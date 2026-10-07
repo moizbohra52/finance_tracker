@@ -23,7 +23,11 @@ void main() {
 
   Future<void> openProfile(WidgetTester tester) async {
     await pumpApp(tester, auth: auth, profile: profiles);
-    await tapAndSettle(tester, find.byTooltip('Profile'));
+    // Tap the profile tab in the bottom navigation
+    await tapAndSettle(tester, find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.widgetWithIcon(Icon, Icons.person_outline),
+        ));
     expect(find.byType(ProfileView), findsOneWidget);
   }
 

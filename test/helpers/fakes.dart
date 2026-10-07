@@ -1,12 +1,16 @@
 import 'dart:async';
 
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/services/connectivity_service.dart';
+import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/main.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// In-memory AuthRepository. Successful sign-in/out calls emit the same
 /// status events Supabase would; [nextError] makes the next call fail.
@@ -114,11 +118,24 @@ Future<void> pumpApp(
   WidgetTester tester, {
   required FakeAuthRepository auth,
   FakeProfileRepository? profile,
+  ConnectivityService? connectivityService,
 }) async {
+  SharedPreferences.setMockInitialValues(<String, Object>{});
+  final StorageService storage = StorageService(
+    await SharedPreferences.getInstance(),
+  );
   await tester.pumpWidget(
     FinanceTrackerApp(
       authRepository: auth,
       profileRepository: profile ?? FakeProfileRepository(),
+      storageService: storage,
+      themeController: ThemeController(storage),
+      connectivityService:
+          connectivityService ??
+          ConnectivityService.forTest(
+            watch: () => const Stream<NetworkStatus>.empty(),
+            check: () async => NetworkStatus.unknown,
+          ),
     ),
   );
   await tester.pumpAndSettle();

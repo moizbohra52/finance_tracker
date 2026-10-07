@@ -1,5 +1,11 @@
+import 'dart:async';
+
+import 'package:finance_tracker/core/services/connectivity_service.dart';
+import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
+import 'package:finance_tracker/core/widgets/offline_widgets.dart';
+import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
 import 'package:flutter/material.dart';
@@ -35,6 +41,81 @@ void main() {
     expect(find.byType(SettingsView), findsNothing);
   });
 
+  testWidgets('shell switches among its five destinations', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
+    expect(find.byType(AppShellView), findsOneWidget);
+    expect(find.byType(DashboardView), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.receipt_long_outlined));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Your income and expenses will appear here.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byIcon(Icons.people_outline));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Your credit and debit ledger will appear here.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Your financial reports will appear here.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byIcon(Icons.person_outline));
+    await tester.pumpAndSettle();
+    expect(find.text('Personal details'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.home_outlined));
+    await tester.pumpAndSettle();
+    expect(find.byType(DashboardView), findsOneWidget);
+  });
+
+  testWidgets('wide shell uses a navigation rail', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1000, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
+
+    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
+  });
+
+  testWidgets('offline banner follows connectivity transitions', (
+    WidgetTester tester,
+  ) async {
+    final StreamController<NetworkStatus> events =
+        StreamController<NetworkStatus>.broadcast();
+    addTearDown(events.close);
+    final ConnectivityService connectivity = ConnectivityService.forTest(
+      watch: () => events.stream,
+      check: () async => NetworkStatus.online,
+    );
+    await pumpApp(
+      tester,
+      auth: FakeAuthRepository(signedIn: true),
+      connectivityService: connectivity,
+    );
+    expect(find.byType(OfflineBanner), findsNothing);
+
+    events.add(NetworkStatus.offline);
+    await tester.pumpAndSettle();
+    expect(find.byType(OfflineBanner), findsOneWidget);
+
+    events.add(NetworkStatus.online);
+    await tester.pumpAndSettle();
+    expect(find.byType(OfflineBanner), findsNothing);
+  });
+
   testWidgets('switching theme mode changes the app brightness', (
     WidgetTester tester,
   ) async {
@@ -50,5 +131,22 @@ void main() {
     await tester.tap(find.text('Light'));
     await tester.pumpAndSettle();
     expect(_brightnessOf(tester, SettingsView), Brightness.light);
+  });
+
+  testWidgets('accent selection rebuilds the app theme', (
+    WidgetTester tester,
+  ) async {
+    await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
+    final Color original = Theme.of(
+      tester.element(find.byType(DashboardView)),
+    ).colorScheme.primary;
+    await tester.tap(find.text('Appearance settings'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(AppAccentColor.teal.label));
+    await tester.pumpAndSettle();
+    expect(
+      Theme.of(tester.element(find.byType(SettingsView))).colorScheme.primary,
+      isNot(original),
+    );
   });
 }

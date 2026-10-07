@@ -1,6 +1,7 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
+import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
@@ -44,12 +45,12 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return AppDialog(
       icon: Icon(
         Icons.warning_amber_rounded,
         color: Theme.of(context).colorScheme.error,
       ),
-      title: const Text('Delete your account?'),
+      title: 'Delete your account?',
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,

@@ -41,4 +41,6 @@ abstract final class AppSizes {
   /// Keeps status messages readable on tablets instead of stretching edge to
   /// edge.
   static const double maxContentWidth = 420;
+  static const double maxPageWidth = 720;
+  static const double maxWideContentWidth = 960;
 }

@@ -11,7 +11,7 @@ import 'package:finance_tracker/features/auth/views/onboarding_view.dart';
 import 'package:finance_tracker/features/auth/views/register_view.dart';
 import 'package:finance_tracker/features/auth/views/reset_password_view.dart';
 import 'package:finance_tracker/features/auth/views/splash_view.dart';
-import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
+import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
@@ -73,8 +73,11 @@ abstract final class AppPages {
     ),
     GetPage<dynamic>(
       name: AppRoutes.dashboard,
-      page: () => const DashboardView(),
+      page: () => const AppShellView(),
       middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BindingsBuilder<void>(
+        () => Get.lazyPut(() => ProfileController(Get.find(), Get.find())),
+      ),
     ),
     GetPage<dynamic>(
       name: AppRoutes.settings,

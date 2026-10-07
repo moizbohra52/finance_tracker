@@ -31,6 +31,12 @@ final class DatabaseFailure extends AppException {
   ]);
 }
 
+final class StorageFailure extends AppException {
+  const StorageFailure([
+    super.message = 'Your preferences could not be saved. Please try again.',
+  ]);
+}
+
 final class UnexpectedFailure extends AppException {
   const UnexpectedFailure([
     super.message = 'Something went wrong. Please try again.',
