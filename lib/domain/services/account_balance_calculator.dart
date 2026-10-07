@@ -20,18 +20,18 @@ class AccountBalanceCalculator {
     for (final transaction in transactions) {
       switch (transaction.type) {
         case TransactionType.income:
-        case TransactionType.transferIn:
-        case TransactionType.adjustmentIn:
-        case TransactionType.paymentReceived:
+        case TransactionType.transfer_in:
+        case TransactionType.adjustment_in:
+        case TransactionType.payment_received:
           balance += transaction.amount;
           break;
         case TransactionType.expense:
-        case TransactionType.transferOut:
-        case TransactionType.adjustmentOut:
-        case TransactionType.paymentMade:
+        case TransactionType.transfer_out:
+        case TransactionType.adjustment_out:
+        case TransactionType.payment_made:
           balance -= transaction.amount;
           break;
-        case TransactionType.openingBalance:
+        case TransactionType.opening_balance:
           // Opening balance transactions are already accounted for in the
           // openingBalance parameter.
           break;
@@ -45,7 +45,7 @@ class AccountBalanceCalculator {
     Decimal total = Decimal.zero;
     for (final t in transactions) {
       if (t.type == TransactionType.income ||
-          t.type == TransactionType.transferIn) {
+          t.type == TransactionType.transfer_in) {
         total += t.amount;
       }
     }
@@ -57,7 +57,7 @@ class AccountBalanceCalculator {
     Decimal total = Decimal.zero;
     for (final t in transactions) {
       if (t.type == TransactionType.expense ||
-          t.type == TransactionType.transferOut) {
+          t.type == TransactionType.transfer_out) {
         total += t.amount;
       }
     }

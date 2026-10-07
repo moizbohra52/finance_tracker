@@ -1,6 +1,6 @@
 import 'package:decimal/decimal.dart';
 
-enum TransactionType { income, expense, transferIn, transferOut, adjustmentIn, adjustmentOut, openingBalance, paymentReceived, paymentMade }
+enum TransactionType { income, expense, transfer_in, transfer_out, adjustment_in, adjustment_out, opening_balance, payment_received, payment_made }
 
 class Transaction {
   final String id;
@@ -66,19 +66,19 @@ class Transaction {
       case 'expense':
         return TransactionType.expense;
       case 'transfer_in':
-        return TransactionType.transferIn;
+        return TransactionType.transfer_in;
       case 'transfer_out':
-        return TransactionType.transferOut;
+        return TransactionType.transfer_out;
       case 'adjustment_in':
-        return TransactionType.adjustmentIn;
+        return TransactionType.adjustment_in;
       case 'adjustment_out':
-        return TransactionType.adjustmentOut;
+        return TransactionType.adjustment_out;
       case 'opening_balance':
-        return TransactionType.openingBalance;
+        return TransactionType.opening_balance;
       case 'payment_received':
-        return TransactionType.paymentReceived;
+        return TransactionType.payment_received;
       case 'payment_made':
-        return TransactionType.paymentMade;
+        return TransactionType.payment_made;
       default:
         throw ArgumentError('Unknown transaction type: $type');
     }
@@ -110,19 +110,19 @@ class Transaction {
         return 'income';
       case TransactionType.expense:
         return 'expense';
-      case TransactionType.transferIn:
+      case TransactionType.transfer_in:
         return 'transfer_in';
-      case TransactionType.transferOut:
+      case TransactionType.transfer_out:
         return 'transfer_out';
-      case TransactionType.adjustmentIn:
+      case TransactionType.adjustment_in:
         return 'adjustment_in';
-      case TransactionType.adjustmentOut:
+      case TransactionType.adjustment_out:
         return 'adjustment_out';
-      case TransactionType.openingBalance:
+      case TransactionType.opening_balance:
         return 'opening_balance';
-      case TransactionType.paymentReceived:
+      case TransactionType.payment_received:
         return 'payment_received';
-      case TransactionType.paymentMade:
+      case TransactionType.payment_made:
         return 'payment_made';
     }
   }

@@ -3,7 +3,9 @@ import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -36,5 +38,9 @@ class InitialBinding extends Bindings {
     // Account repository
     final SupabaseClient client = Supabase.instance.client;
     Get.put<AccountRepository>(AccountRepository(client), permanent: true);
+    // Category repository
+    Get.put<CategoryRepository>(CategoryRepository(client), permanent: true);
+    // Transaction repository
+    Get.put<TransactionRepository>(TransactionRepository(client), permanent: true);
   }
 }
