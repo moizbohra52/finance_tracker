@@ -19,6 +19,9 @@ class ProfileController extends GetxController {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
 
+  /// Saved full name, for greetings elsewhere in the app.
+  final RxString displayName = ''.obs;
+
   final RxBool isLoading = true.obs;
   final RxnString loadError = RxnString();
   final SubmitState save = SubmitState();
@@ -73,6 +76,7 @@ class ProfileController extends GetxController {
   void _fill(Profile profile) {
     fullNameController.text = profile.fullName ?? '';
     mobileController.text = profile.mobile ?? '';
+    displayName.value = profile.fullName ?? '';
   }
 
   @override

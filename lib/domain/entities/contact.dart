@@ -36,7 +36,9 @@ class Contact {
 
     // Apply opening balance type
     if (openingBalanceType == 'payable') {
-      balance = Decimal.zero - balance; // Payable opening balance is negative (we owe)
+      balance =
+          Decimal.zero -
+          balance; // Payable opening balance is negative (we owe)
     }
     // Receivable opening balance is positive (they owe us)
 
@@ -92,7 +94,13 @@ class Contact {
   }
 }
 
-enum ContactTransactionType { credit, debit, paymentReceived, paymentMade, adjustment }
+enum ContactTransactionType {
+  credit,
+  debit,
+  paymentReceived,
+  paymentMade,
+  adjustment,
+}
 
 class ContactTransaction {
   final String id;

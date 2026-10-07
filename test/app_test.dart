@@ -50,24 +50,15 @@ void main() {
 
     await tester.tap(find.byIcon(Icons.receipt_long_outlined));
     await tester.pumpAndSettle();
-    expect(
-      find.text('Your income and expenses will appear here.'),
-      findsOneWidget,
-    );
+    expect(find.text('No transactions yet'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.people_outline));
     await tester.pumpAndSettle();
-    expect(
-      find.text('Your credit and debit ledger will appear here.'),
-      findsOneWidget,
-    );
+    expect(find.text('No contacts yet'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.insights_outlined));
     await tester.pumpAndSettle();
-    expect(
-      find.text('Your financial reports will appear here.'),
-      findsOneWidget,
-    );
+    expect(find.text('This month'), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.person_outline));
     await tester.pumpAndSettle();
@@ -120,7 +111,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
-    await tester.tap(find.text('Appearance settings'));
+    await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
     expect(_brightnessOf(tester, SettingsView), Brightness.light);
 
@@ -140,7 +131,7 @@ void main() {
     final Color original = Theme.of(
       tester.element(find.byType(DashboardView)),
     ).colorScheme.primary;
-    await tester.tap(find.text('Appearance settings'));
+    await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
     await tester.tap(find.text(AppAccentColor.teal.label));
     await tester.pumpAndSettle();

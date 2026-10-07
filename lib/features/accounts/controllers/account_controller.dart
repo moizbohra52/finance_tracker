@@ -1,161 +1,99 @@
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/utils/parallel.dart';
+import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
-import 'package:finance_tracker/domain/entities/account_transaction_summary.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
-import 'package:finance_tracker/domain/services/account_balance_calculator.dart';
+import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+/// Account list plus create, edit (including the opening balance) and delete.
 class AccountController extends GetxController {
-  AccountController(this._accountRepository);
+  AccountController(
+    this._accountRepository,
+    this._transactionRepository,
+    this._notifier,
+  );
 
   final AccountRepository _accountRepository;
+  final TransactionRepository _transactionRepository;
+  final DataChangeNotifier _notifier;
 
-  final RxList<Account> accounts = RxList<Account>();
-  final RxBool isLoading = RxBool(false);
-  final RxString error = RxString('');
+  static const Uuid _uuid = Uuid();
 
-  final SupabaseClient _supabaseClient = Supabase.instance.client;
-  final Uuid _uuid = const Uuid();
+  final RxList<Account> accounts = <Account>[].obs;
+  final RxMap<String, Decimal> balances = <String, Decimal>{}.obs;
+  final RxBool isLoading = true.obs;
+  final RxnString error = RxnString();
+  final SubmitState save = SubmitState();
+  final SubmitState deletion = SubmitState();
 
   @override
   void onInit() {
     super.onInit();
-    loadAccounts();
+    load();
+    ever<int>(_notifier.version, (_) => load(silent: true));
   }
 
-  Future<void> loadAccounts() async {
+  Future<void> load({bool silent = false}) async {
+    if (!silent) isLoading.value = true;
+    error.value = null;
     try {
-      isLoading.value = true;
-      error.value = '';
-      final List<Account> data = await _accountRepository.getAccounts();
-      accounts.assignAll(data);
-    } catch (e) {
-      error.value = e.toString();
+      final (
+        List<Account> loaded,
+        List<Transaction> transactions,
+      ) = await wait2(
+        _accountRepository.getAccounts(),
+        _transactionRepository.getAllTransactions(),
+      );
+      accounts.assignAll(loaded);
+      balances.assignAll(
+        FinanceSummaryCalculator.accountBalances(loaded, transactions),
+      );
+    } on AppException catch (failure) {
+      error.value = failure.message;
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> addAccount({
+  /// [id] is generated once per form so a retried save upserts one row.
+  Future<bool> saveAccount({
+    required String id,
+    Account? existing,
     required String name,
     required AccountType type,
     required Decimal openingBalance,
-    DateTime? openingBalanceDate,
-  }) async {
-    final String userId = _supabaseClient.auth.currentUser?.id ?? '';
-    if (userId.isEmpty) {
-      throw Exception('User not authenticated');
-    }
+    required DateTime openingBalanceDate,
+  }) => save.run(() async {
+    final DateTime now = DateTime.now();
     final Account account = Account(
-      id: _uuid.v4(),
-      userId: userId,
+      id: id,
+      userId: existing?.userId ?? '',
       name: name,
       type: type,
       openingBalance: openingBalance,
       openingBalanceDate: openingBalanceDate,
-      isActive: true,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+      isActive: existing?.isActive ?? true,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
     );
-    try {
-      isLoading.value = true;
-      error.value = '';
+    if (existing == null) {
       await _accountRepository.createAccount(account);
-      accounts.add(account);
-    } catch (e) {
-      error.value = e.toString();
-      rethrow;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  Future<void> updateAccount(Account account) async {
-    try {
-      isLoading.value = true;
-      error.value = '';
+    } else {
       await _accountRepository.updateAccount(account);
-      final int index = accounts.indexWhere((a) => a.id == account.id);
-      if (index != -1) {
-        accounts[index] = account;
-      }
-    } catch (e) {
-      error.value = e.toString();
-      rethrow;
-    } finally {
-      isLoading.value = false;
     }
-  }
+    _notifier.markChanged();
+  });
 
-  Future<void> deleteAccount(String accountId) async {
-    try {
-      isLoading.value = true;
-      error.value = '';
-      await _accountRepository.deleteAccount(accountId);
-      accounts.removeWhere((a) => a.id == accountId);
-    } catch (e) {
-      error.value = e.toString();
-      rethrow;
-    } finally {
-      isLoading.value = false;
-    }
-  }
+  Future<bool> deleteAccount(String accountId) => deletion.run(() async {
+    await _accountRepository.deleteAccount(accountId);
+    _notifier.markChanged();
+  });
 
-  List<Account> get activeAccounts =>
-      accounts.where((a) => a.isActive).toList();
-
-  Account? get defaultAccount {
-    final List<Account> active = activeAccounts;
-    if (active.isEmpty) return null;
-    // Prefer a cash account as the default; otherwise the first active account.
-    final cash = active.firstWhereOrNull((a) => a.type == AccountType.cash);
-    return cash ?? active.first;
-  }
-
-  /// Fetches transactions for the given account from Supabase and calculates
-  /// the current balance using the centralized [AccountBalanceCalculator].
-  Future<Decimal> getAccountBalance(Account account) async {
-    final List<Map<String, dynamic>> data = await _supabaseClient
-        .from('transactions')
-        .select()
-        .eq('account_id', account.id)
-        .isFilter('deleted_at', null);
-
-    final List<Transaction> transactions =
-        data.map((json) => Transaction.fromJson(json)).toList();
-
-    return AccountBalanceCalculator.calculateBalance(
-      account.openingBalance,
-      transactions,
-    );
-  }
-
-  /// Transaction summary for the account detail view.
-  Future<AccountTransactionSummary> getAccountTransactionSummary(
-    Account account,
-  ) async {
-    final List<Map<String, dynamic>> data = await _supabaseClient
-        .from('transactions')
-        .select()
-        .eq('account_id', account.id)
-        .isFilter('deleted_at', null);
-
-    final List<Transaction> transactions =
-        data.map((json) => Transaction.fromJson(json)).toList();
-
-    final Decimal balance =
-        AccountBalanceCalculator.calculateBalance(account.openingBalance, transactions);
-    final Decimal income = AccountBalanceCalculator.sumIncome(transactions);
-    final Decimal expense = AccountBalanceCalculator.sumExpense(transactions);
-
-    return AccountTransactionSummary(
-      balance: balance,
-      totalIncome: income,
-      totalExpense: expense,
-      transactionCount: transactions.length,
-    );
-  }
+  static String newId() => _uuid.v4();
 }

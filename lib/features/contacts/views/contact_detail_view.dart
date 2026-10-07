@@ -1,323 +1,339 @@
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/theme/finance_colors.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_button.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
+import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_pickers.dart';
+import 'package:finance_tracker/core/widgets/app_snackbar.dart';
+import 'package:finance_tracker/core/widgets/finance_widgets.dart';
+import 'package:finance_tracker/core/widgets/inline_message.dart';
+import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
-import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
-import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
-import 'package:finance_tracker/widgets/contact_list_item.dart';
+import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
+import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
+import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
+import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class ContactDetailView extends GetView<ContactController> {
-  final String contactId;
+class ContactDetailView extends GetView<ContactDetailController> {
+  const ContactDetailView({super.key});
 
-  const ContactDetailView({
-    super.key,
-    required this.contactId,
-  });
+  Future<void> _delete(BuildContext context, Contact contact) async {
+    final bool confirmed = await confirmDestructive(
+      context,
+      title: 'Delete ${contact.name}?',
+      message:
+          'The contact and their ledger entries will be removed from your '
+          'khata.',
+    );
+    if (!confirmed) return;
+    if (await controller.deleteContact()) {
+      AppSnackbar.show('Contact deleted');
+      Get.back<void>();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Load contact details when view is created
-    _loadContactDetails();
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Contact Details'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back<void>(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _editContact,
-            tooltip: 'Edit Contact',
-          ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _deleteContact,
-            tooltip: 'Delete Contact',
-          ),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (controller.errorMessage.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Error: ${controller.errorMessage}',
-                    style: const TextStyle(color: Colors.red)),
-                ElevatedButton(
-                  onPressed: () => _loadContactDetails(),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final contact = controller.selectedContact;
-        if (contact == null) {
-          return const Center(
-            child: Text('Contact not found'),
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ContactListItem(contact: contact),
-              const Divider(height: 32),
-              const Text(
-                'Details',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow('Name', contact.name),
-              if (contact.mobile != null && contact.mobile!.isNotEmpty)
-                _buildDetailRow('Mobile', contact.mobile!),
-              if (contact.email != null && contact.email!.isNotEmpty)
-                _buildDetailRow('Email', contact.email!),
-              if (contact.address != null && contact.address!.isNotEmpty)
-                _buildDetailRow('Address', contact.address!),
-              _buildDetailRow(
-                  'Opening Balance',
-                  '${contact.openingBalanceType == 'receivable' ? '+' : '-'}\$${contact.openingBalance.toStringAsFixed(2)}'),
-              _buildDetailRow(
-                  'Opening Balance Type',
-                  contact.openingBalanceType == 'receivable'
-                      ? 'Receivable'
-                      : 'Payable'),
-              if (contact.notes != null && contact.notes!.isNotEmpty)
-                _buildDetailRow('Notes', contact.notes!),
-              const SizedBox(height: 24),
-              const Text(
-                'Transaction History',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildTransactionHistory(),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-
-  Future<void> _loadContactDetails() async {
-    controller.isLoading = true;
-    controller.errorMessage = '';
-    try {
-      final contact =
-          await controller.getContactById(contactId);
-      controller.selectedContact = contact;
-
-      // Also load transaction history
-      await _loadContactTransactions();
-    } catch (e) {
-      controller.errorMessage = e.toString();
-    } finally {
-      controller.isLoading = false;
-    }
-  }
-
-  Future<void> _loadContactTransactions() async {
-    final contact = controller.selectedContact;
-    if (contact == null) return;
-
-    controller.isLoading = true;
-    controller.errorMessage = '';
-    try {
-      final transactions = await controller.getContactTransactions(
-          contact.id);
-      // Store transactions in controller for display
-      controller.contactTransactions = transactions;
-    } catch (e) {
-      controller.errorMessage = e.toString();
-    } finally {
-      controller.isLoading = false;
-    }
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              softWrap: true,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTransactionHistory() {
     return Obx(() {
-      if (controller.isLoading) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      if (controller.errorMessage.isNotEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Error: ${controller.errorMessage}',
-                  style: const TextStyle(color: Colors.red)),
-              ElevatedButton(
-                onPressed: () => _loadContactDetails(),
-                child: const Text('Retry'),
+      final Contact? contact = controller.contact.value;
+      return Scaffold(
+        appBar: AppAppBar(
+          title: contact?.name ?? 'Contact',
+          actions: <Widget>[
+            if (contact != null) ...<Widget>[
+              IconButton(
+                tooltip: 'Edit contact',
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => Get.toNamed<void>(
+                  AppRoutes.contactForm,
+                  arguments: contact,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Delete contact',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _delete(context, contact),
               ),
             ],
-          ),
-        );
-      }
-
-      final transactions = controller.contactTransactions;
-      if (transactions.isEmpty) {
-        return const Center(
-          child: Text('No transactions found'),
-        );
-      }
-
-      return ListView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: transactions.length,
-        itemBuilder: (context, index) {
-          final transaction = transactions[index];
-          return _buildTransactionItem(transaction);
-        },
+          ],
+        ),
+        body: SafeArea(child: _body(context, contact)),
       );
     });
   }
 
-  Widget _buildTransactionItem(ContactTransaction transaction) {
-    // Determine transaction type and color
-    String typeText;
-    Color typeColor;
-    String amountText;
-    Color amountColor;
-
-    switch (transaction.type) {
-      case ContactTransactionType.credit:
-        typeText = 'Credit';
-        typeColor = Colors.green;
-        amountText = '+ \$${transaction.amount.toStringAsFixed(2)}';
-        amountColor = Colors.green;
-        break;
-      case ContactTransactionType.debit:
-        typeText = 'Debit';
-        typeColor = Colors.red;
-        amountText = '- \$${transaction.amount.toStringAsFixed(2)}';
-        amountColor = Colors.red;
-        break;
-      case ContactTransactionType.paymentReceived:
-        typeText = 'Payment Received';
-        typeColor = Colors.blue;
-        amountText = '- \$${transaction.amount.toStringAsFixed(2)}';
-        amountColor = Colors.blue;
-        break;
-      case ContactTransactionType.paymentMade:
-        typeText = 'Payment Made';
-        typeColor = Colors.purple;
-        amountText = '+ \$${transaction.amount.toStringAsFixed(2)}';
-        amountColor = Colors.purple;
-        break;
-      case ContactTransactionType.adjustment:
-        typeText = 'Adjustment';
-        typeColor = Colors.orange;
-        amountText = '${transaction.amount >= Decimal.zero ? '+' : '-'}\$${transaction.amount.abs().toStringAsFixed(2)}';
-        amountColor = Colors.orange;
-        break;
+  Widget _body(BuildContext context, Contact? contact) {
+    if (controller.isLoading.value) {
+      return const LoadingState(message: 'Loading contact');
     }
-
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: typeColor.withValues(alpha: 0.2),
-          child: Text(
-            typeText[0],
-            style: TextStyle(
-              color: typeColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          typeText,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Date: ',
-            ),
-            Text(
-              '${transaction.transactionDate.toLocal()}'.split(' ')[0],
-            ),
-            if (transaction.note != null && transaction.note!.isNotEmpty)
-              Text('Note: ${transaction.note}'),
+    final String? error = controller.error.value;
+    if (error != null) {
+      return ErrorState(message: error, onRetry: controller.load);
+    }
+    if (contact == null) {
+      return const EmptyState(
+        icon: Icons.person_off_outlined,
+        title: 'Contact not found',
+        message: 'It may have been deleted.',
+      );
+    }
+    return AppContent(
+      child: RefreshIndicator(
+        onRefresh: controller.load,
+        child: ListView(
+          children: <Widget>[
+            _BalanceHeader(contact: contact),
+            const SizedBox(height: AppSpacing.md),
+            _EntryActions(contact: contact),
+            const SizedBox(height: AppSpacing.lg),
+            const SectionHeader(title: 'Ledger'),
+            const SizedBox(height: AppSpacing.sm),
+            Obx(() {
+              final String? deleteError = controller.deletion.error.value;
+              return deleteError == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: InlineMessage(message: deleteError),
+                    );
+            }),
+            if (controller.entries.isEmpty)
+              const AppCard(
+                child: EmptyState(
+                  icon: Icons.menu_book_outlined,
+                  title: 'No entries yet',
+                  message: 'Add a credit or debit to start this ledger.',
+                ),
+              )
+            else
+              AppCard(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
+                ),
+                child: Column(
+                  children: <Widget>[
+                    for (final ContactTransaction e in controller.entries)
+                      _EntryTile(entry: e),
+                  ],
+                ),
+              ),
+            const SizedBox(height: AppSpacing.lg),
+            _ContactInfo(contact: contact),
           ],
-        ),
-        trailing: Text(
-          amountText,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: amountColor,
-          ),
         ),
       ),
     );
   }
+}
 
-  void _editContact() {
-    Get.to<void>(() => ContactFormView(
-          isEditMode: true,
-          contactId: contactId,
-        ));
+class _BalanceHeader extends GetView<ContactDetailController> {
+  const _BalanceHeader({required this.contact});
+
+  final Contact contact;
+
+  @override
+  Widget build(BuildContext context) {
+    final FinanceColors money = FinanceColors.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
+    return Obx(() {
+      final balance = controller.balance.value;
+      final bool receivable = balance > Decimal.zero;
+      final bool payable = balance < Decimal.zero;
+      final Color? color = receivable
+          ? money.receivable
+          : (payable ? money.payable : null);
+      return AppCard(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: <Widget>[
+            Text(
+              receivable
+                  ? 'You will get'
+                  : (payable ? 'You will give' : 'All settled'),
+              style: text.labelLarge,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              AppFormatters.money(balance.abs()),
+              style: text.displaySmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _EntryActions extends StatelessWidget {
+  const _EntryActions({required this.contact});
+
+  final Contact contact;
+
+  void _add(ContactTransactionType type) => Get.toNamed<void>(
+    AppRoutes.contactEntry,
+    arguments: ContactEntryArgs(
+      contactId: contact.id,
+      contactName: contact.name,
+      type: type,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: AppButton(
+                label: 'Add credit',
+                icon: Icons.add_card_outlined,
+                onPressed: () => _add(ContactTransactionType.credit),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: AppButton(
+                label: 'Add debit',
+                icon: Icons.remove_circle_outline,
+                variant: AppButtonVariant.secondary,
+                onPressed: () => _add(ContactTransactionType.debit),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            TextButton(
+              onPressed: () => _add(ContactTransactionType.paymentReceived),
+              child: const Text('Payment received'),
+            ),
+            TextButton(
+              onPressed: () => _add(ContactTransactionType.paymentMade),
+              child: const Text('Payment made'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Whether an entry raises (+) or lowers (−) what the contact owes the user.
+bool _raisesBalance(ContactTransactionType t) =>
+    t == ContactTransactionType.credit ||
+    t == ContactTransactionType.paymentMade ||
+    t == ContactTransactionType.adjustment;
+
+class _EntryTile extends GetView<ContactDetailController> {
+  const _EntryTile({required this.entry});
+
+  final ContactTransaction entry;
+
+  Future<void> _delete(BuildContext context) async {
+    final bool confirmed = await confirmDestructive(
+      context,
+      title: 'Delete entry?',
+      message:
+          '${contactEntryLabel(entry.type)} of '
+          '${AppFormatters.money(entry.amount)} will be removed.',
+    );
+    if (confirmed && await controller.deleteEntry(entry.id)) {
+      AppSnackbar.show('Entry deleted');
+    }
   }
 
-  void _deleteContact() {
-    Get.defaultDialog<void>(
-      title: 'Delete Contact',
-      middleText: 'Are you sure you want to delete this contact?',
-      textConfirm: 'Delete',
-      textCancel: 'Cancel',
-      confirmTextColor: Colors.white,
-      onConfirm: () {
-        controller.deleteContact(contactId);
-        Get.back<void>();
-        Get.back<void>(); // Go back to contact list
-      },
+  @override
+  Widget build(BuildContext context) {
+    final FinanceColors money = FinanceColors.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
+    final bool raises = _raisesBalance(entry.type);
+    final String note = entry.note ?? '';
+    final String due = entry.dueDate == null
+        ? ''
+        : ' · Due ${AppFormatters.date(entry.dueDate!)}';
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(contactEntryLabel(entry.type)),
+      subtitle: Text(
+        '${AppFormatters.dateTime(entry.transactionDate)}$due'
+        '${note.isEmpty ? '' : '\n$note'}',
+        style: text.bodySmall,
+      ),
+      isThreeLine: note.isNotEmpty,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            AppFormatters.signedMoney(entry.amount, positive: raises),
+            style: text.titleSmall?.copyWith(
+              color: raises ? money.receivable : money.payable,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Delete entry',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () => _delete(context),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactInfo extends StatelessWidget {
+  const _ContactInfo({required this.contact});
+
+  final Contact contact;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<(String, String?)> rows = <(String, String?)>[
+      ('Mobile', contact.mobile),
+      ('Email', contact.email),
+      ('Address', contact.address),
+      ('Notes', contact.notes),
+    ].where(((String, String?) r) => (r.$2 ?? '').isNotEmpty).toList();
+    if (rows.isEmpty) return const SizedBox.shrink();
+    final TextTheme text = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const SectionHeader(title: 'Details'),
+        const SizedBox(height: AppSpacing.sm),
+        AppCard(
+          child: Column(
+            children: <Widget>[
+              for (final (String, String?) r in rows)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      SizedBox(
+                        width: 80,
+                        child: Text(r.$1, style: text.bodyMedium),
+                      ),
+                      Expanded(child: Text(r.$2!, style: text.titleSmall)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

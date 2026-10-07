@@ -24,11 +24,14 @@ void main() {
   Future<void> openProfile(WidgetTester tester) async {
     await pumpApp(tester, auth: auth, profile: profiles);
     // Tap the profile tab in the bottom navigation
-    await tapAndSettle(tester, find.descendant(
-          of: find.byType(NavigationBar),
-          matching: find.widgetWithIcon(Icon, Icons.person_outline),
-        ));
-    expect(find.byType(ProfileView), findsOneWidget);
+    await tapAndSettle(
+      tester,
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byIcon(Icons.person_outline),
+      ),
+    );
+    expect(find.byType(ProfileContent), findsOneWidget);
   }
 
   testWidgets('shows the profile and saves edits', (WidgetTester tester) async {
@@ -71,7 +74,7 @@ void main() {
     );
 
     expect(auth.calls, <String>['changePassword']);
-    expect(find.byType(ProfileView), findsOneWidget);
+    expect(find.byType(ProfileContent), findsOneWidget);
     expect(find.text('Your password has been changed.'), findsOneWidget);
   });
 
@@ -130,6 +133,6 @@ void main() {
 
     expect(find.byType(AlertDialog), findsNothing);
     expect(auth.calls, isEmpty);
-    expect(Get.currentRoute, AppRoutes.profile);
+    expect(Get.currentRoute, AppRoutes.dashboard);
   });
 }

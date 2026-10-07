@@ -6,16 +6,20 @@ import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
+import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // DateFormat needs symbols for any locale other than en_US.
+  await initializeDateFormatting(AppConstants.defaultLocale);
   if (!AppEnv.isConfigured) {
     throw StateError(
       'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are missing. Copy env.example.json '
@@ -42,6 +46,7 @@ Future<void> main() async {
       storageService: storageService,
       themeController: themeController,
       connectivityService: ConnectivityService(),
+      repositories: AppRepositories.supabase(client),
     ),
   );
 }
@@ -54,12 +59,14 @@ class FinanceTrackerApp extends StatelessWidget {
     required this.storageService,
     required this.themeController,
     required this.connectivityService,
+    required this.repositories,
   }) : initialBinding = InitialBinding(
          authRepository: authRepository,
          profileRepository: profileRepository,
          storageService: storageService,
          themeController: themeController,
          connectivityService: connectivityService,
+         repositories: repositories,
        );
 
   final AuthRepository authRepository;
@@ -67,6 +74,7 @@ class FinanceTrackerApp extends StatelessWidget {
   final StorageService storageService;
   final ThemeController themeController;
   final ConnectivityService connectivityService;
+  final AppRepositories repositories;
   final InitialBinding initialBinding;
 
   @override

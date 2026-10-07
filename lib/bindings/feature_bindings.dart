@@ -1,0 +1,146 @@
+import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/category_repository.dart';
+import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/transaction_repository.dart';
+import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
+import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
+import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
+import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
+import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
+import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
+import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
+import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
+import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
+import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
+import 'package:get/get.dart';
+
+/// Registers [create] unless a screen further down the stack already did, so
+/// a controller shared by a tab and a pushed route is created only once.
+void _putIfAbsent<T extends GetxController>(T Function() create) {
+  if (!Get.isRegistered<T>()) Get.lazyPut<T>(create);
+}
+
+/// The route argument as an id, e.g. a contact or transaction id.
+String _idArgument() => Get.arguments is String ? Get.arguments as String : '';
+
+class TransactionBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => TransactionController(
+      Get.find<TransactionRepository>(),
+      Get.find<AccountRepository>(),
+      Get.find<CategoryRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+class TransactionDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    TransactionBinding().dependencies();
+    Get.put<TransactionDetailController>(
+      TransactionDetailController(
+        Get.find<TransactionRepository>(),
+        Get.find<DataChangeNotifier>(),
+        _idArgument(),
+      ),
+    );
+  }
+}
+
+class ContactBinding extends Bindings {
+  @override
+  void dependencies() {
+    _putIfAbsent(
+      () => ContactController(
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+    _putIfAbsent(
+      () => ContactFormController(
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+  }
+}
+
+class ContactDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    ContactBinding().dependencies();
+    Get.put<ContactDetailController>(
+      ContactDetailController(
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+        _idArgument(),
+      ),
+    );
+  }
+}
+
+class AccountBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => AccountController(
+      Get.find<AccountRepository>(),
+      Get.find<TransactionRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+class AccountDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    AccountBinding().dependencies();
+    TransactionBinding().dependencies();
+    Get.put<AccountDetailController>(
+      AccountDetailController(
+        Get.find<AccountRepository>(),
+        Get.find<TransactionRepository>(),
+        Get.find<DataChangeNotifier>(),
+        _idArgument(),
+      ),
+    );
+  }
+}
+
+class ReportsBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => ReportsController(
+      Get.find<AccountRepository>(),
+      Get.find<TransactionRepository>(),
+      Get.find<ContactRepository>(),
+      Get.find<CategoryRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+/// Everything the signed-in shell's tabs need.
+class ShellBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut<ProfileController>(
+      () => ProfileController(Get.find(), Get.find()),
+    );
+    _putIfAbsent(
+      () => HomeController(
+        Get.find<AccountRepository>(),
+        Get.find<TransactionRepository>(),
+        Get.find<ContactRepository>(),
+        Get.find<CategoryRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+    TransactionBinding().dependencies();
+    ContactBinding().dependencies();
+    AccountBinding().dependencies();
+    ReportsBinding().dependencies();
+  }
+}

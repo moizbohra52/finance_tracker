@@ -56,8 +56,9 @@ class TransactionDatasourceImpl implements TransactionDatasource {
         .range(offset, offset + limit - 1);
 
     final List<dynamic> raw = response as List<dynamic>;
-    final List<Map<String, dynamic>> data =
-        raw.map((e) => e as Map<String, dynamic>).toList();
+    final List<Map<String, dynamic>> data = raw
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
     return data
         .map((json) => TransactionModel.fromJson(json).toEntity())
         .toList();
@@ -91,9 +92,6 @@ class TransactionDatasourceImpl implements TransactionDatasource {
 
   @override
   Future<void> deleteTransaction(String transactionId) async {
-    await _supabaseClient
-        .from('transactions')
-        .delete()
-        .eq('id', transactionId);
+    await _supabaseClient.from('transactions').delete().eq('id', transactionId);
   }
 }

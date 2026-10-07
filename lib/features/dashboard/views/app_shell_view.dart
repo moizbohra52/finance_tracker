@@ -2,8 +2,11 @@ import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
+import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
+import 'package:finance_tracker/features/reports/views/reports_view.dart';
+import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -33,23 +36,26 @@ class _AppShellViewState extends State<AppShellView> {
 
   Widget _destination(int index) => switch (index) {
     0 => const DashboardView(),
-    1 => const FeaturePlaceholderView(
-      icon: Icons.receipt_long_outlined,
-      title: 'Transactions',
-      message: 'Your income and expenses will appear here.',
-    ),
-    2 => const FeaturePlaceholderView(
-      icon: Icons.people_outline,
-      title: 'Khata',
-      message: 'Your credit and debit ledger will appear here.',
-    ),
-    3 => const FeaturePlaceholderView(
-      icon: Icons.insights_outlined,
-      title: 'Reports',
-      message: 'Your financial reports will appear here.',
-    ),
+    1 => const TransactionListContent(),
+    2 => const ContactListContent(),
+    3 => const ReportsView(),
     4 => const ProfileContent(),
     _ => const SizedBox.shrink(),
+  };
+
+  /// The primary action for the current tab, if it has one.
+  Widget? _floatingAction(BuildContext context) => switch (_selectedIndex) {
+    1 => FloatingActionButton.extended(
+      onPressed: () => showAddTransactionSheet(context),
+      icon: const Icon(Icons.add),
+      label: const Text('Add'),
+    ),
+    2 => const FloatingActionButton.extended(
+      onPressed: openAddContact,
+      icon: Icon(Icons.person_add_alt_1_outlined),
+      label: Text('Add contact'),
+    ),
+    _ => null,
   };
 
   Widget _pageStack() => IndexedStack(
@@ -119,6 +125,7 @@ class _AppShellViewState extends State<AppShellView> {
               ],
             ),
           ),
+          floatingActionButton: _floatingAction(context),
           bottomNavigationBar: useRail
               ? null
               : AppBottomNavigation(

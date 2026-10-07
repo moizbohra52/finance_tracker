@@ -16,6 +16,20 @@ abstract final class AppRoutes {
   static const String accountForm = '/account-form';
   static const String accountDetail = '/account-detail';
 
+  // Reports
+  static const String reports = '/reports';
+
+  // Transactions
+  static const String transactions = '/transactions';
+  static const String transactionForm = '/transaction-form';
+  static const String transactionDetail = '/transaction-detail';
+
+  // Khata
+  static const String contacts = '/contacts';
+  static const String contactForm = '/contact-form';
+  static const String contactDetail = '/contact-detail';
+  static const String contactEntry = '/contact-entry';
+
   /// Screens for signed-out users only.
   static const Set<String> guestOnly = <String>{
     onboarding,

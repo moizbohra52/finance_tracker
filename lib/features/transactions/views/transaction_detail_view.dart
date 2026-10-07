@@ -1,182 +1,180 @@
+import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/category_icons.dart';
+import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_button.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
+import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_pickers.dart';
+import 'package:finance_tracker/core/widgets/app_snackbar.dart';
+import 'package:finance_tracker/core/widgets/finance_widgets.dart';
+import 'package:finance_tracker/core/widgets/inline_message.dart';
+import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
-import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
-import 'package:finance_tracker/widgets/transaction_list_item.dart';
-import 'package:finance_tracker/utils/app_formatters.dart';
+import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
+import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class TransactionDetailView extends GetView<TransactionController> {
-  final String transactionId;
-
-  const TransactionDetailView({
-    super.key,
-    required this.transactionId,
-  });
+class TransactionDetailView extends GetView<TransactionDetailController> {
+  const TransactionDetailView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Load transaction details when view is created
-    _loadTransactionDetails();
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transaction Details'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _editTransaction,
-            tooltip: 'Edit Transaction',
+      appBar: const AppAppBar(title: 'Transaction'),
+      body: SafeArea(
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const LoadingState(message: 'Loading transaction');
+          }
+          final String? error = controller.error.value;
+          if (error != null) {
+            return ErrorState(message: error, onRetry: controller.load);
+          }
+          final Transaction? t = controller.transaction.value;
+          if (t == null) {
+            return const EmptyState(
+              icon: Icons.search_off_rounded,
+              title: 'Transaction not found',
+              message: 'It may have been deleted.',
+            );
+          }
+          return _Details(transaction: t);
+        }),
+      ),
+    );
+  }
+}
+
+class _Details extends StatelessWidget {
+  const _Details({required this.transaction});
+
+  final Transaction transaction;
+
+  bool get _editable =>
+      transaction.type == TransactionType.income ||
+      transaction.type == TransactionType.expense;
+
+  Future<void> _delete(BuildContext context) async {
+    final TransactionController list = Get.find<TransactionController>();
+    final bool confirmed = await confirmDestructive(
+      context,
+      title: 'Delete transaction?',
+      message:
+          'This ${transaction.type.label.toLowerCase()} of '
+          '${AppFormatters.money(transaction.amount)} will be removed from '
+          'your balance.',
+    );
+    if (!confirmed) return;
+    if (await list.deleteTransaction(transaction.id)) {
+      AppSnackbar.show('Transaction deleted');
+      Get.back<void>();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final TransactionController list = Get.find<TransactionController>();
+    final TextTheme text = Theme.of(context).textTheme;
+    final category = list.categoryOf(transaction.categoryId);
+    final String? note = transaction.note ?? transaction.description;
+
+    return AppContent(
+      child: ListView(
+        children: <Widget>[
+          AppCard(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              children: <Widget>[
+                CircleAvatar(
+                  radius: 28,
+                  child: Icon(
+                    CategoryIcons.of(category?.icon, transaction.type),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                MoneyText(
+                  transaction.amount,
+                  flow: transaction.type.isInflow
+                      ? MoneyFlow.inflow
+                      : MoneyFlow.outflow,
+                  style: text.headlineMedium,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(transaction.type.label, style: text.bodyMedium),
+              ],
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: _deleteTransaction,
-            tooltip: 'Delete Transaction',
+          const SizedBox(height: AppSpacing.md),
+          AppCard(
+            child: Column(
+              children: <Widget>[
+                _Row('Category', category?.name ?? 'Uncategorised'),
+                _Row('Account', list.accountName(transaction.accountId)),
+                _Row(
+                  'Date',
+                  AppFormatters.dateTime(transaction.transactionDate),
+                ),
+                if (note != null && note.isNotEmpty) _Row('Note', note),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Obx(() {
+            final String? error = list.deletion.error.value;
+            return error == null
+                ? const SizedBox.shrink()
+                : Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: InlineMessage(message: error),
+                  );
+          }),
+          if (_editable)
+            AppButton(
+              label: 'Edit',
+              icon: Icons.edit_outlined,
+              onPressed: () => Get.toNamed<void>(
+                AppRoutes.transactionForm,
+                arguments: TransactionFormArgs(
+                  type: transaction.type,
+                  existing: transaction,
+                ),
+              ),
+            ),
+          if (_editable) const SizedBox(height: AppSpacing.md),
+          Obx(
+            () => AppButton(
+              label: 'Delete',
+              icon: Icons.delete_outline,
+              variant: AppButtonVariant.destructive,
+              isLoading: list.deletion.isBusy.value,
+              onPressed: () => _delete(context),
+            ),
           ),
         ],
       ),
-      body: Obx(() {
-        if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (controller.errorMessage.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Error: ${controller.errorMessage}',
-                    style: const TextStyle(color: Colors.red)),
-                ElevatedButton(
-                  onPressed: () => _loadTransactionDetails(),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final transaction = controller.selectedTransaction;
-        if (transaction == null) {
-          return const Center(
-            child: Text('Transaction not found'),
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TransactionListItem(transaction: transaction),
-              const Divider(height: 32),
-              const Text(
-                'Details',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 16),
-              _buildDetailRow('Type', _getTransactionTypeLabel(transaction.type)),
-              _buildDetailRow(
-                  'Amount', AppFormatters.currency(transaction.amount)),
-              _buildDetailRow(
-                  'Date', AppFormatters.dateTime(transaction.transactionDate)),
-              if (transaction.note != null && transaction.note!.isNotEmpty)
-                _buildDetailRow('Notes', transaction.note!),
-              if (transaction.description != null &&
-                  transaction.description!.isNotEmpty)
-                _buildDetailRow('Description', transaction.description!),
-              if (transaction.paymentMethod != null &&
-                  transaction.paymentMethod!.isNotEmpty)
-                _buildDetailRow('Payment Method', transaction.paymentMethod!),
-              if (transaction.transferId != null &&
-                  transaction.transferId!.isNotEmpty)
-                _buildDetailRow('Transfer ID', transaction.transferId!),
-            ],
-          ),
-        );
-      }),
     );
   }
+}
 
-  Future<void> _loadTransactionDetails() async {
-    controller.isLoading = true;
-    controller.errorMessage = '';
-    try {
-      final transaction =
-          await controller.getTransactionById(transactionId);
-      controller.selectedTransaction = transaction;
-    } catch (e) {
-      controller.errorMessage = e.toString();
-    } finally {
-      controller.isLoading = false;
-    }
-  }
+class _Row extends StatelessWidget {
+  const _Row(this.label, this.value);
 
-  void _editTransaction() {
-    Get.to(() => TransactionFormView(
-          isEditMode: true,
-          transactionId: transactionId,
-        ));
-  }
+  final String label;
+  final String value;
 
-  void _deleteTransaction() {
-    // TODO: Implement delete confirmation dialog
-  }
-
-  String _getTransactionTypeLabel(TransactionType type) {
-    switch (type) {
-      case TransactionType.income:
-        return 'Income';
-      case TransactionType.expense:
-        return 'Expense';
-      case TransactionType.transfer_in:
-        return 'Transfer In';
-      case TransactionType.transfer_out:
-        return 'Transfer Out';
-      case TransactionType.adjustment_in:
-        return 'Adjustment In';
-      case TransactionType.adjustment_out:
-        return 'Adjustment Out';
-      case TransactionType.opening_balance:
-        return 'Opening Balance';
-      case TransactionType.payment_received:
-        return 'Payment Received';
-      case TransactionType.payment_made:
-        return 'Payment Made';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  Widget _buildDetailRow(String label, String value) {
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 100,
-            child: Text(
-              '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              softWrap: true,
-            ),
-          ),
+        children: <Widget>[
+          SizedBox(width: 96, child: Text(label, style: text.bodyMedium)),
+          Expanded(child: Text(value, style: text.titleSmall)),
         ],
       ),
     );

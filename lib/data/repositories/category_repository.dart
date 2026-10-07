@@ -8,15 +8,15 @@ class CategoryRepository {
 
   final SupabaseClient _supabaseClient;
 
-  Future<List<Category>> getCategories() async {
-    final response = await _supabaseClient.from('categories').select();
-    final List<dynamic> raw = response as List<dynamic>;
-    final List<Map<String, dynamic>> data =
-        raw.map((e) => e as Map<String, dynamic>).toList();
-    return data
-        .map((json) => CategoryModel.fromJson(json).toEntity())
-        .toList();
-  }
+  Future<List<Category>> getCategories() => guardSupabase(() async {
+    final List<Map<String, dynamic>> data = await _supabaseClient
+        .from('categories')
+        .select()
+        .isFilter('deleted_at', null)
+        .eq('is_active', true)
+        .order('name');
+    return data.map((json) => CategoryModel.fromJson(json).toEntity()).toList();
+  });
 
   Future<Category> getCategoryById(String categoryId) async {
     final response = await _supabaseClient
@@ -41,9 +41,6 @@ class CategoryRepository {
   }
 
   Future<void> deleteCategory(String categoryId) async {
-    await _supabaseClient
-        .from('categories')
-        .delete()
-        .eq('id', categoryId);
+    await _supabaseClient.from('categories').delete().eq('id', categoryId);
   }
 }

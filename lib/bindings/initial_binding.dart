@@ -1,14 +1,16 @@
 import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
+import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
+import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:get/get.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// App-wide dependencies, registered once at startup. Screen-level
 /// dependencies are bound on their route in routes/app_pages.dart.
@@ -19,6 +21,7 @@ class InitialBinding extends Bindings {
     required this.storageService,
     required this.themeController,
     required this.connectivityService,
+    required this.repositories,
   });
 
   final AuthRepository authRepository;
@@ -26,6 +29,7 @@ class InitialBinding extends Bindings {
   final StorageService storageService;
   final ThemeController themeController;
   final ConnectivityService connectivityService;
+  final AppRepositories repositories;
 
   @override
   void dependencies() {
@@ -35,12 +39,10 @@ class InitialBinding extends Bindings {
     Get.put<AuthRepository>(authRepository, permanent: true);
     Get.put<ProfileRepository>(profileRepository, permanent: true);
     Get.put(AuthController(authRepository), permanent: true);
-    // Account repository
-    final SupabaseClient client = Supabase.instance.client;
-    Get.put<AccountRepository>(AccountRepository(client), permanent: true);
-    // Category repository
-    Get.put<CategoryRepository>(CategoryRepository(client), permanent: true);
-    // Transaction repository
-    Get.put<TransactionRepository>(TransactionRepository(client), permanent: true);
+    Get.put<AccountRepository>(repositories.accounts, permanent: true);
+    Get.put<CategoryRepository>(repositories.categories, permanent: true);
+    Get.put<TransactionRepository>(repositories.transactions, permanent: true);
+    Get.put<ContactRepository>(repositories.contacts, permanent: true);
+    Get.put<DataChangeNotifier>(DataChangeNotifier(), permanent: true);
   }
 }

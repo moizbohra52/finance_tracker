@@ -1,76 +1,58 @@
-import 'package:decimal/decimal.dart';
-import 'package:finance_tracker/domain/entities/contact.dart';
-import 'package:finance_tracker/utils/app_formatters.dart';
+import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/theme/finance_colors.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
 import 'package:flutter/material.dart';
 
-class ContactListItem extends StatelessWidget {
-  final Contact contact;
-  final VoidCallback? onTap;
+/// Contact name with what they owe the user or what the user owes them.
+class ContactBalanceTile extends StatelessWidget {
+  const ContactBalanceTile({super.key, required this.row, this.onTap});
 
-  const ContactListItem({
-    super.key,
-    required this.contact,
-    this.onTap,
-  });
+  final ContactBalance row;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    final isReceivable = contact.getCurrentBalance([]) >= Decimal.zero;
-    final balance = contact.getCurrentBalance([]);
-    final String balanceText =
-        '${isReceivable ? '+' : '-'}\$${balance.abs().toStringAsFixed(2)}';
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final FinanceColors money = FinanceColors.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
+    final String name = row.contact.name;
 
-    return Card(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor:
-              isReceivable ? Colors.green.shade100 : Colors.red.shade100,
-          child: Text(
-            contact.name.isNotEmpty ? contact.name[0] : '?',
-            style: TextStyle(
-              color: isReceivable ? Colors.green : Colors.red,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          contact.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (contact.mobile != null && contact.mobile!.isNotEmpty)
-              Text('Mobile: ${contact.mobile}'),
-            if (contact.email != null && contact.email!.isNotEmpty)
-              Text('Email: ${contact.email}'),
-          ],
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+    final (String label, Color? color) = row.isReceivable
+        ? ('You will get', money.receivable)
+        : row.isPayable
+        ? ('You will give', money.payable)
+        : ('Settled', null);
+
+    return ListTile(
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xs,
+      ),
+      leading: CircleAvatar(
+        backgroundColor: colors.primaryContainer,
+        foregroundColor: colors.onPrimaryContainer,
+        child: Text(name.isEmpty ? '?' : name.characters.first.toUpperCase()),
+      ),
+      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: (row.contact.mobile ?? '').isEmpty
+          ? null
+          : Text(row.contact.mobile!, style: text.bodySmall),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: <Widget>[
+          if (color != null)
             Text(
-              balanceText,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: isReceivable ? Colors.green : Colors.red,
+              AppFormatters.money(row.balance.abs()),
+              style: text.titleSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              contact.openingBalanceType == 'receivable'
-                  ? 'Receivable'
-                  : 'Payable',
-              style: TextStyle(
-                fontSize: 12,
-                color: contact.openingBalanceType == 'receivable'
-                    ? Colors.green
-                    : Colors.red,
-              ),
-            ),
-          ],
-        ),
-        onTap: onTap,
+          Text(label, style: text.labelSmall),
+        ],
       ),
     );
   }

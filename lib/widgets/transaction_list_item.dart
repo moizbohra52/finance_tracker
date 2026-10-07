@@ -1,131 +1,59 @@
+import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/category_icons.dart';
+import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
-import 'package:finance_tracker/utils/app_formatters.dart';
 import 'package:flutter/material.dart';
 
+/// One transaction row: icon, title, time and type, and a signed amount.
 class TransactionListItem extends StatelessWidget {
+  const TransactionListItem({
+    super.key,
+    required this.transaction,
+    required this.title,
+    required this.subtitle,
+    this.iconKey,
+    this.onTap,
+  });
+
   final Transaction transaction;
 
-  const TransactionListItem({
-    Key? key,
-    required this.transaction,
-  }) : super(key: key);
+  /// Category name, or a fallback chosen by the caller.
+  final String title;
+
+  /// Extra metadata such as the account name.
+  final String subtitle;
+  final String? iconKey;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final TextTheme text = Theme.of(context).textTheme;
+    final bool inflow = transaction.type.isInflow;
     return ListTile(
-      leading: _buildTransactionIcon(),
-      title: Text(transaction.description ?? 'No description'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(AppFormatters.currency(transaction.amount)),
-          Text(
-            '${AppFormatters.dateTime(transaction.transactionDate)} • ${_getTransactionTypeLabel()}',
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xs,
       ),
-      trailing: PopupMenuButton<String>(
-        onSelected: _handleMenuSelection,
-        itemBuilder: (context) => [
-          const PopupMenuItem(
-            value: 'edit',
-            child: ListTile(
-              leading: Icon(Icons.edit),
-              title: Text('Edit'),
-            ),
-          ),
-          const PopupMenuItem(
-            value: 'delete',
-            child: ListTile(
-              leading: Icon(Icons.delete),
-              title: Text('Delete'),
-            ),
-          ),
-        ],
+      leading: CircleAvatar(
+        backgroundColor: colors.secondaryContainer,
+        foregroundColor: colors.onSecondaryContainer,
+        child: Icon(CategoryIcons.of(iconKey, transaction.type)),
+      ),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        '${AppFormatters.time(transaction.transactionDate)} · '
+        '${transaction.type.label} · $subtitle',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: text.bodySmall,
+      ),
+      trailing: MoneyText(
+        transaction.amount,
+        flow: inflow ? MoneyFlow.inflow : MoneyFlow.outflow,
       ),
     );
-  }
-
-  Widget _buildTransactionIcon() {
-    IconData icon;
-    Color color;
-
-    switch (transaction.type) {
-      case TransactionType.income:
-        icon = Icons.arrow_upward;
-        color = Colors.green;
-        break;
-      case TransactionType.expense:
-        icon = Icons.arrow_downward;
-        color = Colors.red;
-        break;
-      case TransactionType.transfer_in:
-      case TransactionType.transfer_out:
-        icon = Icons.swap_horiz;
-        color = Colors.blue;
-        break;
-      case TransactionType.adjustment_in:
-      case TransactionType.adjustment_out:
-        icon = Icons.create;
-        color = Colors.orange;
-        break;
-      case TransactionType.opening_balance:
-        icon = Icons.account_balance;
-        color = Colors.purple;
-        break;
-      case TransactionType.payment_received:
-        icon = Icons.receipt_long;
-        color = Colors.green;
-        break;
-      case TransactionType.payment_made:
-        icon = Icons.receipt_long;
-        color = Colors.red;
-        break;
-      default:
-        icon = Icons.account_balance_wallet;
-        color = Colors.grey;
-    }
-
-    return CircleAvatar(
-      backgroundColor: color.withOpacity(0.2),
-      child: Icon(icon, color: color),
-    );
-  }
-
-  String _getTransactionTypeLabel() {
-    switch (transaction.type) {
-      case TransactionType.income:
-        return 'Income';
-      case TransactionType.expense:
-        return 'Expense';
-      case TransactionType.transfer_in:
-        return 'Transfer In';
-      case TransactionType.transfer_out:
-        return 'Transfer Out';
-      case TransactionType.adjustment_in:
-        return 'Adjustment In';
-      case TransactionType.adjustment_out:
-        return 'Adjustment Out';
-      case TransactionType.opening_balance:
-        return 'Opening Balance';
-      case TransactionType.payment_received:
-        return 'Payment Received';
-      case TransactionType.payment_made:
-        return 'Payment Made';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  void _handleMenuSelection(String value) {
-    switch (value) {
-      case 'edit':
-        // TODO: Navigate to edit transaction screen
-        break;
-      case 'delete':
-        // TODO: Show delete confirmation dialog
-        break;
-    }
   }
 }

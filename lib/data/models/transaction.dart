@@ -36,14 +36,15 @@ class TransactionModel {
     this.deletedAt,
   });
 
-  factory TransactionModel.fromJson(Map<String, dynamic> json) => TransactionModel(
+  factory TransactionModel.fromJson(Map<String, dynamic> json) =>
+      TransactionModel(
         id: json['id'] as String,
         userId: json['user_id'] as String,
         accountId: json['account_id'] as String,
         categoryId: json['category_id'] as String?,
         contactId: json['contact_id'] as String?,
         type: json['type'] as String,
-        amount: json['amount'] as String,
+        amount: json['amount'].toString(),
         transactionDate: json['transaction_date'] as String,
         note: json['note'] as String?,
         description: json['description'] as String?,
@@ -55,42 +56,43 @@ class TransactionModel {
       );
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'account_id': accountId,
-        'category_id': categoryId,
-        'contact_id': contactId,
-        'type': type,
-        'amount': amount,
-        'transaction_date': transactionDate,
-        'note': note,
-        'description': description,
-        'payment_method': paymentMethod,
-        'transfer_id': transferId,
-        'created_at': createdAt,
-        'updated_at': updatedAt,
-        'deleted_at': deletedAt,
-      };
+    'id': id,
+    'user_id': userId,
+    'account_id': accountId,
+    'category_id': categoryId,
+    'contact_id': contactId,
+    'type': type,
+    'amount': amount,
+    'transaction_date': transactionDate,
+    'note': note,
+    'description': description,
+    'payment_method': paymentMethod,
+    'transfer_id': transferId,
+    'created_at': createdAt,
+    'updated_at': updatedAt,
+    'deleted_at': deletedAt,
+  };
 
   Transaction toEntity() => Transaction(
-        id: id,
-        userId: userId,
-        accountId: accountId,
-        categoryId: categoryId,
-        contactId: contactId,
-        type: _parseTransactionType(type),
-        amount: Decimal.parse(amount),
-        transactionDate: DateTime.parse(transactionDate),
-        note: note,
-        description: description,
-        paymentMethod: paymentMethod,
-        transferId: transferId,
-        createdAt: DateTime.parse(createdAt),
-        updatedAt: DateTime.parse(updatedAt),
-        deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
-      );
+    id: id,
+    userId: userId,
+    accountId: accountId,
+    categoryId: categoryId,
+    contactId: contactId,
+    type: _parseTransactionType(type),
+    amount: Decimal.parse(amount),
+    transactionDate: DateTime.parse(transactionDate).toLocal(),
+    note: note,
+    description: description,
+    paymentMethod: paymentMethod,
+    transferId: transferId,
+    createdAt: DateTime.parse(createdAt),
+    updatedAt: DateTime.parse(updatedAt),
+    deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
+  );
 
-  static TransactionModel fromEntity(Transaction transaction) => TransactionModel(
+  static TransactionModel fromEntity(Transaction transaction) =>
+      TransactionModel(
         id: transaction.id,
         userId: transaction.userId,
         accountId: transaction.accountId,
@@ -98,7 +100,7 @@ class TransactionModel {
         contactId: transaction.contactId,
         type: _transactionTypeToString(transaction.type),
         amount: transaction.amount.toString(),
-        transactionDate: transaction.transactionDate.toIso8601String(),
+        transactionDate: transaction.transactionDate.toUtc().toIso8601String(),
         note: transaction.note,
         description: transaction.description,
         paymentMethod: transaction.paymentMethod,

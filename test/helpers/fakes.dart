@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
@@ -8,8 +9,10 @@ import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/main.dart';
+import 'fake_finance.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// In-memory AuthRepository. Successful sign-in/out calls emit the same
@@ -119,7 +122,9 @@ Future<void> pumpApp(
   required FakeAuthRepository auth,
   FakeProfileRepository? profile,
   ConnectivityService? connectivityService,
+  FakeFinance? finance,
 }) async {
+  await initializeDateFormatting(AppConstants.defaultLocale);
   SharedPreferences.setMockInitialValues(<String, Object>{});
   final StorageService storage = StorageService(
     await SharedPreferences.getInstance(),
@@ -128,6 +133,7 @@ Future<void> pumpApp(
     FinanceTrackerApp(
       authRepository: auth,
       profileRepository: profile ?? FakeProfileRepository(),
+      repositories: (finance ?? FakeFinance()).repositories,
       storageService: storage,
       themeController: ThemeController(storage),
       connectivityService:

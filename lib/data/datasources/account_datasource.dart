@@ -19,11 +19,10 @@ class AccountDatasourceImpl implements AccountDatasource {
   Future<List<Account>> getAccounts() async {
     final raw = await _supabaseClient.from('accounts').select();
     final List<dynamic> list = raw as List<dynamic>;
-    final List<Map<String, dynamic>> data =
-        list.map((e) => e as Map<String, dynamic>).toList();
-    return data
-        .map((json) => AccountModel.fromJson(json).toEntity())
+    final List<Map<String, dynamic>> data = list
+        .map((e) => e as Map<String, dynamic>)
         .toList();
+    return data.map((json) => AccountModel.fromJson(json).toEntity()).toList();
   }
 
   @override
@@ -54,9 +53,6 @@ class AccountDatasourceImpl implements AccountDatasource {
 
   @override
   Future<void> deleteAccount(String accountId) async {
-    await _supabaseClient
-        .from('accounts')
-        .delete()
-        .eq('id', accountId);
+    await _supabaseClient.from('accounts').delete().eq('id', accountId);
   }
 }

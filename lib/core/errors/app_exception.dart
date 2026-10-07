@@ -42,3 +42,7 @@ final class UnexpectedFailure extends AppException {
     super.message = 'Something went wrong. Please try again.',
   ]);
 }
+
+/// A message safe to show the user for any thrown [error].
+String userMessage(Object error) =>
+    error is AppException ? error.message : const UnexpectedFailure().message;

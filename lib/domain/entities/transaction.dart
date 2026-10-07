@@ -1,6 +1,16 @@
 import 'package:decimal/decimal.dart';
 
-enum TransactionType { income, expense, transfer_in, transfer_out, adjustment_in, adjustment_out, opening_balance, payment_received, payment_made }
+enum TransactionType {
+  income,
+  expense,
+  transfer_in,
+  transfer_out,
+  adjustment_in,
+  adjustment_out,
+  opening_balance,
+  payment_received,
+  payment_made,
+}
 
 class Transaction {
   final String id;

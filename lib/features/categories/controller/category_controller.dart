@@ -44,8 +44,7 @@ class CategoryController extends GetxController {
     isLoading = true;
     errorMessage = '';
     try {
-      final category =
-          await _categoryRepository.getCategoryById(categoryId);
+      final category = await _categoryRepository.getCategoryById(categoryId);
       return category;
     } catch (e) {
       errorMessage = e.toString();

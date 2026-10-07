@@ -1,175 +1,168 @@
-import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/theme/finance_colors.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/finance_widgets.dart';
+import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
-import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
-import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
+import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/contact_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class ContactListView extends GetView<ContactController> {
+void openAddContact() => Get.toNamed<void>(AppRoutes.contactForm);
+
+/// Standalone khata route (back-navigable from the dashboard).
+class ContactListView extends StatelessWidget {
   const ContactListView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Contacts'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back<void>(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addContact,
-            tooltip: 'Add Contact',
-          ),
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterOptions,
-            tooltip: 'Filter Contacts',
-          ),
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: _checkReminders,
-            tooltip: 'Check Reminders',
-          ),
-        ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48.0),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: TextField(
-              onChanged: (value) => controller.searchQuery = value,
-              decoration: InputDecoration(
-                hintText: 'Search contacts...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0),
-              ),
-            ),
-          ),
-        ),
+    return const Scaffold(
+      appBar: AppAppBar(title: 'Khata'),
+      body: SafeArea(child: ContactListContent()),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: openAddContact,
+        icon: Icon(Icons.person_add_alt_1_outlined),
+        label: Text('Add contact'),
       ),
-      body: Obx(() {
-        if (controller.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+    );
+  }
+}
 
-        if (controller.errorMessage.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Error: ${controller.errorMessage}',
-                    style: const TextStyle(color: Colors.red)),
-                ElevatedButton(
-                  onPressed: () => controller.loadContacts(),
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
-        }
+/// Summary, search, filter and contact list. Shared by the tab and the route.
+class ContactListContent extends GetView<ContactController> {
+  const ContactListContent({super.key});
 
-        if (controller.contacts.isEmpty) {
-          return const Center(
-            child: Text('No contacts found'),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: controller.contacts.length,
-          itemBuilder: (context, index) {
-            final contact = controller.contacts[index];
-            return ContactListItem(
-              contact: contact,
-              onTap: () => _viewContact(contact.id),
-            );
-          },
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const AppContent(child: SkeletonList());
+      }
+      final String? error = controller.error.value;
+      if (error != null && !controller.hasContacts) {
+        return ErrorState(message: error, onRetry: controller.load);
+      }
+      if (!controller.hasContacts) {
+        return const EmptyState(
+          icon: Icons.people_outline,
+          title: 'No contacts yet',
+          message:
+              'Add the people you lend to or borrow from, then record credit '
+              'and debit entries against them.',
+          actionLabel: 'Add contact',
+          onAction: openAddContact,
         );
-      }),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addContact,
-        tooltip: 'Add Contact',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  void _addContact() {
-    Get.to<void>(() => ContactFormView());
-  }
-
-  void _viewContact(String contactId) {
-    Get.to<void>(() => ContactDetailView(contactId: contactId));
-  }
-
-  void _showFilterOptions() {
-    Get.defaultDialog<String>(
-      title: 'Filter Contacts',
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.all_inclusive),
-            title: const Text('All Contacts'),
-            selected: controller.filterType == 'all',
-            onTap: () {
-              controller.filterType = 'all';
-              Get.back<void>();
-            },
+      }
+      final List<ContactBalance> rows = controller.visible;
+      return AppContent(
+        child: RefreshIndicator(
+          onRefresh: controller.load,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: <Widget>[
+              const SliverToBoxAdapter(child: _Summary()),
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
+              const SliverToBoxAdapter(child: _SearchAndFilter()),
+              if (rows.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyState(
+                    icon: Icons.search_off_rounded,
+                    title: 'No matching contacts',
+                    message: 'Try a different name or filter.',
+                  ),
+                )
+              else
+                SliverList.builder(
+                  itemCount: rows.length,
+                  itemBuilder: (BuildContext context, int index) =>
+                      ContactBalanceTile(
+                        row: rows[index],
+                        onTap: () => Get.toNamed<void>(
+                          AppRoutes.contactDetail,
+                          arguments: rows[index].contact.id,
+                        ),
+                      ),
+                ),
+              const SliverToBoxAdapter(child: SizedBox(height: 88)),
+            ],
           ),
-          ListTile(
-            leading: const Icon(Icons.arrow_downward, color: Colors.green),
-            title: const Text('Receivable (They owe you)'),
-            selected: controller.filterType == 'receivable',
-            onTap: () {
-              controller.filterType = 'receivable';
-              Get.back<void>();
-            },
+        ),
+      );
+    });
+  }
+}
+
+class _Summary extends GetView<ContactController> {
+  const _Summary();
+
+  @override
+  Widget build(BuildContext context) {
+    final FinanceColors money = FinanceColors.of(context);
+    return Obx(
+      () => Row(
+        children: <Widget>[
+          Expanded(
+            child: SummaryTile(
+              icon: Icons.call_received_rounded,
+              label: 'You will get',
+              value: AppFormatters.money(controller.summary.value.receivable),
+              color: money.receivable,
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.arrow_upward, color: Colors.red),
-            title: const Text('Payable (You owe)'),
-            selected: controller.filterType == 'payable',
-            onTap: () {
-              controller.filterType = 'payable';
-              Get.back<void>();
-            },
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: SummaryTile(
+              icon: Icons.call_made_rounded,
+              label: 'You will give',
+              value: AppFormatters.money(controller.summary.value.payable),
+              color: money.payable,
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  void _checkReminders() async {
-    final count = await controller.getRemindersCount();
-    if (count > 0) {
-      await Get.dialog<void>(
-        AlertDialog(
-          title: const Text('Reminders'),
-          content: Text('You have $count contacts requiring attention'),
-          actions: [
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () => Get.back<void>(),
-            ),
-          ],
+class _SearchAndFilter extends GetView<ContactController> {
+  const _SearchAndFilter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        TextField(
+          onChanged: (String v) => controller.searchText.value = v,
+          decoration: const InputDecoration(
+            hintText: 'Search name or mobile',
+            prefixIcon: Icon(Icons.search),
+          ),
         ),
-      );
-    } else {
-      Get.showSnackbar(
-        const GetSnackBar(
-          title: 'No Reminders',
-          message: 'No contacts require attention at this time',
-          backgroundColor: Colors.green,
+        const SizedBox(height: AppSpacing.sm),
+        Obx(
+          () => Wrap(
+            spacing: AppSpacing.sm,
+            children: <Widget>[
+              for (final (KhataFilter f, String label)
+                  in <(KhataFilter, String)>[
+                    (KhataFilter.all, 'All'),
+                    (KhataFilter.receivable, 'You will get'),
+                    (KhataFilter.payable, 'You will give'),
+                  ])
+                ChoiceChip(
+                  label: Text(label),
+                  selected: controller.filter.value == f,
+                  onSelected: (_) => controller.filter.value = f,
+                ),
+            ],
+          ),
         ),
-      );
-    }
+      ],
+    );
   }
 }

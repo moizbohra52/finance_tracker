@@ -18,9 +18,7 @@ class CategoryDatasourceImpl implements CategoryDatasource {
   @override
   Future<List<Category>> getCategories() async {
     final raw = await _supabaseClient.from('categories').select();
-    return raw
-        .map((json) => CategoryModel.fromJson(json).toEntity())
-        .toList();
+    return raw.map((json) => CategoryModel.fromJson(json).toEntity()).toList();
   }
 
   @override
@@ -50,9 +48,6 @@ class CategoryDatasourceImpl implements CategoryDatasource {
 
   @override
   Future<void> deleteCategory(String categoryId) async {
-    await _supabaseClient
-        .from('categories')
-        .delete()
-        .eq('id', categoryId);
+    await _supabaseClient.from('categories').delete().eq('id', categoryId);
   }
 }

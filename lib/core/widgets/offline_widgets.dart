@@ -1,6 +1,9 @@
+import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
+import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Compact status banner shown when the device has no network transport.
 class OfflineBanner extends StatelessWidget {
@@ -83,5 +86,24 @@ class OfflineState extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Failure view that says "offline" when the device has no network, and
+/// shows the mapped [message] otherwise.
+class LoadFailureView extends StatelessWidget {
+  const LoadFailureView({super.key, required this.message, this.onRetry});
+
+  final String message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool offline =
+        Get.isRegistered<ConnectivityService>() &&
+        Get.find<ConnectivityService>().isOffline;
+    return offline
+        ? OfflineState(onRetry: onRetry)
+        : ErrorState(message: message, onRetry: onRetry);
   }
 }

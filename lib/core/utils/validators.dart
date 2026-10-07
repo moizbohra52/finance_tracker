@@ -1,3 +1,5 @@
+import 'package:decimal/decimal.dart';
+
 /// Form field validators. Each returns an error message, or null when valid.
 abstract final class Validators {
   static const int minPasswordLength = 8;
@@ -43,4 +45,27 @@ abstract final class Validators {
     if (mobile.isEmpty) return null;
     return _mobile.hasMatch(mobile) ? null : 'Enter a valid mobile number';
   }
+
+  static final RegExp _amount = RegExp(r'^\d{1,13}(\.\d{1,2})?$');
+
+  /// A positive money amount with at most two decimals.
+  static String? positiveAmount(String? value) {
+    final String text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Enter an amount';
+    final Decimal? parsed = _amount.hasMatch(text)
+        ? Decimal.tryParse(text)
+        : null;
+    if (parsed == null) return 'Enter a valid amount, e.g. 250.50';
+    return parsed > Decimal.zero ? null : 'Amount must be more than zero';
+  }
+
+  /// A money amount with at most two decimals; zero is allowed.
+  static String? nonNegativeAmount(String? value) {
+    final String text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Enter an amount (0 if none)';
+    return _amount.hasMatch(text) ? null : 'Enter a valid amount, e.g. 250.50';
+  }
+
+  static String? name(String? value, String fieldName) =>
+      (value == null || value.trim().isEmpty) ? 'Enter $fieldName' : null;
 }

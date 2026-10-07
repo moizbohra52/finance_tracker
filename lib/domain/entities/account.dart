@@ -56,8 +56,10 @@ class Account {
       'name': name,
       'type': type.toString().split('.').last,
       'opening_balance': openingBalance.toString(),
-      'opening_balance_date':
-          openingBalanceDate?.toIso8601String().split('T').first,
+      'opening_balance_date': openingBalanceDate
+          ?.toIso8601String()
+          .split('T')
+          .first,
       'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),

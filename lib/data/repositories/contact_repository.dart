@@ -45,30 +45,33 @@ class ContactRepository {
 
   // Contact Transactions
   Future<List<ContactTransaction>> getContactTransactions(
-      String contactId) async {
+    String contactId,
+  ) async {
     return guardSupabase(() async {
-      final transactionModels =
-          await _contactDatasource.getContactTransactions(contactId);
-      return transactionModels
-          .map((model) => model.toEntity())
-          .toList();
+      final transactionModels = await _contactDatasource.getContactTransactions(
+        contactId,
+      );
+      return transactionModels.map((model) => model.toEntity()).toList();
     });
   }
 
-  Future<void> createContactTransaction(
-      ContactTransaction transaction) async {
+  Future<List<ContactTransaction>> getAllContactTransactions() async {
     return guardSupabase(() async {
-      final transactionModel =
-          ContactTransactionModel.fromEntity(transaction);
+      final models = await _contactDatasource.getAllContactTransactions();
+      return models.map((model) => model.toEntity()).toList();
+    });
+  }
+
+  Future<void> createContactTransaction(ContactTransaction transaction) async {
+    return guardSupabase(() async {
+      final transactionModel = ContactTransactionModel.fromEntity(transaction);
       await _contactDatasource.createContactTransaction(transactionModel);
     });
   }
 
-  Future<void> updateContactTransaction(
-      ContactTransaction transaction) async {
+  Future<void> updateContactTransaction(ContactTransaction transaction) async {
     return guardSupabase(() async {
-      final transactionModel =
-          ContactTransactionModel.fromEntity(transaction);
+      final transactionModel = ContactTransactionModel.fromEntity(transaction);
       await _contactDatasource.updateContactTransaction(transactionModel);
     });
   }

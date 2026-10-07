@@ -1,3 +1,12 @@
+import 'package:finance_tracker/features/reports/views/reports_view.dart';
+import 'package:finance_tracker/bindings/feature_bindings.dart';
+import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
+import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
+import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
+import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
+import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
+import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
+import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/features/auth/controllers/change_password_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/forgot_password_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/login_controller.dart';
@@ -11,7 +20,6 @@ import 'package:finance_tracker/features/auth/views/onboarding_view.dart';
 import 'package:finance_tracker/features/auth/views/register_view.dart';
 import 'package:finance_tracker/features/auth/views/reset_password_view.dart';
 import 'package:finance_tracker/features/auth/views/splash_view.dart';
-import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_form_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_list_view.dart';
@@ -79,9 +87,7 @@ abstract final class AppPages {
       name: AppRoutes.dashboard,
       page: () => const AppShellView(),
       middlewares: <GetMiddleware>[AuthGuard()],
-      binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => ProfileController(Get.find(), Get.find())),
-      ),
+      binding: ShellBinding(),
     ),
     GetPage<dynamic>(
       name: AppRoutes.settings,
@@ -109,27 +115,73 @@ abstract final class AppPages {
       name: AppRoutes.accounts,
       page: () => const AccountListView(),
       middlewares: <GetMiddleware>[AuthGuard()],
-      binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => AccountController(Get.find())),
-      ),
+      binding: AccountBinding(),
     ),
     GetPage<dynamic>(
       name: AppRoutes.accountForm,
       page: () => const AccountFormView(),
       middlewares: <GetMiddleware>[AuthGuard()],
-      binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => AccountController(Get.find())),
-      ),
+      binding: AccountBinding(),
     ),
     GetPage<dynamic>(
       name: AppRoutes.accountDetail,
-      page: () => AccountDetailView(
-        // The account object will be passed via arguments
-      ),
+      page: () => const AccountDetailView(),
       middlewares: <GetMiddleware>[AuthGuard()],
-      binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => AccountController(Get.find())),
-      ),
+      binding: AccountDetailBinding(),
+    ),
+
+    // Reports
+    GetPage<dynamic>(
+      name: AppRoutes.reports,
+      page: () => const ReportsPage(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ReportsBinding(),
+    ),
+
+    // Transactions
+    GetPage<dynamic>(
+      name: AppRoutes.transactions,
+      page: () => const TransactionListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: TransactionBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.transactionForm,
+      page: () => const TransactionFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: TransactionBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.transactionDetail,
+      page: () => const TransactionDetailView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: TransactionDetailBinding(),
+    ),
+
+    // Khata
+    GetPage<dynamic>(
+      name: AppRoutes.contacts,
+      page: () => const ContactListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ContactBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.contactForm,
+      page: () => const ContactFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ContactBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.contactDetail,
+      page: () => const ContactDetailView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ContactDetailBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.contactEntry,
+      page: () => const ContactEntryView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ContactBinding(),
     ),
   ];
 }
