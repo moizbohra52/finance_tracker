@@ -5,9 +5,12 @@ import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:get/get.dart';
@@ -43,6 +46,12 @@ class InitialBinding extends Bindings {
     Get.put<CategoryRepository>(repositories.categories, permanent: true);
     Get.put<TransactionRepository>(repositories.transactions, permanent: true);
     Get.put<ContactRepository>(repositories.contacts, permanent: true);
+    Get.put<BudgetRepository>(repositories.budgets, permanent: true);
+    Get.put<RecurringRepository>(repositories.recurring, permanent: true);
+    Get.put<NotificationRepository>(
+      repositories.notifications,
+      permanent: true,
+    );
     Get.put<DataChangeNotifier>(DataChangeNotifier(), permanent: true);
   }
 }

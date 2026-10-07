@@ -130,6 +130,7 @@ category_id UUID nullable
 type TEXT -- income, expense
 amount NUMERIC(18,2)
 frequency TEXT -- daily, weekly, monthly, yearly
+interval_count INTEGER -- 1..365, default 1; "every N <frequency>" (Phase 08 migration)
 start_date DATE
 end_date DATE nullable
 next_run_at TIMESTAMPTZ
@@ -200,6 +201,21 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    ids (`c0000000-0000-4000-8000-000000000xxx`), re-runnable.
 5. `20261007090000_delete_my_account.sql` (Phase 02) — `public.delete_my_account()`
    RPC for self-service account deletion (see docs/04_SECURITY_RLS.md).
+
+6. `20261007100000_recurring_interval.sql` (Phase 08) — adds
+   `recurring_transactions.interval_count` (default 1) so custom schedules such
+   as "every 2 weeks" or "every 45 days" fit the existing frequency check. No
+   new table; existing owner-only RLS policies cover the column. The app reads a
+   missing column as 1 and only sends it when it is not 1, so everything except
+   custom intervals works before the migration is applied.
+
+### Phase 08 conventions (no schema change)
+- Budget threshold events are rows in `notifications` with `type = 'budget_alert'`,
+  `reference_id = budget id` and a deterministic id (UUID v5 of budget id, period
+  start and threshold), inserted with ON CONFLICT DO NOTHING. The same event can
+  never be stored twice.
+- Transactions generated from a recurring rule use a deterministic id (UUID v5 of
+  rule id and occurrence date) and are inserted only if absent.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

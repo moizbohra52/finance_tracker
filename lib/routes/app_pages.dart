@@ -1,3 +1,7 @@
+import 'package:finance_tracker/features/budgets/views/budget_form_view.dart';
+import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
+import 'package:finance_tracker/features/recurring/views/recurring_form_view.dart';
+import 'package:finance_tracker/features/recurring/views/recurring_list_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/bindings/feature_bindings.dart';
 import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
@@ -128,6 +132,32 @@ abstract final class AppPages {
       page: () => const AccountDetailView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: AccountDetailBinding(),
+    ),
+
+    // Planning
+    GetPage<dynamic>(
+      name: AppRoutes.budgets,
+      page: () => const BudgetListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BudgetBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.budgetForm,
+      page: () => const BudgetFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BudgetBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.recurring,
+      page: () => const RecurringListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: RecurringBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.recurringForm,
+      page: () => const RecurringFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: RecurringBinding(),
     ),
 
     // Reports

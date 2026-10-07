@@ -1,11 +1,16 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/budget_repository.dart';
+import 'package:finance_tracker/data/repositories/notification_repository.dart';
+import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
+import 'package:finance_tracker/domain/entities/budget.dart';
+import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -19,6 +24,9 @@ class FakeFinance {
       categories: FakeCategoryRepository(this),
       transactions: FakeTransactionRepository(this),
       contacts: FakeContactRepository(this),
+      budgets: FakeBudgetRepository(this),
+      recurring: FakeRecurringRepository(this),
+      notifications: FakeNotificationRepository(this),
     );
   }
 
@@ -27,6 +35,13 @@ class FakeFinance {
   final List<Transaction> transactions = <Transaction>[];
   final List<Contact> contacts = <Contact>[];
   final List<ContactTransaction> contactTransactions = <ContactTransaction>[];
+  final List<Budget> budgets = <Budget>[];
+  final List<RecurringTransaction> recurring = <RecurringTransaction>[];
+
+  /// Notification rows by id (what `raiseOnce` stored).
+  final Map<String, Map<String, String>> notifications =
+      <String, Map<String, String>>{};
+  int notificationWrites = 0;
   final List<Category> categories = <Category>[
     Category(
       id: 'cat-food',
@@ -52,7 +67,12 @@ class FakeFinance {
 
   AppException? nextError;
 
+  /// While set, every repository call fails (use when several controllers
+  /// load at startup and a single [nextError] would hit only one of them).
+  AppException? failAll;
+
   void throwPending() {
+    if (failAll != null) throw failAll!;
     final AppException? error = nextError;
     nextError = null;
     if (error != null) throw error;
@@ -213,8 +233,15 @@ class FakeTransactionRepository implements TransactionRepository {
   }
 
   @override
-  Future<void> createTransaction(Transaction transaction) async {
+  Future<void> createTransaction(
+    Transaction transaction, {
+    bool onlyIfAbsent = false,
+  }) async {
     _f.throwPending();
+    if (onlyIfAbsent &&
+        _f.transactions.any((Transaction t) => t.id == transaction.id)) {
+      return;
+    }
     _f.transactions
       ..removeWhere((Transaction t) => t.id == transaction.id)
       ..add(transaction);
@@ -307,5 +334,97 @@ class FakeContactRepository implements ContactRepository {
   Future<void> deleteContactTransaction(String id) async {
     _f.throwPending();
     _f.contactTransactions.removeWhere((ContactTransaction x) => x.id == id);
+  }
+}
+
+class FakeBudgetRepository implements BudgetRepository {
+  FakeBudgetRepository(this._f);
+  final FakeFinance _f;
+
+  @override
+  Future<List<Budget>> getBudgets() async {
+    _f.throwPending();
+    return _f.budgets.where((Budget b) => b.deletedAt == null).toList();
+  }
+
+  @override
+  Future<void> createBudget(Budget budget) async {
+    _f.throwPending();
+    _f.budgets
+      ..removeWhere((Budget b) => b.id == budget.id)
+      ..add(budget);
+  }
+
+  @override
+  Future<void> updateBudget(Budget budget) async {
+    _f.throwPending();
+    final int i = _f.budgets.indexWhere((Budget b) => b.id == budget.id);
+    _f.budgets[i] = budget;
+  }
+
+  @override
+  Future<void> deleteBudget(String id) async {
+    _f.throwPending();
+    _f.budgets.removeWhere((Budget b) => b.id == id);
+  }
+}
+
+class FakeRecurringRepository implements RecurringRepository {
+  FakeRecurringRepository(this._f);
+  final FakeFinance _f;
+
+  @override
+  Future<List<RecurringTransaction>> getAll() async {
+    _f.throwPending();
+    return List<RecurringTransaction>.of(_f.recurring);
+  }
+
+  @override
+  Future<void> create(RecurringTransaction rule) async {
+    _f.throwPending();
+    _f.recurring
+      ..removeWhere((RecurringTransaction r) => r.id == rule.id)
+      ..add(rule);
+  }
+
+  @override
+  Future<void> update(RecurringTransaction rule) async {
+    _f.throwPending();
+    final int i = _f.recurring.indexWhere(
+      (RecurringTransaction r) => r.id == rule.id,
+    );
+    _f.recurring[i] = rule;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    _f.throwPending();
+    _f.recurring.removeWhere((RecurringTransaction r) => r.id == id);
+  }
+}
+
+class FakeNotificationRepository implements NotificationRepository {
+  FakeNotificationRepository(this._f);
+  final FakeFinance _f;
+
+  @override
+  Future<void> raiseOnce({
+    required String id,
+    required String type,
+    required String title,
+    required String body,
+    required String referenceId,
+  }) async {
+    _f.throwPending();
+    _f.notificationWrites++;
+    _f.notifications.putIfAbsent(
+      id,
+      () => <String, String>{
+        'type': type,
+        'title': title,
+        'body': body,
+        'reference_id': referenceId,
+      },
+    );
   }
 }

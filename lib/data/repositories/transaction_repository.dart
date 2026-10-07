@@ -109,17 +109,24 @@ class TransactionRepository {
       });
 
   /// Upserts on the client-generated id, so a retried create never duplicates.
-  Future<void> createTransaction(Transaction transaction) =>
-      guardSupabase(() async {
-        await _supabaseClient
-            .from('transactions')
-            .upsert(
-              insertPayload(
-                _supabaseClient,
-                TransactionModel.fromEntity(transaction).toJson(),
-              ),
-            );
-      });
+  ///
+  /// With [onlyIfAbsent] an existing row with the same id is left untouched
+  /// (used for generated transactions, so a re-run never overwrites a row the
+  /// user has since edited).
+  Future<void> createTransaction(
+    Transaction transaction, {
+    bool onlyIfAbsent = false,
+  }) => guardSupabase(() async {
+    await _supabaseClient
+        .from('transactions')
+        .upsert(
+          insertPayload(
+            _supabaseClient,
+            TransactionModel.fromEntity(transaction).toJson(),
+          ),
+          ignoreDuplicates: onlyIfAbsent,
+        );
+  });
 
   Future<void> updateTransaction(Transaction transaction) =>
       guardSupabase(() async {

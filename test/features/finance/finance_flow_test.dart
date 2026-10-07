@@ -86,10 +86,11 @@ void main() {
     testWidgets('shows an error with retry when loading fails', (
       WidgetTester tester,
     ) async {
-      final FakeFinance f = _seeded()..nextError = const NetworkFailure();
+      final FakeFinance f = _seeded()..failAll = const NetworkFailure();
       await _start(tester, finance: f);
       expect(find.text('Try again'), findsOneWidget);
 
+      f.failAll = null;
       await tester.tap(find.text('Try again'));
       await tester.pumpAndSettle();
       expect(find.text('Try again'), findsNothing);

@@ -1,15 +1,20 @@
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/notification_repository.dart';
+import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
+import 'package:finance_tracker/features/budgets/controllers/budget_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
+import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
@@ -122,6 +127,32 @@ class ReportsBinding extends Bindings {
   );
 }
 
+class BudgetBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => BudgetController(
+      Get.find<BudgetRepository>(),
+      Get.find<TransactionRepository>(),
+      Get.find<CategoryRepository>(),
+      Get.find<NotificationRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+class RecurringBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => RecurringController(
+      Get.find<RecurringRepository>(),
+      Get.find<TransactionRepository>(),
+      Get.find<AccountRepository>(),
+      Get.find<CategoryRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
 /// Everything the signed-in shell's tabs need.
 class ShellBinding extends Bindings {
   @override
@@ -142,5 +173,13 @@ class ShellBinding extends Bindings {
     ContactBinding().dependencies();
     AccountBinding().dependencies();
     ReportsBinding().dependencies();
+    // Created right away (not on first visit): the recurring controller turns
+    // due schedules into transactions and the budget controller raises
+    // threshold alerts, both of which must happen without opening their
+    // screens.
+    BudgetBinding().dependencies();
+    RecurringBinding().dependencies();
+    Get.find<BudgetController>();
+    Get.find<RecurringController>();
   }
 }

@@ -15,6 +15,7 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
 import 'package:finance_tracker/domain/services/report_calculator.dart';
+import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_picker_sheet.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
@@ -65,6 +66,8 @@ class DashboardView extends GetView<HomeController> {
                 const _SpendingOverview(),
                 const SizedBox(height: AppSpacing.lg),
                 const _KhataSummary(),
+                const SizedBox(height: AppSpacing.lg),
+                const _PlanSection(),
                 const SizedBox(height: AppSpacing.lg),
                 const _AccountsSection(),
                 const SizedBox(height: AppSpacing.lg),
@@ -281,6 +284,42 @@ class _SpendingOverview extends GetView<HomeController> {
             ),
           );
         }),
+      ],
+    );
+  }
+}
+
+/// Entry points to budgets and recurring schedules.
+class _PlanSection extends StatelessWidget {
+  const _PlanSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const SectionHeader(title: 'Plan ahead'),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: PlanTile(
+                icon: Icons.savings_outlined,
+                title: 'Budgets',
+                subtitle: 'Set limits and track what is left',
+                onTap: () => Get.toNamed<void>(AppRoutes.budgets),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: PlanTile(
+                icon: Icons.event_repeat_outlined,
+                title: 'Recurring',
+                subtitle: 'Rent, salary, EMIs on autopilot',
+                onTap: () => Get.toNamed<void>(AppRoutes.recurring),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
