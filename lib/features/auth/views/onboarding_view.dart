@@ -101,17 +101,22 @@ class _OnboardingPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(AppSpacing.xl),
           decoration: BoxDecoration(
-            color: colors.primaryContainer,
+            color: colors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
+            border: Border.all(
+              color: colors.primary.withValues(alpha: 0.2),
+              width: 2,
+            ),
           ),
-          child: Icon(icon, size: 72, color: colors.onPrimaryContainer),
+          child: Icon(icon, size: 64, color: colors.primary),
         ),
         const SizedBox(height: AppSpacing.xl),
         Text(
           title,
           textAlign: TextAlign.center,
           style: textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
           ),
         ),
         const SizedBox(height: AppSpacing.md),

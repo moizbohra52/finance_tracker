@@ -36,11 +36,17 @@ class AppButton extends StatelessWidget {
 
     final Widget button = switch (variant) {
       AppButtonVariant.primary => FilledButton.icon(
+        style: FilledButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
         onPressed: action,
         icon: leading,
         label: text,
       ),
       AppButtonVariant.secondary => OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+        ),
         onPressed: action,
         icon: leading,
         label: text,
@@ -49,6 +55,7 @@ class AppButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.error,
           foregroundColor: Theme.of(context).colorScheme.onError,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
         ),
         onPressed: action,
         icon: leading,

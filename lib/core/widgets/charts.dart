@@ -94,13 +94,21 @@ class TrendLineChart extends StatelessWidget {
             for (int i = 0; i < points.length; i++)
               FlSpot(i.toDouble(), y(points[i])),
           ],
-          isCurved: false,
+          isCurved: true,
+          curveSmoothness: 0.3,
           color: color,
           barWidth: 3,
           dotData: FlDotData(show: points.length <= 12),
           belowBarData: BarAreaData(
             show: true,
-            color: color.withValues(alpha: 0.12),
+            gradient: LinearGradient(
+              colors: <Color>[
+                color.withValues(alpha: 0.22),
+                color.withValues(alpha: 0.0),
+              ],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
         );
     return Semantics(
@@ -242,10 +250,20 @@ class ShareDonut extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(centerLabel, style: text.labelMedium),
+              Text(
+                centerLabel,
+                style: text.labelSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
               Text(
                 centerValue,
-                style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: text.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.4,
+                ),
               ),
             ],
           ),

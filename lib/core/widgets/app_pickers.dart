@@ -1,3 +1,4 @@
+import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
@@ -36,7 +37,7 @@ class AppDateField extends StatelessWidget {
   Widget build(BuildContext context) {
     final DateTime? current = value;
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       onTap: () => _pick(context),
       child: InputDecorator(
         decoration: InputDecoration(

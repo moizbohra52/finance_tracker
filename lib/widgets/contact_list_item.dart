@@ -27,18 +27,41 @@ class ContactBalanceTile extends StatelessWidget {
     return ListTile(
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
+        horizontal: AppSpacing.sm,
         vertical: AppSpacing.xs,
       ),
-      leading: CircleAvatar(
-        backgroundColor: colors.primaryContainer,
-        foregroundColor: colors.onPrimaryContainer,
-        child: Text(name.isEmpty ? '?' : name.characters.first.toUpperCase()),
+      leading: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: colors.primary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: colors.primary.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          name.isEmpty ? '?' : name.characters.first.toUpperCase(),
+          style: text.titleMedium?.copyWith(
+            color: colors.primary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
-      title: Text(name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(
+        name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+      ),
       subtitle: (row.contact.mobile ?? '').isEmpty
           ? null
-          : Text(row.contact.mobile!, style: text.bodySmall),
+          : Text(
+              row.contact.mobile!,
+              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -49,9 +72,16 @@ class ContactBalanceTile extends StatelessWidget {
               style: text.titleSmall?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
               ),
             ),
-          Text(label, style: text.labelSmall),
+          Text(
+            label,
+            style: text.labelSmall?.copyWith(
+              color: colors.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );

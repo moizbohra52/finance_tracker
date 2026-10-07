@@ -58,11 +58,12 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return _StatusMessage(
       icon: icon,
-      iconColor: Theme.of(context).colorScheme.onSurfaceVariant,
+      iconColor: Theme.of(context).colorScheme.primary,
       title: title,
       message: message,
       actionLabel: actionLabel,
       onAction: onAction,
+      isPrimaryAction: true,
     );
   }
 }
@@ -90,6 +91,7 @@ class ErrorState extends StatelessWidget {
       message: message,
       actionLabel: onRetry == null ? null : 'Try again',
       onAction: onRetry,
+      isPrimaryAction: false,
     );
   }
 }
@@ -102,6 +104,7 @@ class _StatusMessage extends StatelessWidget {
     required this.message,
     required this.actionLabel,
     required this.onAction,
+    this.isPrimaryAction = false,
   });
 
   final IconData icon;
@@ -110,39 +113,61 @@ class _StatusMessage extends StatelessWidget {
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final bool isPrimaryAction;
 
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
+    final ColorScheme colors = Theme.of(context).colorScheme;
     final String? actionLabel = this.actionLabel;
 
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: AppSizes.maxContentWidth),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(icon, size: AppSizes.iconLarge, color: iconColor),
-              const SizedBox(height: AppSpacing.md),
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: iconColor.withValues(alpha: 0.1),
+                  border: Border.all(
+                    color: iconColor.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                ),
+                child: Icon(icon, size: 32, color: iconColor),
+              ),
+              const SizedBox(height: AppSpacing.lg),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: textTheme.titleMedium,
+                style: textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: textTheme.bodyMedium,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurfaceVariant,
+                  height: 1.45,
+                ),
               ),
               if (actionLabel != null) ...<Widget>[
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
                   label: actionLabel,
                   onPressed: onAction,
-                  variant: AppButtonVariant.secondary,
+                  variant: isPrimaryAction
+                      ? AppButtonVariant.primary
+                      : AppButtonVariant.secondary,
                   isExpanded: false,
                 ),
               ],

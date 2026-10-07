@@ -31,6 +31,7 @@ class CategoryBreakdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
+    final ColorScheme colors = Theme.of(context).colorScheme;
     return Column(
       children: <Widget>[
         for (final BreakdownRow r in rows)
@@ -38,10 +39,14 @@ class CategoryBreakdown extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(
               children: <Widget>[
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: r.color.withValues(alpha: 0.15),
-                  child: Icon(r.icon, size: 18, color: r.color),
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: r.color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(r.icon, size: 20, color: r.color),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -55,10 +60,17 @@ class CategoryBreakdown extends StatelessWidget {
                               r.label,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: text.titleSmall,
+                              style: text.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          Text(r.amount, style: text.titleSmall),
+                          Text(
+                            r.amount,
+                            style: text.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -66,24 +78,27 @@ class CategoryBreakdown extends StatelessWidget {
                         children: <Widget>[
                           Expanded(
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(AppRadius.full),
                               child: LinearProgressIndicator(
                                 value: r.share.clamp(0, 1),
                                 minHeight: 6,
                                 color: r.color,
                                 backgroundColor: r.color.withValues(
-                                  alpha: 0.12,
+                                  alpha: 0.14,
                                 ),
                               ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),
                           SizedBox(
-                            width: 40,
+                            width: 44,
                             child: Text(
                               '${AppFormatters.number(r.share * 100, decimalDigits: 0)}%',
                               textAlign: TextAlign.end,
-                              style: text.labelSmall,
+                              style: text.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: colors.onSurfaceVariant,
+                              ),
                             ),
                           ),
                         ],

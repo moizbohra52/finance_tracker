@@ -1,3 +1,4 @@
+import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
 /// Shared dialog shell for app-specific content and actions.
@@ -18,6 +19,9 @@ class AppDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
       icon: icon,
       title: Text(title),
       content: content,

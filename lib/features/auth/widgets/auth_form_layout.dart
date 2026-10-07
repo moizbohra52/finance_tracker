@@ -39,13 +39,19 @@ class AuthFormLayout extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(subtitle, style: textTheme.bodyLarge),
-                  const SizedBox(height: AppSpacing.lg),
+                  const SizedBox(height: AppSpacing.xs + 2),
+                  Text(
+                    subtitle,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
                   ...children,
                 ],
               ),

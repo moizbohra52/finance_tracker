@@ -97,10 +97,19 @@ class _RuleTile extends GetView<RecurringController> {
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: <Widget>[
-              CircleAvatar(
-                backgroundColor: colors.secondaryContainer,
-                foregroundColor: colors.onSecondaryContainer,
-                child: Icon(CategoryIcons.of(category?.icon, rule.type)),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: colors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                alignment: Alignment.center,
+                child: Icon(
+                  CategoryIcons.of(category?.icon, rule.type),
+                  size: 22,
+                  color: colors.primary,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
@@ -111,14 +120,19 @@ class _RuleTile extends GetView<RecurringController> {
                       (rule.note ?? '').isNotEmpty
                           ? rule.note!
                           : (category?.name ?? rule.type.label),
-                      style: text.titleSmall,
+                      style: text.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       '${rule.scheduleLabel} · $next · '
                       '${controller.accountName(rule.accountId)}',
-                      style: text.bodySmall,
+                      style: text.bodySmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -130,6 +144,9 @@ class _RuleTile extends GetView<RecurringController> {
                   MoneyText(
                     rule.amount,
                     flow: inflow ? MoneyFlow.inflow : MoneyFlow.outflow,
+                    style: text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   if (!ended)
                     Semantics(

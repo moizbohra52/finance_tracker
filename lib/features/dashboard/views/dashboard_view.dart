@@ -104,13 +104,20 @@ class _GreetingHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text(_greeting(DateTime.now()), style: text.bodyMedium),
+                Text(
+                  _greeting(DateTime.now()),
+                  style: text.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
                 Text(
                   first.isEmpty ? 'Welcome back' : first,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: text.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.4,
                   ),
                 ),
               ],
@@ -124,9 +131,15 @@ class _GreetingHeader extends StatelessWidget {
               onTap: () => Get.toNamed<void>(AppRoutes.profile),
               child: CircleAvatar(
                 radius: 22,
-                backgroundColor: colors.primaryContainer,
-                foregroundColor: colors.onPrimaryContainer,
-                child: Text(first.isEmpty ? '?' : first[0].toUpperCase()),
+                backgroundColor: colors.primary.withValues(alpha: 0.12),
+                foregroundColor: colors.primary,
+                child: Text(
+                  first.isEmpty ? '?' : first[0].toUpperCase(),
+                  style: text.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colors.primary,
+                  ),
+                ),
               ),
             ),
           ),
@@ -159,6 +172,7 @@ class _MonthlySummary extends GetView<HomeController> {
   Widget build(BuildContext context) {
     final FinanceColors money = FinanceColors.of(context);
     final TextTheme text = Theme.of(context).textTheme;
+    final ColorScheme colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -171,37 +185,53 @@ class _MonthlySummary extends GetView<HomeController> {
           final PeriodSummary m = controller.month.value;
           final bool positive = m.net >= Decimal.zero;
           return AppCard(
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: _Figure(
-                    label: 'Income',
-                    value: AppFormatters.money(m.income),
-                    color: money.income,
+            child: IntrinsicHeight(
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _Figure(
+                      label: 'Income',
+                      value: AppFormatters.money(m.income),
+                      color: money.income,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _Figure(
-                    label: 'Expense',
-                    value: AppFormatters.money(m.expense),
-                    color: money.expense,
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    indent: 4,
+                    endIndent: 4,
+                    color: colors.outlineVariant.withValues(alpha: 0.35),
                   ),
-                ),
-                Expanded(
-                  child: _Figure(
-                    label: 'Net',
-                    value: AppFormatters.signedMoney(m.net, positive: positive),
-                    color: positive ? money.income : money.expense,
+                  Expanded(
+                    child: _Figure(
+                      label: 'Expense',
+                      value: AppFormatters.money(m.expense),
+                      color: money.expense,
+                    ),
                   ),
-                ),
-              ],
+                  VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    indent: 4,
+                    endIndent: 4,
+                    color: colors.outlineVariant.withValues(alpha: 0.35),
+                  ),
+                  Expanded(
+                    child: _Figure(
+                      label: 'Net',
+                      value: AppFormatters.signedMoney(m.net, positive: positive),
+                      color: positive ? money.income : money.expense,
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: AppSpacing.xs + 2),
         Text(
           'Transfers are not counted as income or expense.',
-          style: text.bodySmall,
+          style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
         ),
       ],
     );
@@ -222,10 +252,17 @@ class _Figure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
+    final ColorScheme colors = Theme.of(context).colorScheme;
     return Column(
       children: <Widget>[
-        Text(label, style: text.labelMedium),
-        const SizedBox(height: 4),
+        Text(
+          label,
+          style: text.labelMedium?.copyWith(
+            color: colors.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
@@ -233,6 +270,7 @@ class _Figure extends StatelessWidget {
             style: text.titleSmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
             ),
           ),
         ),
@@ -543,17 +581,46 @@ class _AccountsSection extends GetView<HomeController> {
               children: <Widget>[
                 for (final Account a in controller.accounts)
                   ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(_accountIcon(a.type)),
-                    title: Text(a.name),
-                    subtitle: Text(a.type.name.toUpperCase()),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.xxs,
+                    ),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withValues(
+                          alpha: 0.1,
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Icon(
+                        _accountIcon(a.type),
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    title: Text(
+                      a.name,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      a.type.name.toUpperCase(),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                     trailing: Text(
                       controller.balanceHidden.value
                           ? '••••'
                           : AppFormatters.money(
                               controller.balances[a.id] ?? a.openingBalance,
                             ),
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     onTap: () => Get.toNamed<void>(
                       AppRoutes.accountDetail,

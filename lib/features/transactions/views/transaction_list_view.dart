@@ -17,6 +17,9 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
   final TransactionType? type = await showModalBottomSheet<TransactionType>(
     context: context,
     showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+    ),
     builder: (BuildContext sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -168,6 +171,11 @@ class _SearchBar extends GetView<TransactionController> {
           () => Badge(
             isLabelVisible: controller.hasActiveFilters,
             child: IconButton.filledTonal(
+              style: IconButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+              ),
               tooltip: 'Filter transactions',
               icon: const Icon(Icons.tune_rounded),
               onPressed: () => showTransactionFilterSheet(context),
@@ -302,10 +310,18 @@ class _GroupedList extends GetView<TransactionController> {
         return switch (rows[index]) {
           _HeaderRow(:final String label) => Padding(
             padding: const EdgeInsets.only(
-              top: AppSpacing.md,
+              top: AppSpacing.lg,
               bottom: AppSpacing.xs,
+              left: AppSpacing.xs,
             ),
-            child: Text(label, style: Theme.of(context).textTheme.labelLarge),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                letterSpacing: 0.3,
+              ),
+            ),
           ),
           _ItemRow(:final Transaction transaction) => TransactionListItem(
             transaction: transaction,

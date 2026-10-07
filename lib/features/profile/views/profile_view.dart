@@ -54,7 +54,13 @@ class _ProfileForm extends GetView<ProfileController> {
       maxWidth: 600,
       child: ListView(
         children: <Widget>[
-          Text('Personal details', style: textTheme.titleSmall),
+          Text(
+            'Personal details',
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
           const SizedBox(height: AppSpacing.md),
           Form(
             key: controller.formKey,
@@ -80,13 +86,29 @@ class _ProfileForm extends GetView<ProfileController> {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.xs),
           ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.email_outlined),
+            contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            leading: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(
+                  alpha: 0.1,
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.email_outlined,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
             title: const Text('Email'),
             subtitle: Text(controller.email),
           ),
           SubmitErrorMessage(controller.save),
+          const SizedBox(height: AppSpacing.sm),
           Obx(
             () => AppButton(
               label: 'Save changes',
@@ -95,17 +117,52 @@ class _ProfileForm extends GetView<ProfileController> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text('Security', style: textTheme.titleSmall),
+          Text(
+            'Security',
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
           ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.lock_outline),
+            contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            leading: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(
+                  alpha: 0.1,
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.lock_outline,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
             title: const Text('Change password'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
           ),
           ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.logout),
+            contentPadding: const EdgeInsets.symmetric(vertical: 4),
+            leading: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withValues(
+                  alpha: 0.1,
+                ),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: Icon(
+                Icons.logout,
+                size: 20,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
             title: const Text('Sign out'),
             onTap: controller.signOut,
           ),

@@ -72,13 +72,45 @@ class AccountListView extends GetView<AccountController> {
                   return Card(
                     clipBehavior: Clip.antiAlias,
                     child: ListTile(
-                      leading: Icon(accountTypeIcon(account.type)),
-                      title: Text(account.name),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.xs,
+                      ),
+                      leading: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withValues(
+                            alpha: 0.1,
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ),
+                        child: Icon(
+                          accountTypeIcon(account.type),
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 22,
+                        ),
+                      ),
+                      title: Text(
+                        account.name,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       subtitle: Text(
                         '${accountTypeLabel(account.type)} · opening '
                         '${AppFormatters.money(account.openingBalance)}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                      trailing: MoneyText(balance, flow: MoneyFlow.neutral),
+                      trailing: MoneyText(
+                        balance,
+                        flow: MoneyFlow.neutral,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       onTap: () => Get.toNamed<void>(
                         AppRoutes.accountDetail,
                         arguments: account.id,

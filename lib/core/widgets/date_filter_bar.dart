@@ -53,6 +53,14 @@ class DateFilterBar extends StatelessWidget {
                   padding: const EdgeInsets.only(right: AppSpacing.sm),
                   child: ChoiceChip(
                     label: Text(p.label),
+                    labelStyle: TextStyle(
+                      fontWeight: period.preset == p
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
                     avatar: p == DatePreset.custom
                         ? const Icon(Icons.date_range_outlined, size: 18)
                         : null,
@@ -65,8 +73,13 @@ class DateFilterBar extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(_label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: AppSpacing.xs + 2),
+        Text(
+          _label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }

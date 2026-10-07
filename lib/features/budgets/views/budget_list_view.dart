@@ -126,36 +126,72 @@ class _BudgetCard extends GetView<BudgetController> {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Icon(
-                    CategoryIcons.of(
-                      controller.categoryOf(budget.categoryId)?.icon,
-                      TransactionType.expense,
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Icon(
+                      CategoryIcons.of(
+                        controller.categoryOf(budget.categoryId)?.icon,
+                        TransactionType.expense,
+                      ),
+                      color: color,
+                      size: 20,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
                       controller.nameOf(budget),
-                      style: text.titleMedium,
+                      style: text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Icon(icon, color: color, size: 18),
-                  const SizedBox(width: 4),
-                  Text(label, style: text.labelLarge?.copyWith(color: color)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(icon, color: color, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          label,
+                          style: text.labelSmall?.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 2),
-              Text(stateNote, style: text.bodySmall),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                stateNote,
+                style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+              ),
               const SizedBox(height: AppSpacing.md),
               ClipRRect(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(AppRadius.full),
                 child: LinearProgressIndicator(
                   value: (status.percent / 100).clamp(0, 1),
-                  minHeight: 10,
+                  minHeight: 8,
                   color: color,
-                  backgroundColor: color.withValues(alpha: 0.15),
+                  backgroundColor: color.withValues(alpha: 0.14),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -165,22 +201,27 @@ class _BudgetCard extends GetView<BudgetController> {
                     child: Text(
                       '${AppFormatters.money(status.spent)} of '
                       '${AppFormatters.money(budget.amount)}',
-                      style: text.bodyMedium,
+                      style: text.bodyMedium?.copyWith(
+                        color: colors.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   Text(
                     '${AppFormatters.number(status.percent, decimalDigits: 0)}%',
-                    style: text.labelLarge,
+                    style: text.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: color,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 over
                     ? 'Over by ${AppFormatters.money(status.remaining.abs())}'
                     : '${AppFormatters.money(status.remaining)} left',
                 style: text.titleSmall?.copyWith(
-                  color: over ? money.expense : null,
+                  color: over ? money.expense : colors.primary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -210,21 +251,29 @@ class PlanTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
+    final ColorScheme colors = Theme.of(context).colorScheme;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 2,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Icon(icon),
-              const SizedBox(height: AppSpacing.sm),
-              Text(title, style: text.titleSmall),
+              Icon(icon, color: colors.primary, size: 22),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                title,
+                style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 2),
               Text(
                 subtitle,
-                style: text.bodySmall,
+                style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),

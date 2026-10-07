@@ -13,6 +13,9 @@ Future<void> showTransactionFilterSheet(BuildContext context) {
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+    ),
     builder: (BuildContext _) => const _FilterSheet(),
   );
 }

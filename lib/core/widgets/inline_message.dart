@@ -34,6 +34,10 @@ class InlineMessage extends StatelessWidget {
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+            color: foreground.withValues(alpha: 0.2),
+            width: 1,
+          ),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
