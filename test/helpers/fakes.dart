@@ -1,0 +1,147 @@
+import 'dart:async';
+
+import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/data/models/profile.dart';
+import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/main.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+/// In-memory AuthRepository. Successful sign-in/out calls emit the same
+/// status events Supabase would; [nextError] makes the next call fail.
+class FakeAuthRepository implements AuthRepository {
+  FakeAuthRepository({this._signedIn = false});
+
+  final StreamController<AuthStatus> _status =
+      StreamController<AuthStatus>.broadcast();
+  bool _signedIn;
+  AppException? nextError;
+  bool signUpStartsSession = true;
+  final List<String> calls = <String>[];
+
+  void emit(AuthStatus status) {
+    _signedIn = status != AuthStatus.signedOut;
+    _status.add(status);
+  }
+
+  Future<void> _call(String name, [AuthStatus? onSuccess]) async {
+    calls.add(name);
+    final AppException? error = nextError;
+    nextError = null;
+    if (error != null) throw error;
+    if (onSuccess != null) emit(onSuccess);
+  }
+
+  @override
+  bool get isSignedIn => _signedIn;
+
+  @override
+  String? get currentEmail => _signedIn ? 'asha@example.com' : null;
+
+  @override
+  Stream<AuthStatus> get statusChanges => _status.stream;
+
+  @override
+  Future<void> signIn({required String email, required String password}) =>
+      _call('signIn', AuthStatus.signedIn);
+
+  @override
+  Future<bool> signUp({
+    required String fullName,
+    required String email,
+    required String password,
+  }) async {
+    await _call('signUp', signUpStartsSession ? AuthStatus.signedIn : null);
+    return signUpStartsSession;
+  }
+
+  @override
+  Future<void> sendPasswordReset(String email) => _call('sendPasswordReset');
+
+  @override
+  Future<void> updatePassword(String newPassword) => _call('updatePassword');
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) => _call('changePassword');
+
+  @override
+  Future<void> signOut() => _call('signOut', AuthStatus.signedOut);
+
+  @override
+  Future<void> deleteAccount({required String password}) =>
+      _call('deleteAccount', AuthStatus.signedOut);
+}
+
+class FakeProfileRepository implements ProfileRepository {
+  Profile profile = const Profile(
+    id: 'user-1',
+    fullName: 'Asha Rao',
+    mobile: '+91 98765 43210',
+  );
+  AppException? nextError;
+
+  @override
+  Future<Profile> fetchProfile() async {
+    _throwPending();
+    return profile;
+  }
+
+  @override
+  Future<Profile> updateProfile({
+    required String fullName,
+    required String? mobile,
+  }) async {
+    _throwPending();
+    return profile = Profile(
+      id: profile.id,
+      fullName: fullName,
+      mobile: mobile,
+    );
+  }
+
+  void _throwPending() {
+    final AppException? error = nextError;
+    nextError = null;
+    if (error != null) throw error;
+  }
+}
+
+Future<void> pumpApp(
+  WidgetTester tester, {
+  required FakeAuthRepository auth,
+  FakeProfileRepository? profile,
+}) async {
+  await tester.pumpWidget(
+    FinanceTrackerApp(
+      authRepository: auth,
+      profileRepository: profile ?? FakeProfileRepository(),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// Scrolls [finder] into view, taps it and waits for the UI to settle.
+Future<void> tapAndSettle(WidgetTester tester, Finder finder) async {
+  if (finder.evaluate().isEmpty) {
+    // Lazily built lists only create rows near the viewport.
+    await tester.scrollUntilVisible(
+      finder,
+      200,
+      scrollable: find
+          .byWidgetPredicate(
+            (Widget widget) =>
+                widget is Scrollable &&
+                widget.axisDirection == AxisDirection.down,
+          )
+          .first,
+    );
+  }
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}

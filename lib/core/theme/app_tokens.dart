@@ -1,0 +1,44 @@
+import 'package:flutter/material.dart';
+
+/// Raw colour values. Feature widgets must not reference these directly; read
+/// colours through `Theme.of(context).colorScheme` or [FinanceColors] so
+/// light/dark variants stay consistent.
+abstract final class AppColors {
+  /// Placeholder brand seed until final branding is chosen. Kept away from
+  /// green/red/blue/amber so it never competes with the money semantics below.
+  static const Color brandSeed = Color(0xFF4F46E5);
+
+  // Light variants hold >= 4.5:1 contrast on light surfaces, dark variants
+  // on dark surfaces.
+  static const Color incomeLight = Color(0xFF15803D);
+  static const Color incomeDark = Color(0xFF4ADE80);
+  static const Color expenseLight = Color(0xFFB91C1C);
+  static const Color expenseDark = Color(0xFFF87171);
+  static const Color receivableLight = Color(0xFF0369A1);
+  static const Color receivableDark = Color(0xFF38BDF8);
+  static const Color payableLight = Color(0xFFB45309);
+  static const Color payableDark = Color(0xFFFBBF24);
+}
+
+abstract final class AppSpacing {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 16;
+  static const double lg = 24;
+  static const double xl = 32;
+}
+
+abstract final class AppRadius {
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 20;
+}
+
+abstract final class AppSizes {
+  static const double buttonHeight = 52;
+  static const double iconLarge = 56;
+
+  /// Keeps status messages readable on tablets instead of stretching edge to
+  /// edge.
+  static const double maxContentWidth = 420;
+}
