@@ -11,6 +11,10 @@ import 'package:finance_tracker/features/auth/views/onboarding_view.dart';
 import 'package:finance_tracker/features/auth/views/register_view.dart';
 import 'package:finance_tracker/features/auth/views/reset_password_view.dart';
 import 'package:finance_tracker/features/auth/views/splash_view.dart';
+import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
+import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
+import 'package:finance_tracker/features/accounts/views/account_form_view.dart';
+import 'package:finance_tracker/features/accounts/views/account_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
@@ -98,6 +102,33 @@ abstract final class AppPages {
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BindingsBuilder<void>(
         () => Get.lazyPut(() => ChangePasswordController(Get.find())),
+      ),
+    ),
+    // Accounts
+    GetPage<dynamic>(
+      name: AppRoutes.accounts,
+      page: () => const AccountListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BindingsBuilder<void>(
+        () => Get.lazyPut(() => AccountController(Get.find())),
+      ),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.accountForm,
+      page: () => const AccountFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BindingsBuilder<void>(
+        () => Get.lazyPut(() => AccountController(Get.find())),
+      ),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.accountDetail,
+      page: () => AccountDetailView(
+        // The account object will be passed via arguments
+      ),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BindingsBuilder<void>(
+        () => Get.lazyPut(() => AccountController(Get.find())),
       ),
     ),
   ];

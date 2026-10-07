@@ -11,6 +11,11 @@ abstract final class AppRoutes {
   static const String profile = '/profile';
   static const String changePassword = '/change-password';
 
+  // Accounts
+  static const String accounts = '/accounts';
+  static const String accountForm = '/account-form';
+  static const String accountDetail = '/account-detail';
+
   /// Screens for signed-out users only.
   static const Set<String> guestOnly = <String>{
     onboarding,
