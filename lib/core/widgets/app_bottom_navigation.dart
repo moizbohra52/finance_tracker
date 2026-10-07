@@ -54,18 +54,8 @@ class AppBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).navigationBarTheme.backgroundColor ??
-            colors.surface,
-        border: Border(
-          top: BorderSide(
-            color: colors.outlineVariant.withValues(alpha: 0.35),
-            width: 1,
-          ),
-        ),
-      ),
+    return NavigationBarTheme(
+      data: Theme.of(context).navigationBarTheme,
       child: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: onDestinationSelected,

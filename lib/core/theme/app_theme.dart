@@ -190,7 +190,7 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 68,
+        height: 60,
         elevation: 0,
         backgroundColor: surfaceColor,
         indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
@@ -201,13 +201,17 @@ abstract final class AppTheme {
           (Set<WidgetState> states) {
             if (states.contains(WidgetState.selected)) {
               return textTheme.labelSmall?.copyWith(
+                fontSize: 10,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.primary,
+                height: 1.2,
               );
             }
             return textTheme.labelSmall?.copyWith(
+              fontSize: 10,
               fontWeight: FontWeight.w500,
               color: colorScheme.onSurfaceVariant,
+              height: 1.2,
             );
           },
         ),
@@ -221,6 +225,27 @@ abstract final class AppTheme {
               size: 24,
             );
           },
+        ),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: surfaceColor,
+        elevation: 0,
+        indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        selectedLabelTextStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: colorScheme.primary,
+        ),
+        unselectedLabelTextStyle: textTheme.labelSmall?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        selectedIconTheme: IconThemeData(color: colorScheme.primary, size: 24),
+        unselectedIconTheme: IconThemeData(
+          color: colorScheme.onSurfaceVariant,
+          size: 24,
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(

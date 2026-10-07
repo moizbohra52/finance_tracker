@@ -2,6 +2,7 @@ import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
+import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
@@ -32,7 +33,13 @@ class _AppShellViewState extends State<AppShellView> {
     });
   }
 
-  void _openSettings() => Get.toNamed<void>(AppRoutes.settings);
+  Future<void> _signOut(BuildContext context) async {
+    final AuthRepository auth = Get.find<AuthRepository>();
+    await auth.signOut();
+    if (context.mounted) {
+      // The auth state change will trigger navigation to login via AuthController
+    }
+  }
 
   Widget _destination(int index) => switch (index) {
     0 => const DashboardView(),
@@ -77,17 +84,16 @@ class _AppShellViewState extends State<AppShellView> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool useRail = constraints.maxWidth >= _railBreakpoint;
+        final bool isHome = _selectedIndex == 0;
         return Scaffold(
           appBar: AppAppBar(
             title: destinations[_selectedIndex].label,
-            automaticallyImplyLeading: false,
-            actions: <Widget>[
-              IconButton(
-                tooltip: 'Settings',
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: _openSettings,
-              ),
-            ],
+            centerTitle: true,
+            automaticallyImplyLeading: !isHome,
+            showMenu: isHome,
+            onProfileTap: () => Get.toNamed<void>(AppRoutes.profile),
+            onSettingsTap: () => Get.toNamed<void>(AppRoutes.settings),
+            onSignOutTap: () => _signOut(context),
           ),
           body: SafeArea(
             child: Column(
@@ -101,20 +107,23 @@ class _AppShellViewState extends State<AppShellView> {
                   child: useRail
                       ? Row(
                           children: <Widget>[
-                            NavigationRail(
-                              selectedIndex: _selectedIndex,
-                              labelType: NavigationRailLabelType.all,
-                              onDestinationSelected: _selectDestination,
-                              destinations: destinations
-                                  .map(
-                                    (AppNavigationDestination item) =>
-                                        NavigationRailDestination(
-                                          icon: Icon(item.icon),
-                                          selectedIcon: Icon(item.selectedIcon),
-                                          label: Text(item.label),
-                                        ),
-                                  )
-                                  .toList(),
+                            NavigationRailTheme(
+                              data: Theme.of(context).navigationRailTheme,
+                              child: NavigationRail(
+                                selectedIndex: _selectedIndex,
+                                labelType: NavigationRailLabelType.all,
+                                onDestinationSelected: _selectDestination,
+                                destinations: destinations
+                                    .map(
+                                      (AppNavigationDestination item) =>
+                                          NavigationRailDestination(
+                                            icon: Icon(item.icon),
+                                            selectedIcon: Icon(item.selectedIcon),
+                                            label: Text(item.label),
+                                          ),
+                                    )
+                                    .toList(),
+                              ),
                             ),
                             const VerticalDivider(width: 1),
                             Expanded(child: _pageStack()),

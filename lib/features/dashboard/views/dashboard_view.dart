@@ -105,13 +105,6 @@ class _GreetingHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  _greeting(DateTime.now()),
-                  style: text.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
                   first.isEmpty ? 'Welcome back' : first,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -228,7 +221,7 @@ class _MonthlySummary extends GetView<HomeController> {
             ),
           );
         }),
-        const SizedBox(height: AppSpacing.xs + 2),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           'Transfers are not counted as income or expense.',
           style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
@@ -262,7 +255,7 @@ class _Figure extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
@@ -581,9 +574,7 @@ class _AccountsSection extends GetView<HomeController> {
               children: <Widget>[
                 for (final Account a in controller.accounts)
                   ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.xxs,
-                    ),
+                    contentPadding: EdgeInsets.zero,
                     leading: Container(
                       width: 40,
                       height: 40,
