@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
+import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
@@ -78,19 +79,96 @@ class _AppShellViewState extends State<AppShellView> {
   @override
   Widget build(BuildContext context) {
     final ConnectivityService connectivity = Get.find<ConnectivityService>();
+    final ProfileController profile = Get.find<ProfileController>();
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final TextTheme textTheme = Theme.of(context).textTheme;
     const List<AppNavigationDestination> destinations =
         AppNavigationDestination.items;
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final bool useRail = constraints.maxWidth >= _railBreakpoint;
-        final bool isHome = _selectedIndex == 0;
         return Scaffold(
           appBar: AppAppBar(
-            title: destinations[_selectedIndex].label,
-            centerTitle: true,
-            automaticallyImplyLeading: !isHome,
-            showMenu: isHome,
+            titleWidget: Obx(() {
+              final String name = profile.displayName.value.trim().isNotEmpty
+                  ? profile.displayName.value.trim()
+                  : (profile.fullNameController.text.trim().isNotEmpty
+                      ? profile.fullNameController.text.trim()
+                      : (profile.email.isNotEmpty
+                          ? profile.email.split('@').first
+                          : 'User'));
+              final String email = profile.email;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                      fontSize: 16,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                  if (email.isNotEmpty) ...[
+                    const SizedBox(height: 1),
+                    Text(
+                      email,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.bodySmall?.copyWith(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            }),
+            centerTitle: false,
+            automaticallyImplyLeading: false,
+            showMenu: true,
+            profileAvatar: Obx(() {
+              final String name = profile.displayName.value.trim().isNotEmpty
+                  ? profile.displayName.value.trim()
+                  : (profile.fullNameController.text.trim().isNotEmpty
+                      ? profile.fullNameController.text.trim()
+                      : 'U');
+              final String initial =
+                  name.isNotEmpty ? name[0].toUpperCase() : 'U';
+
+              return Semantics(
+                button: true,
+                label: 'Open profile',
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => Get.toNamed<void>(AppRoutes.profile),
+                    customBorder: const CircleBorder(),
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: colors.primary.withValues(alpha: 0.12),
+                      foregroundColor: colors.primary,
+                      child: Text(
+                        initial,
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: colors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
             onProfileTap: () => Get.toNamed<void>(AppRoutes.profile),
             onSettingsTap: () => Get.toNamed<void>(AppRoutes.settings),
             onSignOutTap: () => _signOut(context),

@@ -3,7 +3,7 @@
          to the debug and profile manifests. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
-        android:label="Finance Tracker"
+        android:label="Track Day"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -29,6 +29,14 @@
             </intent-filter>
             <!-- Supabase auth callback (email confirmation, password reset).
                  Must match AppConstants.authRedirectUrl. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="com.finance_tracker.app"
+                    android:host="auth-callback"/>
+            </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

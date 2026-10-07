@@ -19,7 +19,6 @@ import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_picker_sheet.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
-import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
@@ -82,63 +81,137 @@ class DashboardView extends GetView<HomeController> {
   }
 }
 
-/// Greeting and avatar. The avatar opens the profile.
+/// Greeting and inspirational finance quote.
 class _GreetingHeader extends StatelessWidget {
   const _GreetingHeader();
 
-  static String _greeting(DateTime now) => now.hour < 12
-      ? 'Good morning'
-      : (now.hour < 17 ? 'Good afternoon' : 'Good evening');
+  static ({String text, IconData icon}) _greeting(DateTime now) {
+    if (now.hour < 12) {
+      return (text: 'Good morning', icon: Icons.wb_sunny_rounded);
+    } else if (now.hour < 17) {
+      return (text: 'Good afternoon', icon: Icons.wb_twilight_rounded);
+    } else {
+      return (text: 'Good evening', icon: Icons.nights_stay_rounded);
+    }
+  }
+
+  static const List<({String quote, String author})> _quotes = [
+    (
+      quote: 'Do not save what is left after spending, but spend what is left after saving.',
+      author: 'Warren Buffett',
+    ),
+    (
+      quote: 'Beware of little expenses. A small leak will sink a great ship.',
+      author: 'Benjamin Franklin',
+    ),
+    (
+      quote: 'A budget is telling your money where to go instead of wondering where it went.',
+      author: 'Dave Ramsey',
+    ),
+    (
+      quote: 'Financial freedom is available to those who learn about it and work for it.',
+      author: 'Robert Kiyosaki',
+    ),
+    (
+      quote: 'The secret of getting ahead is getting started. Track your daily expenses.',
+      author: 'Mark Twain',
+    ),
+    (
+      quote: 'Small daily savings compound into monumental financial security.',
+      author: 'Financial Wisdom',
+    ),
+    (
+      quote: 'Never spend your money before you have earned it.',
+      author: 'Thomas Jefferson',
+    ),
+    (
+      quote: 'The art is not in making money, but in keeping it.',
+      author: 'Proverb',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final ProfileController profile = Get.find<ProfileController>();
-    return Obx(() {
-      final String name = profile.displayName.value.trim();
-      final String first = name.isEmpty ? '' : name.split(' ').first;
-      return Row(
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final DateTime now = DateTime.now();
+    final greeting = _greeting(now);
+    final int quoteIndex = (now.day + now.month) % _quotes.length;
+    final dailyQuote = _quotes[quoteIndex];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  colors.surfaceContainerHighest.withValues(alpha: 0.35),
+                  colors.primary.withValues(alpha: 0.08),
+                ]
+              : [
+                  colors.primary.withValues(alpha: 0.05),
+                  colors.surface,
+                ],
+        ),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: colors.outlineVariant.withValues(alpha: isDark ? 0.25 : 0.45),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  first.isEmpty ? 'Welcome back' : first,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
-                  ),
+          Row(
+            children: <Widget>[
+              Icon(greeting.icon, size: 18, color: colors.primary),
+              const SizedBox(width: 8),
+              Text(
+                greeting.text,
+                style: text.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colors.onSurface,
                 ),
-              ],
+              ),
+              const Spacer(),
+              Icon(
+                Icons.format_quote_rounded,
+                size: 18,
+                color: colors.primary.withValues(alpha: 0.4),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '“${dailyQuote.quote}”',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: text.bodySmall?.copyWith(
+              fontStyle: FontStyle.italic,
+              height: 1.35,
+              color: colors.onSurface.withValues(alpha: 0.88),
             ),
           ),
-          Semantics(
-            button: true,
-            label: 'Open profile',
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => Get.toNamed<void>(AppRoutes.profile),
-              child: CircleAvatar(
-                radius: 22,
-                backgroundColor: colors.primary.withValues(alpha: 0.12),
-                foregroundColor: colors.primary,
-                child: Text(
-                  first.isEmpty ? '?' : first[0].toUpperCase(),
-                  style: text.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: colors.primary,
-                  ),
-                ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              '— ${dailyQuote.author}',
+              style: text.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colors.primary,
+                fontSize: 11,
               ),
             ),
           ),
         ],
-      );
-    });
+      ),
+    );
   }
 }
 

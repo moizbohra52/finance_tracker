@@ -17,9 +17,9 @@ class ProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const AppAppBar(title: 'Profile'),
-      body: const SafeArea(child: ProfileContent()),
+    return const Scaffold(
+      appBar: AppAppBar(title: 'Profile'),
+      body: SafeArea(child: ProfileContent()),
     );
   }
 }

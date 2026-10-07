@@ -103,7 +103,10 @@ abstract final class AppPages {
       page: () => const ProfileView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => ProfileController(Get.find(), Get.find())),
+        () => Get.lazyPut(
+          () => ProfileController(Get.find(), Get.find()),
+          fenix: true,
+        ),
       ),
     ),
     GetPage<dynamic>(

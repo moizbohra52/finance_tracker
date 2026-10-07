@@ -85,7 +85,7 @@ void main() {
       WidgetTester tester,
     ) async {
       await _open(tester, _seeded());
-      expect(find.text('Asha'), findsOneWidget);
+      expect(find.textContaining('Asha'), findsOneWidget);
       await _scrollTo(tester, find.text('Spending overview'));
       expect(find.text('This month'), findsOneWidget);
       // Only this month's expense is counted: 250, not 650.
@@ -119,6 +119,7 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
 
+      await _scrollTo(tester, find.text('Accounts').first);
       await tester.tap(find.text('Accounts').first);
       await tester.pumpAndSettle();
       expect(find.byType(AccountListView), findsOneWidget);

@@ -159,6 +159,7 @@ class ShellBinding extends Bindings {
   void dependencies() {
     Get.lazyPut<ProfileController>(
       () => ProfileController(Get.find(), Get.find()),
+      fenix: true,
     );
     _putIfAbsent(
       () => HomeController(

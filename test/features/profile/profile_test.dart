@@ -36,8 +36,8 @@ void main() {
 
   testWidgets('shows the profile and saves edits', (WidgetTester tester) async {
     await openProfile(tester);
-    expect(find.text('Asha Rao'), findsOneWidget);
-    expect(find.text('asha@example.com'), findsOneWidget);
+    expect(find.text('Asha Rao'), findsWidgets);
+    expect(find.text('asha@example.com'), findsWidgets);
 
     await tester.enterText(_field('Full name'), 'Asha R.');
     await tapAndSettle(tester, find.text('Save changes'));
@@ -55,7 +55,7 @@ void main() {
 
     await tapAndSettle(tester, find.text('Try again'));
 
-    expect(find.text('Asha Rao'), findsOneWidget);
+    expect(find.text('Asha Rao'), findsWidgets);
   });
 
   testWidgets('change password is reachable from the profile', (

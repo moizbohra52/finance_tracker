@@ -17,21 +17,33 @@ class SplashView extends GetView<SplashController> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              width: 104,
+              height: 104,
               decoration: BoxDecoration(
-                color: colors.primary,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: <BoxShadow>[
+                  BoxShadow(
+                    color: colors.primary.withValues(alpha: 0.28),
+                    blurRadius: 28,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-              child: Icon(
-                Icons.account_balance_wallet_outlined,
-                size: AppSizes.iconLarge,
-                color: colors.onPrimary,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: Image.asset(
+                  'assets/icons/app_icon.png',
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               AppConstants.appName,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
             ),
             const SizedBox(height: AppSpacing.lg),
             const SizedBox.square(

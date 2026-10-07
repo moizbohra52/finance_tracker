@@ -8,6 +8,7 @@ import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
+import 'package:finance_tracker/widgets/contact_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -302,9 +303,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(f.contacts.single.name, 'Asha Rao');
-      expect(find.text('Asha Rao'), findsOneWidget);
+      expect(find.widgetWithText(ContactBalanceTile, 'Asha Rao'), findsOneWidget);
 
-      await tester.tap(find.text('Asha Rao'));
+      await tester.tap(find.widgetWithText(ContactBalanceTile, 'Asha Rao'));
       await tester.pumpAndSettle();
       expect(find.byType(ContactDetailView), findsOneWidget);
       expect(find.text('All settled'), findsOneWidget);

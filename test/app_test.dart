@@ -25,14 +25,20 @@ void main() {
     expect(AppTheme.dark.extension<FinanceColors>(), FinanceColors.dark);
   });
 
+  Future<void> openSettings(WidgetTester tester) async {
+    await tester.tap(find.byTooltip('More options'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Settings'));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('starts on the dashboard and navigates to settings and back', (
     WidgetTester tester,
   ) async {
     await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
     expect(find.byType(DashboardView), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Settings'));
-    await tester.pumpAndSettle();
+    await openSettings(tester);
     expect(find.byType(SettingsView), findsOneWidget);
 
     await tester.pageBack();
@@ -111,8 +117,7 @@ void main() {
     WidgetTester tester,
   ) async {
     await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
-    await tester.tap(find.byTooltip('Settings'));
-    await tester.pumpAndSettle();
+    await openSettings(tester);
     expect(_brightnessOf(tester, SettingsView), Brightness.light);
 
     await tester.tap(find.text('Dark'));
@@ -131,8 +136,7 @@ void main() {
     final Color original = Theme.of(
       tester.element(find.byType(DashboardView)),
     ).colorScheme.primary;
-    await tester.tap(find.byTooltip('Settings'));
-    await tester.pumpAndSettle();
+    await openSettings(tester);
     await tester.tap(find.text(AppAccentColor.teal.label));
     await tester.pumpAndSettle();
     expect(

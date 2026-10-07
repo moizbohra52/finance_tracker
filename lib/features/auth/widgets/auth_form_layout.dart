@@ -1,4 +1,5 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:flutter/material.dart';
 
 /// Shared frame for the auth screens: headline, supporting text and content,
@@ -20,7 +21,7 @@ class AuthFormLayout extends StatelessWidget {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: const AppAppBar(title: ''),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
