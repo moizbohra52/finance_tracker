@@ -8,13 +8,21 @@ abstract final class AppTheme {
   static ThemeData get light => lightFor(AppAccentColor.indigo.seedColor);
   static ThemeData get dark => darkFor(AppAccentColor.indigo.seedColor);
 
-  static ThemeData lightFor(Color seedColor) =>
-      _build(Brightness.light, seedColor);
+  static ThemeData lightFor(
+    Color seedColor, {
+    DynamicSchemeVariant variant = DynamicSchemeVariant.tonalSpot,
+  }) => _build(Brightness.light, seedColor, variant);
 
-  static ThemeData darkFor(Color seedColor) =>
-      _build(Brightness.dark, seedColor);
+  static ThemeData darkFor(
+    Color seedColor, {
+    DynamicSchemeVariant variant = DynamicSchemeVariant.tonalSpot,
+  }) => _build(Brightness.dark, seedColor, variant);
 
-  static ThemeData _build(Brightness brightness, Color seedColor) {
+  static ThemeData _build(
+    Brightness brightness,
+    Color seedColor,
+    DynamicSchemeVariant variant,
+  ) {
     final bool isDark = brightness == Brightness.dark;
     final Color scaffoldBg = isDark
         ? const Color(0xFF0B0F19)
@@ -24,6 +32,7 @@ abstract final class AppTheme {
     final ColorScheme colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
       brightness: brightness,
+      dynamicSchemeVariant: variant,
       surface: surfaceColor,
     );
 
@@ -248,6 +257,12 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
+        // Material's default is primaryContainer, which is a different
+        // colour from the primary that every button uses. With a vivid
+        // accent such as Sun the two are far apart (bright yellow against
+        // dark gold), so the add button must use the same pair as buttons.
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),

@@ -67,3 +67,34 @@ Prefer skeletons for dashboard/list data and compact progress indicators for act
 
 ## Design Reference
 For visual direction, also read `docs/11_DESIGN_REFERENCE.md`. The user-provided reference image is inspiration only; do not reproduce it pixel-for-pixel.
+
+## Brand colours (the logo)
+The logo (`assets/logo.png`) has four colours, sampled from its flat areas and
+defined once in `AppColors` (`core/theme/app_tokens.dart`):
+
+| Name | Hex | Where in the logo |
+|---|---|---|
+| Ember | `#E24201` | top-left piece (orange-red) |
+| Sun | `#F7C401` | top-right piece (yellow) |
+| Cocoa | `#7B4013` | bottom-left piece (brown) |
+| Sand | `#DEAC72` | bottom-right piece (tan) |
+
+They are offered in Settings > Appearance as the **Logo colours** accents
+(`AppAccentColor`), above the other accents. Choosing one recolours the whole
+app, including charts, which take their colours from the theme.
+
+**They seed the colour scheme; they are not used as `primary` directly.** On a
+white surface the raw colours give 4.2:1 (ember), 1.6:1 (sun), 8.1:1 (cocoa)
+and 2.0:1 (sand); text needs 4.5:1. So Material derives the roles from them,
+using the `fidelity` variant so each keeps the logo colour's hue and strength
+(ember stays a clear orange-red, about `#AA2F00` in light mode). Every accent,
+in light and dark, is tested to keep 4.5:1 for primary text, button labels and
+selected chips (`test/core/theme/accent_colors_test.dart`). The exact logo
+colours remain available for swatches and branding, not for text.
+
+**Default accent.** The default is still Indigo. Ember and sun sit close to the
+expense (red) and payable (amber) colours used for money, so a brand-coloured
+default would blur that meaning. Making a logo colour the default is a change
+to `AppAccentColor.fromStorageKey` and the `indigo` entry only; saved choices
+are unaffected because they are stored by key.
+

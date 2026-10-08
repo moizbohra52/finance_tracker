@@ -8,6 +8,7 @@ import 'package:finance_tracker/core/services/local_notification_service.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/services/push_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
@@ -114,12 +115,12 @@ class FinanceTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final Color accentSeed = themeController.accentColor.value.seedColor;
+      final AppAccentColor accent = themeController.accentColor.value;
       return GetMaterialApp(
         title: AppConstants.appName,
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightFor(accentSeed),
-        darkTheme: AppTheme.darkFor(accentSeed),
+        theme: AppTheme.lightFor(accent.seedColor, variant: accent.variant),
+        darkTheme: AppTheme.darkFor(accent.seedColor, variant: accent.variant),
         themeMode: themeController.themeMode.value,
         scaffoldMessengerKey: AppSnackbar.messengerKey,
         initialBinding: initialBinding,

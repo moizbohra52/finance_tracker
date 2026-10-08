@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/theme/app_theme.dart';
+import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/models/user_settings.dart';
@@ -11,6 +13,7 @@ import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/features/auth/views/login_view.dart';
 import 'package:finance_tracker/features/budgets/controllers/budget_controller.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
+import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
@@ -104,6 +107,51 @@ void main() {
         tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
         ThemeMode.dark,
         reason: 'the saved theme is read on the next launch',
+      );
+    });
+
+    testWidgets('the logo colours are offered first, under their own heading', (
+      WidgetTester tester,
+    ) async {
+      await account.launch(tester);
+      await _openSettings(tester);
+
+      expect(find.text('Logo colours'), findsOneWidget);
+      expect(find.text('More colours'), findsOneWidget);
+      for (final String name in <String>['Ember', 'Sun', 'Cocoa', 'Sand']) {
+        expect(find.text(name), findsOneWidget);
+      }
+      // The logo row sits above the other colours.
+      expect(
+        tester.getTopLeft(find.text('Ember')).dy,
+        lessThan(tester.getTopLeft(find.text('Indigo')).dy),
+      );
+    });
+
+    testWidgets('a logo colour recolours the app and is remembered', (
+      WidgetTester tester,
+    ) async {
+      final Color expected = AppTheme.lightFor(
+        AppColors.logoEmber,
+        variant: DynamicSchemeVariant.fidelity,
+      ).colorScheme.primary;
+
+      await account.launch(tester);
+      await _openSettings(tester);
+      await tapAndSettle(tester, find.text('Ember'));
+
+      expect(
+        Theme.of(tester.element(find.byType(SettingsView))).colorScheme.primary,
+        expected,
+        reason: 'the theme changes at once',
+      );
+      expect(account.storage.readAccentColor(), 'ember');
+
+      await account.launch(tester);
+      expect(
+        Theme.of(tester.element(find.byType(AppShellView))).colorScheme.primary,
+        expected,
+        reason: 'the choice is read on the next launch',
       );
     });
 

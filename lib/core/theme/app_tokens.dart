@@ -4,9 +4,21 @@ import 'package:flutter/material.dart';
 /// colours through `Theme.of(context).colorScheme` or [FinanceColors] so
 /// light/dark variants stay consistent.
 abstract final class AppColors {
-  /// Placeholder brand seed until final branding is chosen. Kept away from
-  /// green/red/blue/amber so it never competes with the money semantics below.
-  static const Color brandSeed = Color(0xFF4F46E5);
+  /// The four colours of the app logo (assets/logo.png), sampled from its
+  /// flat areas. They seed the logo accents in AppAccentColor, which Material
+  /// turns into accessible roles. They are not used as `primary` directly:
+  /// on white, yellow is 1.6:1 and sand 2.0:1, far below the 4.5:1 text needs
+  /// (see docs/06_UI_UX_GUIDELINES.md). Use them for swatches and branding,
+  /// not for text.
+  static const Color logoEmber = Color(0xFFE24201);
+  static const Color logoSun = Color(0xFFF7C401);
+  static const Color logoCocoa = Color(0xFF7B4013);
+  static const Color logoSand = Color(0xFFDEAC72);
+
+  /// Seed of the default accent (Indigo). The logo colours are offered as
+  /// accents rather than made the default because ember and sun sit close to
+  /// the expense (red) and payable (amber) colours below.
+  static const Color defaultAccentSeed = Color(0xFF4F46E5);
 
   // Light variants hold >= 4.5:1 contrast on light surfaces, dark variants
   // on dark surfaces.

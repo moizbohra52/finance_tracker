@@ -101,23 +101,44 @@ class _AppearanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Accent colour', style: Theme.of(context).textTheme.labelLarge),
+          Text('Logo colours', style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: AppSpacing.sm),
-          Obx(
-            () => Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: <Widget>[
-                for (final AppAccentColor accent in AppAccentColor.values)
-                  _AccentChoice(
-                    accent: accent,
-                    selected: themeController.accentColor.value == accent,
-                    onSelected: () =>
-                        unawaited(themeController.setAccentColor(accent)),
-                  ),
-              ],
-            ),
+          _AccentWrap(
+            accents: AppAccentColor.logoColours,
+            controller: themeController,
           ),
+          const SizedBox(height: AppSpacing.md),
+          Text('More colours', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: AppSpacing.sm),
+          _AccentWrap(
+            accents: AppAccentColor.otherColours,
+            controller: themeController,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccentWrap extends StatelessWidget {
+  const _AccentWrap({required this.accents, required this.controller});
+
+  final List<AppAccentColor> accents;
+  final ThemeController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: <Widget>[
+          for (final AppAccentColor accent in accents)
+            _AccentChoice(
+              accent: accent,
+              selected: controller.accentColor.value == accent,
+              onSelected: () => unawaited(controller.setAccentColor(accent)),
+            ),
         ],
       ),
     );

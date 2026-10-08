@@ -205,26 +205,29 @@ class BalanceCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: _CardFlow(
-                            icon: Icons.arrow_downward_rounded,
-                            iconColor: AppColors.incomeOnAccent,
-                            label: 'Income this month',
-                            value: show(monthIncome),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Expanded(
+                            child: _CardFlow(
+                              icon: Icons.arrow_downward_rounded,
+                              iconColor: AppColors.incomeOnAccent,
+                              label: 'Income this month',
+                              value: show(monthIncome),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: _CardFlow(
-                            icon: Icons.arrow_upward_rounded,
-                            iconColor: AppColors.expenseOnAccent,
-                            label: 'Expense this month',
-                            value: show(monthExpense),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: _CardFlow(
+                              icon: Icons.arrow_upward_rounded,
+                              iconColor: AppColors.expenseOnAccent,
+                              label: 'Expense this month',
+                              value: show(monthExpense),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -283,9 +286,11 @@ class _CardFlow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                // Wraps to a second line on narrow phones; a label cut to
+                // "Income this mo…" is worse than a taller tile.
                 Text(
                   label,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: text.labelSmall?.copyWith(
                     color: colors.onPrimary.withValues(alpha: 0.8),
