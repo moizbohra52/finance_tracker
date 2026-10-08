@@ -59,6 +59,46 @@ class AppDateField extends StatelessWidget {
   }
 }
 
+/// Read-only field that opens the platform time picker.
+class AppTimeField extends StatelessWidget {
+  const AppTimeField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final TimeOfDay value;
+  final ValueChanged<TimeOfDay> onChanged;
+
+  Future<void> _pick(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: value,
+    );
+    if (picked != null) onChanged(picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      onTap: () => _pick(context),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: const Icon(Icons.schedule_outlined),
+        ),
+        child: Text(
+          value.format(context),
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+      ),
+    );
+  }
+}
+
 /// Asks before an irreversible action. Resolves to true only on confirm.
 Future<bool> confirmDestructive(
   BuildContext context, {

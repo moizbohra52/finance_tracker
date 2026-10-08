@@ -91,6 +91,16 @@ abstract final class RecurringScheduler {
     }
   }
 
+  /// Id of the notification-center entry announcing the run that ended at
+  /// [lastOccurrence]. Deterministic, so the same run announced twice (retry,
+  /// two devices) is stored once.
+  static String notificationId(String recurringId, DateTime lastOccurrence) =>
+      const Uuid().v5(
+        Namespace.url.value,
+        'recurring-notification:$recurringId:'
+        '${lastOccurrence.year}-${lastOccurrence.month}-${lastOccurrence.day}',
+      );
+
   /// Id of the transaction created for one occurrence. Derived from the rule
   /// and the occurrence date, so running the same occurrence twice (retry,
   /// two devices) can only ever produce one transaction.

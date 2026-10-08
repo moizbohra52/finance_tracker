@@ -6,10 +6,12 @@ import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/features/notifications/widgets/notification_settings_section.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-/// Appearance settings. Full account and finance settings arrive in Phase 10.
+/// Appearance and notification settings. Full account and finance settings
+/// arrive in Phase 10.
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
 
@@ -95,6 +97,8 @@ class SettingsView extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(height: AppSpacing.lg),
+              const NotificationSettingsSection(),
             ],
           ),
         ),

@@ -74,6 +74,18 @@ production): run `supabase/checks/cross_user_isolation.sql` with `psql` or
 paste it into the SQL Editor. It rolls back everything it creates; no error
 means every check passed.
 
+### Reminders and notifications
+
+Reminders need the Phase 09 migration (`supabase db push`): it adds the
+reminder type, snooze and transaction link columns and the `device_tokens`
+table. Local reminder notifications work with no further setup.
+
+Remote push (FCM) is optional and needs per-project Firebase files that are not
+committed (`android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`)
+plus a server that sends the pushes; without them the app runs and reports push
+as unavailable. Setup, the sender contract and platform limits:
+`docs/08_NOTIFICATION_SYSTEM.md`.
+
 ### Auth settings (hosted project)
 
 `supabase/config.toml` covers local development. On the hosted project, set

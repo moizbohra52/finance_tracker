@@ -22,6 +22,12 @@ abstract final class AppRoutes {
   static const String recurring = '/recurring';
   static const String recurringForm = '/recurring-form';
 
+  // Reminders and notifications
+  static const String reminders = '/reminders';
+  static const String reminderForm = '/reminder-form';
+  static const String reminderDetail = '/reminder-detail';
+  static const String notifications = '/notifications';
+
   // Reports
   static const String reports = '/reports';
 

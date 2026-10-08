@@ -109,3 +109,13 @@ Create typed app exceptions/failures for:
 - notification
 
 Convert low-level errors into user-friendly messages at the appropriate boundary.
+
+## Notifications (Phase 09)
+`NotificationCoordinator` (`core/services`) is an app-wide GetX service created
+in `main()` and injected through `FinanceTrackerApp` -> `InitialBinding`, like
+the repositories, so tests pass fakes (`test/helpers/fake_notifications.dart`).
+Controllers never touch the notification plugin: they call the coordinator
+(`syncReminders`, `raise`), which owns `LocalNotificationService` and
+`PushService`. What to schedule is decided by pure domain code
+(`ReminderNotificationPlanner`), and the screen a tap opens by
+`NotificationTarget`. Details: `docs/08_NOTIFICATION_SYSTEM.md`.

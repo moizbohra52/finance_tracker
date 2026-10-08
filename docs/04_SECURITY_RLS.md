@@ -31,7 +31,12 @@ For system categories:
 - References to accounts/contacts are composite foreign keys on
   `(user_id, id)`; pointing at another user's row fails with a foreign key
   violation.
-- Verified by `supabase/checks/cross_user_isolation.sql`.
+- Phase 09: `device_tokens` has the four owner-only policies and no `anon`
+  grant. `reminders.transaction_id` is a composite foreign key on
+  `(user_id, transaction_id)`, so a reminder cannot point at another user's
+  transaction (this needed a `(user_id, id)` unique key on `transactions`).
+- Verified by `supabase/checks/cross_user_isolation.sql` (Phases 01-08; the
+  Phase 09 additions are not covered by it yet).
 
 ## Ownership
 Never trust user_id supplied by the Flutter client. Where possible derive ownership from auth.uid() in database policies/functions.

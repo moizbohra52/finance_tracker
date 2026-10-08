@@ -66,6 +66,12 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Push notifications (FCM). Also needs the Push Notifications capability
+	     and an APNs key in Firebase; see docs/08_NOTIFICATION_SYSTEM.md. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<!-- Supabase auth callback scheme; must match AppConstants.authRedirectUrl. -->
 	<key>CFBundleURLTypes</key>
 	<array>

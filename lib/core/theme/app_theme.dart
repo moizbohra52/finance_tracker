@@ -19,9 +19,7 @@ abstract final class AppTheme {
     final Color scaffoldBg = isDark
         ? const Color(0xFF0B0F19)
         : const Color(0xFFF8FAFC);
-    final Color surfaceColor = isDark
-        ? const Color(0xFF131B2E)
-        : Colors.white;
+    final Color surfaceColor = isDark ? const Color(0xFF131B2E) : Colors.white;
 
     final ColorScheme colorScheme = ColorScheme.fromSeed(
       seedColor: seedColor,
@@ -55,12 +53,8 @@ abstract final class AppTheme {
         fontWeight: FontWeight.w700,
         letterSpacing: -0.2,
       ),
-      titleMedium: baseText.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
-      titleSmall: baseText.titleSmall?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+      titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+      titleSmall: baseText.titleSmall?.copyWith(fontWeight: FontWeight.w600),
       bodyLarge: baseText.bodyLarge?.copyWith(
         fontWeight: FontWeight.w400,
         height: 1.45,
@@ -69,16 +63,12 @@ abstract final class AppTheme {
         fontWeight: FontWeight.w400,
         height: 1.4,
       ),
-      bodySmall: baseText.bodySmall?.copyWith(
-        fontWeight: FontWeight.w400,
-      ),
+      bodySmall: baseText.bodySmall?.copyWith(fontWeight: FontWeight.w400),
       labelLarge: baseText.labelLarge?.copyWith(
         fontWeight: FontWeight.w600,
         letterSpacing: 0.2,
       ),
-      labelMedium: baseText.labelMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-      ),
+      labelMedium: baseText.labelMedium?.copyWith(fontWeight: FontWeight.w600),
       labelSmall: baseText.labelSmall?.copyWith(
         fontWeight: FontWeight.w600,
         letterSpacing: 0.3,
@@ -95,10 +85,8 @@ abstract final class AppTheme {
         if (isDark) FinanceColors.dark else FinanceColors.light,
       ],
       actionIconTheme: ActionIconThemeData(
-        backButtonIconBuilder: (BuildContext context) => const Icon(
-          Icons.arrow_back_ios_new_rounded,
-          size: 16,
-        ),
+        backButtonIconBuilder: (BuildContext context) =>
+            const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
       ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
@@ -171,9 +159,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: isDark
-            ? const Color(0xFF131B2E)
-            : const Color(0xFFF8FAFC),
+        fillColor: isDark ? const Color(0xFF131B2E) : const Color(0xFFF8FAFC),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
@@ -215,35 +201,30 @@ abstract final class AppTheme {
         indicatorShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        labelTextStyle: WidgetStateProperty.resolveWith(
-          (Set<WidgetState> states) {
-            if (states.contains(WidgetState.selected)) {
-              return textTheme.labelSmall?.copyWith(
-                fontSize: 10,
-                fontWeight: FontWeight.w700,
-                color: colorScheme.primary,
-                height: 1.2,
-              );
-            }
+        labelTextStyle: WidgetStateProperty.resolveWith((
+          Set<WidgetState> states,
+        ) {
+          if (states.contains(WidgetState.selected)) {
             return textTheme.labelSmall?.copyWith(
               fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.primary,
               height: 1.2,
             );
-          },
-        ),
-        iconTheme: WidgetStateProperty.resolveWith(
-          (Set<WidgetState> states) {
-            if (states.contains(WidgetState.selected)) {
-              return IconThemeData(color: colorScheme.primary, size: 24);
-            }
-            return IconThemeData(
-              color: colorScheme.onSurfaceVariant,
-              size: 24,
-            );
-          },
-        ),
+          }
+          return textTheme.labelSmall?.copyWith(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: colorScheme.onSurfaceVariant,
+            height: 1.2,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((Set<WidgetState> states) {
+          if (states.contains(WidgetState.selected)) {
+            return IconThemeData(color: colorScheme.primary, size: 24);
+          }
+          return IconThemeData(color: colorScheme.onSurfaceVariant, size: 24);
+        }),
       ),
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: surfaceColor,

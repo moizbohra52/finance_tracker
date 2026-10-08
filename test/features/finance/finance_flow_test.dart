@@ -303,7 +303,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(f.contacts.single.name, 'Asha Rao');
-      expect(find.widgetWithText(ContactBalanceTile, 'Asha Rao'), findsOneWidget);
+      expect(
+        find.widgetWithText(ContactBalanceTile, 'Asha Rao'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.widgetWithText(ContactBalanceTile, 'Asha Rao'));
       await tester.pumpAndSettle();

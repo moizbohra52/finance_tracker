@@ -10,6 +10,8 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // Required by flutter_local_notifications (scheduled notifications).
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -40,6 +42,18 @@ kotlin {
     }
 }
 
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
 flutter {
     source = "../.."
+}
+
+// Firebase (push notifications) is configured per project with a
+// google-services.json that is not committed (see docs/08_NOTIFICATION_SYSTEM.md).
+// Without it the app still builds and runs; push messaging reports itself as
+// unavailable and local reminders are unaffected.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

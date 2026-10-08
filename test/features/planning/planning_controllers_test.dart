@@ -1,5 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
+import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -9,6 +11,8 @@ import 'package:finance_tracker/features/recurring/controllers/recurring_control
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fake_finance.dart';
+import '../../helpers/fake_notifications.dart';
+import '../../helpers/fakes.dart';
 
 Budget overallBudget({bool a90 = true}) {
   final DateTime now = DateTime.now();
@@ -28,11 +32,19 @@ Budget overallBudget({bool a90 = true}) {
   );
 }
 
+late StorageService _storage;
+
+NotificationCoordinator _coordinator(FakeFinance f) => fakeCoordinator(
+  f,
+  auth: FakeAuthRepository(signedIn: true),
+  storage: _storage,
+).coordinator;
+
 BudgetController budgetController(FakeFinance f) => BudgetController(
   f.repositories.budgets,
   f.repositories.transactions,
   f.repositories.categories,
-  f.repositories.notifications,
+  _coordinator(f),
   DataChangeNotifier(),
 );
 
@@ -41,6 +53,7 @@ RecurringController recurringController(FakeFinance f) => RecurringController(
   f.repositories.transactions,
   f.repositories.accounts,
   f.repositories.categories,
+  _coordinator(f),
   DataChangeNotifier(),
 );
 
@@ -78,6 +91,8 @@ RecurringTransaction dailyRule({
 }
 
 void main() {
+  setUp(() async => _storage = await memoryStorage());
+
   group('budget alerts', () {
     test(
       'a threshold is raised once however often the budget reloads',

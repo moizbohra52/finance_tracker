@@ -63,3 +63,34 @@ Search and filters are part of the transaction list (search field + filter botto
 - **No duplicate alerts**: an alert's id is a UUID v5 of budget id, period start and threshold, written to `notifications` (type `budget_alert`) with ON CONFLICT DO NOTHING, and each controller also remembers what it already sent. Showing notifications is Phase 9.
 - **Recurring** (`domain/services/recurring_scheduler.dart`): occurrences are computed from the start date (so a 31st stays month-end) at 09:00 local. A run turns every due occurrence into a transaction whose id is a UUID v5 of rule id and date, inserted only if absent, and only then advances `next_run_at`. Runs happen when the signed-in shell opens and on pull-to-refresh; a server-side scheduler is a later improvement. A run creates at most 366 occurrences per rule.
 - New schedules cannot start in the past, so nothing is back-filled; resuming a paused schedule skips what was missed.
+
+## Phase 09 decisions
+
+New routes:
+
+| Route | Screen | Controller / binding | Opened from |
+|---|---|---|---|
+| `/reminders` | Reminder list (overdue / upcoming / completed, enable switch, permission banner) | `ReminderBinding` -> `ReminderController` | Home "Reminders" tile |
+| `/reminder-form` | Add / edit reminder (arg: `ReminderFormArgs`) | `ReminderBinding` | list FAB, contact detail "Add reminder", transaction detail "Remind me", reminder detail "Edit" |
+| `/reminder-detail` | Reminder with Mark as done, Snooze, Edit, Delete, link to contact/transaction (arg: id) | `ReminderBinding` | list row, notification tap |
+| `/notifications` | Notification center (paged, mark read, mark all read) | `NotificationCenterBinding` -> `NotificationCenterController` | app-bar bell, Home "Notifications" tile, unknown notification tap |
+
+- The app-bar bell on the shell shows the unread count (`99+` at the cap).
+- Settings has a **Notifications** section (master, reminders, budget alerts,
+  recurring, sound, vibration, exact-alarm row on Android).
+- `ReminderController` and `NotificationCenterController` are created by
+  `ShellBinding` with the budget and recurring controllers, because they keep
+  the device schedule and the badge current without their screens being open.
+- Budget and recurring alerts now go through `NotificationCoordinator.raise`
+  (stored once in the center, shown on the device the first time only).
+  `NotificationRepository.raiseOnce` returns whether it created the row.
+- The Phase 07 note "quick action Reminder and notification bell: not built"
+  is resolved by the bell and the Home tiles; the quick-action row was left at
+  five buttons (a sixth does not fit narrow phones).
+- **Packages added:** `flutter_local_notifications` ^22.3.1 (the documented
+  local-notification package), `timezone` and `flutter_timezone` (scheduled
+  notifications need the device zone), `firebase_core` and `firebase_messaging`
+  (FCM). `connectivity_plus` is pinned to 7.3.1 (was ^7.3.2): the stable
+  `flutter_local_notifications` 22.x and `connectivity_plus` 7.3.2 require
+  incompatible versions of the Linux-only `nm` package, and the alternative was
+  a pre-release notification plugin. Revisit when a compatible pair is published.

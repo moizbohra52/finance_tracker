@@ -1,10 +1,12 @@
 import 'package:finance_tracker/core/services/connectivity_service.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
+import 'package:finance_tracker/features/notifications/widgets/notification_bell.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
@@ -25,7 +27,25 @@ class _AppShellViewState extends State<AppShellView> {
   static const double _railBreakpoint = 840;
 
   final Set<int> _visitedDestinations = <int>{0};
+  late final NotificationCoordinator _notifications =
+      Get.find<NotificationCoordinator>();
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // From here a notification tap can open its screen on top of the shell,
+    // and one that launched the app is opened now.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _notifications.markShellReady(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _notifications.markShellGone();
+    super.dispose();
+  }
 
   void _selectDestination(int index) {
     setState(() {
@@ -94,10 +114,10 @@ class _AppShellViewState extends State<AppShellView> {
               final String name = profile.displayName.value.trim().isNotEmpty
                   ? profile.displayName.value.trim()
                   : (profile.fullNameController.text.trim().isNotEmpty
-                      ? profile.fullNameController.text.trim()
-                      : (profile.email.isNotEmpty
-                          ? profile.email.split('@').first
-                          : 'User'));
+                        ? profile.fullNameController.text.trim()
+                        : (profile.email.isNotEmpty
+                              ? profile.email.split('@').first
+                              : 'User'));
               final String email = profile.email;
 
               return Column(
@@ -134,15 +154,17 @@ class _AppShellViewState extends State<AppShellView> {
             }),
             centerTitle: false,
             automaticallyImplyLeading: false,
+            actions: const <Widget>[NotificationBell()],
             showMenu: true,
             profileAvatar: Obx(() {
               final String name = profile.displayName.value.trim().isNotEmpty
                   ? profile.displayName.value.trim()
                   : (profile.fullNameController.text.trim().isNotEmpty
-                      ? profile.fullNameController.text.trim()
-                      : 'U');
-              final String initial =
-                  name.isNotEmpty ? name[0].toUpperCase() : 'U';
+                        ? profile.fullNameController.text.trim()
+                        : 'U');
+              final String initial = name.isNotEmpty
+                  ? name[0].toUpperCase()
+                  : 'U';
 
               return Semantics(
                 button: true,
@@ -196,7 +218,9 @@ class _AppShellViewState extends State<AppShellView> {
                                       (AppNavigationDestination item) =>
                                           NavigationRailDestination(
                                             icon: Icon(item.icon),
-                                            selectedIcon: Icon(item.selectedIcon),
+                                            selectedIcon: Icon(
+                                              item.selectedIcon,
+                                            ),
                                             label: Text(item.label),
                                           ),
                                     )

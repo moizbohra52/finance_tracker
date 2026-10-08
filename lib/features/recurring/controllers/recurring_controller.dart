@@ -1,6 +1,10 @@
+import 'dart:developer' as developer;
+
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
@@ -8,6 +12,7 @@ import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
+import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -23,6 +28,7 @@ class RecurringController extends GetxController {
     this._transactionRepository,
     this._accountRepository,
     this._categoryRepository,
+    this._notifications,
     this._notifier,
   );
 
@@ -30,6 +36,7 @@ class RecurringController extends GetxController {
   final TransactionRepository _transactionRepository;
   final AccountRepository _accountRepository;
   final CategoryRepository _categoryRepository;
+  final NotificationCoordinator _notifications;
   final DataChangeNotifier _notifier;
 
   static const Uuid _uuid = Uuid();
@@ -152,6 +159,7 @@ class RecurringController extends GetxController {
           await _recurringRepository.update(
             rule.copyWith(nextRunAt: next ?? due.last, active: next != null),
           );
+          await _announce(rule, due);
         } on AppException catch (failure) {
           // Leave this rule where it was; it retries on the next run.
           error.value = failure.message;
@@ -164,6 +172,30 @@ class RecurringController extends GetxController {
     }
     if (created > 0) _notifier.markChanged();
     return created;
+  }
+
+  /// Tells the user a run was recorded. Best effort: the transactions are
+  /// what matters, so a failure here never fails the run.
+  Future<void> _announce(RecurringTransaction rule, List<DateTime> due) async {
+    final String label = (rule.note ?? '').isNotEmpty
+        ? rule.note!
+        : 'Recurring transaction';
+    try {
+      await _notifications.raise(
+        id: RecurringScheduler.notificationId(rule.id, due.last),
+        type: NotificationType.recurring,
+        title: '$label recorded',
+        body: due.length == 1
+            ? '${AppFormatters.money(rule.amount)} was added automatically.'
+            : '${due.length} transactions were added automatically.',
+        referenceId: rule.id,
+      );
+    } on AppException catch (failure) {
+      developer.log(
+        'Recurring notification not raised: ${failure.runtimeType}',
+        name: 'recurring',
+      );
+    }
   }
 
   /// [id] is generated once per form so a retried save upserts one row.

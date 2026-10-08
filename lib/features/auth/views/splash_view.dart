@@ -41,9 +41,9 @@ class SplashView extends GetView<SplashController> {
             Text(
               AppConstants.appName,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
             ),
             const SizedBox(height: AppSpacing.lg),
             const SizedBox.square(

@@ -10,7 +10,9 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
@@ -144,6 +146,20 @@ class _Details extends StatelessWidget {
               ),
             ),
           if (_editable) const SizedBox(height: AppSpacing.md),
+          AppButton(
+            label: 'Remind me',
+            icon: Icons.alarm_add_outlined,
+            variant: AppButtonVariant.secondary,
+            onPressed: () => Get.toNamed<void>(
+              AppRoutes.reminderForm,
+              arguments: ReminderFormArgs(
+                type: ReminderType.payment,
+                transactionId: transaction.id,
+                amount: transaction.amount,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           Obx(
             () => AppButton(
               label: 'Delete',

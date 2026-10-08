@@ -18,6 +18,11 @@ class AuthRepository {
 
   GoTrueClient get _auth => _client.auth;
 
+  /// Runs while the session is still valid, just before signing out (for
+  /// example to stop push notifications to this device). A failure here never
+  /// blocks sign-out.
+  Future<void> Function()? beforeSignOut;
+
   bool get isSignedIn => _auth.currentSession != null;
 
   String? get currentEmail => _auth.currentUser?.email;
@@ -89,6 +94,14 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
+    try {
+      await beforeSignOut?.call();
+    } on Object catch (error) {
+      developer.log(
+        'Pre sign-out step failed: ${error.runtimeType}',
+        name: 'auth',
+      );
+    }
     try {
       await _auth.signOut();
     } on Exception catch (error) {

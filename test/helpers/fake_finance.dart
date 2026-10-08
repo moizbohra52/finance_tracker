@@ -4,13 +4,16 @@ import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
+import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
+import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
+import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -27,6 +30,7 @@ class FakeFinance {
       budgets: FakeBudgetRepository(this),
       recurring: FakeRecurringRepository(this),
       notifications: FakeNotificationRepository(this),
+      reminders: FakeReminderRepository(this),
     );
   }
 
@@ -37,8 +41,14 @@ class FakeFinance {
   final List<ContactTransaction> contactTransactions = <ContactTransaction>[];
   final List<Budget> budgets = <Budget>[];
   final List<RecurringTransaction> recurring = <RecurringTransaction>[];
+  final List<Reminder> reminders = <Reminder>[];
 
-  /// Notification rows by id (what `raiseOnce` stored).
+  /// FCM token rows by device id, with their `active` flag.
+  final Map<String, ({String token, bool active})> deviceTokens =
+      <String, ({String token, bool active})>{};
+
+  /// Notification rows by id (what `raiseOnce` stored), oldest first. A row
+  /// that was read also has a `read_at` entry.
   final Map<String, Map<String, String>> notifications =
       <String, Map<String, String>>{};
   int notificationWrites = 0;
@@ -403,12 +413,44 @@ class FakeRecurringRepository implements RecurringRepository {
   }
 }
 
+class FakeReminderRepository implements ReminderRepository {
+  FakeReminderRepository(this._f);
+  final FakeFinance _f;
+
+  @override
+  Future<List<Reminder>> getAll() async {
+    _f.throwPending();
+    return _f.reminders.where((Reminder r) => r.deletedAt == null).toList();
+  }
+
+  @override
+  Future<void> create(Reminder reminder) async {
+    _f.throwPending();
+    _f.reminders
+      ..removeWhere((Reminder r) => r.id == reminder.id)
+      ..add(reminder);
+  }
+
+  @override
+  Future<void> update(Reminder reminder) async {
+    _f.throwPending();
+    final int i = _f.reminders.indexWhere((Reminder r) => r.id == reminder.id);
+    _f.reminders[i] = reminder;
+  }
+
+  @override
+  Future<void> delete(String id) async {
+    _f.throwPending();
+    _f.reminders.removeWhere((Reminder r) => r.id == id);
+  }
+}
+
 class FakeNotificationRepository implements NotificationRepository {
   FakeNotificationRepository(this._f);
   final FakeFinance _f;
 
   @override
-  Future<void> raiseOnce({
+  Future<bool> raiseOnce({
     required String id,
     required String type,
     required String title,
@@ -417,14 +459,79 @@ class FakeNotificationRepository implements NotificationRepository {
   }) async {
     _f.throwPending();
     _f.notificationWrites++;
-    _f.notifications.putIfAbsent(
-      id,
-      () => <String, String>{
-        'type': type,
-        'title': title,
-        'body': body,
-        'reference_id': referenceId,
-      },
-    );
+    if (_f.notifications.containsKey(id)) return false;
+    _f.notifications[id] = <String, String>{
+      'type': type,
+      'title': title,
+      'body': body,
+      'reference_id': referenceId,
+    };
+    return true;
+  }
+
+  AppNotification _row(int index, String id, Map<String, String> row) =>
+      AppNotification(
+        id: id,
+        type: row['type']!,
+        title: row['title']!,
+        body: row['body'],
+        referenceId: row['reference_id'],
+        readAt: row['read_at'] == null ? null : DateTime(2026, 2),
+        createdAt: DateTime(2026).add(Duration(minutes: index)),
+      );
+
+  @override
+  Future<List<AppNotification>> getPage({
+    int limit = 30,
+    int offset = 0,
+  }) async {
+    _f.throwPending();
+    final List<AppNotification> all = <AppNotification>[
+      for (final (int i, MapEntry<String, Map<String, String>> e)
+          in _f.notifications.entries.indexed)
+        _row(i, e.key, e.value),
+    ].reversed.toList();
+    return all.skip(offset).take(limit).toList();
+  }
+
+  @override
+  Future<int> unreadCount() async {
+    _f.throwPending();
+    return _f.notifications.values
+        .where((Map<String, String> r) => r['read_at'] == null)
+        .length;
+  }
+
+  @override
+  Future<void> markRead(String id) async {
+    _f.throwPending();
+    _f.notifications[id]?['read_at'] = 'now';
+  }
+
+  @override
+  Future<void> markAllRead() async {
+    _f.throwPending();
+    for (final Map<String, String> row in _f.notifications.values) {
+      row['read_at'] = 'now';
+    }
+  }
+
+  @override
+  Future<void> registerDeviceToken({
+    required String token,
+    required String platform,
+    required String deviceId,
+  }) async {
+    _f.throwPending();
+    _f.deviceTokens[deviceId] = (token: token, active: true);
+  }
+
+  @override
+  Future<void> deactivateDeviceToken(String deviceId) async {
+    _f.throwPending();
+    final ({String token, bool active})? current = _f.deviceTokens[deviceId];
+    if (current != null) {
+      _f.deviceTokens[deviceId] = (token: current.token, active: false);
+    }
   }
 }

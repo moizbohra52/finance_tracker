@@ -1,7 +1,12 @@
+import 'dart:developer' as developer;
+
 import 'package:finance_tracker/bindings/initial_binding.dart';
 import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/constants/app_env.dart';
 import 'package:finance_tracker/core/services/connectivity_service.dart';
+import 'package:finance_tracker/core/services/local_notification_service.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
+import 'package:finance_tracker/core/services/push_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
@@ -38,15 +43,36 @@ Future<void> main() async {
     await SharedPreferences.getInstance(),
   );
   final ThemeController themeController = ThemeController(storageService);
+  final AuthRepository authRepository = AuthRepository(client);
+  final AppRepositories repositories = AppRepositories.supabase(client);
+  final NotificationCoordinator notificationCoordinator =
+      NotificationCoordinator(
+        local: LocalNotificationService(),
+        push: PushService(),
+        repository: repositories.notifications,
+        storage: storageService,
+        auth: authRepository,
+      );
+  // Before the first frame, so a notification tap that launched the app is
+  // not missed. Notifications are optional: the app runs without them.
+  try {
+    await notificationCoordinator.initialize();
+  } on Object catch (error) {
+    developer.log(
+      'Notifications could not start: ${error.runtimeType}',
+      name: 'notifications',
+    );
+  }
 
   runApp(
     FinanceTrackerApp(
-      authRepository: AuthRepository(client),
+      authRepository: authRepository,
       profileRepository: ProfileRepository(client),
       storageService: storageService,
       themeController: themeController,
       connectivityService: ConnectivityService(),
-      repositories: AppRepositories.supabase(client),
+      repositories: repositories,
+      notificationCoordinator: notificationCoordinator,
     ),
   );
 }
@@ -60,6 +86,7 @@ class FinanceTrackerApp extends StatelessWidget {
     required this.themeController,
     required this.connectivityService,
     required this.repositories,
+    required this.notificationCoordinator,
   }) : initialBinding = InitialBinding(
          authRepository: authRepository,
          profileRepository: profileRepository,
@@ -67,6 +94,7 @@ class FinanceTrackerApp extends StatelessWidget {
          themeController: themeController,
          connectivityService: connectivityService,
          repositories: repositories,
+         notificationCoordinator: notificationCoordinator,
        );
 
   final AuthRepository authRepository;
@@ -75,6 +103,7 @@ class FinanceTrackerApp extends StatelessWidget {
   final ThemeController themeController;
   final ConnectivityService connectivityService;
   final AppRepositories repositories;
+  final NotificationCoordinator notificationCoordinator;
   final InitialBinding initialBinding;
 
   @override

@@ -56,7 +56,8 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
               statusBarIconBrightness: Brightness.dark,
               statusBarBrightness: Brightness.light,
             ),
-      title: titleWidget ??
+      title:
+          titleWidget ??
           (title != null
               ? Text(
                   title!,
@@ -69,8 +70,8 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
                 )
               : null),
       centerTitle: titleWidget != null ? false : centerTitle,
-      leading: leading ??
-          (automaticallyImplyLeading ? const AppBackButton() : null),
+      leading:
+          leading ?? (automaticallyImplyLeading ? const AppBackButton() : null),
       automaticallyImplyLeading: false,
       backgroundColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -109,7 +110,9 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: PopupMenuButton<String>(
                 tooltip: 'More options',
                 elevation: 6,
-                shadowColor: Colors.black.withValues(alpha: isDark ? 0.4 : 0.12),
+                shadowColor: Colors.black.withValues(
+                  alpha: isDark ? 0.4 : 0.12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(
@@ -297,8 +300,8 @@ class _MenuItemState extends State<_MenuItem> {
         duration: const Duration(milliseconds: 120),
         color: _hovered
             ? (widget.isDestructive
-                ? colors.errorContainer.withValues(alpha: 0.25)
-                : colors.primaryContainer.withValues(alpha: 0.25))
+                  ? colors.errorContainer.withValues(alpha: 0.25)
+                  : colors.primaryContainer.withValues(alpha: 0.25))
             : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
@@ -311,11 +314,7 @@ class _MenuItemState extends State<_MenuItem> {
                 borderRadius: BorderRadius.circular(8),
               ),
               alignment: Alignment.center,
-              child: Icon(
-                widget.icon,
-                size: 18,
-                color: iconColor,
-              ),
+              child: Icon(widget.icon, size: 18, color: iconColor),
             ),
             const SizedBox(width: 12),
             Text(

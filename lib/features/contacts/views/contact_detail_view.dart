@@ -15,6 +15,7 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
+import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -46,6 +47,17 @@ class ContactDetailView extends GetView<ContactDetailController> {
           title: contact?.name ?? 'Contact',
           actions: <Widget>[
             if (contact != null) ...<Widget>[
+              IconButton(
+                tooltip: 'Add reminder',
+                icon: const Icon(Icons.alarm_add_outlined),
+                onPressed: () => Get.toNamed<void>(
+                  AppRoutes.reminderForm,
+                  arguments: ReminderFormArgs.forContact(
+                    contactId: contact.id,
+                    balance: controller.balance.value,
+                  ),
+                ),
+              ),
               IconButton(
                 tooltip: 'Edit contact',
                 icon: const Icon(Icons.edit_outlined),

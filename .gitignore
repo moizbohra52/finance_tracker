@@ -47,6 +47,10 @@ app.*.map.json
 # Local environment values. Commit env.example.json only.
 env.json
 
+# Per-project Firebase config for push notifications (docs/08_NOTIFICATION_SYSTEM.md)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+
 # Supabase CLI local state
 supabase/.temp/
 supabase/.branches/

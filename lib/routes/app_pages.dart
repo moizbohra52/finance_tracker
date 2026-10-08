@@ -1,7 +1,11 @@
 import 'package:finance_tracker/features/budgets/views/budget_form_view.dart';
 import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
+import 'package:finance_tracker/features/notifications/views/notification_center_view.dart';
 import 'package:finance_tracker/features/recurring/views/recurring_form_view.dart';
 import 'package:finance_tracker/features/recurring/views/recurring_list_view.dart';
+import 'package:finance_tracker/features/reminders/views/reminder_detail_view.dart';
+import 'package:finance_tracker/features/reminders/views/reminder_form_view.dart';
+import 'package:finance_tracker/features/reminders/views/reminder_list_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/bindings/feature_bindings.dart';
 import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
@@ -161,6 +165,32 @@ abstract final class AppPages {
       page: () => const RecurringFormView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: RecurringBinding(),
+    ),
+
+    // Reminders and notifications
+    GetPage<dynamic>(
+      name: AppRoutes.reminders,
+      page: () => const ReminderListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ReminderBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.reminderForm,
+      page: () => const ReminderFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ReminderBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.reminderDetail,
+      page: () => const ReminderDetailView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ReminderBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.notifications,
+      page: () => const NotificationCenterView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: NotificationCenterBinding(),
     ),
 
     // Reports

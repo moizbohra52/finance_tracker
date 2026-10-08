@@ -147,9 +147,12 @@ contact_id UUID nullable
 account_id UUID nullable
 title TEXT
 description TEXT
+transaction_id UUID nullable -- (user_id, transaction_id) -> transactions (Phase 09)
+reminder_type TEXT -- payment, receivable, payable, khata, recurring, custom (Phase 09, default custom)
 amount NUMERIC(18,2) nullable
 remind_at TIMESTAMPTZ
-repeat_rule TEXT nullable
+snoozed_until TIMESTAMPTZ nullable -- replaces remind_at while in the future (Phase 09)
+repeat_rule TEXT nullable -- null, daily, weekly, monthly, yearly
 is_completed BOOLEAN
 notification_enabled BOOLEAN
 created_at
@@ -165,6 +168,17 @@ type TEXT
 reference_id UUID nullable
 read_at TIMESTAMPTZ nullable
 created_at
+
+### device_tokens (Phase 09)
+id UUID PK
+user_id UUID
+token TEXT -- FCM registration token
+platform TEXT -- android, ios
+device_id TEXT -- random id generated once per install
+active BOOLEAN
+created_at
+updated_at
+unique (user_id, device_id)
 
 ### sync_queue
 Not created. The upload queue lives in the client's local database
@@ -209,6 +223,14 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    missing column as 1 and only sends it when it is not 1, so everything except
    custom intervals works before the migration is applied.
 
+7. `20261008090000_reminders_notifications.sql` (Phase 09) — adds
+   `reminders.reminder_type`, `snoozed_until` and `transaction_id`, a CHECK on
+   `repeat_rule`, `transactions (user_id, id)` unique key (needed for the
+   composite reminder→transaction foreign key, same pattern as accounts and
+   contacts), and the `device_tokens` table with owner-only RLS. **The app needs
+   this migration**: reminders cannot be saved before it is applied
+   (`supabase db push`).
+
 ### Phase 08 conventions (no schema change)
 - Budget threshold events are rows in `notifications` with `type = 'budget_alert'`,
   `reference_id = budget id` and a deterministic id (UUID v5 of budget id, period
@@ -251,7 +273,31 @@ Cross-user checks: `supabase/checks/cross_user_isolation.sql` (see README).
   direction in `opening_balance_type`.
 - **Enumerated values** are CHECK constraints: account type, category type,
   transaction types, khata types, theme_mode, budget period_type,
-  recurring type/frequency. `notifications.type`, `payment_method` and
-  `repeat_rule` stay free text until their phases define them.
+  recurring type/frequency. `notifications.type` and
+  `payment_method` stay free text. `repeat_rule` became a CHECK in Phase 09.
 - **Profiles and settings** are created by the `on_auth_user_created` trigger;
   `profiles.full_name` comes from signup metadata key `full_name`.
+
+## Implementation decisions (Phase 09)
+- **Reminder fields added, documented rather than assumed.** The Phase 01
+  `reminders` table had no type, no snooze and no transaction link, but the
+  phase needs all three. They are three nullable-or-defaulted columns on the
+  existing table, not a new table. `account_id` is left as is and unused by
+  the app.
+- **Snooze never moves the schedule.** `remind_at` is the series anchor (for a
+  repeating reminder, the next occurrence not yet marked done). Snoozing sets
+  `snoozed_until`; the fire time is `snoozed_until` while it is in the future,
+  so a monthly reminder snoozed by a day does not drift.
+- **Repeating reminders stay one row.** Completing a repeating reminder moves
+  `remind_at` to its next occurrence; completing a one-time reminder sets
+  `is_completed`. Occurrences are computed from the anchor with month-end
+  clamping (the same rule recurring transactions use).
+- **Notification-center rows** (`notifications.type`): `reminder`
+  (`reference_id` = reminder id), `budget_alert` (budget id, Phase 08),
+  `recurring` (recurring rule id). Every id is deterministic (UUID v5 of the
+  event), so raising an event twice, on any device, stores one row:
+  - reminder came due: reminder id + due time
+  - recurring run: rule id + last occurrence date
+  - budget threshold: budget id + period start + threshold (Phase 08)
+- **device_tokens** is written by the app and read by whatever server sends
+  pushes (service role, never in Flutter). `active` is cleared at sign-out.

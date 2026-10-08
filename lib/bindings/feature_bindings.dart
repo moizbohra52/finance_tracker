@@ -1,10 +1,12 @@
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
+import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
@@ -13,8 +15,10 @@ import 'package:finance_tracker/features/contacts/controller/contact_controller.
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
+import 'package:finance_tracker/features/notifications/controllers/notification_center_controller.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
+import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
@@ -134,7 +138,7 @@ class BudgetBinding extends Bindings {
       Get.find<BudgetRepository>(),
       Get.find<TransactionRepository>(),
       Get.find<CategoryRepository>(),
-      Get.find<NotificationRepository>(),
+      Get.find<NotificationCoordinator>(),
       Get.find<DataChangeNotifier>(),
     ),
   );
@@ -148,7 +152,30 @@ class RecurringBinding extends Bindings {
       Get.find<TransactionRepository>(),
       Get.find<AccountRepository>(),
       Get.find<CategoryRepository>(),
+      Get.find<NotificationCoordinator>(),
       Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+class ReminderBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => ReminderController(
+      Get.find<ReminderRepository>(),
+      Get.find<ContactRepository>(),
+      Get.find<NotificationCoordinator>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+class NotificationCenterBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => NotificationCenterController(
+      Get.find<NotificationRepository>(),
+      Get.find<NotificationCoordinator>(),
     ),
   );
 }
@@ -182,5 +209,11 @@ class ShellBinding extends Bindings {
     RecurringBinding().dependencies();
     Get.find<BudgetController>();
     Get.find<RecurringController>();
+    // Same for reminders (they schedule the device notifications) and the
+    // notification center (it owns the unread badge in the app bar).
+    ReminderBinding().dependencies();
+    NotificationCenterBinding().dependencies();
+    Get.find<ReminderController>();
+    Get.find<NotificationCenterController>();
   }
 }

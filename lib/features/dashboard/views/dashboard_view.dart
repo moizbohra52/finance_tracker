@@ -97,7 +97,8 @@ class _GreetingHeader extends StatelessWidget {
 
   static const List<({String quote, String author})> _quotes = [
     (
-      quote: 'Do not save what is left after spending, but spend what is left after saving.',
+      quote:
+          'Do not save what is left after spending, but spend what is left after saving.',
       author: 'Warren Buffett',
     ),
     (
@@ -105,15 +106,18 @@ class _GreetingHeader extends StatelessWidget {
       author: 'Benjamin Franklin',
     ),
     (
-      quote: 'A budget is telling your money where to go instead of wondering where it went.',
+      quote:
+          'A budget is telling your money where to go instead of wondering where it went.',
       author: 'Dave Ramsey',
     ),
     (
-      quote: 'Financial freedom is available to those who learn about it and work for it.',
+      quote:
+          'Financial freedom is available to those who learn about it and work for it.',
       author: 'Robert Kiyosaki',
     ),
     (
-      quote: 'The secret of getting ahead is getting started. Track your daily expenses.',
+      quote:
+          'The secret of getting ahead is getting started. Track your daily expenses.',
       author: 'Mark Twain',
     ),
     (
@@ -152,10 +156,7 @@ class _GreetingHeader extends StatelessWidget {
                   colors.surfaceContainerHighest.withValues(alpha: 0.35),
                   colors.primary.withValues(alpha: 0.08),
                 ]
-              : [
-                  colors.primary.withValues(alpha: 0.05),
-                  colors.surface,
-                ],
+              : [colors.primary.withValues(alpha: 0.05), colors.surface],
         ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
@@ -285,7 +286,10 @@ class _MonthlySummary extends GetView<HomeController> {
                   Expanded(
                     child: _Figure(
                       label: 'Net',
-                      value: AppFormatters.signedMoney(m.net, positive: positive),
+                      value: AppFormatters.signedMoney(
+                        m.net,
+                        positive: positive,
+                      ),
                       color: positive ? money.income : money.expense,
                     ),
                   ),
@@ -420,6 +424,28 @@ class _PlanSection extends StatelessWidget {
                 title: 'Recurring',
                 subtitle: 'Rent, salary, EMIs on autopilot',
                 onTap: () => Get.toNamed<void>(AppRoutes.recurring),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: PlanTile(
+                icon: Icons.notifications_active_outlined,
+                title: 'Reminders',
+                subtitle: 'Never miss a payment or a due date',
+                onTap: () => Get.toNamed<void>(AppRoutes.reminders),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: PlanTile(
+                icon: Icons.notifications_outlined,
+                title: 'Notifications',
+                subtitle: 'Alerts and reminders you received',
+                onTap: () => Get.toNamed<void>(AppRoutes.notifications),
               ),
             ),
           ],
@@ -652,9 +678,9 @@ class _AccountsSection extends GetView<HomeController> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(
-                          alpha: 0.1,
-                        ),
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                       child: Icon(

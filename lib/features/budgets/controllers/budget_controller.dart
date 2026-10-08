@@ -1,12 +1,13 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
-import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
+import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -21,14 +22,14 @@ class BudgetController extends GetxController {
     this._budgetRepository,
     this._transactionRepository,
     this._categoryRepository,
-    this._notificationRepository,
+    this._notifications,
     this._notifier,
   );
 
   final BudgetRepository _budgetRepository;
   final TransactionRepository _transactionRepository;
   final CategoryRepository _categoryRepository;
-  final NotificationRepository _notificationRepository;
+  final NotificationCoordinator _notifications;
   final DataChangeNotifier _notifier;
 
   static const Uuid _uuid = Uuid();
@@ -105,13 +106,20 @@ class BudgetController extends GetxController {
   }
 
   Future<void> _raiseAlerts(List<BudgetStatus> computed) async {
+    // Off in settings: nothing is raised and nothing is remembered as sent,
+    // so turning it back on raises whatever is currently crossed.
+    if (!_notifications.preferences.value.allows(
+      NotificationType.budgetAlert,
+    )) {
+      return;
+    }
     for (final BudgetStatus status in computed) {
       for (final BudgetAlert alert in BudgetCalculator.alertsFor(status)) {
         if (!_raised.add(alert.id)) continue;
         try {
-          await _notificationRepository.raiseOnce(
+          await _notifications.raise(
             id: alert.id,
-            type: 'budget_alert',
+            type: NotificationType.budgetAlert,
             title: alert.threshold >= 100
                 ? '${nameOf(status.budget)} budget exceeded'
                 : '${nameOf(status.budget)} budget at ${alert.threshold}%',

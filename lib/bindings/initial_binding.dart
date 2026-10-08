@@ -1,4 +1,5 @@
 import 'package:finance_tracker/core/services/connectivity_service.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
@@ -11,6 +12,7 @@ import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
+import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:get/get.dart';
@@ -25,6 +27,7 @@ class InitialBinding extends Bindings {
     required this.themeController,
     required this.connectivityService,
     required this.repositories,
+    required this.notificationCoordinator,
   });
 
   final AuthRepository authRepository;
@@ -33,6 +36,7 @@ class InitialBinding extends Bindings {
   final ThemeController themeController;
   final ConnectivityService connectivityService;
   final AppRepositories repositories;
+  final NotificationCoordinator notificationCoordinator;
 
   @override
   void dependencies() {
@@ -52,6 +56,8 @@ class InitialBinding extends Bindings {
       repositories.notifications,
       permanent: true,
     );
+    Get.put<ReminderRepository>(repositories.reminders, permanent: true);
+    Get.put<NotificationCoordinator>(notificationCoordinator, permanent: true);
     Get.put<DataChangeNotifier>(DataChangeNotifier(), permanent: true);
   }
 }

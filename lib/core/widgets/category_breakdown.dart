@@ -78,7 +78,9 @@ class CategoryBreakdown extends StatelessWidget {
                         children: <Widget>[
                           Expanded(
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(AppRadius.full),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.full,
+                              ),
                               child: LinearProgressIndicator(
                                 value: r.share.clamp(0, 1),
                                 minHeight: 6,

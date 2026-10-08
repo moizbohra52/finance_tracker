@@ -10,6 +10,7 @@ import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/main.dart';
 import 'fake_finance.dart';
+import 'fake_notifications.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -25,6 +26,9 @@ class FakeAuthRepository implements AuthRepository {
   bool _signedIn;
   AppException? nextError;
   bool signUpStartsSession = true;
+
+  @override
+  Future<void> Function()? beforeSignOut;
   final List<String> calls = <String>[];
 
   void emit(AuthStatus status) {
@@ -76,7 +80,11 @@ class FakeAuthRepository implements AuthRepository {
   }) => _call('changePassword');
 
   @override
-  Future<void> signOut() => _call('signOut', AuthStatus.signedOut);
+  Future<void> signOut() async {
+    // Like the real repository, the pre-sign-out step runs first.
+    await beforeSignOut?.call();
+    await _call('signOut', AuthStatus.signedOut);
+  }
 
   @override
   Future<void> deleteAccount({required String password}) =>
@@ -123,17 +131,32 @@ Future<void> pumpApp(
   FakeProfileRepository? profile,
   ConnectivityService? connectivityService,
   FakeFinance? finance,
+  FakeLocalNotifications? localNotifications,
+  FakePush? push,
+  NotificationsHandle? notifications,
 }) async {
   await initializeDateFormatting(AppConstants.defaultLocale);
   SharedPreferences.setMockInitialValues(<String, Object>{});
   final StorageService storage = StorageService(
     await SharedPreferences.getInstance(),
   );
+  final FakeFinance data = finance ?? FakeFinance();
+  final NotificationsHandle handle =
+      notifications ??
+      await buildCoordinator(
+        data,
+        auth: auth,
+        local: localNotifications,
+        push: push,
+        storage: storage,
+      );
+  await handle.coordinator.initialize();
   await tester.pumpWidget(
     FinanceTrackerApp(
       authRepository: auth,
       profileRepository: profile ?? FakeProfileRepository(),
-      repositories: (finance ?? FakeFinance()).repositories,
+      repositories: data.repositories,
+      notificationCoordinator: handle.coordinator,
       storageService: storage,
       themeController: ThemeController(storage),
       connectivityService:
