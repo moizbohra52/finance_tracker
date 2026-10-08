@@ -45,6 +45,10 @@ abstract final class AppRoutes {
   static const String contactDetail = '/contact-detail';
   static const String contactEntry = '/contact-entry';
 
+  // Export and Backup
+  static const String export = '/export';
+  static const String backup = '/backup';
+
   /// Screens for signed-out users only.
   static const Set<String> guestOnly = <String>{
     onboarding,

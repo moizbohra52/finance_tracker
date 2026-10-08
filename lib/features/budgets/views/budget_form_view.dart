@@ -138,12 +138,11 @@ class _BudgetFormViewState extends State<BudgetFormView> {
                   ],
                   labelOf: (String id) => id.isEmpty
                       ? 'All expenses'
-                      : categories
-                            .firstWhere((Category c) => c.id == id)
-                            .name,
+                      : categories.firstWhere((Category c) => c.id == id).name,
                   decoration: const InputDecoration(labelText: 'Applies to'),
-                  onChanged: (String? v) =>
-                      setState(() => _categoryId = (v?.isEmpty ?? true) ? null : v),
+                  onChanged: (String? v) => setState(
+                    () => _categoryId = (v?.isEmpty ?? true) ? null : v,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(

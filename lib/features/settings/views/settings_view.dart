@@ -51,6 +51,10 @@ class SettingsView extends StatelessWidget {
               SizedBox(height: AppSpacing.lg),
               NotificationSettingsSection(),
               SizedBox(height: AppSpacing.lg),
+              SettingsSectionTitle('Data & Backup'),
+              SizedBox(height: AppSpacing.sm),
+              _DataBackupSection(),
+              SizedBox(height: AppSpacing.lg),
               SettingsSectionTitle('Security'),
               SizedBox(height: AppSpacing.sm),
               _SecuritySection(),
@@ -383,6 +387,31 @@ class _AccountOption {
 
   @override
   int get hashCode => id.hashCode;
+}
+
+class _DataBackupSection extends StatelessWidget {
+  const _DataBackupSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsCard(
+      children: <Widget>[
+        SettingsTile(
+          icon: Icons.file_download_outlined,
+          title: 'Export data',
+          subtitle:
+              'Export transactions, accounts & reports to CSV, Excel, or PDF',
+          onTap: () => Get.toNamed<void>(AppRoutes.export),
+        ),
+        SettingsTile(
+          icon: Icons.settings_backup_restore_outlined,
+          title: 'Backup & restore',
+          subtitle: 'Create a full offline backup or restore previous data',
+          onTap: () => Get.toNamed<void>(AppRoutes.backup),
+        ),
+      ],
+    );
+  }
 }
 
 /// Sign-out and account deletion, both reachable from here as well as from

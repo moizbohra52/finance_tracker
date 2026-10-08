@@ -15,6 +15,7 @@ import 'package:finance_tracker/features/auth/views/onboarding_view.dart';
 import 'package:finance_tracker/features/auth/views/register_view.dart';
 import 'package:finance_tracker/features/auth/views/reset_password_view.dart';
 import 'package:finance_tracker/features/auth/views/splash_view.dart';
+import 'package:finance_tracker/features/backup/views/backup_view.dart';
 import 'package:finance_tracker/features/budgets/views/budget_form_view.dart';
 import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
@@ -22,6 +23,7 @@ import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart'
 import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
+import 'package:finance_tracker/features/export/views/export_view.dart';
 import 'package:finance_tracker/features/notifications/views/notification_center_view.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
@@ -149,6 +151,19 @@ abstract final class AppPages {
       binding: BindingsBuilder<void>(
         () => Get.lazyPut(() => ChangePasswordController(Get.find())),
       ),
+    ),
+    // Export and Backup
+    GetPage<dynamic>(
+      name: AppRoutes.export,
+      page: () => const ExportView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ExportBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.backup,
+      page: () => const BackupView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BackupBinding(),
     ),
     // Accounts
     GetPage<dynamic>(

@@ -27,6 +27,8 @@ class AuthRepository {
 
   String? get currentEmail => _auth.currentUser?.email;
 
+  String? get currentUserId => _auth.currentUser?.id;
+
   /// Replays transitions that happened before the first listener (e.g. a
   /// password-reset link that cold-started the app). Stream errors, such as an
   /// expired email link, arrive as [AppException].

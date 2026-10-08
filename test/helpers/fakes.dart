@@ -55,6 +55,9 @@ class FakeAuthRepository implements AuthRepository {
   String? get currentEmail => _signedIn ? 'asha@example.com' : null;
 
   @override
+  String? get currentUserId => _signedIn ? 'user-1' : null;
+
+  @override
   Stream<AuthStatus> get statusChanges => _status.stream;
 
   @override

@@ -112,18 +112,16 @@ class BottomSheetDropdown<T> extends StatelessWidget {
                 ),
                 child: Text(
                   title,
-                  style: Theme.of(sheet)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(sheet).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               for (final T option in options)
                 ListTile(
                   minTileHeight: AppSizes.minTouchTarget,
                   title: Text(labelOf(option)),
-                  subtitle:
-                      detailOf == null ? null : Text(detailOf!(option)),
+                  subtitle: detailOf == null ? null : Text(detailOf!(option)),
                   trailing: option == current
                       ? Icon(
                           Icons.check_rounded,

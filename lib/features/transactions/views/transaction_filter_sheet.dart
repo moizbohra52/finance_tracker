@@ -109,15 +109,10 @@ class _FilterSheetState extends State<_FilterSheet> {
             const SizedBox(height: AppSpacing.md),
             BottomSheetDropdown<String>(
               value: _accountId ?? '',
-              options: <String>[
-                '',
-                for (final Account a in accounts) a.id,
-              ],
+              options: <String>['', for (final Account a in accounts) a.id],
               labelOf: (String id) => id.isEmpty
                   ? 'All accounts'
-                  : accounts
-                        .firstWhere((Account a) => a.id == id)
-                        .name,
+                  : accounts.firstWhere((Account a) => a.id == id).name,
               decoration: const InputDecoration(labelText: 'Account'),
               onChanged: (String? v) =>
                   setState(() => _accountId = (v?.isEmpty ?? true) ? null : v),
@@ -126,15 +121,10 @@ class _FilterSheetState extends State<_FilterSheet> {
             BottomSheetDropdown<String>(
               key: ValueKey<TransactionType?>(_type),
               value: categoryValue ?? '',
-              options: <String>[
-                '',
-                for (final Category c in categories) c.id,
-              ],
+              options: <String>['', for (final Category c in categories) c.id],
               labelOf: (String id) => id.isEmpty
                   ? 'All categories'
-                  : categories
-                        .firstWhere((Category c) => c.id == id)
-                        .name,
+                  : categories.firstWhere((Category c) => c.id == id).name,
               decoration: const InputDecoration(labelText: 'Category'),
               onChanged: (String? v) =>
                   setState(() => _categoryId = (v?.isEmpty ?? true) ? null : v),

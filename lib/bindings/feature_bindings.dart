@@ -1,20 +1,25 @@
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
+import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
+import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
+import 'package:finance_tracker/features/backup/controllers/backup_controller.dart';
 import 'package:finance_tracker/features/budgets/controllers/budget_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
+import 'package:finance_tracker/features/export/controllers/export_controller.dart';
 import 'package:finance_tracker/features/notifications/controllers/notification_center_controller.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
@@ -216,4 +221,36 @@ class ShellBinding extends Bindings {
     Get.find<ReminderController>();
     Get.find<NotificationCenterController>();
   }
+}
+
+class ExportBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => ExportController(
+      transactionRepository: Get.find<TransactionRepository>(),
+      accountRepository: Get.find<AccountRepository>(),
+      contactRepository: Get.find<ContactRepository>(),
+      budgetRepository: Get.find<BudgetRepository>(),
+      categoryRepository: Get.find<CategoryRepository>(),
+      authRepository: Get.isRegistered<AuthRepository>()
+          ? Get.find<AuthRepository>()
+          : null,
+      profileRepository: Get.isRegistered<ProfileRepository>()
+          ? Get.find<ProfileRepository>()
+          : null,
+    ),
+  );
+}
+
+class BackupBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => BackupController(
+      database: Get.find<AppDatabase>(),
+      dataChangeNotifier: Get.find<DataChangeNotifier>(),
+      authRepository: Get.isRegistered<AuthRepository>()
+          ? Get.find<AuthRepository>()
+          : null,
+    ),
+  );
 }
