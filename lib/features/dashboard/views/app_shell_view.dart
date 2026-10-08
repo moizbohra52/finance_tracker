@@ -1,4 +1,3 @@
-import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
@@ -98,7 +97,6 @@ class _AppShellViewState extends State<AppShellView> {
 
   @override
   Widget build(BuildContext context) {
-    final ConnectivityService connectivity = Get.find<ConnectivityService>();
     final ProfileController profile = Get.find<ProfileController>();
     final ColorScheme colors = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
@@ -198,11 +196,7 @@ class _AppShellViewState extends State<AppShellView> {
           body: SafeArea(
             child: Column(
               children: <Widget>[
-                Obx(
-                  () => connectivity.isOffline
-                      ? const OfflineBanner()
-                      : const SizedBox.shrink(),
-                ),
+                const SyncStatusBar(),
                 Expanded(
                   child: useRail
                       ? Row(

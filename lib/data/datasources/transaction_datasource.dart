@@ -1,5 +1,5 @@
-import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/data/models/transaction.dart';
+import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class TransactionDatasource {

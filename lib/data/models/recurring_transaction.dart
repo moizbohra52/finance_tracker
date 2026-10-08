@@ -35,7 +35,9 @@ abstract final class RecurringTransactionModel {
             ? null
             : _parseDate(json['end_date'] as String),
         nextRunAt: DateTime.parse(json['next_run_at'] as String).toLocal(),
-        active: json['active'] as bool? ?? true,
+        active: json['active'] == null
+            ? true
+            : (json['active'] == true || json['active'] == 1),
         note: json['note'] as String?,
         createdAt: DateTime.parse(json['created_at'] as String),
         updatedAt: DateTime.parse(json['updated_at'] as String),

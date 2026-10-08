@@ -31,8 +31,8 @@ class CategoryModel {
     name: json['name'] as String,
     type: json['type'] as String,
     icon: (json['icon'] as String?) ?? 'other',
-    isSystem: json['is_system'] as bool,
-    isActive: json['is_active'] as bool,
+    isSystem: json['is_system'] == true || json['is_system'] == 1,
+    isActive: json['is_active'] == true || json['is_active'] == 1,
     createdAt: DateTime.parse(json['created_at'] as String),
     updatedAt: DateTime.parse(json['updated_at'] as String),
     deletedAt: json['deleted_at'] != null

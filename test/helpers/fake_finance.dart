@@ -1,21 +1,21 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
+import 'package:finance_tracker/data/repositories/category_repository.dart';
+import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
-import 'package:finance_tracker/data/repositories/app_repositories.dart';
-import 'package:finance_tracker/data/repositories/category_repository.dart';
-import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
-import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
-import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
+import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 
 /// In-memory finance data shared by the fake repositories. [nextError] makes

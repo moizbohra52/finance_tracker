@@ -20,8 +20,11 @@ abstract final class ReminderModel {
     transactionId: json['transaction_id'] as String?,
     remindAt: _parse(json['remind_at']),
     repeat: ReminderRepeat.fromRule(json['repeat_rule'] as String?),
-    isCompleted: json['is_completed'] as bool? ?? false,
-    notificationEnabled: json['notification_enabled'] as bool? ?? true,
+    isCompleted: json['is_completed'] == true || json['is_completed'] == 1,
+    notificationEnabled: json['notification_enabled'] == null
+        ? true
+        : (json['notification_enabled'] == true ||
+              json['notification_enabled'] == 1),
     snoozedUntil: json['snoozed_until'] == null
         ? null
         : _parse(json['snoozed_until']),

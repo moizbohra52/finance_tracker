@@ -1,8 +1,10 @@
 import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
+import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
+import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
@@ -31,6 +33,9 @@ class InitialBinding extends Bindings {
     required this.connectivityService,
     required this.repositories,
     required this.notificationCoordinator,
+    this.database,
+    this.syncEngine,
+    this.dataChangeNotifier,
   });
 
   final AuthRepository authRepository;
@@ -41,10 +46,20 @@ class InitialBinding extends Bindings {
   final ConnectivityService connectivityService;
   final AppRepositories repositories;
   final NotificationCoordinator notificationCoordinator;
+  final AppDatabase? database;
+  final SyncEngine? syncEngine;
+  final DataChangeNotifier? dataChangeNotifier;
 
   @override
   void dependencies() {
-    final DataChangeNotifier notifier = DataChangeNotifier();
+    final DataChangeNotifier notifier =
+        dataChangeNotifier ?? DataChangeNotifier();
+    if (database != null) {
+      Get.put<AppDatabase>(database!, permanent: true);
+    }
+    if (syncEngine != null) {
+      Get.put<SyncEngine>(syncEngine!, permanent: true);
+    }
     Get.put<StorageService>(storageService, permanent: true);
     Get.put<ThemeController>(themeController, permanent: true);
     Get.put<ConnectivityService>(connectivityService, permanent: true);

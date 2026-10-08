@@ -1,5 +1,5 @@
-import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/data/models/category.dart';
+import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class CategoryDatasource {
@@ -33,7 +33,7 @@ class CategoryDatasourceImpl implements CategoryDatasource {
 
   @override
   Future<void> createCategory(Category category) async {
-    final response = await _supabaseClient
+    await _supabaseClient
         .from('categories')
         .insert(CategoryModel.fromEntity(category).toJson());
   }

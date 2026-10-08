@@ -11,6 +11,7 @@ import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/core/widgets/sync_status_sheet.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
@@ -431,6 +432,12 @@ class _InformationSection extends StatelessWidget {
           icon: Icons.description_outlined,
           title: 'Terms of service',
           onTap: () => Get.toNamed<void>(AppRoutes.terms),
+        ),
+        SettingsTile(
+          icon: Icons.sync_rounded,
+          title: 'Cloud sync',
+          subtitle: 'Sync queue & connection status',
+          onTap: () => showSyncStatusSheet(context),
         ),
         SettingsTile(
           icon: Icons.info_outline_rounded,

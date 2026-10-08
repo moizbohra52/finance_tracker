@@ -1,5 +1,5 @@
-import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/data/models/account.dart';
+import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract class AccountDatasource {
@@ -32,13 +32,13 @@ class AccountDatasourceImpl implements AccountDatasource {
         .select('*')
         .eq('id', accountId)
         .single();
-    final Map<String, dynamic> json = response as Map<String, dynamic>;
+    final Map<String, dynamic> json = response;
     return AccountModel.fromJson(json).toEntity();
   }
 
   @override
   Future<void> createAccount(Account account) async {
-    final response = await _supabaseClient
+    await _supabaseClient
         .from('accounts')
         .insert(AccountModel.fromEntity(account).toJson());
   }

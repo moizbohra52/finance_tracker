@@ -26,9 +26,15 @@ abstract final class BudgetModel {
     endDate: json['end_date'] == null
         ? null
         : _parseDate(json['end_date'] as String),
-    alert75: json['alert_75'] as bool? ?? true,
-    alert90: json['alert_90'] as bool? ?? true,
-    alert100: json['alert_100'] as bool? ?? true,
+    alert75: json['alert_75'] == null
+        ? true
+        : (json['alert_75'] == true || json['alert_75'] == 1),
+    alert90: json['alert_90'] == null
+        ? true
+        : (json['alert_90'] == true || json['alert_90'] == 1),
+    alert100: json['alert_100'] == null
+        ? true
+        : (json['alert_100'] == true || json['alert_100'] == 1),
     createdAt: DateTime.parse(json['created_at'] as String),
     updatedAt: DateTime.parse(json['updated_at'] as String),
     deletedAt: json['deleted_at'] == null

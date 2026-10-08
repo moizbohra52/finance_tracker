@@ -1,5 +1,5 @@
-import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/domain/entities/account.dart';
 
 class AccountModel {
   final String id;
@@ -33,7 +33,7 @@ class AccountModel {
     type: json['type'] as String,
     openingBalance: Decimal.parse(json['opening_balance'].toString()),
     openingBalanceDate: json['opening_balance_date'] as String?,
-    isActive: json['is_active'] as bool,
+    isActive: json['is_active'] == true || json['is_active'] == 1,
     createdAt: DateTime.parse(json['created_at'] as String),
     updatedAt: DateTime.parse(json['updated_at'] as String),
     deletedAt: json['deleted_at'] != null

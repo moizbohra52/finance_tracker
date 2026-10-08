@@ -1,17 +1,21 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:finance_tracker/bindings/initial_binding.dart';
 import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/constants/app_env.dart';
 import 'package:finance_tracker/core/services/connectivity_service.dart';
+import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/local_notification_service.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/services/push_service.dart';
+import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
+import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
@@ -41,12 +45,29 @@ Future<void> main() async {
     publishableKey: AppEnv.supabasePublishableKey,
   );
   final SupabaseClient client = Supabase.instance.client;
+
+  // Initialize offline SQLite database
+  final AppDatabase database = await AppDatabase.open();
+  final ConnectivityService connectivityService = ConnectivityService();
+  final DataChangeNotifier dataChangeNotifier = DataChangeNotifier();
+
+  final SyncEngine syncEngine = SyncEngine(
+    database: database,
+    client: client,
+    connectivity: connectivityService,
+    notifier: dataChangeNotifier,
+  );
+
   final StorageService storageService = StorageService(
     await SharedPreferences.getInstance(),
   );
   final ThemeController themeController = ThemeController(storageService);
   final AuthRepository authRepository = AuthRepository(client);
-  final AppRepositories repositories = AppRepositories.supabase(client);
+  final AppRepositories repositories = AppRepositories.supabase(
+    client,
+    database: database,
+    syncEngine: syncEngine,
+  );
   final NotificationCoordinator notificationCoordinator =
       NotificationCoordinator(
         local: LocalNotificationService(),
@@ -55,6 +76,7 @@ Future<void> main() async {
         storage: storageService,
         auth: authRepository,
       );
+
   // Before the first frame, so a notification tap that launched the app is
   // not missed. Notifications are optional: the app runs without them.
   try {
@@ -66,16 +88,32 @@ Future<void> main() async {
     );
   }
 
+  // Trigger background sync if online and user is authenticated
+  if (authRepository.isSignedIn) {
+    unawaited(syncEngine.syncAll());
+  }
+
   runApp(
     FinanceTrackerApp(
       authRepository: authRepository,
-      profileRepository: ProfileRepository(client),
-      userSettingsRepository: UserSettingsRepository(client),
+      profileRepository: ProfileRepository(
+        client,
+        database: database,
+        syncEngine: syncEngine,
+      ),
+      userSettingsRepository: UserSettingsRepository(
+        client,
+        database: database,
+        syncEngine: syncEngine,
+      ),
       storageService: storageService,
       themeController: themeController,
-      connectivityService: ConnectivityService(),
+      connectivityService: connectivityService,
       repositories: repositories,
       notificationCoordinator: notificationCoordinator,
+      database: database,
+      syncEngine: syncEngine,
+      dataChangeNotifier: dataChangeNotifier,
     ),
   );
 }
@@ -91,6 +129,9 @@ class FinanceTrackerApp extends StatelessWidget {
     required this.connectivityService,
     required this.repositories,
     required this.notificationCoordinator,
+    this.database,
+    this.syncEngine,
+    this.dataChangeNotifier,
   }) : initialBinding = InitialBinding(
          authRepository: authRepository,
          profileRepository: profileRepository,
@@ -100,6 +141,9 @@ class FinanceTrackerApp extends StatelessWidget {
          connectivityService: connectivityService,
          repositories: repositories,
          notificationCoordinator: notificationCoordinator,
+         database: database,
+         syncEngine: syncEngine,
+         dataChangeNotifier: dataChangeNotifier,
        );
 
   final AuthRepository authRepository;
@@ -110,6 +154,9 @@ class FinanceTrackerApp extends StatelessWidget {
   final ConnectivityService connectivityService;
   final AppRepositories repositories;
   final NotificationCoordinator notificationCoordinator;
+  final AppDatabase? database;
+  final SyncEngine? syncEngine;
+  final DataChangeNotifier? dataChangeNotifier;
   final InitialBinding initialBinding;
 
   @override
