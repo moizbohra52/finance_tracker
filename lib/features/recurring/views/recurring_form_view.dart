@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
@@ -238,42 +239,26 @@ class _RecurringFormViewState extends State<RecurringFormView> {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            DropdownButtonFormField<String>(
-              initialValue: _effectiveAccount(accounts),
-              isExpanded: true,
+            BottomSheetDropdown<String>(
+              value: _effectiveAccount(accounts),
+              options: <String>[for (final Account a in accounts) a.id],
+              labelOf: (String id) =>
+                  accounts.firstWhere((Account a) => a.id == id).name,
               decoration: const InputDecoration(labelText: 'Account'),
-              items: <DropdownMenuItem<String>>[
-                for (final Account a in accounts)
-                  DropdownMenuItem<String>(value: a.id, child: Text(a.name)),
-              ],
               onChanged: (String? v) => setState(() => _accountId = v),
             ),
             const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<_Repeat>(
-              initialValue: _repeat,
+            BottomSheetDropdown<_Repeat>(
+              value: _repeat,
+              options: _Repeat.values,
+              labelOf: (_Repeat r) => switch (r) {
+                _Repeat.daily => 'Daily',
+                _Repeat.weekly => 'Weekly',
+                _Repeat.monthly => 'Monthly',
+                _Repeat.yearly => 'Yearly',
+                _Repeat.custom => 'Custom…',
+              },
               decoration: const InputDecoration(labelText: 'Repeats'),
-              items: const <DropdownMenuItem<_Repeat>>[
-                DropdownMenuItem<_Repeat>(
-                  value: _Repeat.daily,
-                  child: Text('Daily'),
-                ),
-                DropdownMenuItem<_Repeat>(
-                  value: _Repeat.weekly,
-                  child: Text('Weekly'),
-                ),
-                DropdownMenuItem<_Repeat>(
-                  value: _Repeat.monthly,
-                  child: Text('Monthly'),
-                ),
-                DropdownMenuItem<_Repeat>(
-                  value: _Repeat.yearly,
-                  child: Text('Yearly'),
-                ),
-                DropdownMenuItem<_Repeat>(
-                  value: _Repeat.custom,
-                  child: Text('Custom…'),
-                ),
-              ],
               onChanged: (_Repeat? v) => setState(() => _repeat = v ?? _repeat),
             ),
             if (_repeat == _Repeat.custom) ...<Widget>[
@@ -300,17 +285,11 @@ class _RecurringFormViewState extends State<RecurringFormView> {
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
-                    child: DropdownButtonFormField<RecurringFrequency>(
-                      initialValue: _unit,
+                    child: BottomSheetDropdown<RecurringFrequency>(
+                      value: _unit,
+                      options: RecurringFrequency.values,
+                      labelOf: (RecurringFrequency f) => '${f.unit}s',
                       decoration: const InputDecoration(labelText: 'Unit'),
-                      items: <DropdownMenuItem<RecurringFrequency>>[
-                        for (final RecurringFrequency f
-                            in RecurringFrequency.values)
-                          DropdownMenuItem<RecurringFrequency>(
-                            value: f,
-                            child: Text('${f.unit}s'),
-                          ),
-                      ],
                       onChanged: (RecurringFrequency? v) =>
                           setState(() => _unit = v ?? _unit),
                     ),

@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
@@ -106,35 +107,37 @@ class _FilterSheetState extends State<_FilterSheet> {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<String?>(
-              initialValue: _accountId,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Account'),
-              items: <DropdownMenuItem<String?>>[
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('All accounts'),
-                ),
-                for (final Account a in accounts)
-                  DropdownMenuItem<String?>(value: a.id, child: Text(a.name)),
+            BottomSheetDropdown<String>(
+              value: _accountId ?? '',
+              options: <String>[
+                '',
+                for (final Account a in accounts) a.id,
               ],
-              onChanged: (String? v) => setState(() => _accountId = v),
+              labelOf: (String id) => id.isEmpty
+                  ? 'All accounts'
+                  : accounts
+                        .firstWhere((Account a) => a.id == id)
+                        .name,
+              decoration: const InputDecoration(labelText: 'Account'),
+              onChanged: (String? v) =>
+                  setState(() => _accountId = (v?.isEmpty ?? true) ? null : v),
             ),
             const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<String?>(
+            BottomSheetDropdown<String>(
               key: ValueKey<TransactionType?>(_type),
-              initialValue: categoryValue,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Category'),
-              items: <DropdownMenuItem<String?>>[
-                const DropdownMenuItem<String?>(
-                  value: null,
-                  child: Text('All categories'),
-                ),
-                for (final Category c in categories)
-                  DropdownMenuItem<String?>(value: c.id, child: Text(c.name)),
+              value: categoryValue ?? '',
+              options: <String>[
+                '',
+                for (final Category c in categories) c.id,
               ],
-              onChanged: (String? v) => setState(() => _categoryId = v),
+              labelOf: (String id) => id.isEmpty
+                  ? 'All categories'
+                  : categories
+                        .firstWhere((Category c) => c.id == id)
+                        .name,
+              decoration: const InputDecoration(labelText: 'Category'),
+              onChanged: (String? v) =>
+                  setState(() => _categoryId = (v?.isEmpty ?? true) ? null : v),
             ),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton.icon(

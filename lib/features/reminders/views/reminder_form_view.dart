@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
@@ -265,16 +266,11 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),
-                DropdownButtonFormField<ReminderRepeat>(
-                  initialValue: _repeat,
+                BottomSheetDropdown<ReminderRepeat>(
+                  value: _repeat,
+                  options: ReminderRepeat.values,
+                  labelOf: (ReminderRepeat r) => r.label,
                   decoration: const InputDecoration(labelText: 'Repeat'),
-                  items: <DropdownMenuItem<ReminderRepeat>>[
-                    for (final ReminderRepeat r in ReminderRepeat.values)
-                      DropdownMenuItem<ReminderRepeat>(
-                        value: r,
-                        child: Text(r.label),
-                      ),
-                  ],
                   onChanged: (ReminderRepeat? v) =>
                       setState(() => _repeat = v ?? _repeat),
                 ),

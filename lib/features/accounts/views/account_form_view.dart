@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
@@ -93,16 +94,11 @@ class _AccountFormViewState extends State<AccountFormView> {
                       Validators.name(v, 'an account name'),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                DropdownButtonFormField<AccountType>(
-                  initialValue: _type,
+                BottomSheetDropdown<AccountType>(
+                  value: _type,
+                  options: AccountType.values,
+                  labelOf: accountTypeLabel,
                   decoration: const InputDecoration(labelText: 'Account type'),
-                  items: <DropdownMenuItem<AccountType>>[
-                    for (final AccountType t in AccountType.values)
-                      DropdownMenuItem<AccountType>(
-                        value: t,
-                        child: Text(accountTypeLabel(t)),
-                      ),
-                  ],
                   onChanged: (AccountType? v) =>
                       setState(() => _type = v ?? _type),
                 ),

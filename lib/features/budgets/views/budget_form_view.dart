@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
@@ -129,22 +130,20 @@ class _BudgetFormViewState extends State<BudgetFormView> {
             key: _formKey,
             child: ListView(
               children: <Widget>[
-                DropdownButtonFormField<String?>(
-                  initialValue: categoryValue,
-                  isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Applies to'),
-                  items: <DropdownMenuItem<String?>>[
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('All expenses'),
-                    ),
-                    for (final Category c in categories)
-                      DropdownMenuItem<String?>(
-                        value: c.id,
-                        child: Text(c.name),
-                      ),
+                BottomSheetDropdown<String>(
+                  value: categoryValue ?? '',
+                  options: <String>[
+                    '',
+                    for (final Category c in categories) c.id,
                   ],
-                  onChanged: (String? v) => setState(() => _categoryId = v),
+                  labelOf: (String id) => id.isEmpty
+                      ? 'All expenses'
+                      : categories
+                            .firstWhere((Category c) => c.id == id)
+                            .name,
+                  decoration: const InputDecoration(labelText: 'Applies to'),
+                  onChanged: (String? v) =>
+                      setState(() => _categoryId = (v?.isEmpty ?? true) ? null : v),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(

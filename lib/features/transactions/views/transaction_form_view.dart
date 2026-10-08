@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
@@ -213,14 +214,12 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            DropdownButtonFormField<String>(
-              initialValue: accountId,
-              isExpanded: true,
+            BottomSheetDropdown<String>(
+              value: accountId,
+              options: <String>[for (final Account a in accounts) a.id],
+              labelOf: (String id) =>
+                  accounts.firstWhere((Account a) => a.id == id).name,
               decoration: const InputDecoration(labelText: 'Account'),
-              items: <DropdownMenuItem<String>>[
-                for (final Account a in accounts)
-                  DropdownMenuItem<String>(value: a.id, child: Text(a.name)),
-              ],
               onChanged: (String? v) => setState(() => _accountId = v),
               validator: (String? v) => v == null ? 'Choose an account' : null,
             ),
