@@ -68,4 +68,23 @@ abstract final class Validators {
 
   static String? name(String? value, String fieldName) =>
       (value == null || value.trim().isEmpty) ? 'Enter $fieldName' : null;
+
+  static const int maxNameLength = 80;
+  static final RegExp _personName = RegExp(
+    r"^[\p{L}\p{M}][\p{L}\p{M} .'-]*$",
+    unicode: true,
+  );
+
+  /// The account holder's name: required, at most [maxNameLength] characters,
+  /// letters in any script plus spaces, dots, apostrophes and hyphens.
+  static String? profileName(String? value) {
+    final String name = value?.trim() ?? '';
+    if (name.isEmpty) return 'Enter your name';
+    if (name.length > maxNameLength) {
+      return 'Keep your name under $maxNameLength characters';
+    }
+    return _personName.hasMatch(name)
+        ? null
+        : 'Use letters, spaces, dots, apostrophes or hyphens only';
+  }
 }

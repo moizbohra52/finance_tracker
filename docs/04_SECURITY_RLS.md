@@ -71,3 +71,24 @@ Storage buckets must also use policies based on user ownership/path.
 
 ## Security acceptance
 Test both authenticated and unauthenticated access, and attempt cross-user reads/writes before release.
+
+### Avatars bucket (Phase 10)
+- Bucket `avatars`: **private**, 2 MiB per file, `image/jpeg`, `image/png`,
+  `image/webp` only. The bucket enforces these limits as well as the app.
+- Objects are named `<user id>/<file>`. Four policies on `storage.objects`
+  (select, insert, update, delete), all `to authenticated`, all requiring
+  `bucket_id = 'avatars'` and `(storage.foldername(name))[1] = auth.uid()`.
+- The app never shows a public URL. It creates a signed link valid for one
+  hour, and a link that expires shows the fallback picture.
+- Deleting the account removes the photo after the password is confirmed and
+  before the account is deleted. Storage objects are not removed by the
+  database cascade, so this step is what removes them. If it fails (for example
+  offline), the file remains and is not shown to anyone; it is a known gap.
+- Sign-out clears no stored secrets: the only values on the device are
+  preferences (theme, notification flags, the device id), and the Supabase
+  session is cleared by supabase_flutter.
+
+### Account deletion ordering (Phase 10)
+`AuthRepository.deleteAccount` re-checks the password, then runs the
+`beforeDelete` hook (photo removal), then calls `delete_my_account`, then signs
+out. A wrong password therefore changes nothing, including the photo.

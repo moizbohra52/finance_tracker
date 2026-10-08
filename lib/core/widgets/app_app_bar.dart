@@ -110,7 +110,7 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: PopupMenuButton<String>(
                 tooltip: 'More options',
                 elevation: 6,
-                shadowColor: Colors.black.withValues(
+                shadowColor: colors.shadow.withValues(
                   alpha: isDark ? 0.4 : 0.12,
                 ),
                 shape: RoundedRectangleBorder(
@@ -122,7 +122,7 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
                     width: 1,
                   ),
                 ),
-                color: isDark ? const Color(0xFF131B2E) : Colors.white,
+                color: colors.surface,
                 offset: const Offset(0, 48),
                 onSelected: (String value) {
                   switch (value) {

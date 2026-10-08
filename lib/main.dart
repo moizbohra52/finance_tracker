@@ -14,6 +14,7 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/user_settings.dart';
 import 'package:finance_tracker/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -68,6 +69,7 @@ Future<void> main() async {
     FinanceTrackerApp(
       authRepository: authRepository,
       profileRepository: ProfileRepository(client),
+      userSettingsRepository: UserSettingsRepository(client),
       storageService: storageService,
       themeController: themeController,
       connectivityService: ConnectivityService(),
@@ -82,6 +84,7 @@ class FinanceTrackerApp extends StatelessWidget {
     super.key,
     required this.authRepository,
     required this.profileRepository,
+    required this.userSettingsRepository,
     required this.storageService,
     required this.themeController,
     required this.connectivityService,
@@ -90,6 +93,7 @@ class FinanceTrackerApp extends StatelessWidget {
   }) : initialBinding = InitialBinding(
          authRepository: authRepository,
          profileRepository: profileRepository,
+         userSettingsRepository: userSettingsRepository,
          storageService: storageService,
          themeController: themeController,
          connectivityService: connectivityService,
@@ -99,6 +103,7 @@ class FinanceTrackerApp extends StatelessWidget {
 
   final AuthRepository authRepository;
   final ProfileRepository profileRepository;
+  final UserSettingsRepository userSettingsRepository;
   final StorageService storageService;
   final ThemeController themeController;
   final ConnectivityService connectivityService;

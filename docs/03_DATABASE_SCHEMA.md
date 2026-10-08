@@ -239,6 +239,14 @@ Migrations live in `supabase/migrations/` and apply in filename order:
 - Transactions generated from a recurring rule use a deterministic id (UUID v5 of
   rule id and occurrence date) and are inserted only if absent.
 
+8. `20261008120000_profile_settings.sql` (Phase 10) - adds
+   `user_settings.first_day_of_week` (monday|sunday, default monday),
+   `user_settings.default_account_id` (composite foreign key to
+   accounts, indexed), CHECKs on `date_format`, `number_format` and
+   `language_code`, and the private `avatars` storage bucket with
+   owner-only policies (see docs/04_SECURITY_RLS.md). Existing rows are
+   unaffected: every new column is nullable or defaulted.
+
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.
 
@@ -301,3 +309,24 @@ Cross-user checks: `supabase/checks/cross_user_isolation.sql` (see README).
   - budget threshold: budget id + period start + threshold (Phase 08)
 - **device_tokens** is written by the app and read by whatever server sends
   pushes (service role, never in Flutter). `active` is cleared at sign-out.
+
+## Implementation decisions (Phase 10)
+- **Where each setting lives.** Appearance (theme mode, accent colour) stays on
+  the device in StorageService, because it must apply before sign-in. The
+  server columns `user_settings.theme_mode` and `accent_color` exist from
+  Phase 01 and are not written. Account-level values are on the server:
+  currency in `profiles.currency_code`; date format, number format, first day
+  of the week, language and default account in `user_settings`.
+- **Date format is stored as its pattern** (`d MMM y`, `dd/MM/yyyy`,
+  `MM/dd/yyyy`, `yyyy-MM-dd`), checked by a CHECK constraint. Number format is
+  `indian` or `international`. Both mirror the enums in
+  `domain/entities/user_preferences.dart`.
+- **Avatar path in `profiles.avatar_url`.** The column keeps its name but holds
+  the object path in the private bucket, not a URL. Photos saved as full URLs by
+  an earlier build are still shown as they are.
+- **Default account** is a composite foreign key `(user_id, default_account_id)`
+  to accounts, so it can only name the user's own account. Deleting an account
+  is a soft delete, so the reference does not break.
+- **Saving** writes the currency to the profile and the rest to user_settings in
+  two requests. If the second fails, the screen reloads from the server, so it
+  never shows a value that was not stored.

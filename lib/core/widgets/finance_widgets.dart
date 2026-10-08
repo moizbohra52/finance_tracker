@@ -102,7 +102,7 @@ class BalanceCard extends StatelessWidget {
             ),
           ],
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.16),
+            color: colors.onPrimary.withValues(alpha: 0.16),
             width: 1.2,
           ),
         ),
@@ -118,7 +118,7 @@ class BalanceCard extends StatelessWidget {
                   height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: colors.onPrimary.withValues(alpha: 0.05),
                   ),
                 ),
               ),
@@ -210,7 +210,7 @@ class BalanceCard extends StatelessWidget {
                         Expanded(
                           child: _CardFlow(
                             icon: Icons.arrow_downward_rounded,
-                            iconColor: const Color(0xFF4ADE80),
+                            iconColor: AppColors.incomeOnAccent,
                             label: 'Income this month',
                             value: show(monthIncome),
                           ),
@@ -219,7 +219,7 @@ class BalanceCard extends StatelessWidget {
                         Expanded(
                           child: _CardFlow(
                             icon: Icons.arrow_upward_rounded,
-                            iconColor: const Color(0xFFF87171),
+                            iconColor: AppColors.expenseOnAccent,
                             label: 'Expense this month',
                             value: show(monthExpense),
                           ),

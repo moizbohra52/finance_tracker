@@ -8,6 +8,9 @@ abstract final class AppRoutes {
 
   static const String dashboard = '/dashboard';
   static const String settings = '/settings';
+  static const String about = '/about';
+  static const String privacyPolicy = '/privacy-policy';
+  static const String terms = '/terms';
   static const String profile = '/profile';
   static const String changePassword = '/change-password';
 

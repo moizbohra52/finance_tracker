@@ -34,6 +34,7 @@ import 'package:finance_tracker/features/accounts/views/account_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
+import 'package:finance_tracker/features/settings/views/information_views.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/routes/route_guards.dart';
@@ -100,6 +101,34 @@ abstract final class AppPages {
     GetPage<dynamic>(
       name: AppRoutes.settings,
       page: () => const SettingsView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.about,
+      page: () => const AboutView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.privacyPolicy,
+      page: () => const PolicyView(
+        title: 'Privacy policy',
+        paragraphs: <String>[
+          'The privacy policy will be published before the app is released.',
+          'Until then this page is a placeholder and not a statement of how '
+              'your data is handled.',
+        ],
+      ),
+      middlewares: <GetMiddleware>[AuthGuard()],
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.terms,
+      page: () => const PolicyView(
+        title: 'Terms of service',
+        paragraphs: <String>[
+          'The terms of service will be published before the app is released.',
+          'Until then this page is a placeholder and not a binding agreement.',
+        ],
+      ),
       middlewares: <GetMiddleware>[AuthGuard()],
     ),
     GetPage<dynamic>(

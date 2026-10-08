@@ -1,8 +1,9 @@
 abstract final class AppConstants {
   static const String appName = 'Track Day';
-  static const String defaultCurrencyCode = 'INR';
   static const String defaultLocale = 'en_IN';
-  static const int currencyDecimalDigits = 2;
+
+  /// Shown on the About screen. Must match the version in pubspec.yaml.
+  static const String appVersion = '1.0.0';
 
   /// Where Supabase auth emails (confirmation, password reset) send the user
   /// back. Must match the scheme in AndroidManifest.xml and Info.plist, and be

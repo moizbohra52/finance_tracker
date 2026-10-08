@@ -94,3 +94,28 @@ New routes:
   `flutter_local_notifications` 22.x and `connectivity_plus` 7.3.2 require
   incompatible versions of the Linux-only `nm` package, and the alternative was
   a pre-release notification plugin. Revisit when a compatible pair is published.
+
+## Phase 10 decisions
+
+New routes (all signed-in only):
+
+| Route | Screen | Opened from |
+|---|---|---|
+| `/settings` | Appearance, region and format, notifications, security, information | app-bar menu |
+| `/about` | Version and open-source licences | Settings > About |
+| `/privacy-policy` | Placeholder page, says so | Settings > Information |
+| `/terms` | Placeholder page, says so | Settings > Information |
+
+- The profile tab is the account page: photo, name, mobile, email and time zone
+  (the last two read-only), change password, sign out, and delete account.
+- Settings is organised into Appearance, Region and format, Notifications,
+  Security and Information. Each region row opens a list; a choice is saved at
+  once and confirmed with a message.
+- Language offers English only; the row says more are coming.
+- The new-transaction form pre-selects the default account when it still exists.
+- Removed: the dead "Backup & Export" tiles (Phase 12 scope) and the placeholder
+  "Check for updates" row.
+- **Package added:** `image_picker` (photo selection). Photos are scaled to 512
+  px and JPEG quality 85 at pick time, then checked against the 2 MiB limit.
+- **Upload progress** is indeterminate: the storage client does not report byte
+  progress, so the photo shows a spinner while uploading.

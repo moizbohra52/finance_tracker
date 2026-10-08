@@ -74,6 +74,13 @@ production): run `supabase/checks/cross_user_isolation.sql` with `psql` or
 paste it into the SQL Editor. It rolls back everything it creates; no error
 means every check passed.
 
+### Phase 9 and 10 migrations
+
+Apply `20261008090000_reminders_notifications.sql` and
+`20261008120000_profile_settings.sql` with `supabase db push`. The second
+adds the settings columns and the private `avatars` bucket; until it is
+applied, the Region and format section shows a load error.
+
 ### Reminders and notifications
 
 Reminders need the Phase 09 migration (`supabase db push`): it adds the

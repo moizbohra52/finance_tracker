@@ -13,6 +13,7 @@ import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -71,9 +72,13 @@ class _TransactionFormViewState extends State<TransactionFormView> {
 
   bool get _isEditing => _existing != null;
 
-  /// Keeps the chosen account valid and defaults to the first one.
+  /// Keeps the chosen account valid. A new transaction starts on the account
+  /// set as default in Settings when it still exists, else the first account.
   String? _effectiveAccount(List<Account> accounts) {
     if (accounts.any((Account a) => a.id == _accountId)) return _accountId;
+    final String? defaultId =
+        Get.find<SettingsController>().preferences.value.defaultAccountId;
+    if (accounts.any((Account a) => a.id == defaultId)) return defaultId;
     return accounts.isEmpty ? null : accounts.first.id;
   }
 

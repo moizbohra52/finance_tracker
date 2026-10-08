@@ -119,3 +119,18 @@ Controllers never touch the notification plugin: they call the coordinator
 `PushService`. What to schedule is decided by pure domain code
 (`ReminderNotificationPlanner`), and the screen a tap opens by
 `NotificationTarget`. Details: `docs/08_NOTIFICATION_SYSTEM.md`.
+
+## Account scope (Phase 10)
+`bindings/user_scope.dart` owns what happens to per-user state:
+- `loadUserScope()` runs on every sign-in and loads the preferences.
+- `resetUserScope()` runs after the sign-in screen has replaced the app, on the
+  next frame. It resets `SettingsController` and removes the controllers that
+  hold a user's data or typed passwords. Controllers registered with `fenix`
+  are disposed and rebuilt fresh on next use, so the user's instance is
+  replaced even though the registration stays.
+- Global infrastructure (repositories, the notifier, the notification
+  coordinator, storage) is never removed.
+
+Formatting is centralised in `AppFormatters`, which reads `UserPreferences`.
+Widgets pass no symbols, locales or patterns of their own, except fixed labels
+such as chart axes.

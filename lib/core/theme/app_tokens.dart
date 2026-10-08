@@ -18,6 +18,11 @@ abstract final class AppColors {
   static const Color receivableDark = Color(0xFF38BDF8);
   static const Color payableLight = Color(0xFFB45309);
   static const Color payableDark = Color(0xFFFBBF24);
+
+  /// Money colours used on the gradient balance card, which is always
+  /// primary-toned, so they keep contrast in both themes.
+  static const Color incomeOnAccent = Color(0xFF4ADE80);
+  static const Color expenseOnAccent = Color(0xFFF87171);
 }
 
 abstract final class AppSpacing {
@@ -41,6 +46,9 @@ abstract final class AppRadius {
 
 abstract final class AppSizes {
   static const double buttonHeight = 52;
+
+  /// Smallest comfortable touch target (docs/06_UI_UX_GUIDELINES.md).
+  static const double minTouchTarget = 48;
   static const double iconLarge = 56;
 
   /// Keeps status messages readable on tablets instead of stretching edge to

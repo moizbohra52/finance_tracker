@@ -117,8 +117,16 @@ class AuthRepository {
   /// Permanently deletes the account and all its data, then signs out.
   /// The server only accepts this right after a password sign-in
   /// (see supabase/migrations/*_delete_my_account.sql).
-  Future<void> deleteAccount({required String password}) async {
+  ///
+  /// [beforeDelete] runs once the password is confirmed and before the account
+  /// is removed, for cleanup that must not happen for a wrong password (the
+  /// profile photo). It must not throw.
+  Future<void> deleteAccount({
+    required String password,
+    Future<void> Function()? beforeDelete,
+  }) async {
     await _reauthenticate(password);
+    await beforeDelete?.call();
     await guardSupabase(() => _client.rpc<void>('delete_my_account'));
     await signOut();
   }

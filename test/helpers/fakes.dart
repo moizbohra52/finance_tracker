@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
@@ -6,15 +7,18 @@ import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/data/models/profile.dart';
+import 'package:finance_tracker/data/models/user_settings.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/user_settings.dart';
 import 'package:finance_tracker/main.dart';
-import 'fake_finance.dart';
-import 'fake_notifications.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'fake_finance.dart';
+import 'fake_notifications.dart';
 
 /// In-memory AuthRepository. Successful sign-in/out calls emit the same
 /// status events Supabase would; [nextError] makes the next call fail.
@@ -86,18 +90,51 @@ class FakeAuthRepository implements AuthRepository {
     await _call('signOut', AuthStatus.signedOut);
   }
 
+  /// Like the real repository: the hook runs only after the password check
+  /// succeeds, and before the account is removed.
   @override
-  Future<void> deleteAccount({required String password}) =>
-      _call('deleteAccount', AuthStatus.signedOut);
+  Future<void> deleteAccount({
+    required String password,
+    Future<void> Function()? beforeDelete,
+  }) async {
+    calls.add('deleteAccount');
+    final AppException? error = nextError;
+    nextError = null;
+    if (error != null) throw error;
+    await beforeDelete?.call();
+    emit(AuthStatus.signedOut);
+  }
 }
 
+/// In-memory ProfileRepository. [nextError] fails the next call once;
+/// [failUploads] fails every upload until cleared.
 class FakeProfileRepository implements ProfileRepository {
   Profile profile = const Profile(
     id: 'user-1',
     fullName: 'Asha Rao',
     mobile: '+91 98765 43210',
+    currencyCode: 'INR',
+    timezone: 'Asia/Kolkata',
   );
   AppException? nextError;
+  bool failUploads = false;
+
+  /// Fails profile updates only, so an upload can succeed and be orphaned.
+  bool failUpdates = false;
+
+  /// Fails photo links only, so the profile loads with the fallback picture.
+  bool failLinks = false;
+
+  /// Storage paths uploaded and removed, in order, for assertions.
+  final List<String> uploads = <String>[];
+  final List<String> removed = <String>[];
+  int _uploadCount = 0;
+
+  void _throwPending() {
+    final AppException? error = nextError;
+    nextError = null;
+    if (error != null) throw error;
+  }
 
   @override
   Future<Profile> fetchProfile() async {
@@ -107,39 +144,114 @@ class FakeProfileRepository implements ProfileRepository {
 
   @override
   Future<Profile> updateProfile({
-    required String fullName,
-    required String? mobile,
+    String? fullName,
+    String? mobile,
+    bool clearMobile = false,
+    String? currencyCode,
+    String? timezone,
+    String? avatarPath,
+    bool clearAvatar = false,
   }) async {
     _throwPending();
+    if (failUpdates) {
+      throw const DatabaseFailure(
+        "Couldn't load or save your data. Please try again.",
+      );
+    }
     return profile = Profile(
       id: profile.id,
-      fullName: fullName,
-      mobile: mobile,
+      fullName: fullName ?? profile.fullName,
+      mobile: clearMobile ? null : (mobile ?? profile.mobile),
+      avatarPath: clearAvatar ? null : (avatarPath ?? profile.avatarPath),
+      currencyCode: currencyCode ?? profile.currencyCode,
+      timezone: timezone ?? profile.timezone,
     );
   }
 
-  void _throwPending() {
-    final AppException? error = nextError;
-    nextError = null;
-    if (error != null) throw error;
+  @override
+  Future<String> uploadAvatar({
+    required Uint8List bytes,
+    required String extension,
+    required String contentType,
+  }) async {
+    _throwPending();
+    if (failUploads) throw const DatabaseFailure("Couldn't update your photo.");
+    final String path = 'user-1/${_uploadCount++}.$extension';
+    uploads.add(path);
+    return path;
+  }
+
+  @override
+  Future<String> avatarLink(String path) async {
+    _throwPending();
+    if (failLinks) throw const NetworkFailure();
+    return 'https://signed.example/$path?token=test';
+  }
+
+  @override
+  Future<void> removeAvatar(String path) async {
+    _throwPending();
+    removed.add(path);
   }
 }
 
+/// In-memory UserSettingsRepository. Starts with the defaults a new account
+/// has on the server.
+class FakeUserSettingsRepository implements UserSettingsRepository {
+  UserSettings settings = const UserSettings(
+    dateFormat: 'd MMM y',
+    numberFormat: 'indian',
+    firstDayOfWeek: 'monday',
+    languageCode: 'en',
+    defaultAccountId: null,
+  );
+  AppException? nextError;
+
+  /// Every row written, in order, so tests can see partial failures.
+  final List<UserSettings> writes = <UserSettings>[];
+
+  @override
+  Future<UserSettings> fetch() async {
+    final AppException? error = nextError;
+    nextError = null;
+    if (error != null) throw error;
+    return settings;
+  }
+
+  @override
+  Future<UserSettings> save(UserSettings next) async {
+    final AppException? error = nextError;
+    nextError = null;
+    if (error != null) throw error;
+    writes.add(next);
+    return settings = next;
+  }
+}
+
+/// Builds the app over fakes, then pumps it. A signed-in session loads the
+/// preferences, as a real sign-in does.
 Future<void> pumpApp(
   WidgetTester tester, {
   required FakeAuthRepository auth,
   FakeProfileRepository? profile,
+  FakeUserSettingsRepository? userSettings,
   ConnectivityService? connectivityService,
   FakeFinance? finance,
   FakeLocalNotifications? localNotifications,
   FakePush? push,
   NotificationsHandle? notifications,
+  StorageService? storage,
 }) async {
   await initializeDateFormatting(AppConstants.defaultLocale);
-  SharedPreferences.setMockInitialValues(<String, Object>{});
-  final StorageService storage = StorageService(
-    await SharedPreferences.getInstance(),
-  );
+  // A restart passes the same storage, so the saved values must survive:
+  // the mock is only reset for a fresh start.
+  final StorageService preferences;
+  if (storage != null) {
+    preferences = storage;
+  } else {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    preferences = StorageService(await SharedPreferences.getInstance());
+  }
   final FakeFinance data = finance ?? FakeFinance();
   final NotificationsHandle handle =
       notifications ??
@@ -148,17 +260,18 @@ Future<void> pumpApp(
         auth: auth,
         local: localNotifications,
         push: push,
-        storage: storage,
+        storage: preferences,
       );
   await handle.coordinator.initialize();
   await tester.pumpWidget(
     FinanceTrackerApp(
       authRepository: auth,
       profileRepository: profile ?? FakeProfileRepository(),
+      userSettingsRepository: userSettings ?? FakeUserSettingsRepository(),
       repositories: data.repositories,
       notificationCoordinator: handle.coordinator,
-      storageService: storage,
-      themeController: ThemeController(storage),
+      storageService: preferences,
+      themeController: ThemeController(preferences),
       connectivityService:
           connectivityService ??
           ConnectivityService.forTest(

@@ -59,8 +59,9 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               const Text(
-                'This permanently deletes your profile, accounts, transactions '
-                'and khata records. It cannot be undone.',
+                'This permanently deletes your profile, accounts, transactions, '
+                'khata records, reminders and profile photo. It cannot be '
+                'undone.',
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(

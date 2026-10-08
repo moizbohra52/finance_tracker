@@ -32,6 +32,11 @@ AppException mapSupabaseError(Object error) {
       error is TimeoutException) {
     return const NetworkFailure();
   }
+  if (error is StorageException) {
+    return const DatabaseFailure(
+      "Couldn't update your photo. Check your connection and try again.",
+    );
+  }
   if (error is AuthWeakPasswordException) {
     return const AuthFailure(
       'Choose a stronger password: at least 8 characters with letters and '
