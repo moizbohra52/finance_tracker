@@ -31,12 +31,23 @@ import 'package:get/get.dart';
 
 /// Registers [create] unless a screen further down the stack already did, so
 /// a controller shared by a tab and a pushed route is created only once.
+///
+/// `fenix` matters: GetX ties a lazy instance to the route that first reads
+/// it. A shell tab's controller is often first read on a pushed screen (Home →
+/// Add expense), which deletes it on pop; without `fenix` the registration
+/// goes too and the tab then fails with "controller not found".
 void _putIfAbsent<T extends GetxController>(T Function() create) {
-  if (!Get.isRegistered<T>()) Get.lazyPut<T>(create);
+  if (!Get.isRegistered<T>()) Get.lazyPut<T>(create, fenix: true);
 }
 
 /// The route argument as an id, e.g. a contact or transaction id.
-String _idArgument() => Get.arguments is String ? Get.arguments as String : '';
+///
+/// Detail controllers are tagged with it, and their pages read the same tag
+/// (both run when the route is built), so a second detail screen of the same
+/// kind, e.g. opened from a notification, gets its own controller instead of
+/// reusing the one below it.
+String routeIdArgument() =>
+    Get.arguments is String ? Get.arguments as String : '';
 
 class TransactionBinding extends Bindings {
   @override
@@ -58,8 +69,9 @@ class TransactionDetailBinding extends Bindings {
       TransactionDetailController(
         Get.find<TransactionRepository>(),
         Get.find<DataChangeNotifier>(),
-        _idArgument(),
+        routeIdArgument(),
       ),
+      tag: routeIdArgument(),
     );
   }
 }
@@ -90,8 +102,9 @@ class ContactDetailBinding extends Bindings {
       ContactDetailController(
         Get.find<ContactRepository>(),
         Get.find<DataChangeNotifier>(),
-        _idArgument(),
+        routeIdArgument(),
       ),
+      tag: routeIdArgument(),
     );
   }
 }
@@ -117,8 +130,9 @@ class AccountDetailBinding extends Bindings {
         Get.find<AccountRepository>(),
         Get.find<TransactionRepository>(),
         Get.find<DataChangeNotifier>(),
-        _idArgument(),
+        routeIdArgument(),
       ),
+      tag: routeIdArgument(),
     );
   }
 }

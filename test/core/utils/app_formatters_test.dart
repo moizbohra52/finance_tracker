@@ -40,6 +40,17 @@ void main() {
       expect(AppFormatters.money(Decimal.parse('1500')), '¥1,500');
     });
 
+    test('amount fields get the selected currency symbol', () {
+      expect(AppFormatters.currencySymbol, '₹');
+      use(
+        const UserPreferences(
+          currencyCode: 'USD',
+          numberStyle: NumberStyle.international,
+        ),
+      );
+      expect(AppFormatters.currencySymbol, '\$');
+    });
+
     test('an unknown code falls back to rupees', () {
       expect(Currencies.byCode('XXX'), Currencies.inr);
       expect(Currencies.byCode(null), Currencies.inr);

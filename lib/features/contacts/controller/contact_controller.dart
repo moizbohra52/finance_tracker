@@ -54,11 +54,21 @@ class ContactController extends GetxController {
 
   bool get hasContacts => _all.isNotEmpty;
 
+  // GetX does not dispose workers, and the notifier outlives this
+  // controller, so without this a closed controller keeps reloading.
+  late final Worker _changes;
+
+  @override
+  void onClose() {
+    _changes.dispose();
+    super.onClose();
+  }
+
   @override
   void onInit() {
     super.onInit();
     load();
-    ever<int>(_notifier.version, (_) => load(silent: true));
+    _changes = ever<int>(_notifier.version, (_) => load(silent: true));
   }
 
   // ponytail: contacts and their ledger rows are loaded in full and searched

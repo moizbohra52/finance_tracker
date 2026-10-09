@@ -134,7 +134,6 @@ class ProfileController extends GetxController {
   }
 
   /// AuthController returns the app to sign-in on the signed-out event.
-  Future<void> signOut() => _authRepository.signOut();
 
   /// The account is only deleted after the password is confirmed, so the photo
   /// is removed inside that step, not before it. On success AuthController
@@ -187,6 +186,8 @@ class ProfileController extends GetxController {
   }
 
   void _fill(Profile profile) {
+    // A load can finish after sign-out disposed the text controllers.
+    if (isClosed) return;
     fullNameController.text = profile.fullName ?? '';
     mobileController.text = profile.mobile ?? '';
     displayName.value = profile.fullName ?? '';

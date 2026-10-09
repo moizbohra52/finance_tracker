@@ -41,7 +41,7 @@ class NotificationCenterView extends GetView<NotificationCenterController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const AppContent(child: SkeletonList(count: 5));
+            return const AppContent(child: SkeletonList(count: 5, type: SkeletonType.generic));
           }
           final String? error = controller.error.value;
           if (error != null && controller.items.isEmpty) {

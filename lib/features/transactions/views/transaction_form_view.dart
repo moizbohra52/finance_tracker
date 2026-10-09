@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
@@ -190,9 +191,9 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               style: text.displaySmall,
               autovalidateMode: AutovalidateMode.onUserInteractionIfError,
               validator: Validators.positiveAmount,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Amount',
-                prefixText: '₹ ',
+                prefixText: '${AppFormatters.currencySymbol} ',
                 hintText: '0.00',
               ),
             ),

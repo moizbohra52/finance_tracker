@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
@@ -83,7 +84,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
 
   Future<void> _chooseContact() async {
     final Contact? picked = await pickContact();
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     setState(() {
       _contactId = picked.id;
       _contactError = null;
@@ -116,7 +117,8 @@ class _ReminderFormViewState extends State<ReminderFormView> {
       type: _type,
       title: _title.text.trim(),
       description: description.isEmpty ? null : description,
-      amount: amount.isEmpty ? null : Decimal.parse(amount),
+      // The amount field is hidden (and not validated) for some types.
+      amount: amount.isEmpty ? null : Decimal.tryParse(amount),
       contactId: _contactId,
       transactionId: _existing?.transactionId ?? _args.transactionId,
       remindAt: remindAt,
@@ -208,9 +210,9 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                     validator: (String? v) => (v ?? '').trim().isEmpty
                         ? null
                         : Validators.positiveAmount(v),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Amount (optional)',
-                      prefixText: '₹ ',
+                      prefixText: '${AppFormatters.currencySymbol} ',
                       hintText: '0.00',
                     ),
                   ),

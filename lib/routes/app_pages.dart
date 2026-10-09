@@ -180,7 +180,7 @@ abstract final class AppPages {
     ),
     GetPage<dynamic>(
       name: AppRoutes.accountDetail,
-      page: () => const AccountDetailView(),
+      page: () => AccountDetailView(id: routeIdArgument()),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: AccountDetailBinding(),
     ),
@@ -260,7 +260,7 @@ abstract final class AppPages {
     ),
     GetPage<dynamic>(
       name: AppRoutes.transactionDetail,
-      page: () => const TransactionDetailView(),
+      page: () => TransactionDetailView(id: routeIdArgument()),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: TransactionDetailBinding(),
     ),
@@ -280,7 +280,7 @@ abstract final class AppPages {
     ),
     GetPage<dynamic>(
       name: AppRoutes.contactDetail,
-      page: () => const ContactDetailView(),
+      page: () => ContactDetailView(id: routeIdArgument()),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: ContactDetailBinding(),
     ),

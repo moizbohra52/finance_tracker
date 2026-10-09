@@ -50,9 +50,11 @@ class BottomSheetDropdown<T> extends StatelessWidget {
       initialValue: value,
       validator: validator,
       builder: (FormFieldState<T> state) {
-        // Resolve the displayed text.
-        final String displayText = state.value != null
-            ? labelOf(state.value as T)
+        // A value no longer offered (e.g. its account was deleted) shows as
+        // empty instead of crashing every caller's labelOf lookup.
+        final T? current = state.value;
+        final String displayText = current != null && options.contains(current)
+            ? labelOf(current)
             : '';
 
         return InkWell(

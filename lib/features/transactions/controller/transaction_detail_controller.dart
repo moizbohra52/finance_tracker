@@ -20,12 +20,22 @@ class TransactionDetailController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxnString error = RxnString();
 
+  // GetX does not dispose workers, and the notifier outlives this
+  // controller, so without this a closed controller keeps reloading.
+  late final Worker _changes;
+
+  @override
+  void onClose() {
+    _changes.dispose();
+    super.onClose();
+  }
+
   @override
   void onInit() {
     super.onInit();
     load();
     // Reload after an edit made from this screen.
-    ever<int>(_notifier.version, (_) => load(silent: true));
+    _changes = ever<int>(_notifier.version, (_) => load(silent: true));
   }
 
   Future<void> load({bool silent = false}) async {

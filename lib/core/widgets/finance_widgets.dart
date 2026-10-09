@@ -493,15 +493,60 @@ class MoneyText extends StatelessWidget {
   }
 }
 
-/// Placeholder rows shown while the first page of a list loads.
+/// Rounded progress bar that eases to its value. A NaN or out-of-range ratio
+/// is clamped, so a bad calculation can never crash the frame.
+class AppProgressBar extends StatelessWidget {
+  const AppProgressBar({
+    super.key,
+    required this.value,
+    required this.color,
+    this.height = 8,
+  });
+
+  final double value;
+  final Color color;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final double target = value.isFinite ? value.clamp(0.0, 1.0) : 0;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.full),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0, end: target),
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : AppSizes.slowAnimation,
+        curve: Curves.easeOutCubic,
+        builder: (_, double animated, _) => LinearProgressIndicator(
+          value: animated,
+          minHeight: height,
+          color: color,
+          backgroundColor: color.withValues(alpha: 0.14),
+        ),
+      ),
+    );
+  }
+}
+
+/// Placeholder rows shown while the first page of a list loads. [type]
+/// roughly matches the shape of the rows that replace it, so the layout does
+/// not jump when data arrives.
 class SkeletonList extends StatefulWidget {
-  const SkeletonList({super.key, this.count = 6});
+  const SkeletonList({
+    super.key,
+    this.count = 6,
+    this.type = SkeletonType.generic,
+  });
 
   final int count;
+  final SkeletonType type;
 
   @override
   State<SkeletonList> createState() => _SkeletonListState();
 }
+
+enum SkeletonType { generic, transaction, account, khata, budget, report }
 
 class _SkeletonListState extends State<SkeletonList>
     with SingleTickerProviderStateMixin {
@@ -519,6 +564,7 @@ class _SkeletonListState extends State<SkeletonList>
   @override
   Widget build(BuildContext context) {
     final Color base = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final Widget item = _item(base);
     return Semantics(
       label: 'Loading',
       child: ExcludeSemantics(
@@ -529,33 +575,135 @@ class _SkeletonListState extends State<SkeletonList>
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             itemCount: widget.count,
             separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
-            itemBuilder: (BuildContext context, int index) => Row(
-              children: <Widget>[
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: base,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Container(height: 12, width: 140, color: base),
-                      const SizedBox(height: AppSpacing.sm),
-                      Container(height: 10, width: 90, color: base),
-                    ],
-                  ),
-                ),
-                Container(height: 14, width: 60, color: base),
-              ],
-            ),
+            itemBuilder: (_, _) => item,
           ),
         ),
       ),
     );
   }
+
+  Widget _item(Color base) => switch (widget.type) {
+    SkeletonType.generic => _SkeletonRow(base: base),
+    SkeletonType.transaction => _SkeletonCard(
+      child: _SkeletonRow(base: base, squareLeading: true),
+    ),
+    SkeletonType.account => _SkeletonCard(child: _SkeletonRow(base: base)),
+    SkeletonType.khata => _SkeletonCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          _SkeletonRow(base: base, leading: false),
+          const SizedBox(height: AppSpacing.sm),
+          _SkeletonBar(base: base, width: 120, height: 10),
+        ],
+      ),
+    ),
+    SkeletonType.budget => _SkeletonCard(
+      child: Column(
+        children: <Widget>[
+          _SkeletonRow(base: base, leading: false),
+          const SizedBox(height: AppSpacing.md),
+          _SkeletonBar(base: base, height: 6),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: <Widget>[
+              _SkeletonBar(base: base, width: 70, height: 10),
+              const Spacer(),
+              _SkeletonBar(base: base, width: 70, height: 10),
+            ],
+          ),
+        ],
+      ),
+    ),
+    SkeletonType.report => _SkeletonCard(
+      child: Column(
+        children: <Widget>[
+          _SkeletonRow(base: base, leading: false),
+          const SizedBox(height: AppSpacing.md),
+          _SkeletonBar(base: base, height: AppSizes.chartHeightSmall),
+        ],
+      ),
+    ),
+  };
+}
+
+/// Icon, two text lines and an amount: the shape of most list rows.
+class _SkeletonRow extends StatelessWidget {
+  const _SkeletonRow({
+    required this.base,
+    this.leading = true,
+    this.squareLeading = false,
+  });
+
+  final Color base;
+  final bool leading;
+  final bool squareLeading;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: <Widget>[
+        if (leading) ...<Widget>[
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: base,
+              shape: squareLeading ? BoxShape.rectangle : BoxShape.circle,
+              borderRadius: squareLeading
+                  ? BorderRadius.circular(AppRadius.md)
+                  : null,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _SkeletonBar(base: base, width: 140, height: 12),
+              const SizedBox(height: AppSpacing.sm),
+              _SkeletonBar(base: base, width: 90, height: 10),
+            ],
+          ),
+        ),
+        _SkeletonBar(base: base, width: 64, height: 14),
+      ],
+    );
+  }
+}
+
+class _SkeletonBar extends StatelessWidget {
+  const _SkeletonBar({
+    required this.base,
+    required this.height,
+    this.width = double.infinity,
+  });
+
+  final Color base;
+  final double height;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: base,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+      ),
+    );
+  }
+}
+
+class _SkeletonCard extends StatelessWidget {
+  const _SkeletonCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: child),
+  );
 }

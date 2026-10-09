@@ -62,11 +62,21 @@ class ReportsController extends GetxController {
   bool get hasData => transactionCount.value > 0;
   TrendBucket get bucket => ReportCalculator.bucketFor(period.value);
 
+  // GetX does not dispose workers, and the notifier outlives this
+  // controller, so without this a closed controller keeps reloading.
+  late final Worker _changes;
+
+  @override
+  void onClose() {
+    _changes.dispose();
+    super.onClose();
+  }
+
   @override
   void onInit() {
     super.onInit();
     load();
-    ever<int>(_notifier.version, (_) => load(force: true));
+    _changes = ever<int>(_notifier.version, (_) => load(force: true));
   }
 
   Category? categoryOf(String? id) {

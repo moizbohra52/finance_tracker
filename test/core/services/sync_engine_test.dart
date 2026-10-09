@@ -126,4 +126,60 @@ void main() {
       expect(items.first.entityId, equals('acc-restart-1'));
     },
   );
+
+  group('local data belongs to one user', () {
+    Future<void> seedFor(String userId) async {
+      await database.db.insert('accounts', <String, Object?>{
+        'id': 'acc-$userId',
+        'user_id': userId,
+        'name': 'Cash',
+        'type': 'cash',
+        'opening_balance': '0',
+        'opening_balance_date': '2026-01-01',
+        'created_at': '2026-01-01T00:00:00Z',
+        'updated_at': '2026-01-01T00:00:00Z',
+      });
+      await database.enqueue(
+        SyncQueueItem(
+          operation: SyncOperation.create,
+          entity: 'accounts',
+          entityId: 'acc-$userId',
+          payload: <String, dynamic>{'name': 'Cash'},
+          createdAt: DateTime.now(),
+        ),
+      );
+      await database.setMetadata('cursor_accounts_$userId', '2026-01-01');
+    }
+
+    Future<int> count(String table) async =>
+        (await database.db.query(table)).length;
+
+    test('the first user to sync keeps what is on the device', () async {
+      await seedFor('user-a');
+      await syncEngine.claimLocalData('user-a');
+      expect(await count('accounts'), 1);
+      expect(await database.getPendingQueueCount(), 1);
+      expect(await database.getMetadata(AppDatabase.localOwnerKey), 'user-a');
+    });
+
+    test(
+      "another user never gets the previous user's rows or uploads",
+      () async {
+        await seedFor('user-a');
+        await syncEngine.claimLocalData('user-a');
+
+        await syncEngine.claimLocalData('user-b');
+
+        expect(await count('accounts'), 0);
+        expect(await database.getPendingQueueCount(), 0);
+        expect(await database.getMetadata('cursor_accounts_user-a'), isNull);
+        expect(await database.getMetadata(AppDatabase.localOwnerKey), 'user-b');
+        // System categories are shared and survive.
+        expect(
+          await database.db.query('categories', where: 'is_system = 1'),
+          isNotEmpty,
+        );
+      },
+    );
+  });
 }

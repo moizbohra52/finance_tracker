@@ -72,6 +72,16 @@ class TransactionController extends GetxController {
       categoryFilter.value != null ||
       rangeFilter.value != null;
 
+  // GetX does not dispose workers, and the notifier outlives this
+  // controller, so without this a closed controller keeps reloading.
+  late final Worker _changes;
+
+  @override
+  void onClose() {
+    _changes.dispose();
+    super.onClose();
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -82,7 +92,7 @@ class TransactionController extends GetxController {
       (_) => load(),
       time: const Duration(milliseconds: 400),
     );
-    ever<int>(_notifier.version, (_) {
+    _changes = ever<int>(_notifier.version, (_) {
       loadLookups();
       load(silent: true);
     });

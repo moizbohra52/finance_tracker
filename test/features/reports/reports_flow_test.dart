@@ -86,12 +86,12 @@ void main() {
     ) async {
       await _open(tester, _seeded());
       expect(find.textContaining('Asha'), findsOneWidget);
-      await _scrollTo(tester, find.text('Spending overview'));
+      await _scrollTo(tester, find.text('+₹4,750.00'));
       expect(find.text('This month'), findsOneWidget);
+      await _scrollTo(tester, find.text('Spending overview'));
       // Only this month's expense is counted: 250, not 650.
       expect(find.text('₹250.00'), findsWidgets);
       expect(find.text('₹650.00'), findsNothing);
-      expect(find.text('+₹4,750.00'), findsOneWidget);
     });
 
     testWidgets('monthly summary opens the reports route and goes back', (

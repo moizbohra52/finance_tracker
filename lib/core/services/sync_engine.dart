@@ -6,6 +6,7 @@ import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/repositories/payloads.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -147,6 +148,9 @@ class SyncEngine extends GetxService {
     lastError.value = null;
 
     try {
+      // 0. Never upload or show another account's local rows as this one's.
+      await claimLocalData(_client.auth.currentUser!.id);
+
       // 1. Upload local changes
       await uploadPending();
 
@@ -173,6 +177,21 @@ class SyncEngine extends GetxService {
         unawaited(syncAll());
       }
     }
+  }
+
+  /// The local tables are not scoped by user, and an upload takes its
+  /// `user_id` from the session. Sign-out clears them (resetUserScope), but
+  /// that can be missed, e.g. when the session ends while the app is closed.
+  /// So before syncing for [userId], data left by another account is wiped.
+  @visibleForTesting
+  Future<void> claimLocalData(String userId) async {
+    final String? owner = await _db.getMetadata(AppDatabase.localOwnerKey);
+    if (owner == userId) return;
+    if (owner != null) {
+      await _db.clearAllUserData();
+      _notifier?.markChanged();
+    }
+    await _db.setMetadata(AppDatabase.localOwnerKey, userId);
   }
 
   /// Uploads all pending queue items in FIFO order.

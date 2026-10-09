@@ -28,7 +28,7 @@ class BudgetListView extends GetView<BudgetController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const AppContent(child: SkeletonList(count: 4));
+            return const AppContent(child: SkeletonList(count: 4, type: SkeletonType.budget));
           }
           final String? error = controller.error.value;
           if (error != null && controller.statuses.isEmpty) {
@@ -185,15 +185,7 @@ class _BudgetCard extends GetView<BudgetController> {
                 style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
               ),
               const SizedBox(height: AppSpacing.md),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.full),
-                child: LinearProgressIndicator(
-                  value: (status.percent / 100).clamp(0, 1),
-                  minHeight: 8,
-                  color: color,
-                  backgroundColor: color.withValues(alpha: 0.14),
-                ),
-              ),
+              AppProgressBar(value: status.percent / 100, color: color),
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: <Widget>[

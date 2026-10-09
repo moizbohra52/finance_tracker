@@ -53,13 +53,23 @@ class RecurringController extends GetxController {
 
   bool _running = false;
 
+  // GetX does not dispose workers, and the notifier outlives this
+  // controller, so without this a closed controller keeps reloading.
+  late final Worker _changes;
+
+  @override
+  void onClose() {
+    _changes.dispose();
+    super.onClose();
+  }
+
   @override
   void onInit() {
     super.onInit();
     // Materialise anything that came due while the app was closed, then show
     // the list.
-    runDue().then((_) => load());
-    ever<int>(_notifier.version, (_) => load(silent: true));
+    runDue().whenComplete(load);
+    _changes = ever<int>(_notifier.version, (_) => load(silent: true));
   }
 
   Category? categoryOf(String? id) {

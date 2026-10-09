@@ -39,7 +39,7 @@ class ContactListContent extends GetView<ContactController> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const AppContent(child: SkeletonList());
+        return const AppContent(child: SkeletonList(type: SkeletonType.khata));
       }
       final String? error = controller.error.value;
       if (error != null && !controller.hasContacts) {

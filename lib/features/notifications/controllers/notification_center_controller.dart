@@ -24,11 +24,21 @@ class NotificationCenterController extends GetxController {
   final RxnString error = RxnString();
   final SubmitState action = SubmitState();
 
+  // GetX does not dispose workers, and the notifier outlives this
+  // controller, so without this a closed controller keeps reloading.
+  late final Worker _changes;
+
+  @override
+  void onClose() {
+    _changes.dispose();
+    super.onClose();
+  }
+
   @override
   void onInit() {
     super.onInit();
     load();
-    ever<int>(_coordinator.centerVersion, (_) => load(silent: true));
+    _changes = ever<int>(_coordinator.centerVersion, (_) => load(silent: true));
   }
 
   Future<void> load({bool silent = false}) async {

@@ -1,6 +1,7 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
@@ -23,7 +24,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AccountDetailView extends GetView<AccountDetailController> {
-  const AccountDetailView({super.key});
+  const AccountDetailView({super.key, required this.id});
+
+  /// Tag of this screen's controller (see routeIdArgument).
+  final String id;
+
+  @override
+  String get tag => id;
 
   Future<void> _delete(BuildContext context, Account account) async {
     final AccountController accounts = Get.find<AccountController>();
@@ -146,7 +153,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                       TransactionListItem(
                         transaction: t,
                         title:
-                            list.categoryOf(t.categoryId)?.name ?? t.type.name,
+                            list.categoryOf(t.categoryId)?.name ?? t.type.label,
                         iconKey: list.categoryOf(t.categoryId)?.icon,
                         subtitle: account.name,
                         onTap: () => Get.toNamed<void>(

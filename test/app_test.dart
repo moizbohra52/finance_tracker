@@ -8,6 +8,7 @@ import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
+import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -73,6 +74,36 @@ void main() {
     await tester.tap(find.byIcon(Icons.home_outlined));
     await tester.pumpAndSettle();
     expect(find.byType(DashboardView), findsOneWidget);
+  });
+
+  testWidgets('a tab still works after its controller was first created on a '
+      'pushed screen', (WidgetTester tester) async {
+    await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
+    // Home is the only tab built so far, so these screens create the
+    // transactions and khata controllers while they are on top.
+    for (final String route in <String>[
+      AppRoutes.transactions,
+      AppRoutes.contacts,
+      AppRoutes.reports,
+    ]) {
+      unawaited(Get.toNamed<void>(route));
+      await tester.pumpAndSettle();
+      Get.back<void>();
+      await tester.pumpAndSettle();
+    }
+
+    await tester.tap(find.byIcon(Icons.receipt_long_outlined));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('No transactions yet'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.people_outline));
+    await tester.pumpAndSettle();
+    expect(find.text('No contacts yet'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.insights_outlined));
+    await tester.pumpAndSettle();
+    expect(find.text('This month'), findsOneWidget);
   });
 
   testWidgets('wide shell uses a navigation rail', (WidgetTester tester) async {

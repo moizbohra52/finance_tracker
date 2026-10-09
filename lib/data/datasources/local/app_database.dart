@@ -600,9 +600,14 @@ class AppDatabase {
     return rows.isNotEmpty;
   }
 
-  /// Wipes all non-system data from the database (e.g. for complete reset).
-  Future<void> clearAllUserData([String? userId]) async {
-    final List<String> userTables = <String>[
+  /// Metadata key holding the user whose data the local tables hold.
+  static const String localOwnerKey = 'local_owner';
+
+  /// Wipes all non-system data, the upload queue and the pull cursors, in one
+  /// transaction. Used when the signed-in user changes: the local tables are
+  /// not scoped by user, so another account must never read or upload them.
+  Future<void> clearAllUserData() => db.transaction((Transaction txn) async {
+    for (final String table in <String>[
       'accounts',
       'transactions',
       'contacts',
@@ -612,27 +617,12 @@ class AppDatabase {
       'reminders',
       'user_settings',
       'profiles',
-    ];
-
-    for (final String table in userTables) {
-      if (userId != null) {
-        final String col = table == 'profiles' ? 'id' : 'user_id';
-        await db.delete(table, where: '$col = ?', whereArgs: <Object>[userId]);
-      } else {
-        await db.delete(table);
-      }
+      'sync_queue',
+    ]) {
+      await txn.delete(table);
     }
-    // Delete custom categories
-    if (userId != null) {
-      await db.delete(
-        'categories',
-        where: 'user_id = ?',
-        whereArgs: <Object>[userId],
-      );
-    } else {
-      await db.delete('categories', where: 'is_system = 0');
-    }
-    // Clear sync queue
-    await db.delete('sync_queue');
-  }
+    await txn.delete('categories', where: 'is_system = 0');
+    // Without its rows the next sign-in must pull everything again.
+    await txn.delete('sync_metadata', where: "key LIKE 'cursor_%'");
+  });
 }

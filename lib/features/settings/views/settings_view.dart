@@ -14,12 +14,12 @@ import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/core/widgets/sync_status_sheet.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
-import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_settings_section.dart';
 import 'package:finance_tracker/features/profile/widgets/delete_account_dialog.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/settings/widgets/settings_widgets.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -431,7 +431,7 @@ class _SecuritySection extends StatelessWidget {
         SettingsTile(
           icon: Icons.logout_rounded,
           title: 'Sign out of this device',
-          onTap: () => Get.find<AuthController>().signOut(),
+          onTap: () => confirmAndSignOut(context),
         ),
         SettingsTile(
           icon: Icons.delete_forever_outlined,

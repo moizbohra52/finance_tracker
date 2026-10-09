@@ -129,9 +129,12 @@ abstract final class BudgetCalculator {
       state: state,
       spent: spent,
       remaining: budget.amount - spent,
-      percent: (spent * hundred / budget.amount)
-          .toDecimal(scaleOnInfinitePrecision: 4)
-          .toDouble(),
+      // A zero amount can only come from an unchecked backup restore.
+      percent: budget.amount == Decimal.zero
+          ? 0
+          : (spent * hundred / budget.amount)
+                .toDecimal(scaleOnInfinitePrecision: 4)
+                .toDouble(),
       crossed: <int>[
         for (final int t in thresholds)
           if (spent * hundred >= budget.amount * Decimal.fromInt(t)) t,

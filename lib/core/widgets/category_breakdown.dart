@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:flutter/material.dart';
 
 /// One labelled row of a breakdown list.
@@ -73,22 +74,14 @@ class CategoryBreakdown extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppSpacing.xs),
                       Row(
                         children: <Widget>[
                           Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.full,
-                              ),
-                              child: LinearProgressIndicator(
-                                value: r.share.clamp(0, 1),
-                                minHeight: 6,
-                                color: r.color,
-                                backgroundColor: r.color.withValues(
-                                  alpha: 0.14,
-                                ),
-                              ),
+                            child: AppProgressBar(
+                              value: r.share,
+                              color: r.color,
+                              height: 6,
                             ),
                           ),
                           const SizedBox(width: AppSpacing.sm),

@@ -26,7 +26,7 @@ class RecurringListView extends GetView<RecurringController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const AppContent(child: SkeletonList(count: 4));
+            return const AppContent(child: SkeletonList(count: 4, type: SkeletonType.generic));
           }
           final String? error = controller.error.value;
           if (error != null && controller.rules.isEmpty) {

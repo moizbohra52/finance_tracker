@@ -87,7 +87,7 @@ Future<void> _tall(WidgetTester tester) async {
 /// Opens a dashboard "Plan ahead" tile.
 Future<void> _openPlan(WidgetTester tester, String title) async {
   await tester.scrollUntilVisible(
-    find.text('Plan ahead'),
+    find.widgetWithText(PlanTile, title),
     200,
     scrollable: find
         .descendant(
@@ -96,6 +96,11 @@ Future<void> _openPlan(WidgetTester tester, String title) async {
         )
         .first,
   );
+  // Sections above the tiles (recent transactions) can grow while data
+  // loads, so settle and bring the tile back into view before tapping.
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.widgetWithText(PlanTile, title));
+  await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(PlanTile, title));
   await tester.pumpAndSettle();
 }

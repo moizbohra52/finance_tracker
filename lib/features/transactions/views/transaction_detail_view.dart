@@ -20,7 +20,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class TransactionDetailView extends GetView<TransactionDetailController> {
-  const TransactionDetailView({super.key});
+  const TransactionDetailView({super.key, required this.id});
+
+  /// Tag of this screen's controller (see routeIdArgument).
+  final String id;
+
+  @override
+  String get tag => id;
 
   @override
   Widget build(BuildContext context) {

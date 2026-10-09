@@ -2,7 +2,6 @@ import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
-import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_bell.dart';
@@ -11,6 +10,7 @@ import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -53,12 +53,15 @@ class _AppShellViewState extends State<AppShellView> {
     });
   }
 
-  Future<void> _signOut(BuildContext context) async {
-    final AuthRepository auth = Get.find<AuthRepository>();
-    await auth.signOut();
-    if (context.mounted) {
-      // The auth state change will trigger navigation to login via AuthController
-    }
+  /// Profile name, else the email's local part, so the title and the avatar
+  /// initial always agree.
+  static String _displayName(ProfileController profile) {
+    final String name = profile.displayName.value.trim();
+    if (name.isNotEmpty) return name;
+    final String typed = profile.fullNameController.text.trim();
+    if (typed.isNotEmpty) return typed;
+    final String local = profile.email.split('@').first.trim();
+    return local.isNotEmpty ? local : 'User';
   }
 
   Widget _destination(int index) => switch (index) {
@@ -109,13 +112,7 @@ class _AppShellViewState extends State<AppShellView> {
         return Scaffold(
           appBar: AppAppBar(
             titleWidget: Obx(() {
-              final String name = profile.displayName.value.trim().isNotEmpty
-                  ? profile.displayName.value.trim()
-                  : (profile.fullNameController.text.trim().isNotEmpty
-                        ? profile.fullNameController.text.trim()
-                        : (profile.email.isNotEmpty
-                              ? profile.email.split('@').first
-                              : 'User'));
+              final String name = _displayName(profile);
               final String email = profile.email;
 
               return Column(
@@ -130,7 +127,6 @@ class _AppShellViewState extends State<AppShellView> {
                     style: textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.3,
-                      fontSize: 16,
                       color: colors.onSurface,
                     ),
                   ),
@@ -141,7 +137,6 @@ class _AppShellViewState extends State<AppShellView> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodySmall?.copyWith(
-                        fontSize: 12,
                         fontWeight: FontWeight.w500,
                         color: colors.onSurfaceVariant,
                       ),
@@ -155,14 +150,9 @@ class _AppShellViewState extends State<AppShellView> {
             actions: const <Widget>[NotificationBell()],
             showMenu: true,
             profileAvatar: Obx(() {
-              final String name = profile.displayName.value.trim().isNotEmpty
-                  ? profile.displayName.value.trim()
-                  : (profile.fullNameController.text.trim().isNotEmpty
-                        ? profile.fullNameController.text.trim()
-                        : 'U');
-              final String initial = name.isNotEmpty
-                  ? name[0].toUpperCase()
-                  : 'U';
+              final String initial = _displayName(
+                profile,
+              ).characters.first.toUpperCase();
 
               return Semantics(
                 button: true,
@@ -180,7 +170,6 @@ class _AppShellViewState extends State<AppShellView> {
                         initial,
                         style: textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w800,
-                          fontSize: 14,
                           color: colors.primary,
                         ),
                       ),
@@ -191,7 +180,7 @@ class _AppShellViewState extends State<AppShellView> {
             }),
             onProfileTap: () => Get.toNamed<void>(AppRoutes.profile),
             onSettingsTap: () => Get.toNamed<void>(AppRoutes.settings),
-            onSignOutTap: () => _signOut(context),
+            onSignOutTap: () => confirmAndSignOut(context),
           ),
           body: SafeArea(
             child: Column(

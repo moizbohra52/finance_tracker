@@ -45,6 +45,10 @@ abstract final class AppSpacing {
   static const double lg = 24;
   static const double xl = 32;
   static const double xxl = 48;
+
+  /// Bottom padding for a scrolling list under an extended FAB, so the last
+  /// row (and its amount) is never hidden behind the button.
+  static const double fabClearance = 88;
 }
 
 abstract final class AppRadius {
@@ -63,9 +67,18 @@ abstract final class AppSizes {
   static const double minTouchTarget = 48;
   static const double iconLarge = 56;
 
+  /// Tinted icon badge in list rows and cards.
+  static const double iconBadge = 40;
+
   /// Keeps status messages readable on tablets instead of stretching edge to
   /// edge.
   static const double maxContentWidth = 420;
   static const double maxPageWidth = 720;
   static const double maxWideContentWidth = 960;
+
+  static const double chartHeightSmall = 160;
+  static const double chartHeight = 200;
+
+  /// Progress bars and other value changes that should read as motion.
+  static const Duration slowAnimation = Duration(milliseconds: 350);
 }

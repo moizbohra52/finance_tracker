@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
@@ -104,7 +105,7 @@ class _TransactionListContentState extends State<TransactionListContent> {
           const _ActiveFilters(),
           Expanded(
             child: Obx(() {
-              if (_controller.isLoading.value) return const SkeletonList();
+              if (_controller.isLoading.value) return const SkeletonList(type: SkeletonType.transaction);
               final String? error = _controller.error.value;
               if (error != null && _controller.items.isEmpty) {
                 return ErrorState(message: error, onRetry: _controller.load);
@@ -197,7 +198,7 @@ class _ActiveFilters extends GetView<TransactionController> {
       final List<Widget> chips = <Widget>[
         if (controller.typeFilter.value != null)
           InputChip(
-            label: Text(controller.typeFilter.value!.name),
+            label: Text(controller.typeFilter.value!.label),
             onDeleted: () => controller.applyFilters(
               accountId: controller.accountFilter.value,
               categoryId: controller.categoryFilter.value,
@@ -327,7 +328,7 @@ class _GroupedList extends GetView<TransactionController> {
             transaction: transaction,
             title:
                 controller.categoryOf(transaction.categoryId)?.name ??
-                transaction.type.name,
+                transaction.type.label,
             iconKey: controller.categoryOf(transaction.categoryId)?.icon,
             subtitle: controller.accountName(transaction.accountId),
             onTap: () => Get.toNamed<void>(

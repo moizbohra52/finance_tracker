@@ -14,6 +14,7 @@ import 'package:finance_tracker/features/profile/widgets/delete_account_dialog.d
 import 'package:finance_tracker/features/profile/widgets/profile_avatar.dart';
 import 'package:finance_tracker/features/settings/widgets/settings_widgets.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -202,7 +203,7 @@ class _ProfileForm extends StatelessWidget {
                   SettingsTile(
                     icon: Icons.logout_rounded,
                     title: 'Sign out',
-                    onTap: controller.signOut,
+                    onTap: () => confirmAndSignOut(context),
                   ),
                 ],
               ),

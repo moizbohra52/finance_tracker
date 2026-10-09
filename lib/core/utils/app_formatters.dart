@@ -25,6 +25,12 @@ abstract final class AppFormatters {
     ).format(amount);
   }
 
+  /// Symbol of the account's currency, for amount field prefixes.
+  static String get currencySymbol => NumberFormat.simpleCurrency(
+    locale: preferences.numberStyle.locale,
+    name: Currencies.byCode(preferences.currencyCode).code,
+  ).currencySymbol;
+
   /// Formats a domain [Decimal] for display only.
   static String money(Decimal amount) => currency(amount.toDouble());
 

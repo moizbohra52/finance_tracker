@@ -41,7 +41,7 @@ class ReportsView extends GetView<ReportsController> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const AppContent(child: SkeletonList(count: 5));
+        return const AppContent(child: SkeletonList(count: 5, type: SkeletonType.report));
       }
       final String? error = controller.error.value;
       if (error != null && controller.transactionCount.value == 0) {

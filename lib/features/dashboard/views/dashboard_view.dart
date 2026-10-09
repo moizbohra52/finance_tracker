@@ -54,6 +54,8 @@ class DashboardView extends GetView<HomeController> {
               if (controller.accounts.isEmpty)
                 const _NoAccountsCard()
               else ...<Widget>[
+                // Order follows docs/06: balance, income/expense, khata,
+                // recent activity, then planning and breakdowns.
                 const _BalanceSection(),
                 const SizedBox(height: AppSpacing.lg),
                 const _QuickActions(),
@@ -62,15 +64,15 @@ class DashboardView extends GetView<HomeController> {
                 const SizedBox(height: AppSpacing.lg),
                 const _MonthlySummary(),
                 const SizedBox(height: AppSpacing.lg),
-                const _SpendingOverview(),
-                const SizedBox(height: AppSpacing.lg),
                 const _KhataSummary(),
+                const SizedBox(height: AppSpacing.lg),
+                const _RecentTransactions(),
+                const SizedBox(height: AppSpacing.lg),
+                const _SpendingOverview(),
                 const SizedBox(height: AppSpacing.lg),
                 const _PlanSection(),
                 const SizedBox(height: AppSpacing.lg),
                 const _AccountsSection(),
-                const SizedBox(height: AppSpacing.lg),
-                const _RecentTransactions(),
               ],
               const SizedBox(height: AppSpacing.lg),
             ],
@@ -146,7 +148,10 @@ class _GreetingHeader extends StatelessWidget {
     final dailyQuote = _quotes[quoteIndex];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -158,7 +163,7 @@ class _GreetingHeader extends StatelessWidget {
                 ]
               : [colors.primary.withValues(alpha: 0.05), colors.surface],
         ),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: colors.outlineVariant.withValues(alpha: isDark ? 0.25 : 0.45),
           width: 1,
@@ -171,7 +176,7 @@ class _GreetingHeader extends StatelessWidget {
           Row(
             children: <Widget>[
               Icon(greeting.icon, size: 18, color: colors.primary),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 greeting.text,
                 style: text.titleSmall?.copyWith(
@@ -187,7 +192,7 @@ class _GreetingHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             '“${dailyQuote.quote}”',
             maxLines: 2,
@@ -198,7 +203,7 @@ class _GreetingHeader extends StatelessWidget {
               color: colors.onSurface.withValues(alpha: 0.88),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Align(
             alignment: Alignment.centerRight,
             child: Text(
@@ -206,7 +211,6 @@ class _GreetingHeader extends StatelessWidget {
               style: text.labelSmall?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colors.primary,
-                fontSize: 11,
               ),
             ),
           ),
@@ -251,6 +255,9 @@ class _MonthlySummary extends GetView<HomeController> {
         Obx(() {
           final PeriodSummary m = controller.month.value;
           final bool positive = m.net >= Decimal.zero;
+          // Same privacy rule as the balance card above it.
+          final bool hidden = controller.balanceHidden.value;
+          String show(String value) => hidden ? '••••' : value;
           return AppCard(
             child: IntrinsicHeight(
               child: Row(
@@ -258,7 +265,7 @@ class _MonthlySummary extends GetView<HomeController> {
                   Expanded(
                     child: _Figure(
                       label: 'Income',
-                      value: AppFormatters.money(m.income),
+                      value: show(AppFormatters.money(m.income)),
                       color: money.income,
                     ),
                   ),
@@ -272,7 +279,7 @@ class _MonthlySummary extends GetView<HomeController> {
                   Expanded(
                     child: _Figure(
                       label: 'Expense',
-                      value: AppFormatters.money(m.expense),
+                      value: show(AppFormatters.money(m.expense)),
                       color: money.expense,
                     ),
                   ),
@@ -286,9 +293,8 @@ class _MonthlySummary extends GetView<HomeController> {
                   Expanded(
                     child: _Figure(
                       label: 'Net',
-                      value: AppFormatters.signedMoney(
-                        m.net,
-                        positive: positive,
+                      value: show(
+                        AppFormatters.signedMoney(m.net, positive: positive),
                       ),
                       color: positive ? money.income : money.expense,
                     ),
@@ -332,7 +338,7 @@ class _Figure extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
@@ -774,7 +780,7 @@ class _RecentTransactions extends GetView<HomeController> {
                     transaction: t,
                     title:
                         controller.categoryOf(t.categoryId)?.name ??
-                        t.type.name,
+                        t.type.label,
                     iconKey: controller.categoryOf(t.categoryId)?.icon,
                     subtitle: controller.accountName(t.accountId),
                     onTap: () => Get.toNamed<void>(

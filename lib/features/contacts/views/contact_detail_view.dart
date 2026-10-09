@@ -21,7 +21,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ContactDetailView extends GetView<ContactDetailController> {
-  const ContactDetailView({super.key});
+  const ContactDetailView({super.key, required this.id});
+
+  /// Tag of this screen's controller (see routeIdArgument).
+  final String id;
+
+  @override
+  String get tag => id;
 
   Future<void> _delete(BuildContext context, Contact contact) async {
     final bool confirmed = await confirmDestructive(
@@ -99,7 +105,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
         onRefresh: controller.load,
         child: ListView(
           children: <Widget>[
-            _BalanceHeader(contact: contact),
+            _BalanceHeader(contact: contact, id: id),
             const SizedBox(height: AppSpacing.md),
             _EntryActions(contact: contact),
             const SizedBox(height: AppSpacing.lg),
@@ -131,7 +137,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
                 child: Column(
                   children: <Widget>[
                     for (final ContactTransaction e in controller.entries)
-                      _EntryTile(entry: e),
+                      _EntryTile(entry: e, id: id),
                   ],
                 ),
               ),
@@ -145,7 +151,12 @@ class ContactDetailView extends GetView<ContactDetailController> {
 }
 
 class _BalanceHeader extends GetView<ContactDetailController> {
-  const _BalanceHeader({required this.contact});
+  const _BalanceHeader({required this.contact, required this.id});
+
+  final String id;
+
+  @override
+  String get tag => id;
 
   final Contact contact;
 
@@ -249,7 +260,12 @@ bool _raisesBalance(ContactTransactionType t) =>
     t == ContactTransactionType.adjustment;
 
 class _EntryTile extends GetView<ContactDetailController> {
-  const _EntryTile({required this.entry});
+  const _EntryTile({required this.entry, required this.id});
+
+  final String id;
+
+  @override
+  String get tag => id;
 
   final ContactTransaction entry;
 
