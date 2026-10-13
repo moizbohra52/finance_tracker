@@ -24,6 +24,13 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
   bool _replaceExisting = false;
   bool _confirmedWarning = false;
 
+  /// A tick given for one mode never confirms the other, so switching to the
+  /// destructive replace always asks again.
+  void _selectMode(bool replace) => setState(() {
+    if (replace != _replaceExisting) _confirmedWarning = false;
+    _replaceExisting = replace;
+  });
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -124,12 +131,10 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
               RadioListTile<bool>(
                 value: false,
                 groupValue: _replaceExisting,
-                onChanged: (bool? val) {
-                  setState(() => _replaceExisting = val ?? false);
-                },
+                onChanged: (bool? val) => _selectMode(val ?? false),
                 title: const Text('Merge with existing data'),
                 subtitle: const Text(
-                  'Keeps your current data, updating matching items and adding new ones.',
+                  'Keeps your current data, updating matching items and adding new ones. Changes also sync to your cloud account.',
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -137,9 +142,7 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
               RadioListTile<bool>(
                 value: true,
                 groupValue: _replaceExisting,
-                onChanged: (bool? val) {
-                  setState(() => _replaceExisting = val ?? true);
-                },
+                onChanged: (bool? val) => _selectMode(val ?? true),
                 title: Text(
                   'Clean restore (Replace all data)',
                   style: TextStyle(
@@ -147,7 +150,7 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
                   ),
                 ),
                 subtitle: const Text(
-                  'Wipes your current transactions and accounts first, replacing them with the backup.',
+                  'Deletes all your current entries on this device and in your cloud account, including other devices, then restores the backup.',
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -162,7 +165,7 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
                 },
                 title: Text(
                   _replaceExisting
-                      ? 'I understand that current data will be deleted and replaced.'
+                      ? 'I understand that my current data will be deleted from this device and the cloud, and replaced.'
                       : 'I want to proceed with merging this backup data.',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,

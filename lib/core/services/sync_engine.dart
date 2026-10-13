@@ -199,50 +199,59 @@ class SyncEngine extends GetxService {
     final SupabaseClient? client = _client;
     if (client == null || client.auth.currentUser == null) return;
 
-    final List<SyncQueueItem> queue = await _db.getPendingQueue(limit: 100);
-    if (queue.isEmpty) return;
+    // Pages past each batch by id, so a large restore goes up in one sync and
+    // items that keep failing never hold back the ones queued after them.
+    for (
+      List<SyncQueueItem> queue = await _db.getPendingQueue(limit: 100);
+      queue.isNotEmpty;
+      queue = await _db.getPendingQueue(limit: 100, afterId: queue.last.id!)
+    ) {
+      for (final SyncQueueItem item in queue) {
+        if (item.id == null) continue;
 
-    for (final SyncQueueItem item in queue) {
-      if (item.id == null) continue;
-
-      // Mark processing
-      await _db.updateQueueItemStatus(
-        id: item.id!,
-        status: SyncItemStatus.processing,
-        lastAttempt: DateTime.now(),
-      );
-
-      try {
-        await _executeUploadOperation(client, item);
-
-        // Success: mark synced in queue and in local table
+        // Mark processing
         await _db.updateQueueItemStatus(
           id: item.id!,
-          status: SyncItemStatus.synced,
-        );
-        await _db.markEntitySynced(item.entity, item.entityId);
-      } on Object catch (error) {
-        final int nextRetry = item.retryCount + 1;
-        final String safeMsg = _safeErrorMessage(error);
-        developer.log(
-          'Failed syncing item ${item.entity} (${item.entityId}): $safeMsg',
-          name: 'sync',
+          status: SyncItemStatus.processing,
+          lastAttempt: DateTime.now(),
         );
 
-        final SyncItemStatus nextStatus = nextRetry >= maxRetries
-            ? SyncItemStatus.failed
-            : SyncItemStatus.pending;
+        try {
+          await _executeUploadOperation(client, item);
 
-        await _db.updateQueueItemStatus(
-          id: item.id!,
-          status: nextStatus,
-          retryCount: nextRetry,
-          errorMessage: safeMsg,
-        );
+          // Success: mark synced in queue and in local table
+          await _db.updateQueueItemStatus(
+            id: item.id!,
+            status: SyncItemStatus.synced,
+          );
+          await _db.markEntitySynced(item.entity, item.entityId);
+        } on Object catch (error) {
+          final int nextRetry = item.retryCount + 1;
+          final String safeMsg = _safeErrorMessage(error);
+          developer.log(
+            'Failed syncing item ${item.entity} (${item.entityId}): $safeMsg',
+            name: 'sync',
+          );
 
-        // Stop processing further items if there is a network outage
-        if (_isNetworkError(error)) {
-          rethrow;
+          final SyncItemStatus nextStatus = nextRetry >= maxRetries
+              ? SyncItemStatus.failed
+              : SyncItemStatus.pending;
+
+          await _db.updateQueueItemStatus(
+            id: item.id!,
+            status: nextStatus,
+            retryCount: nextRetry,
+            errorMessage: safeMsg,
+          );
+
+          // Stop processing further items if there is a network outage.
+          // A replace is a barrier too: it soft-deletes whatever is on the
+          // server but not kept, so nothing queued after it (an entry made
+          // after the restore) may go up before it succeeds.
+          if (_isNetworkError(error) ||
+              item.operation == SyncOperation.replace) {
+            rethrow;
+          }
         }
       }
     }
@@ -268,16 +277,18 @@ class SyncEngine extends GetxService {
           await client.from('profiles').update(payload).eq('id', userId);
         } else {
           final bool onlyIfAbsent = payload['__only_if_absent'] == true;
+          final bool restore = payload['__restore'] == true;
           final Map<String, dynamic> clean = Map<String, dynamic>.from(payload)
             ..remove('__only_if_absent')
+            ..remove('__restore')
             ..remove('sync_status');
 
-          await client
-              .from(table)
-              .upsert(
-                insertPayload(client, clean),
-                ignoreDuplicates: onlyIfAbsent,
-              );
+          await client.from(table).upsert(<String, dynamic>{
+            ...insertPayload(client, clean),
+            // A restored row brings back its tombstone state too
+            // (BackupService.restoreBackup).
+            if (restore) 'deleted_at': clean['deleted_at'],
+          }, ignoreDuplicates: onlyIfAbsent);
         }
 
       case SyncOperation.update:
@@ -301,6 +312,60 @@ class SyncEngine extends GetxService {
 
       case SyncOperation.delete:
         await client.from(table).update(tombstone()).eq('id', item.entityId);
+
+      case SyncOperation.replace:
+        await _tombstoneAllExcept(
+          client,
+          table,
+          (payload['keep_ids'] as List<dynamic>).cast<String>().toSet(),
+        );
+    }
+  }
+
+  /// Ids read per request. PostgREST caps a response (1000 rows by default),
+  /// so reading stops at the first empty page, not at a short one.
+  static const int _idPageSize = 1000;
+
+  /// Ids per tombstone request, which keeps the `id=in.(...)` URL short.
+  static const int _tombstoneBatch = 100;
+
+  /// Soft-deletes every live row the user has in [table] on the server except
+  /// [keep], including rows this device never pulled. Rows already tombstoned
+  /// are not read again, so a retry after a failure is harmless.
+  Future<void> _tombstoneAllExcept(
+    SupabaseClient client,
+    String table,
+    Set<String> keep,
+  ) async {
+    final String userId = client.auth.currentUser!.id;
+    final List<String> extra = <String>[];
+    String? after;
+    while (true) {
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> query = client
+          .from(table)
+          .select('id')
+          .eq('user_id', userId)
+          .isFilter('deleted_at', null);
+      if (after != null) query = query.gt('id', after);
+      final List<Map<String, dynamic>> page = await query
+          .order('id', ascending: true)
+          .limit(_idPageSize);
+      if (page.isEmpty) break;
+      for (final Map<String, dynamic> row in page) {
+        final String id = row['id'] as String;
+        if (!keep.contains(id)) extra.add(id);
+      }
+      after = page.last['id'] as String;
+    }
+
+    for (int i = 0; i < extra.length; i += _tombstoneBatch) {
+      final int end = i + _tombstoneBatch < extra.length
+          ? i + _tombstoneBatch
+          : extra.length;
+      await client
+          .from(table)
+          .update(tombstone())
+          .inFilter('id', extra.sublist(i, end));
     }
   }
 
@@ -403,9 +468,10 @@ class SyncEngine extends GetxService {
 
       if (rows.isNotEmpty) {
         final Map<String, dynamic> row = rows.first;
+        // Settings changes are queued under the user id, not the row id.
         final bool hasPending = await _db.hasPendingSyncFor(
           'user_settings',
-          row['id'] as String? ?? userId,
+          userId,
         );
         if (!hasPending) {
           final Map<String, dynamic> localData = <String, dynamic>{
@@ -442,7 +508,8 @@ class SyncEngine extends GetxService {
           .eq('id', userId)
           .limit(1);
 
-      if (rows.isNotEmpty) {
+      // An unsent local edit (or restore) wins until it is uploaded.
+      if (rows.isNotEmpty && !await _db.hasPendingSyncFor('profiles', userId)) {
         final Map<String, dynamic> row = rows.first;
         final Map<String, dynamic> localData = <String, dynamic>{
           'id': userId,

@@ -1,6 +1,14 @@
 import 'dart:convert';
 
-enum SyncOperation { create, update, delete }
+enum SyncOperation {
+  create,
+  update,
+  delete,
+
+  /// A clean backup restore: soft-deletes every server row of the user in
+  /// the entity's table except the restored ids in `payload['keep_ids']`.
+  replace,
+}
 
 enum SyncItemStatus { pending, processing, failed, synced }
 
@@ -96,6 +104,8 @@ class SyncQueueItem {
         return SyncOperation.update;
       case 'delete':
         return SyncOperation.delete;
+      case 'replace':
+        return SyncOperation.replace;
       default:
         throw ArgumentError('Unknown sync operation: $op');
     }

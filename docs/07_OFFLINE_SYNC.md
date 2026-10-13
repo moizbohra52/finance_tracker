@@ -41,6 +41,30 @@ When online:
 2. upload idempotently using client UUID
 3. mark synced only after server success
 
+The queue is uploaded in FIFO order, 100 items per read, until it is empty.
+An item that keeps failing does not hold back the items after it, except a
+`replace` item (see Backup restore), which stops the sync until it succeeds.
+
+## Backup restore
+A restored backup is uploaded like any other change, so the server ends up
+matching the device (`BackupService.restoreBackup`):
+- Every restored entry is written as `pending` and queued as a `create`
+  (an upsert on `id`), parents before the rows that reference them. Its
+  payload carries `__restore`, so the upload also sends the backup's
+  `deleted_at`: an entry deleted after the backup was taken comes back, and
+  one deleted in the backup is deleted on the server. System categories are
+  never uploaded.
+- Settings and the profile are single rows the app may only update. A restore
+  applies the backup's editable values to the signed-in user's rows and queues
+  them as an `update`. NOT NULL columns without a value in the backup keep the
+  current value. The avatar is kept: a backup holds only its storage path.
+- A clean restore (replace) first deletes every local entry, including ones
+  never synced, and their queued changes. It then queues one `replace` item per
+  entry table, ahead of the restored rows. On upload it reads the user's live
+  server ids page by page and soft-deletes every id the backup does not
+  contain, including rows this device never pulled. Entries created after the
+  restore are queued behind it, so they are never deleted by it.
+
 ## Download
 Pull changes after the last successful sync cursor/timestamp.
 

@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:finance_tracker/core/services/backup_service.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/file_sharing_service.dart';
+import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -15,6 +18,8 @@ class BackupController extends GetxController {
     required this.database,
     required this.dataChangeNotifier,
     this.authRepository,
+    this.syncEngine,
+    this.settingsController,
     this.backupService = const BackupService(),
     this.sharingService = const FileSharingService(),
   });
@@ -22,6 +27,8 @@ class BackupController extends GetxController {
   final AppDatabase database;
   final DataChangeNotifier dataChangeNotifier;
   final AuthRepository? authRepository;
+  final SyncEngine? syncEngine;
+  final SettingsController? settingsController;
   final BackupService backupService;
   final FileSharingService sharingService;
 
@@ -118,6 +125,10 @@ class BackupController extends GetxController {
       if (result.success) {
         // Trigger reactive updates across entire app
         dataChangeNotifier.markChanged();
+        // Upload the restored entries now rather than on the next sync.
+        syncEngine?.notifyNewQueueItem();
+        // Restored formats and currency apply without a restart.
+        unawaited(settingsController?.load());
 
         AppSnackbar.show(
           'Restored ${result.totalRestored} records successfully!',

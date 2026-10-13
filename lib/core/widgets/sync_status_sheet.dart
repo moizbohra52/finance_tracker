@@ -291,6 +291,7 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
       case SyncOperation.update:
         return Colors.blue;
       case SyncOperation.delete:
+      case SyncOperation.replace:
         return colors.error;
     }
   }

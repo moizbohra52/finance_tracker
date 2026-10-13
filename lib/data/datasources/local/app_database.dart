@@ -507,10 +507,14 @@ class AppDatabase {
     return await db.insert('sync_queue', item.toRow());
   }
 
-  Future<List<SyncQueueItem>> getPendingQueue({int limit = 50}) async {
+  Future<List<SyncQueueItem>> getPendingQueue({
+    int limit = 50,
+    int afterId = 0,
+  }) async {
     final List<Map<String, dynamic>> rows = await db.query(
       'sync_queue',
-      where: "status IN ('pending', 'failed')",
+      where: "status IN ('pending', 'failed') AND id > ?",
+      whereArgs: <Object>[afterId],
       orderBy: 'id ASC',
       limit: limit,
     );

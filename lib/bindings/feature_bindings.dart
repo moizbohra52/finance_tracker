@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
+import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
@@ -25,6 +26,7 @@ import 'package:finance_tracker/features/profile/controllers/profile_controller.
 import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
+import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
 import 'package:get/get.dart';
@@ -264,6 +266,12 @@ class BackupBinding extends Bindings {
       dataChangeNotifier: Get.find<DataChangeNotifier>(),
       authRepository: Get.isRegistered<AuthRepository>()
           ? Get.find<AuthRepository>()
+          : null,
+      syncEngine: Get.isRegistered<SyncEngine>()
+          ? Get.find<SyncEngine>()
+          : null,
+      settingsController: Get.isRegistered<SettingsController>()
+          ? Get.find<SettingsController>()
           : null,
     ),
   );
