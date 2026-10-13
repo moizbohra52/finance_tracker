@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:finance_tracker/core/constants/app_env.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -9,7 +10,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 class AppDatabase {
   AppDatabase({Database? database}) : _db = database;
 
-  static const String databaseName = 'finance_tracker.db';
+  static String get databaseName => AppEnv.databaseName;
   static const int databaseVersion = 1;
 
   Database? _db;

@@ -29,12 +29,9 @@ class SplashView extends GetView<SplashController> {
                   ),
                 ],
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  'assets/icons/app_icon.png',
-                  fit: BoxFit.cover,
-                ),
+              child: Image.asset(
+                'assets/logo.png',
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),

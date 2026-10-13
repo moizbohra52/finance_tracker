@@ -33,11 +33,15 @@ Future<void> main() async {
   await initializeDateFormatting(AppConstants.defaultLocale);
   if (!AppEnv.isConfigured) {
     throw StateError(
-      'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are missing. Copy env.example.json '
-      'to env.json, fill it in, and run with '
-      '--dart-define-from-file=env.json',
+      '[AppEnv] Supabase credentials missing for [${AppEnv.current.name.toUpperCase()}] environment.\n'
+      'Please check your env.${AppEnv.current.name}.json or provide '
+      'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.',
     );
   }
+  developer.log(
+    'Starting ${AppConstants.appName} | Environment: [${AppEnv.current.name.toUpperCase()}] | Local DB: ${AppEnv.databaseName}',
+    name: 'AppEnv',
+  );
   // Restores the persisted session from local storage before the first frame
   // (no network needed), so the splash screen can route immediately.
   await Supabase.initialize(

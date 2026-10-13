@@ -33,19 +33,11 @@ Requires Flutter 3.44+ (Dart 3.12+). Targets Android and iOS.
 
 ### Environment
 
-Configuration is passed at build time with `--dart-define-from-file`, read in
-`lib/core/constants/app_env.dart`.
-
-1. Copy `env.example.json` to `env.json` (git-ignored) and fill in values.
-2. Run with the file:
-
-```
-flutter run --dart-define-from-file=env.json
-```
-
-Only public client values (Supabase URL and publishable key, or the legacy
-anon key) may go in `env.json`.
-Never put the Supabase service-role key or any server secret in the app.
+Configuration is handled in `lib/core/constants/app_env.dart` with automatic environment detection:
+- **Dev Mode** (`flutter run`): Automatically uses Dev Supabase and `finance_tracker_dev.db` without needing any extra flags!
+- **Prod Mode** (`flutter run --release` or `flutter build`): Uses Production Supabase and `finance_tracker.db`.
+- **VS Code / IDE**: Pre-configured launch profiles exist in `.vscode/launch.json` for 1-click Dev and Prod launching.
+- **Optional CLI override**: Pass `--dart-define=ENV=dev` or `--dart-define-from-file=env.dev.json` / `env.prod.json`.
 
 ### Checks
 
