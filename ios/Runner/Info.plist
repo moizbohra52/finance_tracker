@@ -80,8 +80,7 @@
 				<string>Editor</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>com.finance_tracker.app</string>
-					<string>com.example.financetracker</string>
+					<string>com.finance.tracker</string>
 				</array>
 			</dict>
 		</array>

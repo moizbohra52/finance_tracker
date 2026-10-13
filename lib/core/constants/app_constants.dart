@@ -9,5 +9,5 @@ abstract final class AppConstants {
   /// back. Must match the scheme in AndroidManifest.xml and Info.plist, and be
   /// in the Supabase project's redirect allow list.
   static const String authRedirectUrl =
-      'com.finance_tracker.app://auth-callback';
+      'com.finance.tracker://auth-callback';
 }

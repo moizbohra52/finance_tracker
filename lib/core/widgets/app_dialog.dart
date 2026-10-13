@@ -29,3 +29,26 @@ class AppDialog extends StatelessWidget {
     );
   }
 }
+
+/// Asks before closing the application. Resolves to true only if the user confirms.
+Future<bool> confirmExit(BuildContext context) async {
+  final bool? confirmed = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext dialogContext) => AppDialog(
+      title: 'Exit App',
+      icon: const Icon(Icons.exit_to_app_rounded),
+      content: const Text('Are you sure you want to exit the app?'),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: const Text('Exit'),
+        ),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}

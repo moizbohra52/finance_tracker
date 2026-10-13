@@ -177,7 +177,7 @@ signed out) is held and opened once the shell mounts; sign-out discards it.
   No sender exists yet, so no remote pushes are delivered today.
 
 ### Firebase setup (one time per environment)
-1. Create a Firebase project; add Android app `com.finance_tracker.app` and an
+1. Create a Firebase project; add Android app `com.finance.tracker` and an
    iOS app with the bundle id from Xcode.
 2. Put `google-services.json` in `android/app/` and `GoogleService-Info.plist`
    in `ios/Runner/` (both are gitignored; the Gradle plugin is applied only

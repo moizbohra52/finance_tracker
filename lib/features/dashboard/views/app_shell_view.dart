@@ -1,7 +1,9 @@
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
+import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
+import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_bell.dart';
@@ -10,8 +12,8 @@ import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
-import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 /// Responsive signed-in shell for the app's primary destinations.
@@ -106,8 +108,21 @@ class _AppShellViewState extends State<AppShellView> {
     const List<AppNavigationDestination> destinations =
         AppNavigationDestination.items;
 
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        if (_selectedIndex != 0) {
+          _selectDestination(0);
+          return;
+        }
+        final bool shouldExit = await confirmExit(context);
+        if (shouldExit) {
+          await SystemNavigator.pop();
+        }
+      },
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
         final bool useRail = constraints.maxWidth >= _railBreakpoint;
         return Scaffold(
           appBar: AppAppBar(
@@ -228,6 +243,7 @@ class _AppShellViewState extends State<AppShellView> {
                 ),
         );
       },
-    );
+    ),
+  );
   }
 }

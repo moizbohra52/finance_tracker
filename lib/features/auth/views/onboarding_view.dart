@@ -1,7 +1,9 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
+import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 /// Welcome screen for signed-out users: short intro pages, then sign up or
@@ -40,36 +42,46 @@ class _OnboardingViewState extends State<OnboardingView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: AppSizes.maxContentWidth,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                children: <Widget>[
-                  Expanded(
-                    child: PageView(
-                      onPageChanged: (int page) =>
-                          setState(() => _currentPage = page),
-                      children: _pages,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) return;
+        final bool shouldExit = await confirmExit(context);
+        if (shouldExit) {
+          await SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppSizes.maxContentWidth,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Column(
+                  children: <Widget>[
+                    Expanded(
+                      child: PageView(
+                        onPageChanged: (int page) =>
+                            setState(() => _currentPage = page),
+                        children: _pages,
+                      ),
                     ),
-                  ),
-                  _PageDots(count: _pages.length, current: _currentPage),
-                  const SizedBox(height: AppSpacing.xl),
-                  AppButton(
-                    label: 'Get started',
-                    onPressed: () => Get.toNamed<void>(AppRoutes.register),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  TextButton(
-                    onPressed: () => Get.toNamed<void>(AppRoutes.login),
-                    child: const Text('I already have an account'),
-                  ),
-                ],
+                    _PageDots(count: _pages.length, current: _currentPage),
+                    const SizedBox(height: AppSpacing.xl),
+                    AppButton(
+                      label: 'Get started',
+                      onPressed: () => Get.toNamed<void>(AppRoutes.register),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextButton(
+                      onPressed: () => Get.toNamed<void>(AppRoutes.login),
+                      child: const Text('I already have an account'),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

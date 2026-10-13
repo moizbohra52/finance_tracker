@@ -5,6 +5,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:finance_tracker/firebase_options.dart';
+
 /// A push message reduced to what the app uses, so nothing outside this file
 /// depends on Firebase types.
 class PushMessage {
@@ -54,7 +56,9 @@ class PushService {
   Future<bool> initialize() async {
     if (!_platformSupported) return false;
     try {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       _available = true;
     } on Object catch (error) {
       developer.log(
