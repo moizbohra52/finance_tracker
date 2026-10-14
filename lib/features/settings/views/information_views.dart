@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/features/settings/widgets/settings_widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -39,7 +40,7 @@ class AboutView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
-              SettingsCard(
+              AppListCard(
                 children: <Widget>[
                   SettingsTile(
                     icon: Icons.article_outlined,

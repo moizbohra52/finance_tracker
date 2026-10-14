@@ -2,6 +2,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
@@ -12,6 +13,7 @@ import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
@@ -49,7 +51,7 @@ class TransactionDetailView extends GetView<TransactionDetailController> {
               message: 'It may have been deleted.',
             );
           }
-          return _Details(transaction: t);
+          return _Details(transaction: t, transfer: controller.transfer.value);
         }),
       ),
     );
@@ -57,29 +59,61 @@ class TransactionDetailView extends GetView<TransactionDetailController> {
 }
 
 class _Details extends StatelessWidget {
-  const _Details({required this.transaction});
+  const _Details({required this.transaction, this.transfer});
 
   final Transaction transaction;
 
+  /// Both legs when [transaction] is part of a transfer.
+  final TransferLegs? transfer;
+
   bool get _editable =>
+      transfer != null ||
       transaction.type == TransactionType.income ||
       transaction.type == TransactionType.expense;
 
   Future<void> _delete(BuildContext context) async {
     final TransactionController list = Get.find<TransactionController>();
+    final TransferLegs? transfer = this.transfer;
+    final String amount = AppFormatters.money(transaction.amount);
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete transaction?',
-      message:
-          'This ${transaction.type.label.toLowerCase()} of '
-          '${AppFormatters.money(transaction.amount)} will be removed from '
-          'your balance.',
+      title: transfer == null ? 'Delete transaction?' : 'Delete transfer?',
+      message: transfer == null
+          ? 'This ${transaction.type.label.toLowerCase()} of $amount will be '
+                'removed from your balance.'
+          : 'This transfer of $amount from '
+                '${list.accountName(transfer.fromAccountId)} to '
+                '${list.accountName(transfer.toAccountId)} will be removed '
+                'from both accounts.',
     );
     if (!confirmed) return;
-    if (await list.deleteTransaction(transaction.id)) {
-      AppSnackbar.show('Transaction deleted');
+    final bool deleted = transfer == null
+        ? await list.deleteTransaction(transaction.id)
+        : await list.deleteTransfer(transfer.transferId);
+    if (deleted) {
+      AppSnackbar.show(
+        transfer == null ? 'Transaction deleted' : 'Transfer deleted',
+      );
       Get.back<void>();
     }
+  }
+
+  void _edit() {
+    final TransferLegs? transfer = this.transfer;
+    if (transfer != null) {
+      Get.toNamed<void>(
+        AppRoutes.transferForm,
+        arguments: TransferFormArgs(transferId: transfer.transferId),
+      );
+      return;
+    }
+    Get.toNamed<void>(
+      AppRoutes.transactionForm,
+      arguments: TransactionFormArgs(
+        type: transaction.type,
+        existing: transaction,
+      ),
+    );
   }
 
   @override
@@ -88,6 +122,7 @@ class _Details extends StatelessWidget {
     final TextTheme text = Theme.of(context).textTheme;
     final category = list.categoryOf(transaction.categoryId);
     final String? note = transaction.note ?? transaction.description;
+    final TransferLegs? transfer = this.transfer;
 
     return AppContent(
       child: ListView(
@@ -96,22 +131,27 @@ class _Details extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               children: <Widget>[
-                CircleAvatar(
-                  radius: 28,
-                  child: Icon(
-                    CategoryIcons.of(category?.icon, transaction.type),
-                  ),
+                IconBadge(
+                  icon: CategoryIcons.of(category?.icon, transaction.type),
+                  size: AppSizes.iconLarge,
                 ),
                 const SizedBox(height: AppSpacing.md),
+                // A transfer moves money between the user's own accounts,
+                // so it is shown without a sign or money colour.
                 MoneyText(
                   transaction.amount,
-                  flow: transaction.type.isInflow
+                  flow: transfer != null
+                      ? MoneyFlow.neutral
+                      : transaction.type.isInflow
                       ? MoneyFlow.inflow
                       : MoneyFlow.outflow,
                   style: text.headlineMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(transaction.type.label, style: text.bodyMedium),
+                Text(
+                  transfer != null ? 'Transfer' : transaction.type.label,
+                  style: text.bodyMedium,
+                ),
               ],
             ),
           ),
@@ -119,8 +159,13 @@ class _Details extends StatelessWidget {
           AppCard(
             child: Column(
               children: <Widget>[
-                _Row('Category', category?.name ?? 'Uncategorised'),
-                _Row('Account', list.accountName(transaction.accountId)),
+                if (transfer != null) ...<Widget>[
+                  _Row('From', list.accountName(transfer.fromAccountId)),
+                  _Row('To', list.accountName(transfer.toAccountId)),
+                ] else ...<Widget>[
+                  _Row('Category', category?.name ?? 'Uncategorised'),
+                  _Row('Account', list.accountName(transaction.accountId)),
+                ],
                 _Row(
                   'Date',
                   AppFormatters.dateTime(transaction.transactionDate),
@@ -143,13 +188,7 @@ class _Details extends StatelessWidget {
             AppButton(
               label: 'Edit',
               icon: Icons.edit_outlined,
-              onPressed: () => Get.toNamed<void>(
-                AppRoutes.transactionForm,
-                arguments: TransactionFormArgs(
-                  type: transaction.type,
-                  existing: transaction,
-                ),
-              ),
+              onPressed: _edit,
             ),
           if (_editable) const SizedBox(height: AppSpacing.md),
           AppButton(

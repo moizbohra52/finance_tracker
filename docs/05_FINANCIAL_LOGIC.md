@@ -49,6 +49,19 @@ Both share a transfer reference/id.
 
 Transfer must not affect total net worth.
 
+Implementation (`domain/services/transfer_legs.dart`):
+- Both legs carry the same amount, date and note, and no category.
+- Ids (transfer id and both leg ids) are generated once per form, so a retried
+  save upserts the same rows.
+- Both legs are written in one local database transaction together with their
+  sync-queue items, outgoing first; deleting a transfer tombstones both legs
+  in one transaction.
+- Editing updates both rows in place, except when the new source is the old
+  destination: the server allows one leg per account per transfer
+  (`transactions_transfer_account_key`), and the two updates sync one after
+  the other, so that edit would be rejected half-way. It is recorded instead
+  as a new transfer that replaces (tombstones) the old one in the same step.
+
 ## Income/expense
 Income increases account balance.
 Expense decreases account balance.

@@ -3,9 +3,11 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
@@ -129,17 +131,11 @@ class ContactDetailView extends GetView<ContactDetailController> {
                 ),
               )
             else
-              AppCard(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.xs,
-                ),
-                child: Column(
-                  children: <Widget>[
-                    for (final ContactTransaction e in controller.entries)
-                      _EntryTile(entry: e, id: id),
-                  ],
-                ),
+              AppListCard(
+                children: <Widget>[
+                  for (final ContactTransaction e in controller.entries)
+                    _EntryTile(entry: e, id: id),
+                ],
               ),
             const SizedBox(height: AppSpacing.lg),
             _ContactInfo(contact: contact),
@@ -175,6 +171,8 @@ class _BalanceHeader extends GetView<ContactDetailController> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: <Widget>[
+            IconBadge.initial(contact.name, size: AppSizes.iconLarge),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               receivable
                   ? 'You will get'
@@ -287,26 +285,33 @@ class _EntryTile extends GetView<ContactDetailController> {
     final FinanceColors money = FinanceColors.of(context);
     final TextTheme text = Theme.of(context).textTheme;
     final bool raises = _raisesBalance(entry.type);
+    final Color color = raises ? money.receivable : money.payable;
     final String note = entry.note ?? '';
     final String due = entry.dueDate == null
         ? ''
         : ' · Due ${AppFormatters.date(entry.dueDate!)}';
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(contactEntryLabel(entry.type)),
-      subtitle: Text(
-        '${AppFormatters.dateTime(entry.transactionDate)}$due'
-        '${note.isEmpty ? '' : '\n$note'}',
-        style: text.bodySmall,
+    return AppListTile(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.md,
+        top: AppSpacing.sm,
+        bottom: AppSpacing.sm,
       ),
-      isThreeLine: note.isNotEmpty,
+      leading: IconBadge(
+        icon: raises ? Icons.call_received_rounded : Icons.call_made_rounded,
+        color: color,
+      ),
+      title: contactEntryLabel(entry.type),
+      subtitle:
+          '${AppFormatters.dateTime(entry.transactionDate)}$due'
+          '${note.isEmpty ? '' : '\n$note'}',
+      subtitleMaxLines: 3,
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
             AppFormatters.signedMoney(entry.amount, positive: raises),
             style: text.titleSmall?.copyWith(
-              color: raises ? money.receivable : money.payable,
+              color: color,
               fontWeight: FontWeight.w700,
             ),
           ),

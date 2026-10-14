@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 ThemeData _theme(AppAccentColor accent, Brightness brightness) =>
     brightness == Brightness.light
-    ? AppTheme.lightFor(accent.seedColor, variant: accent.variant)
-    : AppTheme.darkFor(accent.seedColor, variant: accent.variant);
+    ? AppTheme.lightFor(accent)
+    : AppTheme.darkFor(accent);
 
 /// The fill colour of the button's Material.
 Color _fill(WidgetTester tester, Finder button) => tester

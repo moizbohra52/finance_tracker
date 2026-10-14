@@ -5,45 +5,77 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 abstract final class AppTheme {
-  static ThemeData get light => lightFor(AppAccentColor.indigo.seedColor);
-  static ThemeData get dark => darkFor(AppAccentColor.indigo.seedColor);
+  static ThemeData get light => lightFor(AppAccentColor.indigo);
+  static ThemeData get dark => darkFor(AppAccentColor.indigo);
 
-  static ThemeData lightFor(
-    Color seedColor, {
-    DynamicSchemeVariant variant = DynamicSchemeVariant.tonalSpot,
-  }) => _build(Brightness.light, seedColor, variant);
+  static ThemeData lightFor(AppAccentColor accent) =>
+      _build(Brightness.light, accent.tones);
 
-  static ThemeData darkFor(
-    Color seedColor, {
-    DynamicSchemeVariant variant = DynamicSchemeVariant.tonalSpot,
-  }) => _build(Brightness.dark, seedColor, variant);
+  static ThemeData darkFor(AppAccentColor accent) =>
+      _build(Brightness.dark, accent.tones);
 
-  static ThemeData _build(
-    Brightness brightness,
-    Color seedColor,
-    DynamicSchemeVariant variant,
-  ) {
+  /// The accent roles come from the accent's hand-picked [AccentTones];
+  /// pages, cards, text and lines are neutral greys whatever the accent.
+  /// Material derives only the quieter roles (secondary, tertiary, error).
+  static ColorScheme _scheme(Brightness brightness, AccentTones tones) {
     final bool isDark = brightness == Brightness.dark;
-    final Color scaffoldBg = isDark
-        ? const Color(0xFF0B0F19)
-        : const Color(0xFFF8FAFC);
-    final Color surfaceColor = isDark ? const Color(0xFF131B2E) : Colors.white;
-
-    final ColorScheme colorScheme = ColorScheme.fromSeed(
-      seedColor: seedColor,
+    final Color primaryContainer = isDark ? tones.deep : tones.tint;
+    final Color onPrimaryContainer = isDark ? Colors.white : tones.ink;
+    return ColorScheme.fromSeed(
+      seedColor: tones.deep,
       brightness: brightness,
-      dynamicSchemeVariant: variant,
-      surface: surfaceColor,
+    ).copyWith(
+      primary: isDark ? tones.light : tones.deep,
+      onPrimary: isDark ? tones.ink : Colors.white,
+      primaryContainer: primaryContainer,
+      onPrimaryContainer: onPrimaryContainer,
+      // Selected chips and segments use the same pair as other selections.
+      secondaryContainer: primaryContainer,
+      onSecondaryContainer: onPrimaryContainer,
+      surfaceTint: Colors.transparent,
+      surface: isDark ? AppColors.cardDark : AppColors.cardLight,
+      onSurface: isDark ? AppColors.textDark : AppColors.textLight,
+      onSurfaceVariant: isDark
+          ? AppColors.textMutedDark
+          : AppColors.textMutedLight,
+      outline: isDark ? AppColors.outlineDark : AppColors.outlineLight,
+      outlineVariant: isDark ? AppColors.lineDark : AppColors.lineLight,
+      surfaceContainerLowest: isDark ? AppColors.pageDark : AppColors.cardLight,
+      surfaceContainerLow: isDark
+          ? AppColors.fillLowDark
+          : AppColors.fillLowLight,
+      surfaceContainer: isDark ? AppColors.fillDark : AppColors.fillLight,
+      surfaceContainerHigh: isDark
+          ? AppColors.fillHighDark
+          : AppColors.fillHighLight,
+      surfaceContainerHighest: isDark
+          ? AppColors.fillHighestDark
+          : AppColors.fillHighestLight,
+      inverseSurface: isDark ? AppColors.textDark : AppColors.fillHighestDark,
+      onInverseSurface: isDark ? AppColors.fillDark : AppColors.textDark,
     );
+  }
 
-    final RoundedRectangleBorder controlShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppRadius.md),
-    );
+  static ThemeData _build(Brightness brightness, AccentTones tones) {
+    final bool isDark = brightness == Brightness.dark;
+    // White cards on a light grey page, so cards read as separate surfaces
+    // without borders.
+    final Color scaffoldBg = isDark ? AppColors.pageDark : AppColors.pageLight;
+    final ColorScheme colorScheme = _scheme(brightness, tones);
+    final Color surfaceColor = colorScheme.surface;
+
+    // Buttons are pills; inputs and cards keep rounded corners.
+    const StadiumBorder controlShape = StadiumBorder();
     const Size buttonMinimumSize = Size(64, AppSizes.buttonHeight);
 
-    final TextTheme baseText = isDark
-        ? Typography.material2021().white
-        : Typography.material2021().black;
+    final TextTheme baseText =
+        (isDark
+                ? Typography.material2021().white
+                : Typography.material2021().black)
+            .apply(
+              bodyColor: colorScheme.onSurface,
+              displayColor: colorScheme.onSurface,
+            );
 
     final TextTheme textTheme = baseText.copyWith(
       displaySmall: baseText.displaySmall?.copyWith(
@@ -115,17 +147,46 @@ abstract final class AppTheme {
               ),
         titleTextStyle: textTheme.titleLarge,
       ),
+      // Light: borderless with a soft shadow. Dark: shadows barely show on
+      // a dark page, so a faint outline separates the card instead.
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: isDark ? 0 : 1,
         color: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: colorScheme.shadow.withValues(alpha: 0.12),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: isDark
+              ? BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+                )
+              : BorderSide.none,
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        modalBackgroundColor: surfaceColor,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: StadiumBorder(
           side: BorderSide(
             color: colorScheme.outlineVariant.withValues(
-              alpha: isDark ? 0.35 : 0.5,
+              alpha: isDark ? 0.45 : 0.7,
             ),
-            width: 1,
           ),
         ),
       ),
@@ -168,7 +229,8 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationThemeData(
         filled: true,
-        fillColor: isDark ? const Color(0xFF131B2E) : const Color(0xFFF8FAFC),
+        // White fields on the grey page, matching the cards.
+        fillColor: surfaceColor,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
@@ -203,13 +265,12 @@ abstract final class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 60,
+        height: 64,
         elevation: 0,
         backgroundColor: surfaceColor,
-        indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
-        indicatorShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: colorScheme.primary.withValues(alpha: 0.12),
+        indicatorShape: const StadiumBorder(),
         labelTextStyle: WidgetStateProperty.resolveWith((
           Set<WidgetState> states,
         ) {
@@ -238,10 +299,8 @@ abstract final class AppTheme {
       navigationRailTheme: NavigationRailThemeData(
         backgroundColor: surfaceColor,
         elevation: 0,
-        indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
-        indicatorShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
+        indicatorColor: colorScheme.primary.withValues(alpha: 0.12),
+        indicatorShape: const StadiumBorder(),
         selectedLabelTextStyle: textTheme.labelSmall?.copyWith(
           fontWeight: FontWeight.w700,
           color: colorScheme.primary,
@@ -263,9 +322,8 @@ abstract final class AppTheme {
         // dark gold), so the add button must use the same pair as buttons.
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
+        // A pill, like every other button.
+        shape: const StadiumBorder(),
         elevation: 2,
         focusElevation: 3,
         hoverElevation: 3,

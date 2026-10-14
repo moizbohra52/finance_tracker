@@ -6,13 +6,15 @@ import 'package:flutter/material.dart';
 abstract final class ChartPalette {
   static List<Color> of(BuildContext context) {
     final ColorScheme c = Theme.of(context).colorScheme;
+    // Containers are pale fills in light mode and would vanish as bars, so
+    // the later series are softer versions of the strong colours instead.
     return <Color>[
       c.primary,
       c.tertiary,
       c.secondary,
       c.error,
-      c.primaryContainer,
-      c.tertiaryContainer,
+      c.primary.withValues(alpha: 0.55),
+      c.tertiary.withValues(alpha: 0.55),
       c.outline,
     ];
   }

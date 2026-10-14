@@ -20,7 +20,7 @@ class RegisterView extends GetView<RegisterController> {
       final String? sentTo = controller.confirmationSentTo.value;
       if (sentTo != null) {
         return Scaffold(
-          appBar: const AppAppBar(title: ''),
+          appBar: const AppAppBar(title: '', transparent: true),
           body: SafeArea(
             child: EmptyState(
               icon: Icons.mark_email_unread_outlined,

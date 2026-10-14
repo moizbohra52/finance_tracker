@@ -5,6 +5,7 @@ import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/models/transaction.dart';
 import 'package:finance_tracker/data/repositories/payloads.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -313,5 +314,194 @@ class TransactionRepository {
           .update(tombstone())
           .eq('id', transactionId);
     });
+  }
+  // --- Transfers (docs/05_FINANCIAL_LOGIC.md) ---
+
+  /// Both live legs of a transfer, or null when it was deleted or is
+  /// incomplete.
+  Future<TransferLegs?> getTransfer(String transferId) async {
+    if (_db != null) {
+      final List<Map<String, dynamic>> rows = await _db.db.query(
+        'transactions',
+        where: 'transfer_id = ? AND deleted_at IS NULL',
+        whereArgs: <Object>[transferId],
+      );
+      return TransferLegs.fromRows(
+        rows.map(
+          (Map<String, dynamic> r) => TransactionModel.fromJson(r).toEntity(),
+        ),
+      );
+    }
+
+    return guardSupabase(() async {
+      final List<Map<String, dynamic>> rows = await _supabaseClient
+          .from('transactions')
+          .select()
+          .eq('transfer_id', transferId)
+          .isFilter('deleted_at', null);
+      return TransferLegs.fromRows(
+        rows.map(
+          (Map<String, dynamic> r) => TransactionModel.fromJson(r).toEntity(),
+        ),
+      );
+    });
+  }
+
+  /// Records both legs together, so a transfer is never half-written:
+  /// locally in one database transaction with both queue items, remotely in
+  /// one upsert. Ids are client-generated, so a retry upserts the same rows.
+  ///
+  /// With [replacing], that transfer's legs are tombstoned in the same step
+  /// (an edit that cannot update in place, see
+  /// [TransferLegs.canUpdateInPlace]).
+  Future<void> createTransfer(TransferLegs legs, {String? replacing}) async {
+    if (_db != null) {
+      final DateTime now = DateTime.now();
+      await _db.db.transaction((txn) async {
+        if (replacing != null) await _tombstoneTransfer(txn, replacing, now);
+        for (final Transaction leg in <Transaction>[
+          legs.outgoing,
+          legs.incoming,
+        ]) {
+          final Map<String, dynamic> json = TransactionModel.fromEntity(
+            leg,
+          ).toJson();
+          await txn.insert('transactions', <String, dynamic>{
+            ...json,
+            'sync_status': 'pending',
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
+          await txn.insert(
+            'sync_queue',
+            SyncQueueItem(
+              operation: SyncOperation.create,
+              entity: 'transactions',
+              entityId: leg.id,
+              payload: json,
+              createdAt: now,
+            ).toRow(),
+          );
+        }
+      });
+      _syncEngine?.notifyNewQueueItem();
+      return;
+    }
+
+    await guardSupabase(() async {
+      if (replacing != null) {
+        await _supabaseClient
+            .from('transactions')
+            .update(tombstone())
+            .eq('transfer_id', replacing);
+      }
+      await _supabaseClient.from('transactions').upsert(<Map<String, dynamic>>[
+        for (final Transaction leg in <Transaction>[
+          legs.outgoing,
+          legs.incoming,
+        ])
+          insertPayload(
+            _supabaseClient,
+            TransactionModel.fromEntity(leg).toJson(),
+          ),
+      ]);
+    });
+  }
+
+  /// Updates both legs of an existing transfer (amount, date, note, or an
+  /// account change allowed by [TransferLegs.canUpdateInPlace]). The
+  /// outgoing leg is written and queued first.
+  Future<void> updateTransfer(TransferLegs legs) async {
+    final List<Transaction> ordered = <Transaction>[
+      legs.outgoing,
+      legs.incoming,
+    ];
+    if (_db != null) {
+      final DateTime now = DateTime.now();
+      await _db.db.transaction((txn) async {
+        for (final Transaction leg in ordered) {
+          final Map<String, dynamic> json = TransactionModel.fromEntity(
+            leg,
+          ).toJson();
+          await txn.update(
+            'transactions',
+            <String, dynamic>{...json, 'sync_status': 'pending'},
+            where: 'id = ?',
+            whereArgs: <Object>[leg.id],
+          );
+          await txn.insert(
+            'sync_queue',
+            SyncQueueItem(
+              operation: SyncOperation.update,
+              entity: 'transactions',
+              entityId: leg.id,
+              payload: json,
+              createdAt: now,
+            ).toRow(),
+          );
+        }
+      });
+      _syncEngine?.notifyNewQueueItem();
+      return;
+    }
+
+    await guardSupabase(() async {
+      for (final Transaction leg in ordered) {
+        await _supabaseClient
+            .from('transactions')
+            .update(updatePayload(TransactionModel.fromEntity(leg).toJson()))
+            .eq('id', leg.id);
+      }
+    });
+  }
+
+  /// Soft-deletes both legs of a transfer together.
+  Future<void> deleteTransfer(String transferId) async {
+    if (_db != null) {
+      await _db.db.transaction(
+        (txn) => _tombstoneTransfer(txn, transferId, DateTime.now()),
+      );
+      _syncEngine?.notifyNewQueueItem();
+      return;
+    }
+
+    await guardSupabase(() async {
+      await _supabaseClient
+          .from('transactions')
+          .update(tombstone())
+          .eq('transfer_id', transferId);
+    });
+  }
+
+  /// Tombstones the live legs of [transferId] and queues their deletes.
+  static Future<void> _tombstoneTransfer(
+    DatabaseExecutor txn,
+    String transferId,
+    DateTime now,
+  ) async {
+    final List<Map<String, dynamic>> legs = await txn.query(
+      'transactions',
+      columns: <String>['id'],
+      where: 'transfer_id = ? AND deleted_at IS NULL',
+      whereArgs: <Object>[transferId],
+    );
+    final String deletedAt = now.toUtc().toIso8601String();
+    for (final Map<String, dynamic> leg in legs) {
+      final String id = leg['id'] as String;
+      await txn.update(
+        'transactions',
+        <String, dynamic>{'deleted_at': deletedAt, 'sync_status': 'pending'},
+        where: 'id = ?',
+        whereArgs: <Object>[id],
+      );
+      await txn.insert(
+        'sync_queue',
+        SyncQueueItem(
+          operation: SyncOperation.delete,
+          entity: 'transactions',
+          entityId: id,
+          payload: tombstone(),
+          createdAt: now,
+        ).toRow(),
+      );
+    }
   }
 }

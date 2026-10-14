@@ -38,6 +38,11 @@ abstract final class AppRoutes {
   static const String transactions = '/transactions';
   static const String transactionForm = '/transaction-form';
   static const String transactionDetail = '/transaction-detail';
+  static const String transferForm = '/transfer-form';
+
+  // Categories
+  static const String categories = '/categories';
+  static const String categoryForm = '/category-form';
 
   // Khata
   static const String contacts = '/contacts';

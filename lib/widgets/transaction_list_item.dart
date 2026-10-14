@@ -1,9 +1,11 @@
-import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:flutter/material.dart';
 
 /// One transaction row: icon, title, time and type, and a signed amount.
@@ -15,6 +17,7 @@ class TransactionListItem extends StatelessWidget {
     required this.subtitle,
     this.iconKey,
     this.onTap,
+    this.padding = AppListTile.defaultPadding,
   });
 
   final Transaction transaction;
@@ -27,54 +30,51 @@ class TransactionListItem extends StatelessWidget {
   final String? iconKey;
   final VoidCallback? onTap;
 
+  /// [AppListTile.flatPadding] when the row sits directly on the page.
+  final EdgeInsetsGeometry padding;
+
+  /// Row title for [t]: its category's name; for a transfer leg "To ..." or
+  /// "From ..." naming the other account when [nearby] holds the other leg;
+  /// otherwise its type ("Expense", "Transfer in").
+  static String titleFor(
+    Transaction t, {
+    required String? categoryName,
+    required Iterable<Transaction> nearby,
+    required String Function(String accountId) accountName,
+  }) {
+    if (categoryName != null) return categoryName;
+    if (TransferLegs.isLeg(t)) {
+      for (final Transaction other in nearby) {
+        if (other.transferId == t.transferId && other.id != t.id) {
+          final String account = accountName(other.accountId);
+          return t.type == TransactionType.transfer_out
+              ? 'To $account'
+              : 'From $account';
+        }
+      }
+    }
+    return t.type.label;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    final TextTheme text = Theme.of(context).textTheme;
-    final FinanceColors money = FinanceColors.of(context);
     final bool inflow = transaction.type.isInflow;
-    final Color badgeBg = inflow
-        ? money.income.withValues(alpha: 0.12)
-        : colors.primary.withValues(alpha: 0.1);
-    final Color iconColor = inflow ? money.income : colors.primary;
-
-    return ListTile(
+    // A transfer is neither income nor expense, so its badge is neutral.
+    final bool income = inflow && !TransferLegs.isLeg(transaction);
+    return AppListTile(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+      padding: padding,
+      leading: IconBadge(
+        icon: CategoryIcons.of(iconKey, transaction.type),
+        color: income ? FinanceColors.of(context).income : null,
       ),
-      leading: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: badgeBg,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        alignment: Alignment.center,
-        child: Icon(
-          CategoryIcons.of(iconKey, transaction.type),
-          color: iconColor,
-          size: 22,
-        ),
-      ),
-      title: Text(
-        title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-      ),
-      subtitle: Text(
-        '${AppFormatters.time(transaction.transactionDate)} · '
-        '${transaction.type.label} · $subtitle',
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-      ),
+      title: title,
+      subtitle:
+          '${AppFormatters.time(transaction.transactionDate)} · '
+          '${transaction.type.label} · $subtitle',
       trailing: MoneyText(
         transaction.amount,
         flow: inflow ? MoneyFlow.inflow : MoneyFlow.outflow,
-        style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }

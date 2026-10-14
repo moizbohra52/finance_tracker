@@ -18,6 +18,8 @@ import 'package:finance_tracker/features/auth/views/splash_view.dart';
 import 'package:finance_tracker/features/backup/views/backup_view.dart';
 import 'package:finance_tracker/features/budgets/views/budget_form_view.dart';
 import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
+import 'package:finance_tracker/features/categories/views/category_form_view.dart';
+import 'package:finance_tracker/features/categories/views/category_list_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
@@ -38,6 +40,7 @@ import 'package:finance_tracker/features/settings/views/settings_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
+import 'package:finance_tracker/features/transactions/views/transfer_form_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/routes/route_guards.dart';
 import 'package:get/get.dart';
@@ -263,6 +266,26 @@ abstract final class AppPages {
       page: () => TransactionDetailView(id: routeIdArgument()),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: TransactionDetailBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.transferForm,
+      page: () => const TransferFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: TransactionBinding(),
+    ),
+
+    // Categories
+    GetPage<dynamic>(
+      name: AppRoutes.categories,
+      page: () => const CategoryListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: CategoryBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.categoryForm,
+      page: () => const CategoryFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: CategoryBinding(),
     ),
 
     // Khata

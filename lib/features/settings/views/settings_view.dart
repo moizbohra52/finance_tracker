@@ -8,18 +8,19 @@ import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/core/widgets/sync_status_sheet.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
+import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_settings_section.dart';
 import 'package:finance_tracker/features/profile/widgets/delete_account_dialog.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/settings/widgets/settings_widgets.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
-import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -171,7 +172,8 @@ class _AccentChoice extends StatelessWidget {
       child: ChoiceChip(
         avatar: CircleAvatar(
           radius: 9,
-          backgroundColor: accent.seedColor,
+          // The shade the app uses, so the swatch matches the result.
+          backgroundColor: accent.tones.deep,
           child: selected
               ? Icon(Icons.check, size: 12, color: colors.onPrimary)
               : null,
@@ -213,7 +215,7 @@ class _RegionSection extends GetView<SettingsController> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           SubmitErrorMessage(controller.save),
-          SettingsCard(
+          AppListCard(
             children: <Widget>[
               SettingsTile(
                 icon: Icons.payments_outlined,
@@ -245,6 +247,12 @@ class _RegionSection extends GetView<SettingsController> {
                 subtitle: 'Pre-selected on new transactions',
                 value: _accountName(prefs.defaultAccountId),
                 onTap: () => _pickDefaultAccount(context, prefs),
+              ),
+              SettingsTile(
+                icon: Icons.category_outlined,
+                title: 'Categories',
+                subtitle: 'Add your own income and expense categories',
+                onTap: () => Get.toNamed<void>(AppRoutes.categories),
               ),
               const SettingsTile(
                 icon: Icons.translate_rounded,
@@ -394,7 +402,7 @@ class _DataBackupSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsCard(
+    return AppListCard(
       children: <Widget>[
         SettingsTile(
           icon: Icons.file_download_outlined,
@@ -421,7 +429,7 @@ class _SecuritySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsCard(
+    return AppListCard(
       children: <Widget>[
         SettingsTile(
           icon: Icons.lock_outline,
@@ -450,7 +458,7 @@ class _InformationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsCard(
+    return AppListCard(
       children: <Widget>[
         SettingsTile(
           icon: Icons.privacy_tip_outlined,

@@ -21,7 +21,12 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.onProfileTap,
     this.onSettingsTap,
     this.onSignOutTap,
+    this.transparent = false,
   });
+
+  /// Drops the frosted background and bottom line, so the bar blends into
+  /// the page (sign-in screens, where only the back button is shown).
+  final bool transparent;
 
   final String? title;
   final Widget? titleWidget;
@@ -78,24 +83,28 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       leadingWidth: 56,
-      flexibleSpace: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            decoration: BoxDecoration(
-              color: colors.surface.withValues(alpha: isDark ? 0.82 : 0.88),
-              border: Border(
-                bottom: BorderSide(
-                  color: colors.outlineVariant.withValues(
-                    alpha: isDark ? 0.22 : 0.45,
+      flexibleSpace: transparent
+          ? null
+          : ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colors.surface.withValues(
+                      alpha: isDark ? 0.82 : 0.88,
+                    ),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: colors.outlineVariant.withValues(
+                          alpha: isDark ? 0.22 : 0.45,
+                        ),
+                        width: 1,
+                      ),
+                    ),
                   ),
-                  width: 1,
                 ),
               ),
             ),
-          ),
-        ),
-      ),
       actions: [
         if (profileAvatar != null)
           Padding(

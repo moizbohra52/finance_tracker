@@ -1,8 +1,12 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
@@ -26,7 +30,9 @@ class RecurringListView extends GetView<RecurringController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const AppContent(child: SkeletonList(count: 4, type: SkeletonType.generic));
+            return const AppContent(
+              child: SkeletonList(count: 4, type: SkeletonType.generic),
+            );
           }
           final String? error = controller.error.value;
           if (error != null && controller.rules.isEmpty) {
@@ -78,8 +84,6 @@ class _RuleTile extends GetView<RecurringController> {
 
   @override
   Widget build(BuildContext context) {
-    final TextTheme text = Theme.of(context).textTheme;
-    final ColorScheme colors = Theme.of(context).colorScheme;
     final category = controller.categoryOf(rule.categoryId);
     final bool inflow = rule.type == TransactionType.income;
     final bool ended =
@@ -87,79 +91,40 @@ class _RuleTile extends GetView<RecurringController> {
     final String next = rule.active
         ? 'Next ${AppFormatters.date(rule.nextRunAt)}'
         : (ended ? 'Ended' : 'Paused');
-    return Card(
+    return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      padding: EdgeInsets.zero,
+      child: AppListTile(
         onTap: () =>
             Get.toNamed<void>(AppRoutes.recurringForm, arguments: rule),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  CategoryIcons.of(category?.icon, rule.type),
-                  size: 22,
-                  color: colors.primary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      (rule.note ?? '').isNotEmpty
-                          ? rule.note!
-                          : (category?.name ?? rule.type.label),
-                      style: text.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${rule.scheduleLabel} · $next · '
-                      '${controller.accountName(rule.accountId)}',
-                      style: text.bodySmall?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+        leading: IconBadge(
+          icon: CategoryIcons.of(category?.icon, rule.type),
+          color: inflow ? FinanceColors.of(context).income : null,
+        ),
+        title: (rule.note ?? '').isNotEmpty
+            ? rule.note!
+            : (category?.name ?? rule.type.label),
+        subtitle:
+            '${rule.scheduleLabel} · $next · '
+            '${controller.accountName(rule.accountId)}',
+        subtitleMaxLines: 2,
+        trailing: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: <Widget>[
+            MoneyText(
+              rule.amount,
+              flow: inflow ? MoneyFlow.inflow : MoneyFlow.outflow,
+            ),
+            if (!ended)
+              Semantics(
+                label: rule.active ? 'Pause schedule' : 'Resume schedule',
+                child: Switch(
+                  value: rule.active,
+                  onChanged: (bool v) => controller.setActive(rule, v),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: <Widget>[
-                  MoneyText(
-                    rule.amount,
-                    flow: inflow ? MoneyFlow.inflow : MoneyFlow.outflow,
-                    style: text.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  if (!ended)
-                    Semantics(
-                      label: rule.active ? 'Pause schedule' : 'Resume schedule',
-                      child: Switch(
-                        value: rule.active,
-                        onChanged: (bool v) => controller.setActive(rule, v),
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

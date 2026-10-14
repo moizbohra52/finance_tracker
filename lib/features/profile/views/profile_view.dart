@@ -6,15 +6,16 @@ import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/widgets/delete_account_dialog.dart';
 import 'package:finance_tracker/features/profile/widgets/profile_avatar.dart';
 import 'package:finance_tracker/features/settings/widgets/settings_widgets.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
-import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -155,25 +156,23 @@ class _ProfileForm extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            AppCard(
-              child: Column(
-                children: <Widget>[
-                  SettingsTile(
-                    icon: Icons.email_outlined,
-                    title: 'Email',
-                    value: controller.email,
+            AppListCard(
+              children: <Widget>[
+                SettingsTile(
+                  icon: Icons.email_outlined,
+                  title: 'Email',
+                  value: controller.email,
+                ),
+                Obx(
+                  () => SettingsTile(
+                    icon: Icons.schedule_outlined,
+                    title: 'Time zone',
+                    value: controller.timezone.value.isEmpty
+                        ? 'Not available'
+                        : controller.timezone.value,
                   ),
-                  Obx(
-                    () => SettingsTile(
-                      icon: Icons.schedule_outlined,
-                      title: 'Time zone',
-                      value: controller.timezone.value.isEmpty
-                          ? 'Not available'
-                          : controller.timezone.value,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -192,21 +191,19 @@ class _ProfileForm extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             const SettingsSectionTitle('Security'),
             const SizedBox(height: AppSpacing.sm),
-            AppCard(
-              child: Column(
-                children: <Widget>[
-                  SettingsTile(
-                    icon: Icons.lock_outline,
-                    title: 'Change password',
-                    onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
-                  ),
-                  SettingsTile(
-                    icon: Icons.logout_rounded,
-                    title: 'Sign out',
-                    onTap: () => confirmAndSignOut(context),
-                  ),
-                ],
-              ),
+            AppListCard(
+              children: <Widget>[
+                SettingsTile(
+                  icon: Icons.lock_outline,
+                  title: 'Change password',
+                  onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
+                ),
+                SettingsTile(
+                  icon: Icons.logout_rounded,
+                  title: 'Sign out',
+                  onTap: () => confirmAndSignOut(context),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.lg),
             const SettingsSectionTitle('Danger zone', destructive: true),

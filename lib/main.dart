@@ -170,8 +170,8 @@ class FinanceTrackerApp extends StatelessWidget {
       return GetMaterialApp(
         title: AppConstants.appName,
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightFor(accent.seedColor, variant: accent.variant),
-        darkTheme: AppTheme.darkFor(accent.seedColor, variant: accent.variant),
+        theme: AppTheme.lightFor(accent),
+        darkTheme: AppTheme.darkFor(accent),
         themeMode: themeController.themeMode.value,
         scaffoldMessengerKey: AppSnackbar.messengerKey,
         initialBinding: initialBinding,

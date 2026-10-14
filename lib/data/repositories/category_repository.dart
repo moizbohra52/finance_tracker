@@ -96,9 +96,16 @@ class CategoryRepository {
       return;
     }
 
-    await _supabaseClient
-        .from('categories')
-        .insert(CategoryModel.fromEntity(category).toJson());
+    await guardSupabase(() async {
+      await _supabaseClient
+          .from('categories')
+          .upsert(
+            insertPayload(
+              _supabaseClient,
+              CategoryModel.fromEntity(category).toJson(),
+            ),
+          );
+    });
   }
 
   Future<void> updateCategory(Category category) async {
@@ -129,10 +136,12 @@ class CategoryRepository {
       return;
     }
 
-    await _supabaseClient
-        .from('categories')
-        .update(CategoryModel.fromEntity(category).toJson())
-        .eq('id', category.id);
+    await guardSupabase(() async {
+      await _supabaseClient
+          .from('categories')
+          .update(updatePayload(CategoryModel.fromEntity(category).toJson()))
+          .eq('id', category.id);
+    });
   }
 
   Future<void> deleteCategory(String categoryId) async {
@@ -157,6 +166,13 @@ class CategoryRepository {
       return;
     }
 
-    await _supabaseClient.from('categories').delete().eq('id', categoryId);
+    // A soft delete, like every other entity, so the tombstone syncs to the
+    // user's other devices (docs/07_OFFLINE_SYNC.md).
+    await guardSupabase(() async {
+      await _supabaseClient
+          .from('categories')
+          .update(tombstone())
+          .eq('id', categoryId);
+    });
   }
 }

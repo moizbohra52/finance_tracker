@@ -2,9 +2,11 @@ import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:get/get.dart';
 
-/// Loads one transaction by id for the detail route.
+/// Loads one transaction by id for the detail route, and for a transfer leg
+/// both legs, so the screen can show where the money went.
 class TransactionDetailController extends GetxController {
   TransactionDetailController(
     this._repository,
@@ -17,6 +19,9 @@ class TransactionDetailController extends GetxController {
   final String transactionId;
 
   final Rxn<Transaction> transaction = Rxn<Transaction>();
+
+  /// Both legs when [transaction] is part of a transfer.
+  final Rxn<TransferLegs> transfer = Rxn<TransferLegs>();
   final RxBool isLoading = true.obs;
   final RxnString error = RxnString();
 
@@ -46,7 +51,11 @@ class TransactionDetailController extends GetxController {
         transactionId,
       );
       // A soft-deleted row is gone as far as the user is concerned.
-      transaction.value = loaded.deletedAt == null ? loaded : null;
+      final Transaction? live = loaded.deletedAt == null ? loaded : null;
+      transfer.value = live != null && TransferLegs.isLeg(live)
+          ? await _repository.getTransfer(live.transferId!)
+          : null;
+      transaction.value = live;
     } on AppException catch (failure) {
       if (!silent) error.value = failure.message;
     } finally {

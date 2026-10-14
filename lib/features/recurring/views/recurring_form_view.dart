@@ -1,7 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
-import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
@@ -16,8 +15,10 @@ import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/features/categories/controller/category_controller.dart';
 import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/category_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -145,6 +146,20 @@ class _RecurringFormViewState extends State<RecurringFormView> {
     }
   }
 
+  /// Opens the category form for this kind and selects what it creates.
+  Future<void> _createCategory() async {
+    // GetX routes are typed dynamic, so the id comes back untyped.
+    final Object? id = await Get.toNamed<dynamic>(
+      AppRoutes.categoryForm,
+      arguments: CategoryFormArgs(
+        type: _type == TransactionType.income
+            ? CategoryType.income
+            : CategoryType.expense,
+      ),
+    );
+    if (id is String && mounted) setState(() => _categoryId = id);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -154,8 +169,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
           if (!_controller.lookupsLoaded.value) {
             return const LoadingState(message: 'Loading accounts');
           }
-          if (_controller.error.value != null &&
-              _controller.accounts.isEmpty) {
+          if (_controller.error.value != null && _controller.accounts.isEmpty) {
             return ErrorState(
               message: _controller.error.value!,
               onRetry: _controller.load,
@@ -232,19 +246,12 @@ class _RecurringFormViewState extends State<RecurringFormView> {
             const SizedBox(height: AppSpacing.lg),
             Text('Category', style: text.labelLarge),
             const SizedBox(height: AppSpacing.sm),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: <Widget>[
-                for (final Category c in categories)
-                  ChoiceChip(
-                    avatar: Icon(CategoryIcons.of(c.icon, _type), size: 18),
-                    label: Text(c.name),
-                    selected: _categoryId == c.id,
-                    onSelected: (bool on) =>
-                        setState(() => _categoryId = on ? c.id : null),
-                  ),
-              ],
+            CategoryPicker(
+              categories: categories,
+              type: _type,
+              selectedId: _categoryId,
+              onChanged: (String? id) => setState(() => _categoryId = id),
+              onAddNew: _createCategory,
             ),
             const SizedBox(height: AppSpacing.lg),
             BottomSheetDropdown<String>(

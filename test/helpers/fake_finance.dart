@@ -17,6 +17,7 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/transfer_legs.dart';
 
 /// In-memory finance data shared by the fake repositories. [nextError] makes
 /// the next repository call fail once.
@@ -176,7 +177,41 @@ class FakeCategoryRepository implements CategoryRepository {
   @override
   Future<List<Category>> getCategories() async {
     _f.throwPending();
-    return List<Category>.of(_f.categories);
+    return _f.categories.where((Category c) => c.deletedAt == null).toList();
+  }
+
+  @override
+  Future<void> createCategory(Category category) async {
+    _f.throwPending();
+    _f.categories
+      ..removeWhere((Category c) => c.id == category.id)
+      ..add(category);
+  }
+
+  @override
+  Future<void> updateCategory(Category category) async {
+    _f.throwPending();
+    final int i = _f.categories.indexWhere((Category c) => c.id == category.id);
+    _f.categories[i] = category;
+  }
+
+  @override
+  Future<void> deleteCategory(String categoryId) async {
+    _f.throwPending();
+    final int i = _f.categories.indexWhere((Category c) => c.id == categoryId);
+    final Category c = _f.categories[i];
+    _f.categories[i] = Category(
+      id: c.id,
+      userId: c.userId,
+      name: c.name,
+      type: c.type,
+      icon: c.icon,
+      isSystem: c.isSystem,
+      isActive: c.isActive,
+      createdAt: c.createdAt,
+      updatedAt: DateTime.now(),
+      deletedAt: DateTime.now(),
+    );
   }
 
   @override
@@ -271,6 +306,51 @@ class FakeTransactionRepository implements TransactionRepository {
     _f.throwPending();
     final int i = _f.transactions.indexWhere((Transaction t) => t.id == id);
     _f.transactions[i] = _f.transactions[i].copyWith(deletedAt: DateTime.now());
+  }
+
+  @override
+  Future<TransferLegs?> getTransfer(String transferId) async {
+    _f.throwPending();
+    return TransferLegs.fromRows(
+      _f.transactions.where((Transaction t) => t.transferId == transferId),
+    );
+  }
+
+  @override
+  Future<void> createTransfer(TransferLegs legs, {String? replacing}) async {
+    _f.throwPending();
+    if (replacing != null) _tombstone(replacing);
+    for (final Transaction leg in <Transaction>[legs.outgoing, legs.incoming]) {
+      _f.transactions
+        ..removeWhere((Transaction t) => t.id == leg.id)
+        ..add(leg);
+    }
+  }
+
+  @override
+  Future<void> updateTransfer(TransferLegs legs) async {
+    _f.throwPending();
+    for (final Transaction leg in <Transaction>[legs.outgoing, legs.incoming]) {
+      final int i = _f.transactions.indexWhere(
+        (Transaction t) => t.id == leg.id,
+      );
+      _f.transactions[i] = leg;
+    }
+  }
+
+  @override
+  Future<void> deleteTransfer(String transferId) async {
+    _f.throwPending();
+    _tombstone(transferId);
+  }
+
+  void _tombstone(String transferId) {
+    for (int i = 0; i < _f.transactions.length; i++) {
+      final Transaction t = _f.transactions[i];
+      if (t.transferId == transferId && t.deletedAt == null) {
+        _f.transactions[i] = t.copyWith(deletedAt: DateTime.now());
+      }
+    }
   }
 }
 

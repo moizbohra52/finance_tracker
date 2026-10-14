@@ -9,26 +9,29 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/splash` | Splash | `SplashController` | app start |
 | `/onboarding`, `/login`, `/register`, `/forgot-password` | Auth (guest only) | existing | splash, auth links |
 | `/reset-password`, `/change-password` | Password flows | existing | recovery link, profile |
-| `/dashboard` | App shell, 5 tabs | `ShellBinding` → `HomeController`, `TransactionController`, `ContactController`, `ContactFormController`, `AccountController`, `ProfileController` | splash / sign-in |
+| `/dashboard` | App shell, 4 tabs | `ShellBinding` → `HomeController`, `TransactionController`, `ContactController`, `ContactFormController`, `AccountController`, `ProfileController` | splash / sign-in |
 | tab 0 | Home (balance, quick actions, today, khata, accounts, recent) | `HomeController` | bottom nav |
 | tab 1 | Transactions list (search, filter sheet, day groups, paging) | `TransactionController` | bottom nav |
 | tab 2 | Khata (summary, search, receivable/payable filter) | `ContactController` | bottom nav |
 | tab 3 | Reports (date filter, totals, charts, categories, accounts, monthly comparison) | `ReportsController` | bottom nav |
 | `/reports` | Reports (route form of tab 3) | `ReportsBinding` | Home "Reports" / "Details" |
-| tab 4 | Profile | `ProfileController` | bottom nav |
+| `/profile` | Profile (not a tab since 2026-10-14) | `ProfileController` | app-bar avatar, app-bar menu |
 | `/transactions` | Transaction list (route form of tab 1) | `TransactionBinding` | Home "See all" |
 | `/transaction-form` | Add income / add expense / edit (`TransactionFormArgs`) | `TransactionBinding` | Home quick actions, list FAB, detail Edit |
+| `/transfer-form` | Transfer between two accounts, or edit one (`TransferFormArgs`) | `TransactionBinding` | Home quick action *Transfer*, list FAB sheet, account detail, transfer detail Edit |
 | `/transaction-detail` | Transaction details, edit, delete (arg: id) | `TransactionDetailBinding` | any transaction row |
 | `/contacts` | Khata list (route form of tab 2) | `ContactBinding` | Home "Open" |
 | `/contact-form` | Add / edit contact (arg: `Contact` for edit) | `ContactBinding` | Khata FAB, contact detail |
 | `/contact-detail` | Contact ledger, balance, delete (arg: id) | `ContactDetailBinding` | contact row |
 | `/contact-entry` | Add credit / debit / payment (`ContactEntryArgs`) | `ContactBinding` | contact detail, Home Credit/Debit |
-| `/accounts`, `/account-form`, `/account-detail` | Accounts, opening balance, detail (arg: id / `Account`) | `AccountBinding`, `AccountDetailBinding` | Home Accounts, quick action |
+| `/accounts`, `/account-form`, `/account-detail` | Accounts, opening balance, detail (arg: id / `Account`) | `AccountBinding`, `AccountDetailBinding` | Home Accounts section *Manage*, app-bar menu |
 | `/budgets` | Budget list with progress, spent/left, 75/90/100 state | `BudgetBinding` → `BudgetController` | Home "Plan ahead" |
 | `/budget-form` | Add / edit / delete budget (arg: `Budget` for edit) | `BudgetBinding` | Budgets FAB, budget card |
 | `/recurring` | Recurring schedules, pause/resume | `RecurringBinding` → `RecurringController` | Home "Plan ahead" |
 | `/recurring-form` | Add / edit / delete schedule incl. custom interval (arg: rule for edit) | `RecurringBinding` | Recurring FAB, schedule row |
 | `/settings` | Settings | — | app-bar gear |
+| `/categories` | Own and built-in categories, by kind | `CategoryBinding` → `CategoryController` | Settings > Categories |
+| `/category-form` | Add / edit / delete an own category (`CategoryFormArgs`); returns the id | `CategoryBinding` | Categories FAB and rows, *New* chip in the income/expense and recurring forms |
 
 Search and filters are part of the transaction list (search field + filter bottom sheet), not separate routes.
 
@@ -119,3 +122,32 @@ New routes (all signed-in only):
   px and JPEG quality 85 at pick time, then checked against the 2 MiB limit.
 - **Upload progress** is indeterminate: the storage client does not report byte
   progress, so the photo shows a spinner while uploading.
+
+## 2026-10-14 decisions: transfers, categories, navigation
+
+- **Profile is not a bottom-navigation tab.** It already opened from the
+  app-bar avatar and menu, so the tab duplicated it. The shell has four tabs:
+  Home, Transactions, Khata, Reports.
+- **Transfers** (`/transfer-form`): amount, From, To (the source is not
+  offered as a destination), date and note. Both legs are built in
+  `domain/services/transfer_legs.dart` and written together by
+  `TransactionRepository.createTransfer` (one local database transaction with
+  both sync-queue items). Rows show "To <account>" / "From <account>" when the
+  other leg is loaded; the detail screen shows From/To, edits open the
+  transfer form, and delete removes both legs. Rules and edit behaviour are in
+  `docs/05_FINANCIAL_LOGIC.md`.
+- The Home quick action *Accounts* became *Transfer* (as
+  `docs/11_DESIGN_REFERENCE.md` suggests); accounts open from the Accounts
+  section's *Manage*.
+- **Categories** (`/categories`, `/category-form`): users add, rename,
+  re-icon and delete their own income or expense categories; built-in ones are
+  read-only (RLS refuses writes to them). Names must be unique per kind,
+  ignoring case and including built-in names. The kind is fixed once created.
+  Deleting is a soft delete: rows that used the category keep their amounts.
+  The income/expense and recurring forms offer a *New* chip that opens the
+  form and selects the result.
+- Category chips (`widgets/category_picker.dart`) show no check mark: the
+  selected chip has a thicker primary border and the selected fill.
+- **No database change.** `categories` RLS already allowed own-row writes and
+  `transactions.transfer_id` with its unique indexes already existed.
+

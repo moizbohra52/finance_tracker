@@ -1,7 +1,10 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
@@ -41,7 +44,9 @@ class NotificationCenterView extends GetView<NotificationCenterController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const AppContent(child: SkeletonList(count: 5, type: SkeletonType.generic));
+            return const AppContent(
+              child: SkeletonList(count: 5, type: SkeletonType.generic),
+            );
           }
           final String? error = controller.error.value;
           if (error != null && controller.items.isEmpty) {
@@ -108,32 +113,23 @@ class _NotificationTile extends GetView<NotificationCenterController> {
 
   @override
   Widget build(BuildContext context) {
-    final TextTheme text = Theme.of(context).textTheme;
     final ColorScheme colors = Theme.of(context).colorScheme;
     final bool unread = !notification.isRead;
     final String body = notification.body ?? '';
-    return Card(
+    return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      clipBehavior: Clip.antiAlias,
-      child: ListTile(
+      padding: EdgeInsets.zero,
+      child: AppListTile(
         onTap: () => controller.open(notification),
-        leading: CircleAvatar(
-          backgroundColor: colors.primary.withValues(alpha: 0.1),
-          foregroundColor: colors.primary,
-          child: Icon(_typeIcon(notification.type), size: 20),
+        leading: IconBadge(icon: _typeIcon(notification.type)),
+        title: notification.title,
+        titleStyle: TextStyle(
+          fontWeight: unread ? FontWeight.w700 : FontWeight.w500,
         ),
-        title: Text(
-          notification.title,
-          style: text.titleSmall?.copyWith(
-            fontWeight: unread ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-        subtitle: Text(
-          '${body.isEmpty ? '' : '$body\n'}'
-          '${AppFormatters.dateTime(notification.createdAt)}',
-          style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-        ),
-        isThreeLine: body.isNotEmpty,
+        subtitle:
+            '${body.isEmpty ? '' : '$body\n'}'
+            '${AppFormatters.dateTime(notification.createdAt)}',
+        subtitleMaxLines: 3,
         trailing: unread
             ? Semantics(
                 label: 'Unread',

@@ -109,9 +109,8 @@ void main() {
       expect(find.byType(ReportsPage), findsNothing);
     });
 
-    testWidgets('avatar opens the profile and accounts action works', (
-      WidgetTester tester,
-    ) async {
+    testWidgets('avatar opens the profile and the accounts section opens '
+        'accounts', (WidgetTester tester) async {
       await _open(tester, _seeded());
       await tester.tap(find.widgetWithText(CircleAvatar, 'A'));
       await tester.pumpAndSettle();
@@ -119,8 +118,10 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      await _scrollTo(tester, find.text('Accounts').first);
-      await tester.tap(find.text('Accounts').first);
+      // The home quick actions offer Transfer; accounts open from the
+      // Accounts section's Manage action.
+      await _scrollTo(tester, find.text('Manage'));
+      await tester.tap(find.text('Manage'));
       await tester.pumpAndSettle();
       expect(find.byType(AccountListView), findsOneWidget);
     });

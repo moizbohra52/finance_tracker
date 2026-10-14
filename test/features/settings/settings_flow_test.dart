@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
-import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/models/user_settings.dart';
@@ -132,8 +132,7 @@ void main() {
       WidgetTester tester,
     ) async {
       final Color expected = AppTheme.lightFor(
-        AppColors.logoEmber,
-        variant: DynamicSchemeVariant.fidelity,
+        AppAccentColor.ember,
       ).colorScheme.primary;
 
       await account.launch(tester);

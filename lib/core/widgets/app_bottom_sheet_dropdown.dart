@@ -47,6 +47,10 @@ class BottomSheetDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FormField<T>(
+      // FormField reads initialValue once, so without this key a value the
+      // parent changes itself (a swap button, a corrected default) would
+      // keep showing, and validating, the old value.
+      key: ValueKey<T?>(value),
       initialValue: value,
       validator: validator,
       builder: (FormFieldState<T> state) {

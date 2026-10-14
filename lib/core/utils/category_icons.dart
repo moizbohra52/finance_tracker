@@ -32,6 +32,13 @@ abstract final class CategoryIcons {
     'other_expense': Icons.more_horiz,
   };
 
+  /// Every icon key a category can use, in display order (the category form
+  /// offers these).
+  static List<String> get keys => _byKey.keys.toList(growable: false);
+
+  /// The icon for [key], or a neutral one for an unknown key.
+  static IconData byKey(String key) => _byKey[key] ?? Icons.label_outline;
+
   /// The category's icon, or one that matches the transaction [type].
   static IconData of(String? key, TransactionType type) =>
       _byKey[key] ?? forType(type);

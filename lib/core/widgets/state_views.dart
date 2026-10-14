@@ -1,4 +1,5 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 
@@ -129,19 +130,7 @@ class _StatusMessage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: iconColor.withValues(alpha: 0.1),
-                  border: Border.all(
-                    color: iconColor.withValues(alpha: 0.2),
-                    width: 1.5,
-                  ),
-                ),
-                child: Icon(icon, size: 32, color: iconColor),
-              ),
+              IconBadge(icon: icon, color: iconColor, size: 72),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 title,

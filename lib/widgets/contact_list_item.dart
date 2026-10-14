@@ -1,22 +1,30 @@
-import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
 import 'package:flutter/material.dart';
 
 /// Contact name with what they owe the user or what the user owes them.
 class ContactBalanceTile extends StatelessWidget {
-  const ContactBalanceTile({super.key, required this.row, this.onTap});
+  const ContactBalanceTile({
+    super.key,
+    required this.row,
+    this.onTap,
+    this.padding = AppListTile.defaultPadding,
+  });
 
   final ContactBalance row;
   final VoidCallback? onTap;
+
+  /// [AppListTile.flatPadding] when the row sits directly on the page.
+  final EdgeInsetsGeometry padding;
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final FinanceColors money = FinanceColors.of(context);
     final TextTheme text = Theme.of(context).textTheme;
-    final String name = row.contact.name;
 
     final (String label, Color? color) = row.isReceivable
         ? ('You will get', money.receivable)
@@ -24,46 +32,14 @@ class ContactBalanceTile extends StatelessWidget {
         ? ('You will give', money.payable)
         : ('Settled', null);
 
-    return ListTile(
+    return AppListTile(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      leading: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          color: colors.primary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(
-            color: colors.primary.withValues(alpha: 0.2),
-            width: 1,
-          ),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          name.isEmpty ? '?' : name.characters.first.toUpperCase(),
-          style: text.titleMedium?.copyWith(
-            color: colors.primary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      title: Text(
-        name,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: text.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-      ),
-      subtitle: (row.contact.mobile ?? '').isEmpty
-          ? null
-          : Text(
-              row.contact.mobile!,
-              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-            ),
+      padding: padding,
+      leading: IconBadge.initial(row.contact.name),
+      title: row.contact.name,
+      subtitle: row.contact.mobile,
       trailing: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           if (color != null)

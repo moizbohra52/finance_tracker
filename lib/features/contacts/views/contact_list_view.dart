@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
@@ -80,6 +81,7 @@ class ContactListContent extends GetView<ContactController> {
                   itemCount: rows.length,
                   itemBuilder: (BuildContext context, int index) =>
                       ContactBalanceTile(
+                        padding: AppListTile.flatPadding,
                         row: rows[index],
                         onTap: () => Get.toNamed<void>(
                           AppRoutes.contactDetail,
@@ -87,7 +89,9 @@ class ContactListContent extends GetView<ContactController> {
                         ),
                       ),
                 ),
-              const SliverToBoxAdapter(child: SizedBox(height: 88)),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: AppSpacing.fabClearance),
+              ),
             ],
           ),
         ),

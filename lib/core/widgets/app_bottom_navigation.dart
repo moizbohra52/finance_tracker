@@ -34,11 +34,8 @@ class AppNavigationDestination {
           selectedIcon: Icons.insights_rounded,
           label: 'Reports',
         ),
-        AppNavigationDestination(
-          icon: Icons.person_outline,
-          selectedIcon: Icons.person_rounded,
-          label: 'Profile',
-        ),
+        // Profile is not a tab: the avatar in the app bar (and its menu)
+        // opens it, so a tab would only duplicate that entry point.
       ];
 }
 
@@ -54,20 +51,44 @@ class AppBottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBarTheme(
-      data: Theme.of(context).navigationBarTheme,
-      child: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: onDestinationSelected,
-        destinations: AppNavigationDestination.items
-            .map(
-              (AppNavigationDestination item) => NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-            )
-            .toList(),
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    // A soft shadow lifts the bar off the page in light mode; in dark mode a
+    // hairline does the same job.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: isDark
+            ? Border(
+                top: BorderSide(
+                  color: colors.outlineVariant.withValues(alpha: 0.3),
+                ),
+              )
+            : null,
+        boxShadow: isDark
+            ? null
+            : <BoxShadow>[
+                BoxShadow(
+                  color: colors.shadow.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+      ),
+      child: NavigationBarTheme(
+        data: Theme.of(context).navigationBarTheme,
+        child: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onDestinationSelected,
+          destinations: AppNavigationDestination.items
+              .map(
+                (AppNavigationDestination item) => NavigationDestination(
+                  icon: Icon(item.icon),
+                  selectedIcon: Icon(item.selectedIcon),
+                  label: item.label,
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }

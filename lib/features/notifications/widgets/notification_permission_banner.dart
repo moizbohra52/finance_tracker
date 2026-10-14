@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/services/notification_permission_state.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
+import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -64,39 +65,15 @@ class NotificationPermissionBanner extends StatelessWidget {
           : null;
       if (content == null) return const SizedBox.shrink();
 
-      final ColorScheme colors = Theme.of(context).colorScheme;
       return Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.md),
-        child: Semantics(
-          liveRegion: true,
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: colors.tertiaryContainer,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Row(
-              children: <Widget>[
-                Icon(
-                  Icons.notifications_off_outlined,
-                  color: colors.onTertiaryContainer,
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    content.message,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colors.onTertiaryContainer,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                TextButton(
-                  onPressed: content.onTap,
-                  child: Text(content.action),
-                ),
-              ],
-            ),
+        child: InlineMessage(
+          tone: InlineMessageTone.notice,
+          icon: Icons.notifications_off_outlined,
+          message: content.message,
+          action: TextButton(
+            onPressed: content.onTap,
+            child: Text(content.action),
           ),
         ),
       );

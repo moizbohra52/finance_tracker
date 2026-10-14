@@ -21,8 +21,8 @@ double _contrast(Color a, Color b) {
 
 ThemeData _theme(AppAccentColor accent, Brightness brightness) =>
     brightness == Brightness.light
-    ? AppTheme.lightFor(accent.seedColor, variant: accent.variant)
-    : AppTheme.darkFor(accent.seedColor, variant: accent.variant);
+    ? AppTheme.lightFor(accent)
+    : AppTheme.darkFor(accent);
 
 double _hueGap(double a, double b) {
   final double d = (a - b).abs() % 360;
@@ -142,13 +142,15 @@ void main() {
       }
     });
 
-    test('ember stays a vivid orange-red rather than turning brown', () {
-      final Color primary = _theme(
-        AppAccentColor.ember,
-        Brightness.light,
-      ).colorScheme.primary;
-      // Strong colour: saturation well above a muddy brown's.
-      expect(HSLColor.fromColor(primary).saturation, greaterThan(0.9));
+    test('ember stays a clear orange-red rather than turning brown', () {
+      final HSLColor primary = HSLColor.fromColor(
+        _theme(AppAccentColor.ember, Brightness.light).colorScheme.primary,
+      );
+      // Accents are deliberately muted, so not vivid, but still a clear
+      // colour: brown is the same hue made dark (cocoa sits at about 0.28
+      // lightness), so ember must stay both saturated and light enough.
+      expect(primary.saturation, greaterThan(0.6));
+      expect(primary.lightness, greaterThan(0.35));
     });
   });
 }

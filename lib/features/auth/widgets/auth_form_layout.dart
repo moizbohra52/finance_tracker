@@ -21,7 +21,7 @@ class AuthFormLayout extends StatelessWidget {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: const AppAppBar(title: ''),
+      appBar: const AppAppBar(title: '', transparent: true),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

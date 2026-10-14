@@ -11,7 +11,7 @@ import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
-import 'package:finance_tracker/features/accounts/views/account_list_view.dart';
+import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 

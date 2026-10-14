@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -40,15 +41,7 @@ class CategoryBreakdown extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(
               children: <Widget>[
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: r.color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Icon(r.icon, size: 20, color: r.color),
-                ),
+                IconBadge(icon: r.icon, color: r.color),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(

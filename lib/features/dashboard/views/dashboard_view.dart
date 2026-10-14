@@ -4,10 +4,13 @@ import 'package:finance_tracker/core/theme/chart_palette.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/category_breakdown.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
+import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
@@ -15,12 +18,12 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
 import 'package:finance_tracker/domain/services/report_calculator.dart';
-import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_picker_sheet.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -48,7 +51,7 @@ class DashboardView extends GetView<HomeController> {
               const _GreetingHeader(),
               const SizedBox(height: AppSpacing.md),
               if (error != null) ...<Widget>[
-                _RefreshFailedBanner(message: error),
+                InlineMessage(message: '$error Pull down to retry.'),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (controller.accounts.isEmpty)
@@ -57,7 +60,7 @@ class DashboardView extends GetView<HomeController> {
                 // Order follows docs/06: balance, income/expense, khata,
                 // recent activity, then planning and breakdowns.
                 const _BalanceSection(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.md),
                 const _QuickActions(),
                 const SizedBox(height: AppSpacing.lg),
                 const _TodaySummary(),
@@ -140,82 +143,43 @@ class _GreetingHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     final DateTime now = DateTime.now();
     final greeting = _greeting(now);
     final int quoteIndex = (now.day + now.month) % _quotes.length;
     final dailyQuote = _quotes[quoteIndex];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  colors.surfaceContainerHighest.withValues(alpha: 0.35),
-                  colors.primary.withValues(alpha: 0.08),
-                ]
-              : [colors.primary.withValues(alpha: 0.05), colors.surface],
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: colors.outlineVariant.withValues(alpha: isDark ? 0.25 : 0.45),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(greeting.icon, size: 18, color: colors.primary),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Flexible(
+              child: Text(
                 greeting.text,
-                style: text.titleSmall?.copyWith(
+                style: text.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   color: colors.onSurface,
                 ),
               ),
-              const Spacer(),
-              Icon(
-                Icons.format_quote_rounded,
-                size: 18,
-                color: colors.primary.withValues(alpha: 0.4),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            '“${dailyQuote.quote}”',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: text.bodySmall?.copyWith(
-              fontStyle: FontStyle.italic,
-              height: 1.35,
-              color: colors.onSurface.withValues(alpha: 0.88),
             ),
+            const SizedBox(width: AppSpacing.sm),
+            Icon(greeting.icon, size: 22, color: colors.primary),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          '“${dailyQuote.quote}” — ${dailyQuote.author}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: text.bodySmall?.copyWith(
+            fontStyle: FontStyle.italic,
+            height: 1.35,
+            color: colors.onSurfaceVariant,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              '— ${dailyQuote.author}',
-              style: text.labelSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: colors.primary,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -461,28 +425,6 @@ class _PlanSection extends StatelessWidget {
   }
 }
 
-class _RefreshFailedBanner extends StatelessWidget {
-  const _RefreshFailedBanner({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: colors.errorContainer,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-      ),
-      child: Text(
-        '$message Pull down to retry.',
-        style: TextStyle(color: colors.onErrorContainer),
-      ),
-    );
-  }
-}
-
 class _NoAccountsCard extends StatelessWidget {
   const _NoAccountsCard();
 
@@ -525,35 +467,47 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        QuickActionButton(
-          icon: Icons.south_west_rounded,
-          label: 'Income',
-          onTap: () => _addTransaction(TransactionType.income),
-        ),
-        QuickActionButton(
-          icon: Icons.north_east_rounded,
-          label: 'Expense',
-          onTap: () => _addTransaction(TransactionType.expense),
-        ),
-        QuickActionButton(
-          icon: Icons.add_card_outlined,
-          label: 'Credit',
-          onTap: () => _addEntry(ContactTransactionType.credit),
-        ),
-        QuickActionButton(
-          icon: Icons.remove_circle_outline,
-          label: 'Debit',
-          onTap: () => _addEntry(ContactTransactionType.debit),
-        ),
-        QuickActionButton(
-          icon: Icons.account_balance_wallet_outlined,
-          label: 'Accounts',
-          onTap: () => Get.toNamed<void>(AppRoutes.accounts),
-        ),
-      ],
+    final List<QuickActionButton> actions = <QuickActionButton>[
+      QuickActionButton(
+        icon: Icons.south_west_rounded,
+        label: 'Income',
+        onTap: () => _addTransaction(TransactionType.income),
+      ),
+      QuickActionButton(
+        icon: Icons.north_east_rounded,
+        label: 'Expense',
+        onTap: () => _addTransaction(TransactionType.expense),
+      ),
+      QuickActionButton(
+        icon: Icons.add_card_outlined,
+        label: 'Credit',
+        onTap: () => _addEntry(ContactTransactionType.credit),
+      ),
+      QuickActionButton(
+        icon: Icons.remove_circle_outline,
+        label: 'Debit',
+        onTap: () => _addEntry(ContactTransactionType.debit),
+      ),
+      // Accounts stay one tap away in the Accounts section below.
+      QuickActionButton(
+        icon: Icons.swap_horiz_rounded,
+        label: 'Transfer',
+        onTap: () => Get.toNamed<void>(AppRoutes.transferForm),
+      ),
+    ];
+    // Equal cells, so five actions fit a narrow phone; a long label is
+    // shortened rather than pushing the row off screen.
+    return AppCard(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.sm,
+      ),
+      child: Row(
+        children: <Widget>[
+          for (final QuickActionButton action in actions)
+            Expanded(child: action),
+        ],
+      ),
     );
   }
 }
@@ -609,21 +563,18 @@ class _KhataSummary extends GetView<HomeController> {
         Obx(() {
           if (controller.contactCount.value == 0) {
             return AppCard(
-              child: Row(
-                children: <Widget>[
-                  const Icon(Icons.people_outline),
-                  const SizedBox(width: AppSpacing.md),
-                  const Expanded(
-                    child: Text(
-                      'Track who owes you and who you owe. Add your first '
-                      'contact.',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => Get.toNamed<void>(AppRoutes.contactForm),
-                    child: const Text('Add'),
-                  ),
-                ],
+              padding: EdgeInsets.zero,
+              child: AppListTile(
+                leading: const IconBadge(icon: Icons.people_outline),
+                title: 'No contacts yet',
+                subtitle:
+                    'Track who owes you and who you owe. Add your first '
+                    'contact.',
+                subtitleMaxLines: 3,
+                trailing: TextButton(
+                  onPressed: () => Get.toNamed<void>(AppRoutes.contactForm),
+                  child: const Text('Add'),
+                ),
               ),
             );
           }
@@ -670,75 +621,25 @@ class _AccountsSection extends GetView<HomeController> {
           onAction: () => Get.toNamed<void>(AppRoutes.accounts),
         ),
         Obx(
-          () => AppCard(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            child: Column(
-              children: <Widget>[
-                for (final Account a in controller.accounts)
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
-                      child: Icon(
-                        _accountIcon(a.type),
-                        size: 20,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                    title: Text(
-                      a.name,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    subtitle: Text(
-                      a.type.name.toUpperCase(),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    trailing: Text(
-                      controller.balanceHidden.value
-                          ? '••••'
-                          : AppFormatters.money(
-                              controller.balances[a.id] ?? a.openingBalance,
-                            ),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    onTap: () => Get.toNamed<void>(
-                      AppRoutes.accountDetail,
-                      arguments: a.id,
-                    ),
+          () => AppListCard(
+            children: <Widget>[
+              for (final Account a in controller.accounts)
+                AccountTile(
+                  account: a,
+                  balance: controller.balances[a.id] ?? a.openingBalance,
+                  isHidden: controller.balanceHidden.value,
+                  onTap: () => Get.toNamed<void>(
+                    AppRoutes.accountDetail,
+                    arguments: a.id,
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
       ],
     );
   }
 }
-
-IconData _accountIcon(AccountType type) => switch (type) {
-  AccountType.cash => Icons.payments_outlined,
-  AccountType.bank => Icons.account_balance_outlined,
-  AccountType.upi => Icons.qr_code_2_rounded,
-  AccountType.card => Icons.credit_card_outlined,
-  AccountType.other => Icons.wallet_outlined,
-};
 
 class _RecentTransactions extends GetView<HomeController> {
   const _RecentTransactions();
@@ -768,28 +669,25 @@ class _RecentTransactions extends GetView<HomeController> {
               ),
             );
           }
-          return AppCard(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            child: Column(
-              children: <Widget>[
-                for (final Transaction t in controller.recent)
-                  TransactionListItem(
-                    transaction: t,
-                    title:
-                        controller.categoryOf(t.categoryId)?.name ??
-                        t.type.label,
-                    iconKey: controller.categoryOf(t.categoryId)?.icon,
-                    subtitle: controller.accountName(t.accountId),
-                    onTap: () => Get.toNamed<void>(
-                      AppRoutes.transactionDetail,
-                      arguments: t.id,
-                    ),
+          return AppListCard(
+            children: <Widget>[
+              for (final Transaction t in controller.recent)
+                TransactionListItem(
+                  transaction: t,
+                  title: TransactionListItem.titleFor(
+                    t,
+                    categoryName: controller.categoryOf(t.categoryId)?.name,
+                    nearby: controller.recent,
+                    accountName: controller.accountName,
                   ),
-              ],
-            ),
+                  iconKey: controller.categoryOf(t.categoryId)?.icon,
+                  subtitle: controller.accountName(t.accountId),
+                  onTap: () => Get.toNamed<void>(
+                    AppRoutes.transactionDetail,
+                    arguments: t.id,
+                  ),
+                ),
+            ],
           );
         }),
       ],

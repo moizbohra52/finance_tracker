@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 /// light/dark variants stay consistent.
 abstract final class AppColors {
   /// The four colours of the app logo (assets/logo.png), sampled from its
-  /// flat areas. They seed the logo accents in AppAccentColor, which Material
-  /// turns into accessible roles. They are not used as `primary` directly:
-  /// on white, yellow is 1.6:1 and sand 2.0:1, far below the 4.5:1 text needs
-  /// (see docs/06_UI_UX_GUIDELINES.md). Use them for swatches and branding,
-  /// not for text.
+  /// flat areas. They are the swatches of the logo accents in AppAccentColor,
+  /// whose hand-picked shades (AccentTones) the theme uses. They are not used
+  /// as `primary` directly: on white, yellow is 1.6:1 and sand 2.0:1, far
+  /// below the 4.5:1 text needs (see docs/06_UI_UX_GUIDELINES.md). Use them
+  /// for swatches and branding, not for text.
   static const Color logoEmber = Color(0xFFE24201);
   static const Color logoSun = Color(0xFFF7C401);
   static const Color logoCocoa = Color(0xFF7B4013);
@@ -31,10 +31,30 @@ abstract final class AppColors {
   static const Color payableLight = Color(0xFFB45309);
   static const Color payableDark = Color(0xFFFBBF24);
 
-  /// Money colours used on the gradient balance card, which is always
-  /// primary-toned, so they keep contrast in both themes.
-  static const Color incomeOnAccent = Color(0xFF4ADE80);
-  static const Color expenseOnAccent = Color(0xFFF87171);
+  // Neutral greys for pages, cards, text and lines. They carry no tint of
+  // the accent, so every accent sits on the same clean background (a navy or
+  // accent-tinted grey clashed with warm accents such as Sun).
+  static const Color pageLight = Color(0xFFF4F5F7);
+  static const Color cardLight = Color(0xFFFFFFFF);
+  static const Color textLight = Color(0xFF111418);
+  static const Color textMutedLight = Color(0xFF4D5560);
+  static const Color outlineLight = Color(0xFF8A919C);
+  static const Color lineLight = Color(0xFFDDE0E5);
+  static const Color fillLowLight = Color(0xFFF8F9FA);
+  static const Color fillLight = Color(0xFFF2F3F5);
+  static const Color fillHighLight = Color(0xFFECEEF1);
+  static const Color fillHighestLight = Color(0xFFE4E6EA);
+
+  static const Color pageDark = Color(0xFF0E1014);
+  static const Color cardDark = Color(0xFF181B21);
+  static const Color textDark = Color(0xFFECEEF1);
+  static const Color textMutedDark = Color(0xFFA3AAB5);
+  static const Color outlineDark = Color(0xFF6E7682);
+  static const Color lineDark = Color(0xFF2E333C);
+  static const Color fillLowDark = Color(0xFF14171C);
+  static const Color fillDark = Color(0xFF1C2027);
+  static const Color fillHighDark = Color(0xFF23272F);
+  static const Color fillHighestDark = Color(0xFF2B3039);
 }
 
 abstract final class AppSpacing {
@@ -67,8 +87,14 @@ abstract final class AppSizes {
   static const double minTouchTarget = 48;
   static const double iconLarge = 56;
 
-  /// Tinted icon badge in list rows and cards.
-  static const double iconBadge = 40;
+  /// Tinted icon badge (IconBadge) leading list rows and cards.
+  static const double iconBadge = 44;
+
+  /// Smaller badge inside compact tiles such as SummaryTile.
+  static const double iconBadgeSmall = 32;
+
+  /// Quick action circles on the home screen.
+  static const double quickAction = 48;
 
   /// Keeps status messages readable on tablets instead of stretching edge to
   /// edge.

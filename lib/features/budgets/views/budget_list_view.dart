@@ -4,6 +4,8 @@ import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
@@ -28,7 +30,9 @@ class BudgetListView extends GetView<BudgetController> {
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const AppContent(child: SkeletonList(count: 4, type: SkeletonType.budget));
+            return const AppContent(
+              child: SkeletonList(count: 4, type: SkeletonType.budget),
+            );
           }
           final String? error = controller.error.value;
           if (error != null && controller.statuses.isEmpty) {
@@ -115,163 +119,74 @@ class _BudgetCard extends GetView<BudgetController> {
     };
     final bool over = status.remaining < Decimal.zero;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () => Get.toNamed<void>(AppRoutes.budgetForm, arguments: budget),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return AppCard(
+      onTap: () => Get.toNamed<void>(AppRoutes.budgetForm, arguments: budget),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
             children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    child: Icon(
-                      CategoryIcons.of(
-                        controller.categoryOf(budget.categoryId)?.icon,
-                        TransactionType.expense,
-                      ),
-                      color: color,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      controller.nameOf(budget),
-                      style: text.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppRadius.full),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        Icon(icon, color: color, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          label,
-                          style: text.labelSmall?.copyWith(
-                            color: color,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              IconBadge(
+                icon: CategoryIcons.of(
+                  controller.categoryOf(budget.categoryId)?.icon,
+                  TransactionType.expense,
+                ),
+                color: color,
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  controller.nameOf(budget),
+                  style: text.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              StatusPill(label: label, color: color, icon: icon),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            stateNote,
+            style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          AppProgressBar(value: status.percent / 100, color: color),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: Text(
+                  '${AppFormatters.money(status.spent)} of '
+                  '${AppFormatters.money(budget.amount)}',
+                  style: text.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ),
               Text(
-                stateNote,
-                style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppProgressBar(value: status.percent / 100, color: color),
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Text(
-                      '${AppFormatters.money(status.spent)} of '
-                      '${AppFormatters.money(budget.amount)}',
-                      style: text.bodyMedium?.copyWith(
-                        color: colors.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                  Text(
-                    '${AppFormatters.number(status.percent, decimalDigits: 0)}%',
-                    style: text.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                over
-                    ? 'Over by ${AppFormatters.money(status.remaining.abs())}'
-                    : '${AppFormatters.money(status.remaining)} left',
-                style: text.titleSmall?.copyWith(
-                  color: over ? money.expense : colors.primary,
+                '${AppFormatters.number(status.percent, decimalDigits: 0)}%',
+                style: text.labelLarge?.copyWith(
                   fontWeight: FontWeight.w700,
+                  color: color,
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Small pointer card used on the dashboard.
-class PlanTile extends StatelessWidget {
-  const PlanTile({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final TextTheme text = Theme.of(context).textTheme;
-    final ColorScheme colors = Theme.of(context).colorScheme;
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm + 2,
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            over
+                ? 'Over by ${AppFormatters.money(status.remaining.abs())}'
+                : '${AppFormatters.money(status.remaining)} left',
+            style: text.titleSmall?.copyWith(
+              color: over ? money.expense : colors.primary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(icon, color: colors.primary, size: 22),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                title,
-                style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
+        ],
       ),
     );
   }

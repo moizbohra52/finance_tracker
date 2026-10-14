@@ -1,11 +1,12 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
-import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
@@ -16,9 +17,9 @@ import 'package:finance_tracker/domain/entities/account_transaction_summary.dart
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
-import 'package:finance_tracker/features/accounts/views/account_list_view.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -89,7 +90,10 @@ class AccountDetailView extends GetView<AccountDetailController> {
               padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: <Widget>[
-                  Icon(accountTypeIcon(account.type), size: 32),
+                  IconBadge(
+                    icon: accountTypeIcon(account.type),
+                    size: AppSizes.iconLarge,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                   Text('Current balance', style: text.labelLarge),
                   Text(
@@ -142,27 +146,27 @@ class AccountDetailView extends GetView<AccountDetailController> {
                 ),
               )
             else
-              AppCard(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.xs,
-                ),
-                child: Column(
-                  children: <Widget>[
-                    for (final Transaction t in controller.recent)
-                      TransactionListItem(
-                        transaction: t,
-                        title:
-                            list.categoryOf(t.categoryId)?.name ?? t.type.label,
-                        iconKey: list.categoryOf(t.categoryId)?.icon,
-                        subtitle: account.name,
-                        onTap: () => Get.toNamed<void>(
-                          AppRoutes.transactionDetail,
-                          arguments: t.id,
-                        ),
+              AppListCard(
+                children: <Widget>[
+                  for (final Transaction t in controller.recent)
+                    TransactionListItem(
+                      transaction: t,
+                      // This list holds one account's rows, so a transfer's
+                      // other leg is looked up in the full list.
+                      title: TransactionListItem.titleFor(
+                        t,
+                        categoryName: list.categoryOf(t.categoryId)?.name,
+                        nearby: list.items,
+                        accountName: list.accountName,
                       ),
-                  ],
-                ),
+                      iconKey: list.categoryOf(t.categoryId)?.icon,
+                      subtitle: account.name,
+                      onTap: () => Get.toNamed<void>(
+                        AppRoutes.transactionDetail,
+                        arguments: t.id,
+                      ),
+                    ),
+                ],
               ),
             const SizedBox(height: AppSpacing.lg),
             Obx(() {
@@ -174,6 +178,16 @@ class AccountDetailView extends GetView<AccountDetailController> {
                       child: InlineMessage(message: deleteError),
                     );
             }),
+            AppButton(
+              label: 'Transfer money',
+              icon: Icons.swap_horiz_rounded,
+              variant: AppButtonVariant.secondary,
+              onPressed: () => Get.toNamed<void>(
+                AppRoutes.transferForm,
+                arguments: TransferFormArgs(fromAccountId: account.id),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
             AppButton(
               label: 'Edit account & opening balance',
               icon: Icons.edit_outlined,

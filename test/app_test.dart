@@ -48,7 +48,7 @@ void main() {
     expect(find.byType(SettingsView), findsNothing);
   });
 
-  testWidgets('shell switches among its five destinations', (
+  testWidgets('shell switches among its four destinations', (
     WidgetTester tester,
   ) async {
     await pumpApp(tester, auth: FakeAuthRepository(signedIn: true));
@@ -67,9 +67,24 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('This month'), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.person_outline));
+    // Profile is opened from the app bar avatar, not a tab.
+    expect(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.text('Profile'),
+      ),
+      findsNothing,
+    );
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byType(CircleAvatar),
+      ),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Personal details'), findsOneWidget);
+    Get.back<void>();
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.home_outlined));
     await tester.pumpAndSettle();

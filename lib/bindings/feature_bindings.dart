@@ -16,6 +16,7 @@ import 'package:finance_tracker/features/accounts/controllers/account_controller
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
 import 'package:finance_tracker/features/backup/controllers/backup_controller.dart';
 import 'package:finance_tracker/features/budgets/controllers/budget_controller.dart';
+import 'package:finance_tracker/features/categories/controller/category_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
@@ -76,6 +77,16 @@ class TransactionDetailBinding extends Bindings {
       tag: routeIdArgument(),
     );
   }
+}
+
+class CategoryBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => CategoryController(
+      Get.find<CategoryRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
 }
 
 class ContactBinding extends Bindings {

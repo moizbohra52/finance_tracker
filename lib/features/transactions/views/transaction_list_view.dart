@@ -2,7 +2,9 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -14,37 +16,70 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 /// Opens the income/expense chooser, then the transaction form.
+enum _AddChoice { income, expense, transfer }
+
 Future<void> showAddTransactionSheet(BuildContext context) async {
-  final TransactionType? type = await showModalBottomSheet<TransactionType>(
+  Widget option(
+    BuildContext sheet,
+    _AddChoice choice,
+    IconData icon,
+    String title,
+    String subtitle,
+  ) => AppListTile(
+    leading: IconBadge(icon: icon),
+    title: title,
+    subtitle: subtitle,
+    onTap: () => Navigator.of(sheet).pop(choice),
+  );
+
+  final _AddChoice? choice = await showModalBottomSheet<_AddChoice>(
     context: context,
     showDragHandle: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-    ),
-    builder: (BuildContext sheetContext) => SafeArea(
+    builder: (BuildContext sheet) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          ListTile(
-            leading: const Icon(Icons.south_west_rounded),
-            title: const Text('Add income'),
-            onTap: () => Navigator.of(sheetContext).pop(TransactionType.income),
+          option(
+            sheet,
+            _AddChoice.income,
+            Icons.south_west_rounded,
+            'Add income',
+            'Money received into an account',
           ),
-          ListTile(
-            leading: const Icon(Icons.north_east_rounded),
-            title: const Text('Add expense'),
-            onTap: () =>
-                Navigator.of(sheetContext).pop(TransactionType.expense),
+          option(
+            sheet,
+            _AddChoice.expense,
+            Icons.north_east_rounded,
+            'Add expense',
+            'Money spent from an account',
           ),
+          option(
+            sheet,
+            _AddChoice.transfer,
+            Icons.swap_horiz_rounded,
+            'Transfer between accounts',
+            'Move money, e.g. from bank to cash',
+          ),
+          const SizedBox(height: AppSpacing.sm),
         ],
       ),
     ),
   );
-  if (type == null) return;
-  await Get.toNamed<void>(
-    AppRoutes.transactionForm,
-    arguments: TransactionFormArgs(type: type),
-  );
+  switch (choice) {
+    case null:
+      return;
+    case _AddChoice.transfer:
+      await Get.toNamed<void>(AppRoutes.transferForm);
+    case _AddChoice.income || _AddChoice.expense:
+      await Get.toNamed<void>(
+        AppRoutes.transactionForm,
+        arguments: TransactionFormArgs(
+          type: choice == _AddChoice.income
+              ? TransactionType.income
+              : TransactionType.expense,
+        ),
+      );
+  }
 }
 
 /// Standalone transaction list route (back-navigable from the dashboard).
@@ -105,7 +140,9 @@ class _TransactionListContentState extends State<TransactionListContent> {
           const _ActiveFilters(),
           Expanded(
             child: Obx(() {
-              if (_controller.isLoading.value) return const SkeletonList(type: SkeletonType.transaction);
+              if (_controller.isLoading.value) {
+                return const SkeletonList(type: SkeletonType.transaction);
+              }
               final String? error = _controller.error.value;
               if (error != null && _controller.items.isEmpty) {
                 return ErrorState(message: error, onRetry: _controller.load);
@@ -325,10 +362,14 @@ class _GroupedList extends GetView<TransactionController> {
             ),
           ),
           _ItemRow(:final Transaction transaction) => TransactionListItem(
+            padding: AppListTile.flatPadding,
             transaction: transaction,
-            title:
-                controller.categoryOf(transaction.categoryId)?.name ??
-                transaction.type.label,
+            title: TransactionListItem.titleFor(
+              transaction,
+              categoryName: controller.categoryOf(transaction.categoryId)?.name,
+              nearby: controller.items,
+              accountName: controller.accountName,
+            ),
             iconKey: controller.categoryOf(transaction.categoryId)?.icon,
             subtitle: controller.accountName(transaction.accountId),
             onTap: () => Get.toNamed<void>(

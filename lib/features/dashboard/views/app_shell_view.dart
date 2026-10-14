@@ -8,7 +8,6 @@ import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_bell.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
-import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
@@ -71,7 +70,6 @@ class _AppShellViewState extends State<AppShellView> {
     1 => const TransactionListContent(),
     2 => const ContactListContent(),
     3 => const ReportsView(),
-    4 => const ProfileContent(),
     _ => const SizedBox.shrink(),
   };
 
@@ -123,127 +121,127 @@ class _AppShellViewState extends State<AppShellView> {
       },
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
-        final bool useRail = constraints.maxWidth >= _railBreakpoint;
-        return Scaffold(
-          appBar: AppAppBar(
-            titleWidget: Obx(() {
-              final String name = _displayName(profile);
-              final String email = profile.email;
+          final bool useRail = constraints.maxWidth >= _railBreakpoint;
+          return Scaffold(
+            appBar: AppAppBar(
+              titleWidget: Obx(() {
+                final String name = _displayName(profile);
+                final String email = profile.email;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                      color: colors.onSurface,
-                    ),
-                  ),
-                  if (email.isNotEmpty) ...[
-                    const SizedBox(height: 1),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      email,
+                      name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                        color: colors.onSurfaceVariant,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                        color: colors.onSurface,
                       ),
                     ),
+                    if (email.isNotEmpty) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          color: colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              );
-            }),
-            centerTitle: false,
-            automaticallyImplyLeading: false,
-            actions: const <Widget>[NotificationBell()],
-            showMenu: true,
-            profileAvatar: Obx(() {
-              final String initial = _displayName(
-                profile,
-              ).characters.first.toUpperCase();
+                );
+              }),
+              centerTitle: false,
+              automaticallyImplyLeading: false,
+              actions: const <Widget>[NotificationBell()],
+              showMenu: true,
+              profileAvatar: Obx(() {
+                final String initial = _displayName(
+                  profile,
+                ).characters.first.toUpperCase();
 
-              return Semantics(
-                button: true,
-                label: 'Open profile',
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => Get.toNamed<void>(AppRoutes.profile),
-                    customBorder: const CircleBorder(),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: colors.primary.withValues(alpha: 0.12),
-                      foregroundColor: colors.primary,
-                      child: Text(
-                        initial,
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: colors.primary,
+                return Semantics(
+                  button: true,
+                  label: 'Open profile',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => Get.toNamed<void>(AppRoutes.profile),
+                      customBorder: const CircleBorder(),
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundColor: colors.primary.withValues(alpha: 0.12),
+                        foregroundColor: colors.primary,
+                        child: Text(
+                          initial,
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: colors.primary,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }),
-            onProfileTap: () => Get.toNamed<void>(AppRoutes.profile),
-            onSettingsTap: () => Get.toNamed<void>(AppRoutes.settings),
-            onSignOutTap: () => confirmAndSignOut(context),
-          ),
-          body: SafeArea(
-            child: Column(
-              children: <Widget>[
-                const SyncStatusBar(),
-                Expanded(
-                  child: useRail
-                      ? Row(
-                          children: <Widget>[
-                            NavigationRailTheme(
-                              data: Theme.of(context).navigationRailTheme,
-                              child: NavigationRail(
-                                selectedIndex: _selectedIndex,
-                                labelType: NavigationRailLabelType.all,
-                                onDestinationSelected: _selectDestination,
-                                destinations: destinations
-                                    .map(
-                                      (AppNavigationDestination item) =>
-                                          NavigationRailDestination(
-                                            icon: Icon(item.icon),
-                                            selectedIcon: Icon(
-                                              item.selectedIcon,
-                                            ),
-                                            label: Text(item.label),
-                                          ),
-                                    )
-                                    .toList(),
-                              ),
-                            ),
-                            const VerticalDivider(width: 1),
-                            Expanded(child: _pageStack()),
-                          ],
-                        )
-                      : _pageStack(),
-                ),
-              ],
+                );
+              }),
+              onProfileTap: () => Get.toNamed<void>(AppRoutes.profile),
+              onSettingsTap: () => Get.toNamed<void>(AppRoutes.settings),
+              onSignOutTap: () => confirmAndSignOut(context),
             ),
-          ),
-          floatingActionButton: _floatingAction(context),
-          bottomNavigationBar: useRail
-              ? null
-              : AppBottomNavigation(
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: _selectDestination,
-                ),
-        );
-      },
-    ),
-  );
+            body: SafeArea(
+              child: Column(
+                children: <Widget>[
+                  const SyncStatusBar(),
+                  Expanded(
+                    child: useRail
+                        ? Row(
+                            children: <Widget>[
+                              NavigationRailTheme(
+                                data: Theme.of(context).navigationRailTheme,
+                                child: NavigationRail(
+                                  selectedIndex: _selectedIndex,
+                                  labelType: NavigationRailLabelType.all,
+                                  onDestinationSelected: _selectDestination,
+                                  destinations: destinations
+                                      .map(
+                                        (AppNavigationDestination item) =>
+                                            NavigationRailDestination(
+                                              icon: Icon(item.icon),
+                                              selectedIcon: Icon(
+                                                item.selectedIcon,
+                                              ),
+                                              label: Text(item.label),
+                                            ),
+                                      )
+                                      .toList(),
+                                ),
+                              ),
+                              const VerticalDivider(width: 1),
+                              Expanded(child: _pageStack()),
+                            ],
+                          )
+                        : _pageStack(),
+                  ),
+                ],
+              ),
+            ),
+            floatingActionButton: _floatingAction(context),
+            bottomNavigationBar: useRail
+                ? null
+                : AppBottomNavigation(
+                    selectedIndex: _selectedIndex,
+                    onDestinationSelected: _selectDestination,
+                  ),
+          );
+        },
+      ),
+    );
   }
 }

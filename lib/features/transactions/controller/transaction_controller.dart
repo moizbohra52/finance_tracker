@@ -9,6 +9,7 @@ import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
@@ -25,7 +26,8 @@ class TransactionFormArgs {
   final Transaction? existing;
 }
 
-/// List, search, filter, create, edit and delete for income/expense records.
+/// List, search, filter, create, edit and delete for income/expense records
+/// and transfers between accounts.
 class TransactionController extends GetxController {
   TransactionController(
     this._transactionRepository,
@@ -258,5 +260,92 @@ class TransactionController extends GetxController {
   Future<Transaction> fetchById(String id) =>
       _transactionRepository.getTransactionById(id);
 
+  /// Both legs of a transfer, or null when it is gone.
+  Future<TransferLegs?> fetchTransfer(String transferId) =>
+      _transactionRepository.getTransfer(transferId);
+
+  /// Records a transfer, or edits [existing]. An edit updates the rows in
+  /// place when [TransferLegs.canUpdateInPlace] allows; otherwise the
+  /// transfer is replaced by new rows with [newIds] (generated once per form,
+  /// so a retried save is idempotent). Returns the saved legs, or null on
+  /// failure (the message is in [save]).
+  Future<TransferLegs?> saveTransfer({
+    required TransferIds newIds,
+    TransferLegs? existing,
+    required String fromAccountId,
+    required String toAccountId,
+    required Decimal amount,
+    required DateTime date,
+    required String? note,
+  }) async {
+    TransferLegs? saved;
+    final bool ok = await save.run(() async {
+      final DateTime now = DateTime.now();
+      if (existing != null && existing.canUpdateInPlace(fromAccountId)) {
+        saved = TransferLegs.build(
+          transferId: existing.transferId,
+          outgoingId: existing.outgoing.id,
+          incomingId: existing.incoming.id,
+          fromAccountId: fromAccountId,
+          toAccountId: toAccountId,
+          amount: amount,
+          date: date,
+          note: note,
+          now: now,
+          userId: existing.outgoing.userId,
+          createdAt: existing.outgoing.createdAt,
+        );
+        await _transactionRepository.updateTransfer(saved!);
+      } else {
+        saved = TransferLegs.build(
+          transferId: newIds.transferId,
+          outgoingId: newIds.outgoingId,
+          incomingId: newIds.incomingId,
+          fromAccountId: fromAccountId,
+          toAccountId: toAccountId,
+          amount: amount,
+          date: date,
+          note: note,
+          now: now,
+        );
+        await _transactionRepository.createTransfer(
+          saved!,
+          replacing: existing?.transferId,
+        );
+      }
+      _notifier.markChanged();
+    });
+    return ok ? saved : null;
+  }
+
+  /// Deletes both legs of a transfer.
+  Future<bool> deleteTransfer(String transferId) {
+    return deletion.run(() async {
+      await _transactionRepository.deleteTransfer(transferId);
+      _notifier.markChanged();
+    });
+  }
+
   static String newId() => _uuid.v4();
+}
+
+/// Ids for a new transfer, generated once per form.
+class TransferIds {
+  TransferIds()
+    : transferId = TransactionController.newId(),
+      outgoingId = TransactionController.newId(),
+      incomingId = TransactionController.newId();
+
+  final String transferId;
+  final String outgoingId;
+  final String incomingId;
+}
+
+/// Arguments for the transfer form route: a preselected source account for
+/// a new transfer, or the transfer to edit.
+class TransferFormArgs {
+  const TransferFormArgs({this.fromAccountId, this.transferId});
+
+  final String? fromAccountId;
+  final String? transferId;
 }

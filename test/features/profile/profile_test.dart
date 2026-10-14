@@ -45,14 +45,8 @@ void main() {
 
   Future<void> openProfile(WidgetTester tester) async {
     await pumpApp(tester, auth: auth, profile: profiles);
-    // Tap the profile tab in the bottom navigation
-    await tapAndSettle(
-      tester,
-      find.descendant(
-        of: find.byType(NavigationBar),
-        matching: find.byIcon(Icons.person_outline),
-      ),
-    );
+    // Profile opens from the avatar in the app bar.
+    await tapAndSettle(tester, find.widgetWithText(CircleAvatar, 'A'));
     expect(find.byType(ProfileContent), findsOneWidget);
   }
 
@@ -233,6 +227,7 @@ void main() {
 
     expect(find.byType(AlertDialog), findsNothing);
     expect(auth.calls, isEmpty);
-    expect(Get.currentRoute, AppRoutes.dashboard);
+    // Still on the profile, which is its own route (not a shell tab).
+    expect(Get.currentRoute, AppRoutes.profile);
   });
 }
