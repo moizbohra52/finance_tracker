@@ -20,6 +20,14 @@ class AppTextField extends StatefulWidget {
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
+    this.maxLines = 1,
+    this.minLines,
+    this.scrollPadding = const EdgeInsets.only(
+      top: 80,
+      bottom: 90,
+      left: 16,
+      right: 16,
+    ),
   });
 
   final String label;
@@ -30,6 +38,9 @@ class AppTextField extends StatefulWidget {
   final TextInputAction? textInputAction;
   final List<TextInputFormatter>? inputFormatters;
   final Iterable<String>? autofillHints;
+  final int? maxLines;
+  final int? minLines;
+  final EdgeInsets scrollPadding;
 
   /// Masks the input and adds a show/hide toggle (passwords).
   final bool obscureText;
@@ -55,6 +66,9 @@ class _AppTextFieldState extends State<AppTextField> {
       inputFormatters: widget.inputFormatters,
       autofillHints: widget.autofillHints,
       obscureText: _isObscured,
+      maxLines: widget.obscureText ? 1 : widget.maxLines,
+      minLines: widget.minLines,
+      scrollPadding: widget.scrollPadding,
       enableSuggestions: !widget.obscureText,
       autocorrect: !widget.obscureText,
       enabled: widget.enabled,
@@ -63,6 +77,10 @@ class _AppTextFieldState extends State<AppTextField> {
       autovalidateMode: AutovalidateMode.onUserInteractionIfError,
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onFieldSubmitted,
+      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+          ),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hintText,

@@ -57,27 +57,29 @@ class DashboardView extends GetView<HomeController> {
               if (controller.accounts.isEmpty)
                 const _NoAccountsCard()
               else ...<Widget>[
-                // Order follows docs/06: balance, income/expense, khata,
+                // Order follows docs/06: balance, income/expense, pulse, khata,
                 // recent activity, then planning and breakdowns.
                 const _BalanceSection(),
                 const SizedBox(height: AppSpacing.md),
                 const _QuickActions(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
+                const _FinancialPulseCard(),
+                const SizedBox(height: AppSpacing.xl),
                 const _TodaySummary(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
                 const _MonthlySummary(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
                 const _KhataSummary(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
                 const _RecentTransactions(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
                 const _SpendingOverview(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
                 const _PlanSection(),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
                 const _AccountsSection(),
               ],
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.xxl),
             ],
           ),
         ),
@@ -86,7 +88,7 @@ class DashboardView extends GetView<HomeController> {
   }
 }
 
-/// Greeting and inspirational finance quote.
+/// Greeting, live date, quick shortcuts and inspirational finance quote.
 class _GreetingHeader extends StatelessWidget {
   const _GreetingHeader();
 
@@ -98,6 +100,16 @@ class _GreetingHeader extends StatelessWidget {
     } else {
       return (text: 'Good evening', icon: Icons.nights_stay_rounded);
     }
+  }
+
+  static String _formatDate(DateTime now) {
+    const List<String> weekdays = [
+      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
+    ];
+    const List<String> months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
   }
 
   static const List<({String quote, String author})> _quotes = [
@@ -146,6 +158,7 @@ class _GreetingHeader extends StatelessWidget {
 
     final DateTime now = DateTime.now();
     final greeting = _greeting(now);
+    final String dateString = _formatDate(now);
     final int quoteIndex = (now.day + now.month) % _quotes.length;
     final dailyQuote = _quotes[quoteIndex];
 
@@ -154,33 +167,238 @@ class _GreetingHeader extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Flexible(
-              child: Text(
-                greeting.text,
-                style: text.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: colors.onSurface,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  greeting.text,
+                  style: text.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                    color: colors.onSurface,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Icon(greeting.icon, size: 20, color: colors.primary),
+              ],
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm + 2,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                border: Border.all(
+                  color: colors.outlineVariant.withValues(alpha: 0.2),
                 ),
               ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 12,
+                    color: colors.primary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    dateString,
+                    style: text.labelSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            Icon(greeting.icon, size: 22, color: colors.primary),
           ],
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          '“${dailyQuote.quote}” — ${dailyQuote.author}',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: text.bodySmall?.copyWith(
-            fontStyle: FontStyle.italic,
-            height: 1.35,
-            color: colors.onSurfaceVariant,
+        const SizedBox(height: AppSpacing.sm),
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border(
+              left: BorderSide(
+                color: colors.primary.withValues(alpha: 0.8),
+                width: 3.5,
+              ),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Icon(
+                Icons.format_quote_rounded,
+                size: 16,
+                color: colors.primary.withValues(alpha: 0.85),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  '“${dailyQuote.quote}” — ${dailyQuote.author}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: text.bodySmall?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    height: 1.35,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
+  }
+}
+
+/// Monthly financial pulse showing pacing, days progress and savings rate.
+class _FinancialPulseCard extends GetView<HomeController> {
+  const _FinancialPulseCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final TextTheme text = Theme.of(context).textTheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final DateTime now = DateTime.now();
+    final int daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final int daysRemaining = daysInMonth - now.day;
+    final double monthProgress = (now.day / daysInMonth).clamp(0.0, 1.0);
+
+    return Obx(() {
+      final PeriodSummary m = controller.month.value;
+      final bool hasActivity =
+          m.income > Decimal.zero || m.expense > Decimal.zero;
+
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? <Color>[
+                    colors.surfaceContainer,
+                    colors.surfaceContainerHigh,
+                  ]
+                : <Color>[
+                    colors.surface,
+                    colors.surfaceContainerLowest,
+                  ],
+          ),
+          border: Border.all(
+            color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.45),
+            width: 1,
+          ),
+          boxShadow: <BoxShadow>[
+            BoxShadow(
+              color: colors.shadow.withValues(alpha: isDark ? 0.2 : 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: colors.primary.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.insights_rounded,
+                    size: 16,
+                    color: colors.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Monthly Pace',
+                  style: text.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
+                  child: Text(
+                    '$daysRemaining days left',
+                    style: text.labelSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.full),
+              child: LinearProgressIndicator(
+                value: monthProgress,
+                minHeight: 6,
+                backgroundColor: colors.surfaceContainerHighest,
+                valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    hasActivity
+                        ? (m.net >= Decimal.zero
+                            ? '🟢 On track: ₹${AppFormatters.money(m.net)} net saved this month'
+                            : '⚠️ Spent ₹${AppFormatters.money(m.expense)} across the month')
+                        : '💡 Day ${now.day} of $daysInMonth: Track expenses daily to stay in control',
+                    style: text.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontSize: 12,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                  ),
+                  onPressed: () => Get.toNamed<void>(AppRoutes.budgets),
+                  child: const Text('Budgets →'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
   }
 }
 
@@ -216,6 +434,7 @@ class _MonthlySummary extends GetView<HomeController> {
           actionLabel: 'Reports',
           onAction: () => Get.toNamed<void>(AppRoutes.reports),
         ),
+        const SizedBox(height: AppSpacing.sm),
         Obx(() {
           final PeriodSummary m = controller.month.value;
           final bool positive = m.net >= Decimal.zero;
@@ -330,17 +549,23 @@ class _SpendingOverview extends GetView<HomeController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        SectionHeader(
-          title: 'Spending overview',
-          actionLabel: 'Details',
-          onAction: () => Get.toNamed<void>(AppRoutes.reports),
-        ),
+        Obx(() {
+          final bool hasData = controller.monthCategories.isNotEmpty;
+          return SectionHeader(
+            title: 'Spending overview',
+            actionLabel: hasData ? 'Details' : null,
+            onAction: hasData
+                ? () => Get.toNamed<void>(AppRoutes.reports)
+                : null,
+          );
+        }),
+        const SizedBox(height: AppSpacing.sm),
         Obx(() {
           final List<CategoryTotal> top = controller.monthCategories
               .take(_maxRows)
               .toList();
           if (top.isEmpty) {
-            return const AppCard(child: Text('No expenses this month yet.'));
+            return const _EmptySpendingCard();
           }
           return AppCard(
             child: CategoryBreakdown(
@@ -367,32 +592,236 @@ class _SpendingOverview extends GetView<HomeController> {
   }
 }
 
+/// Rich, engaging empty state shown when no expenses have been recorded yet this month.
+class _EmptySpendingCard extends StatelessWidget {
+  const _EmptySpendingCard();
+
+  static const List<({String label, IconData icon})> _quickCategories = [
+    (label: 'Food', icon: Icons.restaurant_rounded),
+    (label: 'Groceries', icon: Icons.shopping_basket_outlined),
+    (label: 'Bills', icon: Icons.receipt_outlined),
+    (label: 'Shopping', icon: Icons.shopping_bag_outlined),
+  ];
+
+  void _openExpenseForm() {
+    Get.toNamed<void>(
+      AppRoutes.transactionForm,
+      arguments: const TransactionFormArgs(type: TransactionType.expense),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final TextTheme text = Theme.of(context).textTheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: isDark ? colors.surfaceContainer : colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: colors.outlineVariant.withValues(alpha: isDark ? 0.25 : 0.45),
+          width: 1,
+        ),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: isDark ? 0.2 : 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xl,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          // Glowing chart-donut badge
+          Stack(
+            alignment: Alignment.center,
+            children: <Widget>[
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.primary.withValues(alpha: 0.07),
+                  border: Border.all(
+                    color: colors.primary.withValues(alpha: 0.18),
+                    width: 2,
+                  ),
+                ),
+              ),
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: <Color>[
+                      colors.primary.withValues(alpha: 0.22),
+                      colors.primary.withValues(alpha: 0.08),
+                    ],
+                  ),
+                ),
+                child: Icon(
+                  Icons.donut_large_rounded,
+                  size: 28,
+                  color: colors.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'No expenses recorded this month',
+            textAlign: TextAlign.center,
+            style: text.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.2,
+              color: colors.onSurface,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Keep track of where your money goes. As soon as you log expenses, your category breakdown and visual chart will show here.',
+            textAlign: TextAlign.center,
+            style: text.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Quick category chips
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            alignment: WrapAlignment.center,
+            children: <Widget>[
+              for (final cat in _quickCategories)
+                InkWell(
+                  onTap: _openExpenseForm,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceContainerHighest.withValues(
+                        alpha: 0.45,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                      border: Border.all(
+                        color: colors.outlineVariant.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(cat.icon, size: 14, color: colors.primary),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          cat.label,
+                          style: text.labelSmall?.copyWith(
+                            color: colors.onSurface,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // Main action button
+          FilledButton.tonalIcon(
+            onPressed: _openExpenseForm,
+            icon: const Icon(Icons.add_rounded, size: 18),
+            label: const Text('Add your first expense'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.full),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Pro tip banner
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Row(
+              children: <Widget>[
+                const Text('💡', style: TextStyle(fontSize: 14)),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    'Tip: Daily tracking uncovers 15–20% in hidden monthly savings!',
+                    style: text.bodySmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontSize: 11.5,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Entry points to budgets and recurring schedules.
 class _PlanSection extends StatelessWidget {
   const _PlanSection();
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final FinanceColors money = FinanceColors.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         const SectionHeader(title: 'Plan ahead'),
+        const SizedBox(height: AppSpacing.sm),
         Row(
           children: <Widget>[
             Expanded(
-              child: PlanTile(
+              child: _EnhancedPlanTile(
                 icon: Icons.savings_outlined,
+                iconColor: money.income,
                 title: 'Budgets',
-                subtitle: 'Set limits and track what is left',
+                subtitle: 'Set limits and track spend',
                 onTap: () => Get.toNamed<void>(AppRoutes.budgets),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: PlanTile(
+              child: _EnhancedPlanTile(
                 icon: Icons.event_repeat_outlined,
+                iconColor: colors.primary,
                 title: 'Recurring',
-                subtitle: 'Rent, salary, EMIs on autopilot',
+                subtitle: 'Rent, bills, EMIs on autopilot',
                 onTap: () => Get.toNamed<void>(AppRoutes.recurring),
               ),
             ),
@@ -402,25 +831,88 @@ class _PlanSection extends StatelessWidget {
         Row(
           children: <Widget>[
             Expanded(
-              child: PlanTile(
+              child: _EnhancedPlanTile(
                 icon: Icons.notifications_active_outlined,
+                iconColor: money.payable,
                 title: 'Reminders',
-                subtitle: 'Never miss a payment or a due date',
+                subtitle: 'Never miss a due date',
                 onTap: () => Get.toNamed<void>(AppRoutes.reminders),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
-              child: PlanTile(
+              child: _EnhancedPlanTile(
                 icon: Icons.notifications_outlined,
+                iconColor: money.receivable,
                 title: 'Notifications',
-                subtitle: 'Alerts and reminders you received',
+                subtitle: 'Payment alerts received',
                 onTap: () => Get.toNamed<void>(AppRoutes.notifications),
               ),
             ),
           ],
         ),
       ],
+    );
+  }
+}
+
+class _EnhancedPlanTile extends StatelessWidget {
+  const _EnhancedPlanTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final TextTheme text = Theme.of(context).textTheme;
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return AppCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              IconBadge(
+                icon: icon,
+                color: iconColor,
+                size: AppSizes.iconBadgeSmall + AppSpacing.xs,
+              ),
+              const Spacer(),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 11,
+                color: colors.outlineVariant.withValues(alpha: 0.6),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            title,
+            style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            subtitle,
+            style: text.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
+              fontSize: 11.5,
+              height: 1.3,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -467,36 +959,43 @@ class _QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<QuickActionButton> actions = <QuickActionButton>[
-      QuickActionButton(
+    final FinanceColors money = FinanceColors.of(context);
+    final ColorScheme colors = Theme.of(context).colorScheme;
+
+    final List<({IconData icon, String label, Color color, VoidCallback onTap})>
+        actions = [
+      (
         icon: Icons.south_west_rounded,
         label: 'Income',
+        color: money.income,
         onTap: () => _addTransaction(TransactionType.income),
       ),
-      QuickActionButton(
+      (
         icon: Icons.north_east_rounded,
         label: 'Expense',
+        color: money.expense,
         onTap: () => _addTransaction(TransactionType.expense),
       ),
-      QuickActionButton(
+      (
         icon: Icons.add_card_outlined,
         label: 'Credit',
+        color: money.receivable,
         onTap: () => _addEntry(ContactTransactionType.credit),
       ),
-      QuickActionButton(
+      (
         icon: Icons.remove_circle_outline,
         label: 'Debit',
+        color: money.payable,
         onTap: () => _addEntry(ContactTransactionType.debit),
       ),
-      // Accounts stay one tap away in the Accounts section below.
-      QuickActionButton(
+      (
         icon: Icons.swap_horiz_rounded,
         label: 'Transfer',
+        color: colors.primary,
         onTap: () => Get.toNamed<void>(AppRoutes.transferForm),
       ),
     ];
-    // Equal cells, so five actions fit a narrow phone; a long label is
-    // shortened rather than pushing the row off screen.
+
     return AppCard(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.xs,
@@ -504,8 +1003,42 @@ class _QuickActions extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          for (final QuickActionButton action in actions)
-            Expanded(child: action),
+          for (final a in actions)
+            Expanded(
+              child: Semantics(
+                button: true,
+                label: a.label,
+                excludeSemantics: true,
+                child: InkWell(
+                  onTap: a.onTap,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xs,
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        IconBadge(
+                          icon: a.icon,
+                          color: a.color,
+                          size: AppSizes.quickAction,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          a.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -518,31 +1051,38 @@ class _TodaySummary extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     final FinanceColors money = FinanceColors.of(context);
-    return Obx(() {
-      final bool hidden = controller.balanceHidden.value;
-      String show(Object v) => hidden ? '••••' : v.toString();
-      return Row(
-        children: <Widget>[
-          Expanded(
-            child: SummaryTile(
-              icon: Icons.south_west_rounded,
-              label: "Today's income",
-              value: show(AppFormatters.money(controller.today.value.income)),
-              color: money.income,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: SummaryTile(
-              icon: Icons.north_east_rounded,
-              label: "Today's expense",
-              value: show(AppFormatters.money(controller.today.value.expense)),
-              color: money.expense,
-            ),
-          ),
-        ],
-      );
-    });
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        const SectionHeader(title: 'Today'),
+        const SizedBox(height: AppSpacing.sm),
+        Obx(() {
+          final bool hidden = controller.balanceHidden.value;
+          String show(Object v) => hidden ? '••••' : v.toString();
+          return Row(
+            children: <Widget>[
+              Expanded(
+                child: SummaryTile(
+                  icon: Icons.south_west_rounded,
+                  label: "Today's income",
+                  value: show(AppFormatters.money(controller.today.value.income)),
+                  color: money.income,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: SummaryTile(
+                  icon: Icons.north_east_rounded,
+                  label: "Today's expense",
+                  value: show(AppFormatters.money(controller.today.value.expense)),
+                  color: money.expense,
+                ),
+              ),
+            ],
+          );
+        }),
+      ],
+    );
   }
 }
 
@@ -560,6 +1100,7 @@ class _KhataSummary extends GetView<HomeController> {
           actionLabel: 'Open',
           onAction: () => Get.toNamed<void>(AppRoutes.contacts),
         ),
+        const SizedBox(height: AppSpacing.sm),
         Obx(() {
           if (controller.contactCount.value == 0) {
             return AppCard(
@@ -620,6 +1161,7 @@ class _AccountsSection extends GetView<HomeController> {
           actionLabel: 'Manage',
           onAction: () => Get.toNamed<void>(AppRoutes.accounts),
         ),
+        const SizedBox(height: AppSpacing.sm),
         Obx(
           () => AppListCard(
             children: <Widget>[
@@ -654,6 +1196,7 @@ class _RecentTransactions extends GetView<HomeController> {
           actionLabel: 'See all',
           onAction: () => Get.toNamed<void>(AppRoutes.transactions),
         ),
+        const SizedBox(height: AppSpacing.sm),
         Obx(() {
           if (controller.recent.isEmpty) {
             return AppCard(

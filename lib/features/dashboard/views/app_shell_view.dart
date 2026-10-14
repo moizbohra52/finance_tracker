@@ -8,6 +8,7 @@ import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_bell.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
+import 'package:finance_tracker/features/profile/widgets/profile_avatar.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
@@ -78,7 +79,7 @@ class _AppShellViewState extends State<AppShellView> {
     1 => FloatingActionButton.extended(
       onPressed: () => showAddTransactionSheet(context),
       icon: const Icon(Icons.add),
-      label: const Text('Add'),
+      label: const Text('Add transaction'),
     ),
     2 => const FloatingActionButton.extended(
       onPressed: openAddContact,
@@ -124,73 +125,96 @@ class _AppShellViewState extends State<AppShellView> {
           final bool useRail = constraints.maxWidth >= _railBreakpoint;
           return Scaffold(
             appBar: AppAppBar(
-              titleWidget: Obx(() {
-                final String name = _displayName(profile);
-                final String email = profile.email;
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Center(
+                  child: Obx(() {
+                    final String name = _displayName(profile);
+                    final String initial = name.isEmpty
+                        ? ''
+                        : name.characters.first.toUpperCase();
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                        color: colors.onSurface,
+                    return Semantics(
+                      button: true,
+                      label: 'Open profile',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => Get.toNamed<void>(AppRoutes.profile),
+                          customBorder: const CircleBorder(),
+                          child: ProfileAvatar(
+                            initial: initial,
+                            link: profile.avatarLink.value,
+                            radius: 18,
+                            busy: profile.avatarBusy.value,
+                            border: Border.all(
+                              color: colors.primary.withValues(alpha: 0.22),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    if (email.isNotEmpty) ...[
-                      const SizedBox(height: 1),
+                    );
+                  }),
+                ),
+              ),
+              titleWidget: Obx(() {
+                if (_selectedIndex == 0) {
+                  final String name = _displayName(profile);
+                  final String firstName = name.split(' ').first;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
-                        email,
+                        'Hello, $firstName',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                          color: colors.onSurface,
+                        ),
+                      ),
+                      Text(
+                        'Track your finances',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: colors.onSurfaceVariant,
                         ),
                       ),
                     ],
-                  ],
+                  );
+                }
+                final String tabTitle = switch (_selectedIndex) {
+                  1 => 'Transactions',
+                  2 => 'Khata',
+                  3 => 'Reports',
+                  _ => 'Dashboard',
+                };
+                return Text(
+                  tabTitle,
+                  style: textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: colors.onSurface,
+                  ),
                 );
               }),
               centerTitle: false,
               automaticallyImplyLeading: false,
-              actions: const <Widget>[NotificationBell()],
+              actions: <Widget>[
+                IconButton(
+                  tooltip: 'Search transactions',
+                  icon: const Icon(Icons.search_rounded),
+                  onPressed: () => Get.toNamed<void>(AppRoutes.transactions),
+                ),
+                const NotificationBell(),
+              ],
               showMenu: true,
-              profileAvatar: Obx(() {
-                final String initial = _displayName(
-                  profile,
-                ).characters.first.toUpperCase();
-
-                return Semantics(
-                  button: true,
-                  label: 'Open profile',
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () => Get.toNamed<void>(AppRoutes.profile),
-                      customBorder: const CircleBorder(),
-                      child: CircleAvatar(
-                        radius: 18,
-                        backgroundColor: colors.primary.withValues(alpha: 0.12),
-                        foregroundColor: colors.primary,
-                        child: Text(
-                          initial,
-                          style: textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: colors.primary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
               onProfileTap: () => Get.toNamed<void>(AppRoutes.profile),
               onSettingsTap: () => Get.toNamed<void>(AppRoutes.settings),
               onSignOutTap: () => confirmAndSignOut(context),

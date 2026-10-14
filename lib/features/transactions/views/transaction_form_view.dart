@@ -44,6 +44,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
   String? _accountId;
   String? _categoryId;
   late DateTime _date;
+  late TimeOfDay _time;
 
   @override
   void initState() {
@@ -55,6 +56,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
     _existing = formArgs.existing;
     _type = formArgs.type;
     _date = DateTime.now();
+    _time = TimeOfDay.now();
     final Transaction? existing = _existing;
     if (existing != null) {
       _amount.text = existing.amount.toString();
@@ -62,6 +64,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
       _accountId = existing.accountId;
       _categoryId = existing.categoryId;
       _date = existing.transactionDate;
+      _time = TimeOfDay.fromDateTime(existing.transactionDate);
     }
     _controller.save.error.value = null;
   }
@@ -90,6 +93,14 @@ class _TransactionFormViewState extends State<TransactionFormView> {
     final String? accountId = _effectiveAccount(_controller.accounts);
     if (accountId == null) return;
     final String note = _note.text.trim();
+    final DateTime combinedDate = DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      _time.hour,
+      _time.minute,
+      DateTime.now().second,
+    );
     final bool saved = await _controller.saveTransaction(
       id: _existing?.id ?? _id,
       existing: _existing,
@@ -97,7 +108,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
       amount: Decimal.parse(_amount.text.trim()),
       accountId: accountId,
       categoryId: _categoryId,
-      date: _date,
+      date: combinedDate,
       note: note.isEmpty ? null : note,
     );
     if (!saved) return;
@@ -171,7 +182,13 @@ class _TransactionFormViewState extends State<TransactionFormView> {
       child: Form(
         key: _formKey,
         child: ListView(
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.only(
+            top: AppSpacing.sm,
+            bottom: AppSpacing.xxl,
+          ),
           children: <Widget>[
+            const SizedBox(height: AppSpacing.xs),
             if (!_isEditing)
               SegmentedButton<TransactionType>(
                 segments: const <ButtonSegment<TransactionType>>[
@@ -196,6 +213,12 @@ class _TransactionFormViewState extends State<TransactionFormView> {
             TextFormField(
               controller: _amount,
               autofocus: !_isEditing,
+              scrollPadding: const EdgeInsets.only(
+                top: 80,
+                bottom: 90,
+                left: 16,
+                right: 16,
+              ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -209,7 +232,14 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               decoration: InputDecoration(
                 labelText: 'Amount',
                 prefixText: '${AppFormatters.currencySymbol} ',
+                prefixStyle: text.displaySmall,
                 hintText: '0.00',
+                hintStyle: text.displaySmall?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.35),
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -233,20 +263,28 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               validator: (String? v) => v == null ? 'Choose an account' : null,
             ),
             const SizedBox(height: AppSpacing.md),
-            AppDateField(
-              label: 'Date',
-              value: _date,
-              lastDate: DateTime.now().add(const Duration(days: 1)),
-              onChanged: (DateTime picked) => setState(() {
-                // Keep the time of day so same-day entries stay ordered.
-                _date = DateTime(
-                  picked.year,
-                  picked.month,
-                  picked.day,
-                  _date.hour,
-                  _date.minute,
-                );
-              }),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: AppDateField(
+                    label: 'Date',
+                    value: _date,
+                    lastDate: DateTime.now().add(const Duration(days: 1)),
+                    onChanged: (DateTime picked) =>
+                        setState(() => _date = picked),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: AppTimeField(
+                    label: 'Time',
+                    value: _time,
+                    onChanged: (TimeOfDay picked) =>
+                        setState(() => _time = picked),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(

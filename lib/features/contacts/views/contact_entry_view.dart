@@ -58,6 +58,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
   ContactEntryArgs? _args;
   ContactTransactionType _type = ContactTransactionType.credit;
   DateTime _date = DateTime.now();
+  TimeOfDay _time = TimeOfDay.now();
   DateTime? _dueDate;
 
   @override
@@ -67,6 +68,14 @@ class _ContactEntryViewState extends State<ContactEntryView> {
     if (args is ContactEntryArgs) {
       _args = args;
       _type = args.type;
+      final ContactTransaction? e = args.existing;
+      if (e != null) {
+        _amount.text = e.amount.toString();
+        _date = e.transactionDate;
+        _time = TimeOfDay.fromDateTime(e.transactionDate);
+        _dueDate = e.dueDate;
+        _note.text = e.note ?? '';
+      }
     }
     _controller.save.error.value = null;
   }
@@ -81,29 +90,44 @@ class _ContactEntryViewState extends State<ContactEntryView> {
   Future<void> _submit() async {
     final ContactEntryArgs? args = _args;
     if (args == null || !(_formKey.currentState?.validate() ?? false)) return;
+    final bool editing = args.existing != null;
     final String note = _note.text.trim();
+    final DateTime combinedDate = DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      _time.hour,
+      _time.minute,
+      DateTime.now().second,
+    );
     final bool saved = await _controller.saveEntry(
-      id: _id,
+      id: args.existing?.id ?? _id,
+      existing: args.existing,
       contactId: args.contactId,
       type: _type,
       amount: Decimal.parse(_amount.text.trim()),
-      date: _date,
+      date: combinedDate,
       dueDate: _dueDate,
       note: note.isEmpty ? null : note,
     );
     if (!saved) return;
-    AppSnackbar.show('${contactEntryLabel(_type)} recorded');
+    AppSnackbar.show(
+      editing ? 'Entry updated' : '${contactEntryLabel(_type)} recorded',
+    );
     Get.back<void>();
   }
 
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
+    final bool editing = _args?.existing != null;
     return Scaffold(
       appBar: AppAppBar(
-        title: _args?.contactName == null
-            ? 'Add entry'
-            : 'Entry for ${_args!.contactName}',
+        title: editing
+            ? 'Edit entry'
+            : (_args?.contactName == null
+                ? 'Add entry'
+                : 'Entry for ${_args!.contactName}'),
       ),
       body: SafeArea(
         child: AppContent(
@@ -111,7 +135,13 @@ class _ContactEntryViewState extends State<ContactEntryView> {
           child: Form(
             key: _formKey,
             child: ListView(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.xxl,
+              ),
               children: <Widget>[
+                const SizedBox(height: AppSpacing.xs),
                 Wrap(
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
@@ -129,7 +159,13 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                 const SizedBox(height: AppSpacing.lg),
                 TextFormField(
                   controller: _amount,
-                  autofocus: true,
+                  autofocus: !editing,
+                  scrollPadding: const EdgeInsets.only(
+                    top: 80,
+                    bottom: 90,
+                    left: 16,
+                    right: 16,
+                  ),
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -143,15 +179,37 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                   decoration: InputDecoration(
                     labelText: 'Amount',
                     prefixText: '${AppFormatters.currencySymbol} ',
+                    prefixStyle: text.displaySmall,
                     hintText: '0.00',
+                    hintStyle: text.displaySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant
+                          .withValues(alpha: 0.35),
+                    ),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                AppDateField(
-                  label: 'Date',
-                  value: _date,
-                  lastDate: DateTime.now().add(const Duration(days: 1)),
-                  onChanged: (DateTime d) => setState(() => _date = d),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Expanded(
+                      child: AppDateField(
+                        label: 'Date',
+                        value: _date,
+                        lastDate: DateTime.now().add(const Duration(days: 1)),
+                        onChanged: (DateTime d) => setState(() => _date = d),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: AppTimeField(
+                        label: 'Time',
+                        value: _time,
+                        onChanged: (TimeOfDay t) => setState(() => _time = t),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppDateField(
@@ -170,7 +228,9 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                 SubmitErrorMessage(_controller.save),
                 Obx(
                   () => AppButton(
-                    label: 'Save ${contactEntryLabel(_type).toLowerCase()}',
+                    label: editing
+                        ? 'Save changes'
+                        : 'Save ${contactEntryLabel(_type).toLowerCase()}',
                     icon: Icons.check_rounded,
                     isLoading: _controller.save.isBusy.value,
                     onPressed: _args == null ? null : _submit,

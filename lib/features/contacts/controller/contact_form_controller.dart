@@ -6,17 +6,19 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
-/// Arguments for the add-credit/debit route.
+/// Arguments for the add or edit credit/debit route.
 class ContactEntryArgs {
   const ContactEntryArgs({
     required this.contactId,
     required this.type,
     this.contactName,
+    this.existing,
   });
 
   final String contactId;
   final ContactTransactionType type;
   final String? contactName;
+  final ContactTransaction? existing;
 }
 
 /// Saves a contact (create or edit) or one ledger entry for a contact.
@@ -66,6 +68,7 @@ class ContactFormController extends GetxController {
 
   Future<bool> saveEntry({
     required String id,
+    ContactTransaction? existing,
     required String contactId,
     required ContactTransactionType type,
     required Decimal amount,
@@ -74,20 +77,23 @@ class ContactFormController extends GetxController {
     required String? note,
   }) => save.run(() async {
     final DateTime now = DateTime.now();
-    await _repository.createContactTransaction(
-      ContactTransaction(
-        id: id,
-        userId: '',
-        contactId: contactId,
-        type: type,
-        amount: amount,
-        transactionDate: date,
-        dueDate: dueDate,
-        note: note,
-        createdAt: now,
-        updatedAt: now,
-      ),
+    final ContactTransaction transaction = ContactTransaction(
+      id: id,
+      userId: existing?.userId ?? '',
+      contactId: contactId,
+      type: type,
+      amount: amount,
+      transactionDate: date,
+      dueDate: dueDate,
+      note: note,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
     );
+    if (existing == null) {
+      await _repository.createContactTransaction(transaction);
+    } else {
+      await _repository.updateContactTransaction(transaction);
+    }
     _notifier.markChanged();
   });
 

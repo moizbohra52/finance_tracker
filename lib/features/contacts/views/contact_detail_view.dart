@@ -261,11 +261,22 @@ class _EntryTile extends GetView<ContactDetailController> {
   const _EntryTile({required this.entry, required this.id});
 
   final String id;
+  final ContactTransaction entry;
 
   @override
   String get tag => id;
 
-  final ContactTransaction entry;
+  void _edit() {
+    Get.toNamed<void>(
+      AppRoutes.contactEntry,
+      arguments: ContactEntryArgs(
+        contactId: entry.contactId,
+        contactName: controller.contact.value?.name,
+        type: entry.type,
+        existing: entry,
+      ),
+    );
+  }
 
   Future<void> _delete(BuildContext context) async {
     final bool confirmed = await confirmDestructive(
@@ -291,6 +302,7 @@ class _EntryTile extends GetView<ContactDetailController> {
         ? ''
         : ' · Due ${AppFormatters.date(entry.dueDate!)}';
     return AppListTile(
+      onTap: _edit,
       padding: const EdgeInsets.only(
         left: AppSpacing.md,
         top: AppSpacing.sm,
@@ -314,6 +326,11 @@ class _EntryTile extends GetView<ContactDetailController> {
               color: color,
               fontWeight: FontWeight.w700,
             ),
+          ),
+          IconButton(
+            tooltip: 'Edit entry',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: _edit,
           ),
           IconButton(
             tooltip: 'Delete entry',

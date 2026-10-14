@@ -94,7 +94,7 @@ class TransactionListView extends StatelessWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showAddTransactionSheet(context),
         icon: const Icon(Icons.add),
-        label: const Text('Add'),
+        label: const Text('Add transaction'),
       ),
     );
   }

@@ -129,7 +129,13 @@ class _BudgetFormViewState extends State<BudgetFormView> {
           child: Form(
             key: _formKey,
             child: ListView(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.xxl,
+              ),
               children: <Widget>[
+                const SizedBox(height: AppSpacing.xs),
                 BottomSheetDropdown<String>(
                   value: categoryValue ?? '',
                   options: <String>[

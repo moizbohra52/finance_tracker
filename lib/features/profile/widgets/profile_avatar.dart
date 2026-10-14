@@ -11,6 +11,7 @@ class ProfileAvatar extends StatelessWidget {
     this.link,
     this.radius = 48,
     this.busy = false,
+    this.border,
   });
 
   /// First letter of the name, shown when there is no photo.
@@ -23,20 +24,38 @@ class ProfileAvatar extends StatelessWidget {
   /// Shows a progress indicator over the photo while it uploads.
   final bool busy;
 
+  /// Optional decorative border around the avatar.
+  final BoxBorder? border;
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
+    final TextStyle textStyle = (radius < 24
+            ? Theme.of(context).textTheme.titleSmall
+            : Theme.of(context).textTheme.headlineSmall)
+        ?.copyWith(
+          fontWeight: FontWeight.w800,
+          fontSize: radius < 24 ? radius * 0.85 : null,
+          color: colors.primary,
+        ) ??
+        TextStyle(
+          fontWeight: FontWeight.w800,
+          fontSize: radius < 24 ? radius * 0.85 : 20,
+          color: colors.primary,
+        );
+
     final Widget fallback = ColoredBox(
       color: colors.primary.withValues(alpha: 0.12),
       child: Center(
         child: initial.isEmpty
-            ? Icon(Icons.person_rounded, size: radius, color: colors.primary)
+            ? Icon(
+                Icons.person_rounded,
+                size: radius * 1.1,
+                color: colors.primary,
+              )
             : Text(
                 initial,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: colors.primary,
-                ),
+                style: textStyle,
               ),
       ),
     );
@@ -67,6 +86,13 @@ class ProfileAvatar extends StatelessWidget {
                               fallback,
                     ),
             ),
+            if (border != null)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: border,
+                ),
+              ),
             if (busy)
               DecoratedBox(
                 decoration: BoxDecoration(

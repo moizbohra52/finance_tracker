@@ -161,7 +161,13 @@ class _ReminderFormViewState extends State<ReminderFormView> {
           child: Form(
             key: _formKey,
             child: ListView(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.xxl,
+              ),
               children: <Widget>[
+                const SizedBox(height: AppSpacing.xs),
                 if (_notify) const NotificationPermissionBanner(),
                 Text('Type', style: text.labelLarge),
                 const SizedBox(height: AppSpacing.sm),

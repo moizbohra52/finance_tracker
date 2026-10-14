@@ -103,7 +103,13 @@ class _CategoryFormViewState extends State<CategoryFormView> {
           child: Form(
             key: _formKey,
             child: ListView(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.xxl,
+              ),
               children: <Widget>[
+                const SizedBox(height: AppSpacing.xs),
                 // The kind is fixed once created, so past transactions keep
                 // their meaning.
                 if (!_isEditing) ...<Widget>[

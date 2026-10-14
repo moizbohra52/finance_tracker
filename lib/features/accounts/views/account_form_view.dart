@@ -84,7 +84,13 @@ class _AccountFormViewState extends State<AccountFormView> {
           child: Form(
             key: _formKey,
             child: ListView(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.xxl,
+              ),
               children: <Widget>[
+                const SizedBox(height: AppSpacing.xs),
                 AppTextField(
                   label: 'Account name',
                   controller: _name,

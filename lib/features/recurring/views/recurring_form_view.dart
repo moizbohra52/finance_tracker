@@ -203,7 +203,13 @@ class _RecurringFormViewState extends State<RecurringFormView> {
       child: Form(
         key: _formKey,
         child: ListView(
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.only(
+            top: AppSpacing.sm,
+            bottom: AppSpacing.xxl,
+          ),
           children: <Widget>[
+            const SizedBox(height: AppSpacing.xs),
             SegmentedButton<TransactionType>(
               segments: const <ButtonSegment<TransactionType>>[
                 ButtonSegment<TransactionType>(
@@ -227,6 +233,12 @@ class _RecurringFormViewState extends State<RecurringFormView> {
             TextFormField(
               controller: _amount,
               autofocus: !_editing,
+              scrollPadding: const EdgeInsets.only(
+                top: 80,
+                bottom: 90,
+                left: 16,
+                right: 16,
+              ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -240,7 +252,14 @@ class _RecurringFormViewState extends State<RecurringFormView> {
               decoration: InputDecoration(
                 labelText: 'Amount',
                 prefixText: '${AppFormatters.currencySymbol} ',
+                prefixStyle: text.displaySmall,
                 hintText: '0.00',
+                hintStyle: text.displaySmall?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.35),
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),

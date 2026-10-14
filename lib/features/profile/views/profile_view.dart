@@ -18,6 +18,7 @@ import 'package:finance_tracker/features/settings/widgets/settings_widgets.dart'
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileView extends GetView<ProfileController> {
@@ -54,18 +55,53 @@ class ProfileContent extends GetView<ProfileController> {
 class _ProfileForm extends StatelessWidget {
   const _ProfileForm();
 
-  Future<void> _changePhoto(ProfileController controller) async {
-    // Scaled down at pick time: the photo is shown small, and the size limit
-    // is then easy to meet.
+  Future<void> _changePhoto(
+    BuildContext context,
+    ProfileController controller,
+  ) async {
     final XFile? picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      maxWidth: 512,
-      maxHeight: 512,
-      imageQuality: 85,
     );
     if (picked == null) return;
-    final Uint8List bytes = await picked.readAsBytes();
-    await controller.uploadAvatar(picked.name, bytes);
+
+    if (!context.mounted) return;
+    final ThemeData theme = Theme.of(context);
+
+    final CroppedFile? cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      compressQuality: 85,
+      maxWidth: 512,
+      maxHeight: 512,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: <PlatformUiSettings>[
+        AndroidUiSettings(
+          toolbarTitle: 'Crop profile photo',
+          toolbarColor: theme.colorScheme.surface,
+          toolbarWidgetColor: theme.colorScheme.onSurface,
+          activeControlsWidgetColor: theme.colorScheme.primary,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          cropStyle: CropStyle.circle,
+          aspectRatioPresets: const <CropAspectRatioPreset>[
+            CropAspectRatioPreset.square,
+          ],
+        ),
+        IOSUiSettings(
+          title: 'Crop profile photo',
+          cropStyle: CropStyle.circle,
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+          aspectRatioPresets: const <CropAspectRatioPreset>[
+            CropAspectRatioPreset.square,
+          ],
+        ),
+      ],
+    );
+
+    if (cropped == null) return;
+    final Uint8List bytes = await cropped.readAsBytes();
+    final String fileName = cropped.path.split(RegExp(r'[/\\]')).last;
+    await controller.uploadAvatar(fileName, bytes);
   }
 
   @override
@@ -96,7 +132,7 @@ class _ProfileForm extends StatelessWidget {
                     customBorder: const CircleBorder(),
                     onTap: controller.avatarBusy.value
                         ? null
-                        : () => _changePhoto(controller),
+                        : () => _changePhoto(context, controller),
                     child: ProfileAvatar(
                       initial: _initial(controller.displayName.value),
                       link: controller.avatarLink.value,

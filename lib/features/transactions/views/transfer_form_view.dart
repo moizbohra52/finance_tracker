@@ -48,6 +48,7 @@ class _TransferFormViewState extends State<TransferFormView> {
   String? _fromId;
   String? _toId;
   DateTime _date = DateTime.now();
+  TimeOfDay _time = TimeOfDay.now();
 
   bool get _isEditing => _args.transferId != null;
 
@@ -86,6 +87,7 @@ class _TransferFormViewState extends State<TransferFormView> {
           _fromId = legs.fromAccountId;
           _toId = legs.toAccountId;
           _date = legs.date;
+          _time = TimeOfDay.fromDateTime(legs.date);
         }
       });
     } on AppException catch (failure) {
@@ -125,6 +127,14 @@ class _TransferFormViewState extends State<TransferFormView> {
     final String? toId = _effectiveTo(accounts, fromId);
     if (fromId == null || toId == null) return;
     final String note = _note.text.trim();
+    final DateTime combinedDate = DateTime(
+      _date.year,
+      _date.month,
+      _date.day,
+      _time.hour,
+      _time.minute,
+      DateTime.now().second,
+    );
     final TransferLegs? existing = _existing;
     final TransferLegs? saved = await _controller.saveTransfer(
       newIds: _ids,
@@ -132,7 +142,7 @@ class _TransferFormViewState extends State<TransferFormView> {
       fromAccountId: fromId,
       toAccountId: toId,
       amount: Decimal.parse(_amount.text.trim()),
-      date: _date,
+      date: combinedDate,
       note: note.isEmpty ? null : note,
     );
     if (saved == null) return;
@@ -208,10 +218,22 @@ class _TransferFormViewState extends State<TransferFormView> {
       child: Form(
         key: _formKey,
         child: ListView(
+          clipBehavior: Clip.none,
+          padding: const EdgeInsets.only(
+            top: AppSpacing.sm,
+            bottom: AppSpacing.xxl,
+          ),
           children: <Widget>[
+            const SizedBox(height: AppSpacing.xs),
             TextFormField(
               controller: _amount,
               autofocus: !_isEditing,
+              scrollPadding: const EdgeInsets.only(
+                top: 80,
+                bottom: 90,
+                left: 16,
+                right: 16,
+              ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -225,7 +247,14 @@ class _TransferFormViewState extends State<TransferFormView> {
               decoration: InputDecoration(
                 labelText: 'Amount',
                 prefixText: '${AppFormatters.currencySymbol} ',
+                prefixStyle: text.displaySmall,
                 hintText: '0.00',
+                hintStyle: text.displaySmall?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withValues(alpha: 0.35),
+                ),
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -264,20 +293,28 @@ class _TransferFormViewState extends State<TransferFormView> {
                   : null,
             ),
             const SizedBox(height: AppSpacing.md),
-            AppDateField(
-              label: 'Date',
-              value: _date,
-              lastDate: DateTime.now().add(const Duration(days: 1)),
-              onChanged: (DateTime picked) => setState(() {
-                // Keep the time of day so same-day entries stay ordered.
-                _date = DateTime(
-                  picked.year,
-                  picked.month,
-                  picked.day,
-                  _date.hour,
-                  _date.minute,
-                );
-              }),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: AppDateField(
+                    label: 'Date',
+                    value: _date,
+                    lastDate: DateTime.now().add(const Duration(days: 1)),
+                    onChanged: (DateTime picked) =>
+                        setState(() => _date = picked),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: AppTimeField(
+                    label: 'Time',
+                    value: _time,
+                    onChanged: (TimeOfDay picked) =>
+                        setState(() => _time = picked),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(

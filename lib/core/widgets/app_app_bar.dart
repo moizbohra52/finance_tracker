@@ -113,83 +113,60 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
           ),
         ...actions,
         if (showMenu)
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: Center(
-              child: PopupMenuButton<String>(
-                tooltip: 'More options',
-                elevation: 6,
-                shadowColor: colors.shadow.withValues(
-                  alpha: isDark ? 0.4 : 0.12,
+          PopupMenuButton<String>(
+            tooltip: 'More options',
+            icon: Icon(
+              Icons.more_vert_rounded,
+              color: colors.onSurface,
+            ),
+            elevation: 6,
+            shadowColor: colors.shadow.withValues(
+              alpha: isDark ? 0.4 : 0.12,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: colors.outlineVariant.withValues(
+                  alpha: isDark ? 0.3 : 0.45,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: colors.outlineVariant.withValues(
-                      alpha: isDark ? 0.3 : 0.45,
-                    ),
-                    width: 1,
-                  ),
-                ),
-                color: colors.surface,
-                offset: const Offset(0, 48),
-                onSelected: (String value) {
-                  switch (value) {
-                    case 'profile':
-                      onProfileTap?.call();
-                      break;
-                    case 'settings':
-                      onSettingsTap?.call();
-                      break;
-                    case 'signout':
-                      onSignOutTap?.call();
-                      break;
-                  }
-                },
-                itemBuilder: (BuildContext context) => [
-                  const _MenuItem(
-                    value: 'profile',
-                    icon: Icons.person_rounded,
-                    label: 'Profile',
-                    iconColorVariant: _IconColorVariant.primary,
-                  ),
-                  const _MenuItem(
-                    value: 'settings',
-                    icon: Icons.settings_rounded,
-                    label: 'Settings',
-                    iconColorVariant: _IconColorVariant.secondary,
-                  ),
-                  const _MenuItem(
-                    value: 'signout',
-                    icon: Icons.logout_rounded,
-                    label: 'Sign Out',
-                    isDestructive: true,
-                  ),
-                ],
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(
-                      alpha: isDark ? 0.35 : 0.55,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: colors.outlineVariant.withValues(
-                        alpha: isDark ? 0.3 : 0.45,
-                      ),
-                      width: 1,
-                    ),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    Icons.more_vert_rounded,
-                    color: colors.onSurface,
-                    size: 20,
-                  ),
-                ),
+                width: 1,
               ),
             ),
+            color: colors.surface,
+            offset: const Offset(0, 48),
+            onSelected: (String value) {
+              switch (value) {
+                case 'profile':
+                  onProfileTap?.call();
+                  break;
+                case 'settings':
+                  onSettingsTap?.call();
+                  break;
+                case 'signout':
+                  onSignOutTap?.call();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              const _MenuItem(
+                value: 'profile',
+                icon: Icons.person_rounded,
+                label: 'Profile',
+                iconColorVariant: _IconColorVariant.primary,
+              ),
+              const _MenuItem(
+                value: 'settings',
+                icon: Icons.settings_rounded,
+                label: 'Settings',
+                iconColorVariant: _IconColorVariant.secondary,
+              ),
+              const _MenuItem(
+                value: 'signout',
+                icon: Icons.logout_rounded,
+                label: 'Sign Out',
+                isDestructive: true,
+              ),
+            ],
           ),
       ],
     );
@@ -208,41 +185,16 @@ class AppBackButton extends StatelessWidget {
     if (!canPop && onPressed == null) return const SizedBox.shrink();
 
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final String tooltip = MaterialLocalizations.of(context).backButtonTooltip;
 
     return Center(
-      child: Tooltip(
-        message: tooltip,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed ?? () => Navigator.maybePop(context),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: colors.surfaceContainerHighest.withValues(
-                  alpha: isDark ? 0.35 : 0.55,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: colors.outlineVariant.withValues(
-                    alpha: isDark ? 0.3 : 0.45,
-                  ),
-                  width: 1,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 15,
-                color: color ?? colors.onSurface,
-              ),
-            ),
-          ),
+      child: IconButton(
+        tooltip: tooltip,
+        icon: Icon(
+          Icons.arrow_back_rounded,
+          color: color ?? colors.onSurface,
         ),
+        onPressed: onPressed ?? () => Navigator.maybePop(context),
       ),
     );
   }

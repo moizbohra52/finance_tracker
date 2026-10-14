@@ -79,38 +79,58 @@ abstract final class AppTheme {
 
     final TextTheme textTheme = baseText.copyWith(
       displaySmall: baseText.displaySmall?.copyWith(
+        fontSize: 32,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.6,
       ),
       headlineMedium: baseText.headlineMedium?.copyWith(
+        fontSize: 26,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.4,
       ),
       headlineSmall: baseText.headlineSmall?.copyWith(
+        fontSize: 22,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.3,
       ),
       titleLarge: baseText.titleLarge?.copyWith(
+        fontSize: 19,
         fontWeight: FontWeight.w700,
         letterSpacing: -0.2,
       ),
-      titleMedium: baseText.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-      titleSmall: baseText.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+      titleMedium: baseText.titleMedium?.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+      titleSmall: baseText.titleSmall?.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
       bodyLarge: baseText.bodyLarge?.copyWith(
-        fontWeight: FontWeight.w400,
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
         height: 1.45,
       ),
       bodyMedium: baseText.bodyMedium?.copyWith(
+        fontSize: 13.5,
         fontWeight: FontWeight.w400,
         height: 1.4,
       ),
-      bodySmall: baseText.bodySmall?.copyWith(fontWeight: FontWeight.w400),
+      bodySmall: baseText.bodySmall?.copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+      ),
       labelLarge: baseText.labelLarge?.copyWith(
+        fontSize: 14,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.2,
       ),
-      labelMedium: baseText.labelMedium?.copyWith(fontWeight: FontWeight.w600),
+      labelMedium: baseText.labelMedium?.copyWith(
+        fontSize: 12.5,
+        fontWeight: FontWeight.w600,
+      ),
       labelSmall: baseText.labelSmall?.copyWith(
+        fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.3,
       ),
@@ -235,6 +255,33 @@ abstract final class AppTheme {
           horizontal: AppSpacing.md,
           vertical: AppSpacing.md,
         ),
+        labelStyle: TextStyle(
+          fontSize: 14.5,
+          fontWeight: FontWeight.w500,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        floatingLabelStyle: TextStyle(
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.primary,
+        ),
+        hintStyle: TextStyle(
+          fontSize: 14.5,
+          fontWeight: FontWeight.w400,
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
+        ),
+        helperStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: colorScheme.onSurfaceVariant,
+        ),
+        errorStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: colorScheme.error,
+        ),
+        prefixIconColor: colorScheme.onSurfaceVariant,
+        suffixIconColor: colorScheme.onSurfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide(
@@ -253,7 +300,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -261,7 +308,7 @@ abstract final class AppTheme {
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
-          borderSide: BorderSide(color: colorScheme.error, width: 1.5),
+          borderSide: BorderSide(color: colorScheme.error, width: 1.6),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(

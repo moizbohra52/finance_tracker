@@ -102,7 +102,13 @@ class _ContactFormViewState extends State<ContactFormView> {
           child: Form(
             key: _formKey,
             child: ListView(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.only(
+                top: AppSpacing.sm,
+                bottom: AppSpacing.xxl,
+              ),
               children: <Widget>[
+                const SizedBox(height: AppSpacing.xs),
                 AppTextField(
                   label: 'Name',
                   controller: _name,
