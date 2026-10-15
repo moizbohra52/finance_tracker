@@ -18,6 +18,7 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/profile` | Profile (not a tab since 2026-10-14) | `ProfileController` | app-bar avatar, app-bar menu |
 | account switcher (bottom sheet) | Signed-in accounts, switch, *Sign in to another account* | `AccountSwitchController` | long press on the app-bar avatar, app-bar menu *Switch account*, Profile and Settings *Switch account* |
 | `/add-account` | Sign in to another account (signed-in only) | `AddAccountController` | account switcher |
+| app lock cover (not a route) | "Track Day is locked", *Unlock* | `AppLockController` | app start and every return from the background when Settings > Security > *App lock* is on |
 | `/switch-account` | "Switching to ..." while the account changes (no guard) | `AccountSwitchController` | account switch, sign-out hand-over, notification of another account |
 | `/transactions` | Transaction list (route form of tab 1) | `TransactionBinding` | Home "See all" |
 | `/transaction-form` | Add income / add expense / edit (`TransactionFormArgs`) | `TransactionBinding` | Home quick actions, list FAB, detail Edit |

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/services/external_activity.dart';
 import 'package:finance_tracker/core/services/local_notification_service.dart';
 import 'package:finance_tracker/core/services/notification_permission_state.dart';
 import 'package:finance_tracker/core/services/push_service.dart';
@@ -217,9 +218,10 @@ class NotificationCoordinator extends GetxService {
     return permission.value.isGranted;
   }
 
-  Future<void> openSettings() => _local.openSettings();
+  Future<void> openSettings() => ExternalActivity.run(_local.openSettings);
 
-  Future<void> openExactAlarmSettings() => _local.requestExactAlarms();
+  Future<void> openExactAlarmSettings() =>
+      ExternalActivity.run(_local.requestExactAlarms);
 
   // ---------------------------------------------------------------------
   // Scheduling and raising

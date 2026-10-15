@@ -712,7 +712,17 @@ void main() {
         find.textContaining('not available'),
         200,
       );
-      expect(find.byType(SwitchListTile), findsNothing);
+      // No notification switches; app lock's switch does not depend on them.
+      for (final String label in <String>[
+        'Notifications',
+        'Reminders',
+        'Budget alerts',
+        'Recurring transactions',
+        'Sound',
+        'Vibration',
+      ]) {
+        expect(find.widgetWithText(SwitchListTile, label), findsNothing);
+      }
     });
   });
 }

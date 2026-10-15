@@ -15,6 +15,8 @@ import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/core/widgets/sync_status_sheet.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
+import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
+import 'package:finance_tracker/features/app_lock/widgets/app_lock_tile.dart';
 import 'package:finance_tracker/features/auth/widgets/account_switcher_sheet.dart';
 import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_settings_section.dart';
@@ -437,6 +439,7 @@ class _SecuritySection extends StatelessWidget {
           title: 'Change password',
           onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
         ),
+        if (Get.find<AppLockController>().isSupported) const AppLockTile(),
         const SwitchAccountTile(),
         SettingsTile(
           icon: Icons.logout_rounded,

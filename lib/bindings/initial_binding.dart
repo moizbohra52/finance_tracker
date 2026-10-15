@@ -18,6 +18,7 @@ import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
+import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/account_switch_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
@@ -36,6 +37,7 @@ class InitialBinding extends Bindings {
     required this.connectivityService,
     required this.repositories,
     required this.notificationCoordinator,
+    required this.appLock,
     this.database,
     this.syncEngine,
     this.dataChangeNotifier,
@@ -50,6 +52,7 @@ class InitialBinding extends Bindings {
   final ConnectivityService connectivityService;
   final AppRepositories repositories;
   final NotificationCoordinator notificationCoordinator;
+  final AppLockController appLock;
   final AppDatabase? database;
   final SyncEngine? syncEngine;
   final DataChangeNotifier? dataChangeNotifier;
@@ -93,6 +96,7 @@ class InitialBinding extends Bindings {
     );
     Get.put<ReminderRepository>(repositories.reminders, permanent: true);
     Get.put<NotificationCoordinator>(notificationCoordinator, permanent: true);
+    Get.put<AppLockController>(appLock, permanent: true);
     Get.put<DataChangeNotifier>(notifier, permanent: true);
     Get.put<SettingsController>(
       SettingsController(

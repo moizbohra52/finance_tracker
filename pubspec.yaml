@@ -45,6 +45,7 @@ dependencies:
   image_cropper: ^12.2.1
   image_picker: ^1.0.0
   intl: ^0.20.3
+  local_auth: 3.0.2
   path: ^1.9.1
   path_provider: ^2.1.6
   pdf: ^3.12.0
@@ -79,8 +80,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/logo.png
-    - assets/icons/
+    - assets/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
@@ -106,4 +106,4 @@ flutter:
   #         weight: 700
   #
   # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/to/font-from-package
+  # see https://flutter.dev/to/font-from-package

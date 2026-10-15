@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:finance_tracker/core/services/external_activity.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -20,10 +21,12 @@ class FileSharingService {
     // Write as UTF-8 bytes to ensure correct character representation
     await file.writeAsBytes(utf8.encode(content), flush: true);
 
-    return SharePlus.instance.share(
-      ShareParams(
-        files: <XFile>[XFile(file.path, mimeType: mimeType, name: fileName)],
-        subject: subject ?? fileName,
+    return ExternalActivity.run(
+      () => SharePlus.instance.share(
+        ShareParams(
+          files: <XFile>[XFile(file.path, mimeType: mimeType, name: fileName)],
+          subject: subject ?? fileName,
+        ),
       ),
     );
   }
@@ -39,10 +42,12 @@ class FileSharingService {
     final File file = File(p.join(tempDir.path, fileName));
     await file.writeAsBytes(bytes, flush: true);
 
-    return SharePlus.instance.share(
-      ShareParams(
-        files: <XFile>[XFile(file.path, mimeType: mimeType, name: fileName)],
-        subject: subject ?? fileName,
+    return ExternalActivity.run(
+      () => SharePlus.instance.share(
+        ShareParams(
+          files: <XFile>[XFile(file.path, mimeType: mimeType, name: fileName)],
+          subject: subject ?? fileName,
+        ),
       ),
     );
   }

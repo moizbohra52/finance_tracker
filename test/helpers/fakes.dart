@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/connectivity_service.dart';
+import 'package:finance_tracker/core/services/device_auth_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
@@ -13,6 +14,7 @@ import 'package:finance_tracker/data/models/user_settings.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
+import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/main.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -186,6 +188,29 @@ class FakeAuthRepository implements AuthRepository {
   }
 }
 
+/// The device's fingerprint / face check: every prompt is recorded and
+/// answered with [next].
+class FakeDeviceAuth implements DeviceAuthService {
+  bool supported = true;
+
+  /// Whether the device has biometrics or a screen lock set up.
+  bool available = true;
+  DeviceAuthResult next = DeviceAuthResult.success;
+  final List<String> prompts = <String>[];
+
+  @override
+  bool get isSupportedPlatform => supported;
+
+  @override
+  Future<bool> isAvailable() async => supported && available;
+
+  @override
+  Future<DeviceAuthResult> authenticate(String reason) async {
+    prompts.add(reason);
+    return next;
+  }
+}
+
 /// In-memory ProfileRepository. [nextError] fails the next call once;
 /// [failUploads] fails every upload until cleared.
 class FakeProfileRepository implements ProfileRepository {
@@ -321,6 +346,8 @@ Future<void> pumpApp(
   FakePush? push,
   NotificationsHandle? notifications,
   StorageService? storage,
+  FakeDeviceAuth? deviceAuth,
+  AppLockController? appLock,
 }) async {
   await initializeDateFormatting(AppConstants.defaultLocale);
   // A restart passes the same storage, so the saved values must survive:
@@ -343,6 +370,17 @@ Future<void> pumpApp(
         storage: preferences,
       );
   await handle.coordinator.initialize();
+  // Like main(): initialised before the app, so it sees the back button
+  // first. Detached afterwards, so it cannot act in the next test.
+  final AppLockController lock =
+      appLock ??
+      AppLockController(
+        deviceAuth: deviceAuth ?? FakeDeviceAuth(),
+        storage: preferences,
+        auth: auth,
+      );
+  lock.initialize();
+  addTearDown(lock.detach);
   await tester.pumpWidget(
     FinanceTrackerApp(
       authRepository: auth,
@@ -350,6 +388,7 @@ Future<void> pumpApp(
       userSettingsRepository: userSettings ?? FakeUserSettingsRepository(),
       repositories: data.repositories,
       notificationCoordinator: handle.coordinator,
+      appLock: lock,
       storageService: preferences,
       // The same preferences: supabase_flutter keeps its session there too.
       savedLogins: SavedLoginStore(await SharedPreferences.getInstance()),

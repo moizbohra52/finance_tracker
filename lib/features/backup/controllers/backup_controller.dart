@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:finance_tracker/core/services/backup_service.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/external_activity.dart';
 import 'package:finance_tracker/core/services/file_sharing_service.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
@@ -79,9 +80,11 @@ class BackupController extends GetxController {
   /// Opens file picker for the user to select a JSON backup file.
   Future<BackupValidationResult?> pickAndValidateBackup() async {
     try {
-      final PlatformFile? file = await FilePicker.pickFile(
-        type: FileType.custom,
-        allowedExtensions: <String>['json'],
+      final PlatformFile? file = await ExternalActivity.run(
+        () => FilePicker.pickFile(
+          type: FileType.custom,
+          allowedExtensions: <String>['json'],
+        ),
       );
 
       if (file == null) {

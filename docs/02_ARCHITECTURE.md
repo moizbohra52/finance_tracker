@@ -132,6 +132,15 @@ Controllers never touch the notification plugin: they call the coordinator
 - Global infrastructure (repositories, the notifier, the notification
   coordinator, storage) is never removed.
 
+## App lock (2026-10-15)
+`AppLockController` (`features/app_lock`, permanent GetX service) is created
+and initialised in `main()` before `runApp`, like the notification
+coordinator, because its back-button observer must come before the
+navigator's. `DeviceAuthService` (`core/services`) wraps `local_auth`;
+`AppLockGate` is installed through `GetMaterialApp.builder`, above every
+route. Screens that open another app wrap it in `ExternalActivity.run` so
+coming back does not lock. Rules: `docs/04_SECURITY_RLS.md`.
+
 ## Several signed-in accounts (2026-10-15)
 Like a social app, several accounts can be signed in on one device and the
 user switches between them (app-bar avatar long press or menu, Profile and

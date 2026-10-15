@@ -112,6 +112,28 @@ Test both authenticated and unauthenticated access, and attempt cross-user reads
 - RLS is unchanged: every request carries exactly one account's token, and
   each account's local rows are in its own file.
 
+### App lock (2026-10-15)
+- Optional, off by default: Settings > Security > *App lock*. Turning it on
+  or off asks for the device's own check first.
+- The check is the device's: fingerprint or face through `local_auth`
+  (Android BiometricPrompt, iOS Face ID / Touch ID), with the device PIN,
+  pattern or passcode accepted as fallback, so nobody is shut out when a
+  finger or face is not recognised. The app stores no biometric data and no
+  PIN; only the on/off flag (`security.app_lock`, device-local preferences).
+- Locked at start and every time the app goes to the background while an
+  account is signed in. Coming back within 2 minutes from a screen the app
+  opened itself (photo picker and cropper, file picker, share sheet, system
+  settings: `ExternalActivity`) does not lock.
+- The lock is a cover above the navigator (`AppLockGate`), not a route: the
+  screens underneath are excluded from focus and screen readers, a
+  notification tap opens its screen underneath, and back leaves the app.
+- If the device no longer has any screen lock, unlocking turns app lock off
+  instead of shutting the user out: removing the screen lock required it, so
+  the app lock protected nothing more.
+- One lock for the device, whichever account is active.
+- Not covered: screenshots and the app-switcher thumbnail
+  (`FLAG_SECURE`) are not blocked.
+
 ### Account deletion ordering (Phase 10)
 `AuthRepository.deleteAccount` re-checks the password, then runs the
 `beforeDelete` hook (photo removal), then calls `delete_my_account`, then signs

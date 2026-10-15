@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:finance_tracker/core/services/external_activity.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
@@ -56,7 +57,14 @@ class ProfileContent extends GetView<ProfileController> {
 class _ProfileForm extends StatelessWidget {
   const _ProfileForm();
 
+  /// The picker and the cropper are other apps' screens: coming back from
+  /// them does not ask for the app lock again.
   Future<void> _changePhoto(
+    BuildContext context,
+    ProfileController controller,
+  ) => ExternalActivity.run(() => _pickAndCrop(context, controller));
+
+  Future<void> _pickAndCrop(
     BuildContext context,
     ProfileController controller,
   ) async {

@@ -6,6 +6,7 @@ import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/constants/app_env.dart';
 import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/device_auth_service.dart';
 import 'package:finance_tracker/core/services/local_notification_service.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/services/push_service.dart';
@@ -21,6 +22,8 @@ import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
+import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
+import 'package:finance_tracker/features/app_lock/widgets/app_lock_gate.dart';
 import 'package:finance_tracker/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -95,6 +98,14 @@ Future<void> main() async {
     );
   }
 
+  // Before runApp, so its back-button handling comes before the navigator's
+  // and a locked cold start shows the lock from the first frame.
+  final AppLockController appLock = AppLockController(
+    deviceAuth: DeviceAuthService(),
+    storage: storageService,
+    auth: authRepository,
+  )..initialize();
+
   // Trigger background sync if online and user is authenticated
   if (authRepository.isSignedIn) {
     unawaited(syncEngine.syncAll());
@@ -119,6 +130,7 @@ Future<void> main() async {
       connectivityService: connectivityService,
       repositories: repositories,
       notificationCoordinator: notificationCoordinator,
+      appLock: appLock,
       database: database,
       syncEngine: syncEngine,
       dataChangeNotifier: dataChangeNotifier,
@@ -138,6 +150,7 @@ class FinanceTrackerApp extends StatelessWidget {
     required this.connectivityService,
     required this.repositories,
     required this.notificationCoordinator,
+    required this.appLock,
     this.database,
     this.syncEngine,
     this.dataChangeNotifier,
@@ -151,6 +164,7 @@ class FinanceTrackerApp extends StatelessWidget {
          connectivityService: connectivityService,
          repositories: repositories,
          notificationCoordinator: notificationCoordinator,
+         appLock: appLock,
          database: database,
          syncEngine: syncEngine,
          dataChangeNotifier: dataChangeNotifier,
@@ -165,6 +179,7 @@ class FinanceTrackerApp extends StatelessWidget {
   final ConnectivityService connectivityService;
   final AppRepositories repositories;
   final NotificationCoordinator notificationCoordinator;
+  final AppLockController appLock;
   final AppDatabase? database;
   final SyncEngine? syncEngine;
   final DataChangeNotifier? dataChangeNotifier;
@@ -184,6 +199,8 @@ class FinanceTrackerApp extends StatelessWidget {
         initialBinding: initialBinding,
         initialRoute: AppPages.initial,
         getPages: AppPages.routes,
+        builder: (BuildContext context, Widget? child) =>
+            AppLockGate(controller: appLock, child: child),
       );
     });
   }
