@@ -164,6 +164,7 @@ class AccountSwitchController extends GetxController {
         userId: added.userId,
         email: added.email,
         displayName: added.displayName ?? known?.displayName,
+        avatarUrl: known?.avatarUrl,
         lastUsedAt: DateTime.now(),
       ),
       session: added.session,
@@ -173,15 +174,34 @@ class AccountSwitchController extends GetxController {
   }
 
   /// Keeps the active account's name in the switcher current.
-  void updateActiveName(String? fullName) {
+  void updateActiveName(String? fullName) =>
+      updateActiveProfile(fullName: fullName);
+
+  /// Keeps the active account's name and avatar in the switcher current.
+  void updateActiveProfile({String? fullName, String? avatarUrl}) {
     final String? userId = activeUserId;
-    final String name = fullName?.trim() ?? '';
-    if (userId == null || name.isEmpty) return;
+    if (userId == null) return;
     final SavedLogin? login = _store.login(userId);
-    if (login == null || login.displayName == name) return;
+    if (login == null) return;
+
+    final String? name = fullName?.trim();
+    final String? effectiveName =
+        (name != null && name.isNotEmpty) ? name : login.displayName;
+    final String? effectiveAvatar = avatarUrl ?? login.avatarUrl;
+
+    if (login.displayName == effectiveName &&
+        login.avatarUrl == effectiveAvatar) {
+      return;
+    }
+
     unawaited(
       _store
-          .save(login.copyWith(displayName: name))
+          .save(
+            login.copyWith(
+              displayName: effectiveName,
+              avatarUrl: effectiveAvatar,
+            ),
+          )
           .then((_) => _reload())
           .catchError((Object error) => _logStorage(error)),
     );
@@ -388,6 +408,7 @@ class AccountSwitchController extends GetxController {
         userId: session.userId,
         email: session.email.isNotEmpty ? session.email : known?.email ?? '',
         displayName: known?.displayName ?? session.displayName,
+        avatarUrl: known?.avatarUrl,
         lastUsedAt: DateTime.now(),
       ),
       session: session.session,

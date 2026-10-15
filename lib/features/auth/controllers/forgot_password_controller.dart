@@ -22,9 +22,4 @@ class ForgotPasswordController extends GetxController {
     if (succeeded) linkSentTo.value = email;
   }
 
-  @override
-  void onClose() {
-    emailController.dispose();
-    super.onClose();
-  }
 }

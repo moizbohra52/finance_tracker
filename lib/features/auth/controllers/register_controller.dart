@@ -35,12 +35,4 @@ class RegisterController extends GetxController {
     if (succeeded && !signedIn) confirmationSentTo.value = email;
   }
 
-  @override
-  void onClose() {
-    fullNameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.onClose();
-  }
 }

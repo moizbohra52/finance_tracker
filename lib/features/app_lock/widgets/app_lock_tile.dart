@@ -1,3 +1,5 @@
+import 'package:finance_tracker/core/widgets/app_badges.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:flutter/material.dart';
@@ -16,15 +18,24 @@ class AppLockTile extends GetView<AppLockController> {
   @override
   Widget build(BuildContext context) {
     if (!controller.isSupported) return const SizedBox.shrink();
+    final ColorScheme colors = Theme.of(context).colorScheme;
     return Obx(
-      () => SwitchListTile(
-        secondary: const Icon(Icons.fingerprint_rounded),
-        title: const Text('App lock'),
-        subtitle: const Text(
-          'Ask for fingerprint, face or screen lock every time the app opens',
+      () => AppListTile(
+        leading: IconBadge(
+          icon: Icons.fingerprint_rounded,
+          color: colors.primary,
         ),
-        value: controller.enabled.value,
-        onChanged: controller.busy.value ? null : _change,
+        title: 'App lock',
+        subtitle:
+            'Ask for fingerprint, face or screen lock every time the app opens',
+        subtitleMaxLines: 2,
+        trailing: Switch(
+          value: controller.enabled.value,
+          onChanged: controller.busy.value ? null : _change,
+        ),
+        onTap: controller.busy.value
+            ? null
+            : () => _change(!controller.enabled.value),
       ),
     );
   }

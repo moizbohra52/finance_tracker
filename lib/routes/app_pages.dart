@@ -143,19 +143,16 @@ abstract final class AppPages {
       name: AppRoutes.profile,
       page: () => const ProfileView(),
       middlewares: <GetMiddleware>[AuthGuard()],
-      binding: BindingsBuilder<void>(
-        () => Get.lazyPut(
-          () => ProfileController(Get.find(), Get.find()),
-          fenix: true,
-        ),
-      ),
     ),
     GetPage<dynamic>(
       name: AppRoutes.changePassword,
       page: () => const ChangePasswordView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => ChangePasswordController(Get.find())),
+        () => Get.lazyPut(
+          () => ChangePasswordController(Get.find()),
+          fenix: true,
+        ),
       ),
     ),
     // Several signed-in accounts. The switching screen has no guard: it shows
@@ -165,7 +162,10 @@ abstract final class AppPages {
       page: () => const AddAccountView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => AddAccountController(Get.find())),
+        () => Get.lazyPut(
+          () => AddAccountController(Get.find()),
+          fenix: true,
+        ),
       ),
     ),
     GetPage<dynamic>(

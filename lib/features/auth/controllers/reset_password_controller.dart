@@ -32,10 +32,4 @@ class ResetPasswordController extends GetxController {
   /// Leaves without changing the password; ends the recovery session.
   Future<void> cancel() => _authRepository.signOut();
 
-  @override
-  void onClose() {
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.onClose();
-  }
 }

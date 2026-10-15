@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 
@@ -69,22 +71,9 @@ class ProfileAvatar extends StatelessWidget {
           fit: StackFit.expand,
           children: <Widget>[
             ClipOval(
-              child: url == null
+              child: url == null || url.trim().isEmpty
                   ? fallback
-                  : Image.network(
-                      url,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                      loadingBuilder:
-                          (
-                            BuildContext context,
-                            Widget child,
-                            ImageChunkEvent? progress,
-                          ) => progress == null ? child : fallback,
-                      errorBuilder:
-                          (BuildContext context, Object error, StackTrace? _) =>
-                              fallback,
-                    ),
+                  : _buildImage(url.trim(), fallback),
             ),
             if (border != null)
               DecoratedBox(
@@ -113,6 +102,33 @@ class ProfileAvatar extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImage(String url, Widget fallback) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return Image.network(
+        url,
+        fit: BoxFit.cover,
+        gaplessPlayback: true,
+        loadingBuilder:
+            (
+              BuildContext context,
+              Widget child,
+              ImageChunkEvent? progress,
+            ) => progress == null ? child : fallback,
+        errorBuilder:
+            (BuildContext context, Object error, StackTrace? _) => fallback,
+      );
+    }
+    final String cleanPath =
+        url.startsWith('file://') ? url.replaceFirst('file://', '') : url;
+    return Image.file(
+      File(cleanPath),
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      errorBuilder:
+          (BuildContext context, Object error, StackTrace? _) => fallback,
     );
   }
 }

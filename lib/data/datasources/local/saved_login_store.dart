@@ -125,6 +125,7 @@ class _Entry {
     'user_id': login.userId,
     'email': login.email,
     'display_name': login.displayName,
+    'avatar_url': login.avatarUrl,
     'last_used_at': login.lastUsedAt.toUtc().toIso8601String(),
     'session': session,
   };
@@ -135,6 +136,7 @@ class _Entry {
     final Object? email = json['email'];
     final Object? usedAt = json['last_used_at'];
     final Object? name = json['display_name'];
+    final Object? avatarUrl = json['avatar_url'];
     final Object? session = json['session'];
     if (userId is! String || userId.isEmpty || email is! String) return null;
     return _Entry(
@@ -142,6 +144,7 @@ class _Entry {
         userId: userId,
         email: email,
         displayName: name is String ? name : null,
+        avatarUrl: avatarUrl is String ? avatarUrl : null,
         lastUsedAt:
             (usedAt is String ? DateTime.tryParse(usedAt) : null) ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),

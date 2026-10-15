@@ -24,13 +24,14 @@ class AppLockGate extends StatelessWidget {
       return Stack(
         fit: StackFit.expand,
         children: <Widget>[
-          ExcludeSemantics(
-            excluding: locked,
-            child: ExcludeFocus(
-              excluding: locked,
-              child: child ?? const SizedBox.shrink(),
+          if (child != null)
+            IgnorePointer(
+              ignoring: locked,
+              child: FocusScope(
+                canRequestFocus: !locked,
+                child: child!,
+              ),
             ),
-          ),
           if (locked) _LockScreen(controller: controller),
         ],
       );

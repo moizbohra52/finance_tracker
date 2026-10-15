@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/services/avatar_cache.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
@@ -48,6 +49,7 @@ class ProfileController extends GetxController {
   final SubmitState deletion = SubmitState();
 
   String get email => _authRepository.currentEmail ?? '';
+  String? get userId => _authRepository.currentUserId;
 
   @override
   void onInit() {
@@ -62,6 +64,25 @@ class ProfileController extends GetxController {
       final Profile profile = await _profiles.fetchProfile();
       _fill(profile);
       avatarLink.value = await _linkFor(profile.avatarPath);
+      final String? link = avatarLink.value;
+      if (link != null && link.isNotEmpty) {
+        if (Get.isRegistered<AccountSwitchController>()) {
+          Get.find<AccountSwitchController>().updateActiveProfile(
+            fullName: profile.fullName,
+            avatarUrl: link,
+          );
+        }
+        unawaited(
+          AvatarCache.cacheFromUrl(profile.id, link).then((String? cached) {
+            if (cached != null && Get.isRegistered<AccountSwitchController>()) {
+              Get.find<AccountSwitchController>().updateActiveProfile(
+                fullName: profile.fullName,
+                avatarUrl: cached,
+              );
+            }
+          }),
+        );
+      }
     } on AppException catch (failure) {
       loadError.value = failure.message;
     } finally {
@@ -119,6 +140,15 @@ class ProfileController extends GetxController {
       final String? previous = avatarPath.value;
       _fill(await _profiles.updateProfile(avatarPath: uploaded));
       avatarLink.value = await _linkFor(uploaded);
+      final String? uid = userId;
+      if (uid != null && uid.isNotEmpty) {
+        final String? cached = await AvatarCache.saveBytes(uid, bytes);
+        if (Get.isRegistered<AccountSwitchController>()) {
+          Get.find<AccountSwitchController>().updateActiveProfile(
+            avatarUrl: cached ?? avatarLink.value,
+          );
+        }
+      }
       if (previous != null && previous != uploaded) {
         await _removeQuietly(previous);
       }
@@ -153,6 +183,13 @@ class ProfileController extends GetxController {
   Future<void> _removeAvatarBeforeDelete() async {
     final String? path = avatarPath.value;
     if (path != null) await _removeQuietly(path);
+    final String? uid = userId;
+    if (uid != null && uid.isNotEmpty) {
+      await AvatarCache.delete(uid);
+      if (Get.isRegistered<AccountSwitchController>()) {
+        Get.find<AccountSwitchController>().updateActiveProfile(avatarUrl: '');
+      }
+    }
   }
 
   /// Best effort: a photo that cannot be removed must not block the caller.
@@ -195,14 +232,9 @@ class ProfileController extends GetxController {
     avatarPath.value = profile.avatarPath;
     // The account switcher names this account by its profile name.
     if (Get.isRegistered<AccountSwitchController>()) {
-      Get.find<AccountSwitchController>().updateActiveName(profile.fullName);
+      Get.find<AccountSwitchController>().updateActiveProfile(
+        fullName: profile.fullName,
+      );
     }
-  }
-
-  @override
-  void onClose() {
-    fullNameController.dispose();
-    mobileController.dispose();
-    super.onClose();
   }
 }

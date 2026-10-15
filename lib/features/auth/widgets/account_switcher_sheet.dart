@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:finance_tracker/core/services/avatar_cache.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/domain/entities/saved_login.dart';
@@ -116,7 +117,7 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
   }
 }
 
-class _AccountRow extends StatelessWidget {
+class _AccountRow extends StatefulWidget {
   const _AccountRow({
     required this.login,
     required this.active,
@@ -128,37 +129,79 @@ class _AccountRow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_AccountRow> createState() => _AccountRowState();
+}
+
+class _AccountRowState extends State<_AccountRow> {
+  String? _localAvatar;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAvatar();
+  }
+
+  @override
+  void didUpdateWidget(_AccountRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.login.userId != oldWidget.login.userId ||
+        widget.login.avatarUrl != oldWidget.login.avatarUrl) {
+      _checkAvatar();
+    }
+  }
+
+  Future<void> _checkAvatar() async {
+    final String? url = widget.login.avatarUrl;
+    if (url != null && url.isNotEmpty) {
+      if (mounted) setState(() => _localAvatar = url);
+      return;
+    }
+    final String? cached = await AvatarCache.getCachedPath(widget.login.userId);
+    if (cached != null && mounted) {
+      setState(() => _localAvatar = cached);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    // Only the active account's photo can be shown: a photo link is signed
-    // with that account's session and expires within the hour.
     final ProfileController? profile =
-        active && Get.isRegistered<ProfileController>()
-        ? Get.find<ProfileController>()
-        : null;
+        widget.active && Get.isRegistered<ProfileController>()
+            ? Get.find<ProfileController>()
+            : null;
+
+    final String? fallbackAvatar = _localAvatar ?? widget.login.avatarUrl;
 
     return Semantics(
-      selected: active,
+      selected: widget.active,
       child: ListTile(
-        leading: profile == null
-            ? ProfileAvatar(initial: login.initial, radius: 20)
-            : Obx(
+        leading: widget.active && profile != null
+            ? Obx(
                 () => ProfileAvatar(
-                  initial: login.initial,
-                  link: profile.avatarLink.value,
+                  initial: widget.login.initial,
+                  link: profile.avatarLink.value ?? fallbackAvatar,
                   radius: 20,
                 ),
+              )
+            : ProfileAvatar(
+                initial: widget.login.initial,
+                link: fallbackAvatar,
+                radius: 20,
               ),
-        title: Text(login.label, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(
-          login.email,
+        title: Text(
+          widget.login.label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        trailing: active
+        subtitle: Text(
+          widget.login.email,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: widget.active
             ? Icon(Icons.check_circle_rounded, color: colors.primary)
             : null,
-        onTap: onTap,
+        onTap: widget.onTap,
       ),
     );
   }

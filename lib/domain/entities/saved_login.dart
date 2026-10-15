@@ -13,6 +13,7 @@ class SavedLogin {
     required this.email,
     required this.lastUsedAt,
     this.displayName,
+    this.avatarUrl,
   });
 
   final String userId;
@@ -20,6 +21,9 @@ class SavedLogin {
 
   /// The profile name when it was last known, or null.
   final String? displayName;
+
+  /// The profile image URL or local cached path, or null.
+  final String? avatarUrl;
 
   /// When the user last switched to (or signed in to) this account. The most
   /// recent one is the next active account after a sign-out.
@@ -45,11 +49,13 @@ class SavedLogin {
   SavedLogin copyWith({
     String? email,
     String? displayName,
+    String? avatarUrl,
     DateTime? lastUsedAt,
   }) => SavedLogin(
     userId: userId,
     email: email ?? this.email,
     displayName: displayName ?? this.displayName,
+    avatarUrl: avatarUrl ?? this.avatarUrl,
     lastUsedAt: lastUsedAt ?? this.lastUsedAt,
   );
 
@@ -59,10 +65,12 @@ class SavedLogin {
       other.userId == userId &&
       other.email == email &&
       other.displayName == displayName &&
+      other.avatarUrl == avatarUrl &&
       other.lastUsedAt == lastUsedAt;
 
   @override
-  int get hashCode => Object.hash(userId, email, displayName, lastUsedAt);
+  int get hashCode =>
+      Object.hash(userId, email, displayName, avatarUrl, lastUsedAt);
 
   @override
   String toString() => 'SavedLogin($userId)';

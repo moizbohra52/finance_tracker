@@ -55,6 +55,7 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
   AppLifecycleListener? _lifecycle;
   DateTime? _hiddenAt;
   bool _hiddenForExternal = false;
+  bool _hasPrompted = false;
 
   bool get isSupported => _deviceAuth.isSupportedPlatform;
 
@@ -95,6 +96,7 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
   Future<void> unlock() async {
     if (!locked.value || busy.value) return;
     busy.value = true;
+    _hasPrompted = true;
     lockMessage.value = null;
     try {
       final DeviceAuthResult result = await _deviceAuth.authenticate(
@@ -103,12 +105,15 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
       switch (result) {
         case DeviceAuthResult.success:
           locked.value = false;
+          _hasPrompted = false;
+          lockMessage.value = null;
         case DeviceAuthResult.unavailable:
           // The device has no screen lock any more. Removing it needed the
           // old one, so the lock protects nothing now: turn it off rather
           // than shut the user out of their data.
           await _save(false);
           locked.value = false;
+          _hasPrompted = false;
           AppSnackbar.show(
             'App lock was turned off because this device no longer has a '
             'screen lock.',
@@ -117,7 +122,7 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
         case DeviceAuthResult.error:
           lockMessage.value = _messageFor(result);
         case DeviceAuthResult.cancelled:
-          break;
+          lockMessage.value = 'Tap Unlock to try again.';
       }
     } finally {
       busy.value = false;
@@ -199,15 +204,21 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
   }
 
   void _lock() {
-    if (enabled.value && _auth.isSignedIn) locked.value = true;
+    if (enabled.value && _auth.isSignedIn) {
+      locked.value = true;
+      _hasPrompted = false;
+      lockMessage.value = null;
+    }
   }
 
   /// The prompt needs the app in the foreground; when it is not, the next
-  /// resume asks instead.
+  /// resume asks instead. Only auto-prompts once per lock session.
   void _promptIfVisible() {
     final AppLifecycleState? state = WidgetsBinding.instance.lifecycleState;
     if (state != null && state != AppLifecycleState.resumed) return;
-    if (locked.value) unawaited(unlock());
+    if (locked.value && !_hasPrompted && !busy.value) {
+      unawaited(unlock());
+    }
   }
 
   @override

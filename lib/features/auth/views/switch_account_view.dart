@@ -28,7 +28,10 @@ class SwitchAccountView extends GetView<AccountSwitchController> {
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    ProfileAvatar(initial: login?.initial ?? ''),
+                    ProfileAvatar(
+                      initial: login?.initial ?? '',
+                      link: login?.avatarUrl,
+                    ),
                     const SizedBox(height: AppSpacing.lg),
                     Text(
                       login == null
