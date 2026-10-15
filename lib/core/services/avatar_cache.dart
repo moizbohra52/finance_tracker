@@ -66,7 +66,7 @@ abstract final class AvatarCache {
 
   /// Deletes the cached avatar for [userId].
   static Future<void> delete(String userId) async {
-    if (userId.isEmpty) return null;
+    if (userId.isEmpty) return;
     try {
       final Directory dir = await _avatarsDir;
       final File file = File(p.join(dir.path, '$userId.jpg'));

@@ -3,13 +3,16 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_pickers.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
+import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -60,6 +63,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
   DateTime _date = DateTime.now();
   TimeOfDay _time = TimeOfDay.now();
   DateTime? _dueDate;
+  String? _accountId;
 
   @override
   void initState() {
@@ -75,9 +79,15 @@ class _ContactEntryViewState extends State<ContactEntryView> {
         _time = TimeOfDay.fromDateTime(e.transactionDate);
         _dueDate = e.dueDate;
         _note.text = e.note ?? '';
+        _controller.getLinkedTransaction(e.id).then((Transaction? tx) {
+          if (mounted && tx != null) {
+            setState(() => _accountId = tx.accountId);
+          }
+        });
       }
     }
     _controller.save.error.value = null;
+    _controller.loadAccounts();
   }
 
   @override
@@ -104,15 +114,21 @@ class _ContactEntryViewState extends State<ContactEntryView> {
       id: args.existing?.id ?? _id,
       existing: args.existing,
       contactId: args.contactId,
+      contactName: args.contactName,
       type: _type,
       amount: Decimal.parse(_amount.text.trim()),
       date: combinedDate,
       dueDate: _dueDate,
       note: note.isEmpty ? null : note,
+      accountId: _accountId,
     );
     if (!saved) return;
     AppSnackbar.show(
-      editing ? 'Entry updated' : '${contactEntryLabel(_type)} recorded',
+      editing
+          ? 'Entry updated'
+          : (_accountId != null
+              ? '${contactEntryLabel(_type)} recorded & account updated'
+              : '${contactEntryLabel(_type)} recorded'),
     );
     Get.back<void>();
   }
@@ -222,8 +238,77 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                 AppTextField(
                   label: 'Note (optional)',
                   controller: _note,
-                  textInputAction: TextInputAction.done,
+                  minLines: 3,
+                  maxLines: 5,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
                 ),
+                const SizedBox(height: AppSpacing.md),
+                Obx(() {
+                  final List<Account> accounts = _controller.accounts;
+                  if (accounts.isEmpty) return const SizedBox.shrink();
+
+                  final bool isOutflow =
+                      _type == ContactTransactionType.credit ||
+                      _type == ContactTransactionType.paymentMade;
+                  final String label = isOutflow
+                      ? 'Paid from account (optional)'
+                      : 'Deposit into account (optional)';
+                  final String helper = isOutflow
+                      ? 'Deducts amount from this account'
+                      : 'Adds amount to this account';
+
+                  return BottomSheetDropdown<String?>(
+                    value: _accountId,
+                    options: <String?>[
+                      null,
+                      for (final Account a in accounts) a.id,
+                    ],
+                    labelOf: (String? id) {
+                      if (id == null) return 'None (Khata only)';
+                      final Account? a = accounts.firstWhereOrNull(
+                        (Account a) => a.id == id,
+                      );
+                      return a?.name ?? 'Unknown account';
+                    },
+                    detailOf: (String? id) {
+                      if (id == null) {
+                        return 'Only updates this contact\'s balance';
+                      }
+                      final Account? a = accounts.firstWhereOrNull(
+                        (Account a) => a.id == id,
+                      );
+                      return a != null
+                          ? '${a.type.name.toUpperCase()} · $helper'
+                          : '';
+                    },
+                    decoration: InputDecoration(
+                      labelText: label,
+                      helperText: _accountId != null
+                          ? helper
+                          : 'Optional: record in bank or cash balance as well',
+                      helperMaxLines: 2,
+                      prefixIcon: Icon(
+                        isOutflow
+                            ? Icons.call_made_rounded
+                            : Icons.call_received_rounded,
+                      ),
+                      suffixIcon: _accountId != null
+                          ? IconButton(
+                              icon: const Icon(
+                                Icons.clear_rounded,
+                                size: 20,
+                              ),
+                              tooltip: 'Clear account',
+                              onPressed: () =>
+                                  setState(() => _accountId = null),
+                            )
+                          : null,
+                    ),
+                    onChanged: (String? val) =>
+                        setState(() => _accountId = val),
+                  );
+                }),
                 const SizedBox(height: AppSpacing.lg),
                 SubmitErrorMessage(_controller.save),
                 Obx(

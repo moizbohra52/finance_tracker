@@ -12,6 +12,7 @@ class BreakdownRow {
     required this.amount,
     required this.share,
     required this.color,
+    this.onTap,
   });
 
   final String label;
@@ -21,6 +22,7 @@ class BreakdownRow {
   /// 0..1
   final double share;
   final Color color;
+  final VoidCallback? onTap;
 }
 
 /// Category (or account) list with a share bar and percentage. The bar is
@@ -37,10 +39,18 @@ class CategoryBreakdown extends StatelessWidget {
     return Column(
       children: <Widget>[
         for (final BreakdownRow r in rows)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: Row(
-              children: <Widget>[
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: r.onTap,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  children: <Widget>[
                 IconBadge(icon: r.icon, color: r.color),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
@@ -97,7 +107,9 @@ class CategoryBreakdown extends StatelessWidget {
               ],
             ),
           ),
-      ],
-    );
+        ),
+      ),
+  ],
+);
   }
 }

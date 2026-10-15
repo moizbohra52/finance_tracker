@@ -320,7 +320,10 @@ class _TransferFormViewState extends State<TransferFormView> {
             AppTextField(
               label: 'Note (optional)',
               controller: _note,
-              textInputAction: TextInputAction.done,
+              minLines: 3,
+              maxLines: 5,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(

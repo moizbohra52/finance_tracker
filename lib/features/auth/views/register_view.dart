@@ -44,6 +44,7 @@ class _RegisterForm extends GetView<RegisterController> {
 
   @override
   Widget build(BuildContext context) {
+    final RegisterController controller = this.controller;
     return AuthFormLayout(
       title: 'Create your account',
       subtitle: 'Track balances, spending and khata in one place.',

@@ -88,6 +88,37 @@ class DashboardView extends GetView<HomeController> {
   }
 }
 
+DateTimeRange _todayRange() {
+  final DateTime now = DateTime.now();
+  final DateTime start = DateTime(now.year, now.month, now.day);
+  final DateTime end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+  return DateTimeRange(start: start, end: end);
+}
+
+DateTimeRange _monthRange() {
+  final DateTime now = DateTime.now();
+  final DateTime start = DateTime(now.year, now.month, 1);
+  final DateTime end = DateTime(now.year, now.month + 1, 0, 23, 59, 59);
+  return DateTimeRange(start: start, end: end);
+}
+
+void _openTransactionsFiltered({
+  TransactionType? type,
+  String? categoryId,
+  String? accountId,
+  DateTimeRange? range,
+}) {
+  try {
+    Get.find<TransactionController>().applyFilters(
+      type: type,
+      categoryId: categoryId,
+      accountId: accountId,
+      range: range,
+    );
+  } catch (_) {}
+  Get.toNamed<void>(AppRoutes.transactions);
+}
+
 /// Greeting, live date, quick shortcuts and inspirational finance quote.
 class _GreetingHeader extends StatelessWidget {
   const _GreetingHeader();
@@ -185,77 +216,91 @@ class _GreetingHeader extends StatelessWidget {
                 Icon(greeting.icon, size: 20, color: colors.primary),
               ],
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm + 2,
-                vertical: 4,
-              ),
-              decoration: BoxDecoration(
-                color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _openTransactionsFiltered(range: _todayRange()),
                 borderRadius: BorderRadius.circular(AppRadius.full),
-                border: Border.all(
-                  color: colors.outlineVariant.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 12,
-                    color: colors.primary,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm + 2,
+                    vertical: 4,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    dateString,
-                    style: text.labelSmall?.copyWith(
-                      color: colors.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
+                  decoration: BoxDecoration(
+                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                    border: Border.all(
+                      color: colors.outlineVariant.withValues(alpha: 0.2),
                     ),
                   ),
-                ],
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 12,
+                        color: colors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        dateString,
+                        style: text.labelSmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => Get.toNamed<void>(AppRoutes.reports),
             borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border(
-              left: BorderSide(
-                color: colors.primary.withValues(alpha: 0.8),
-                width: 3.5,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
               ),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Icon(
-                Icons.format_quote_rounded,
-                size: 16,
-                color: colors.primary.withValues(alpha: 0.85),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  '“${dailyQuote.quote}” — ${dailyQuote.author}',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    height: 1.35,
-                    color: colors.onSurfaceVariant,
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHighest.withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border(
+                  left: BorderSide(
+                    color: colors.primary.withValues(alpha: 0.8),
+                    width: 3.5,
                   ),
                 ),
               ),
-            ],
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Icon(
+                    Icons.format_quote_rounded,
+                    size: 16,
+                    color: colors.primary.withValues(alpha: 0.85),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      '“${dailyQuote.quote}” — ${dailyQuote.author}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.bodySmall?.copyWith(
+                        fontStyle: FontStyle.italic,
+                        height: 1.35,
+                        color: colors.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -283,119 +328,126 @@ class _FinancialPulseCard extends GetView<HomeController> {
       final bool hasActivity =
           m.income > Decimal.zero || m.expense > Decimal.zero;
 
-      return Container(
-        decoration: BoxDecoration(
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Get.toNamed<void>(AppRoutes.budgets),
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? <Color>[
-                    colors.surfaceContainer,
-                    colors.surfaceContainerHigh,
-                  ]
-                : <Color>[
-                    colors.surface,
-                    colors.surfaceContainerLowest,
-                  ],
-          ),
-          border: Border.all(
-            color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.45),
-            width: 1,
-          ),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: colors.shadow.withValues(alpha: isDark ? 0.2 : 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: colors.primary.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.insights_rounded,
-                    size: 16,
-                    color: colors.primary,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Monthly Pace',
-                  style: text.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                  ),
-                  child: Text(
-                    '$daysRemaining days left',
-                    style: text.labelSmall?.copyWith(
-                      color: colors.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.full),
-              child: LinearProgressIndicator(
-                value: monthProgress,
-                minHeight: 6,
-                backgroundColor: colors.surfaceContainerHighest,
-                valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isDark
+                    ? <Color>[
+                        colors.surfaceContainer,
+                        colors.surfaceContainerHigh,
+                      ]
+                    : <Color>[
+                        colors.surface,
+                        colors.surfaceContainerLowest,
+                      ],
               ),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: Text(
-                    hasActivity
-                        ? (m.net >= Decimal.zero
-                            ? '🟢 On track: ₹${AppFormatters.money(m.net)} net saved this month'
-                            : '⚠️ Spent ₹${AppFormatters.money(m.expense)} across the month')
-                        : '💡 Day ${now.day} of $daysInMonth: Track expenses daily to stay in control',
-                    style: text.bodySmall?.copyWith(
-                      color: colors.onSurfaceVariant,
-                      fontSize: 12,
-                      height: 1.3,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                  ),
-                  onPressed: () => Get.toNamed<void>(AppRoutes.budgets),
-                  child: const Text('Budgets →'),
+              border: Border.all(
+                color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.45),
+                width: 1,
+              ),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: colors.shadow.withValues(alpha: isDark ? 0.2 : 0.04),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
                 ),
               ],
             ),
-          ],
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: colors.primary.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.insights_rounded,
+                        size: 16,
+                        color: colors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      'Monthly Pace',
+                      style: text.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
+                      ),
+                      child: Text(
+                        '$daysRemaining days left',
+                        style: text.labelSmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  child: LinearProgressIndicator(
+                    value: monthProgress,
+                    minHeight: 6,
+                    backgroundColor: colors.surfaceContainerHighest,
+                    valueColor: AlwaysStoppedAnimation<Color>(colors.primary),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: Text(
+                        hasActivity
+                            ? (m.net >= Decimal.zero
+                                ? '🟢 On track: ₹${AppFormatters.money(m.net)} net saved this month'
+                                : '⚠️ Spent ₹${AppFormatters.money(m.expense)} across the month')
+                            : '💡 Day ${now.day} of $daysInMonth: Track expenses daily to stay in control',
+                        style: text.bodySmall?.copyWith(
+                          color: colors.onSurfaceVariant,
+                          fontSize: 12,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                      ),
+                      onPressed: () => Get.toNamed<void>(AppRoutes.budgets),
+                      child: const Text('Budgets →'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       );
     });
@@ -414,6 +466,16 @@ class _BalanceSection extends GetView<HomeController> {
       monthExpense: controller.month.value.expense,
       isHidden: controller.balanceHidden.value,
       onToggleHidden: controller.toggleBalanceHidden,
+      onTap: () => Get.toNamed<void>(AppRoutes.accounts),
+      onOpeningBalanceTap: () => Get.toNamed<void>(AppRoutes.accounts),
+      onIncomeTap: () => _openTransactionsFiltered(
+        type: TransactionType.income,
+        range: _monthRange(),
+      ),
+      onExpenseTap: () => _openTransactionsFiltered(
+        type: TransactionType.expense,
+        range: _monthRange(),
+      ),
     ),
   );
 }
@@ -442,6 +504,7 @@ class _MonthlySummary extends GetView<HomeController> {
           final bool hidden = controller.balanceHidden.value;
           String show(String value) => hidden ? '••••' : value;
           return AppCard(
+            onTap: () => Get.toNamed<void>(AppRoutes.reports),
             child: IntrinsicHeight(
               child: Row(
                 children: <Widget>[
@@ -450,6 +513,10 @@ class _MonthlySummary extends GetView<HomeController> {
                       label: 'Income',
                       value: show(AppFormatters.money(m.income)),
                       color: money.income,
+                      onTap: () => _openTransactionsFiltered(
+                        type: TransactionType.income,
+                        range: _monthRange(),
+                      ),
                     ),
                   ),
                   VerticalDivider(
@@ -464,6 +531,10 @@ class _MonthlySummary extends GetView<HomeController> {
                       label: 'Expense',
                       value: show(AppFormatters.money(m.expense)),
                       color: money.expense,
+                      onTap: () => _openTransactionsFiltered(
+                        type: TransactionType.expense,
+                        range: _monthRange(),
+                      ),
                     ),
                   ),
                   VerticalDivider(
@@ -480,6 +551,7 @@ class _MonthlySummary extends GetView<HomeController> {
                         AppFormatters.signedMoney(m.net, positive: positive),
                       ),
                       color: positive ? money.income : money.expense,
+                      onTap: () => Get.toNamed<void>(AppRoutes.reports),
                     ),
                   ),
                 ],
@@ -502,17 +574,20 @@ class _Figure extends StatelessWidget {
     required this.label,
     required this.value,
     required this.color,
+    this.onTap,
   });
 
   final String label;
   final String value;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     final ColorScheme colors = Theme.of(context).colorScheme;
-    return Column(
+    final Widget content = Column(
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Text(
           label,
@@ -534,6 +609,19 @@ class _Figure extends StatelessWidget {
           ),
         ),
       ],
+    );
+
+    if (onTap == null) return content;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+          child: content,
+        ),
+      ),
     );
   }
 }
@@ -568,6 +656,7 @@ class _SpendingOverview extends GetView<HomeController> {
             return const _EmptySpendingCard();
           }
           return AppCard(
+            onTap: () => Get.toNamed<void>(AppRoutes.reports),
             child: CategoryBreakdown(
               rows: <BreakdownRow>[
                 for (int i = 0; i < top.length; i++)
@@ -582,6 +671,11 @@ class _SpendingOverview extends GetView<HomeController> {
                     amount: AppFormatters.money(top[i].amount),
                     share: top[i].share,
                     color: ChartPalette.at(context, i),
+                    onTap: () => _openTransactionsFiltered(
+                      categoryId: top[i].categoryId,
+                      type: TransactionType.expense,
+                      range: _monthRange(),
+                    ),
                   ),
               ],
             ),
@@ -1054,7 +1148,11 @@ class _TodaySummary extends GetView<HomeController> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SectionHeader(title: 'Today'),
+        SectionHeader(
+          title: 'Today',
+          actionLabel: 'Details',
+          onAction: () => _openTransactionsFiltered(range: _todayRange()),
+        ),
         const SizedBox(height: AppSpacing.sm),
         Obx(() {
           final bool hidden = controller.balanceHidden.value;
@@ -1067,6 +1165,10 @@ class _TodaySummary extends GetView<HomeController> {
                   label: "Today's income",
                   value: show(AppFormatters.money(controller.today.value.income)),
                   color: money.income,
+                  onTap: () => _openTransactionsFiltered(
+                    type: TransactionType.income,
+                    range: _todayRange(),
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -1076,6 +1178,10 @@ class _TodaySummary extends GetView<HomeController> {
                   label: "Today's expense",
                   value: show(AppFormatters.money(controller.today.value.expense)),
                   color: money.expense,
+                  onTap: () => _openTransactionsFiltered(
+                    type: TransactionType.expense,
+                    range: _todayRange(),
+                  ),
                 ),
               ),
             ],
@@ -1104,8 +1210,10 @@ class _KhataSummary extends GetView<HomeController> {
         Obx(() {
           if (controller.contactCount.value == 0) {
             return AppCard(
+              onTap: () => Get.toNamed<void>(AppRoutes.contactForm),
               padding: EdgeInsets.zero,
               child: AppListTile(
+                onTap: () => Get.toNamed<void>(AppRoutes.contactForm),
                 leading: const IconBadge(icon: Icons.people_outline),
                 title: 'No contacts yet',
                 subtitle:

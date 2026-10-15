@@ -195,8 +195,8 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _description,
-                  minLines: 2,
-                  maxLines: 4,
+                  minLines: 3,
+                  maxLines: 5,
                   textCapitalization: TextCapitalization.sentences,
                   decoration: const InputDecoration(
                     labelText: 'Description (optional)',

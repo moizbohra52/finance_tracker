@@ -1,8 +1,12 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
+import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/transaction_repository.dart';
+import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
@@ -23,14 +27,52 @@ class ContactEntryArgs {
 
 /// Saves a contact (create or edit) or one ledger entry for a contact.
 class ContactFormController extends GetxController {
-  ContactFormController(this._repository, this._notifier);
+  ContactFormController(
+    this._repository,
+    this._transactionRepository,
+    this._accountRepository,
+    this._notifier,
+  );
 
   final ContactRepository _repository;
+  final TransactionRepository _transactionRepository;
+  final AccountRepository _accountRepository;
   final DataChangeNotifier _notifier;
 
   static const Uuid _uuid = Uuid();
 
+  final RxList<Account> accounts = <Account>[].obs;
   final SubmitState save = SubmitState();
+
+  @override
+  void onInit() {
+    super.onInit();
+    loadAccounts();
+  }
+
+  Future<void> loadAccounts() async {
+    try {
+      final List<Account> loaded = await _accountRepository.getAccounts();
+      accounts.assignAll(loaded);
+    } catch (_) {}
+  }
+
+  /// Deterministic transaction ID derived from the contact entry ID so that
+  /// creating, editing, and deleting always refer to the same row in transactions.
+  static String linkedTransactionId(String contactTransactionId) =>
+      _uuid.v5(
+        Namespace.url.value,
+        'contact-transaction:$contactTransactionId',
+      );
+
+  Future<Transaction?> getLinkedTransaction(String contactTransactionId) async {
+    try {
+      final String txId = linkedTransactionId(contactTransactionId);
+      return await _transactionRepository.getTransactionById(txId);
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// [id] is generated once per form so a retried save upserts one row.
   Future<bool> saveContact({
@@ -70,11 +112,13 @@ class ContactFormController extends GetxController {
     required String id,
     ContactTransaction? existing,
     required String contactId,
+    String? contactName,
     required ContactTransactionType type,
     required Decimal amount,
     required DateTime date,
     required DateTime? dueDate,
     required String? note,
+    String? accountId,
   }) => save.run(() async {
     final DateTime now = DateTime.now();
     final ContactTransaction transaction = ContactTransaction(
@@ -94,6 +138,46 @@ class ContactFormController extends GetxController {
     } else {
       await _repository.updateContactTransaction(transaction);
     }
+
+    final String txId = linkedTransactionId(id);
+    if (accountId != null && accountId.isNotEmpty) {
+      final TransactionType txType = (type == ContactTransactionType.credit ||
+              type == ContactTransactionType.paymentMade)
+          ? TransactionType.payment_made
+          : TransactionType.payment_received;
+
+      final String displayName = (contactName != null && contactName.trim().isNotEmpty)
+          ? contactName.trim()
+          : 'Contact';
+
+      final String defaultDescription = switch (type) {
+        ContactTransactionType.credit => 'Lent to $displayName',
+        ContactTransactionType.debit => 'Borrowed from $displayName',
+        ContactTransactionType.paymentReceived => 'Payment received from $displayName',
+        ContactTransactionType.paymentMade => 'Payment made to $displayName',
+        ContactTransactionType.adjustment => 'Adjustment: $displayName',
+      };
+
+      final Transaction tx = Transaction(
+        id: txId,
+        userId: existing?.userId ?? '',
+        accountId: accountId,
+        contactId: contactId,
+        type: txType,
+        amount: amount,
+        transactionDate: date,
+        note: note,
+        description: defaultDescription,
+        createdAt: existing?.createdAt ?? now,
+        updatedAt: now,
+      );
+      await _transactionRepository.createTransaction(tx);
+    } else if (existing != null) {
+      try {
+        await _transactionRepository.deleteTransaction(txId);
+      } catch (_) {}
+    }
+
     _notifier.markChanged();
   });
 

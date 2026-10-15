@@ -101,6 +101,8 @@ class ContactBinding extends Bindings {
     _putIfAbsent(
       () => ContactFormController(
         Get.find<ContactRepository>(),
+        Get.find<TransactionRepository>(),
+        Get.find<AccountRepository>(),
         Get.find<DataChangeNotifier>(),
       ),
     );
@@ -114,6 +116,7 @@ class ContactDetailBinding extends Bindings {
     Get.put<ContactDetailController>(
       ContactDetailController(
         Get.find<ContactRepository>(),
+        Get.find<TransactionRepository>(),
         Get.find<DataChangeNotifier>(),
         routeIdArgument(),
       ),

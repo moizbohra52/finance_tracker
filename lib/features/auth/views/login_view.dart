@@ -14,6 +14,7 @@ class LoginView extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
+    final LoginController controller = this.controller;
     return AuthFormLayout(
       title: 'Welcome back',
       subtitle: 'Sign in to see your balances.',

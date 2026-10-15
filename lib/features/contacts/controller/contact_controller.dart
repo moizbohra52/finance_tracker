@@ -19,7 +19,7 @@ class ContactBalance {
   bool get isPayable => balance < Decimal.zero;
 }
 
-enum KhataFilter { all, receivable, payable }
+enum KhataFilter { all, receivable, payable, settled }
 
 /// Khata list: contacts with balances, search and a receivable/payable filter.
 class ContactController extends GetxController {
@@ -35,6 +35,12 @@ class ContactController extends GetxController {
   final Rx<KhataFilter> filter = KhataFilter.all.obs;
   final Rx<KhataSummary> summary = KhataSummary.zero.obs;
 
+  int get allCount => _all.length;
+  int get receivableCount => _all.where((ContactBalance r) => r.isReceivable).length;
+  int get payableCount => _all.where((ContactBalance r) => r.isPayable).length;
+  int get settledCount =>
+      _all.where((ContactBalance r) => !r.isReceivable && !r.isPayable).length;
+
   /// Contacts matching the current search and filter.
   List<ContactBalance> get visible {
     final String query = searchText.value.trim().toLowerCase();
@@ -43,6 +49,7 @@ class ContactController extends GetxController {
         KhataFilter.all => true,
         KhataFilter.receivable => row.isReceivable,
         KhataFilter.payable => row.isPayable,
+        KhataFilter.settled => !row.isReceivable && !row.isPayable,
       };
       if (!matchesFilter) return false;
       if (query.isEmpty) return true;

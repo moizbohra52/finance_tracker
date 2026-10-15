@@ -13,6 +13,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
 
   @override
   Widget build(BuildContext context) {
+    final ForgotPasswordController controller = this.controller;
     return AuthFormLayout(
       title: 'Reset your password',
       subtitle: "Enter your account email and we'll send you a reset link.",

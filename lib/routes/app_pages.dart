@@ -30,7 +30,6 @@ import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/export/views/export_view.dart';
 import 'package:finance_tracker/features/notifications/views/notification_center_view.dart';
-import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/recurring/views/recurring_form_view.dart';
 import 'package:finance_tracker/features/recurring/views/recurring_list_view.dart';
@@ -71,7 +70,10 @@ abstract final class AppPages {
       page: () => const LoginView(),
       middlewares: <GetMiddleware>[GuestGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => LoginController(Get.find())),
+        () => Get.lazyPut(
+          () => LoginController(Get.find()),
+          fenix: true,
+        ),
       ),
     ),
     GetPage<dynamic>(
@@ -79,7 +81,10 @@ abstract final class AppPages {
       page: () => const RegisterView(),
       middlewares: <GetMiddleware>[GuestGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => RegisterController(Get.find())),
+        () => Get.lazyPut(
+          () => RegisterController(Get.find()),
+          fenix: true,
+        ),
       ),
     ),
     GetPage<dynamic>(
@@ -87,7 +92,10 @@ abstract final class AppPages {
       page: () => const ForgotPasswordView(),
       middlewares: <GetMiddleware>[GuestGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => ForgotPasswordController(Get.find())),
+        () => Get.lazyPut(
+          () => ForgotPasswordController(Get.find()),
+          fenix: true,
+        ),
       ),
     ),
 
@@ -97,7 +105,10 @@ abstract final class AppPages {
       page: () => const ResetPasswordView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(() => ResetPasswordController(Get.find())),
+        () => Get.lazyPut(
+          () => ResetPasswordController(Get.find()),
+          fenix: true,
+        ),
       ),
     ),
     GetPage<dynamic>(

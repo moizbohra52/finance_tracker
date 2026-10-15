@@ -13,6 +13,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
 
   @override
   Widget build(BuildContext context) {
+    final ResetPasswordController controller = this.controller;
     return AuthFormLayout(
       title: 'Choose a new password',
       subtitle: 'You will use it the next time you sign in.',

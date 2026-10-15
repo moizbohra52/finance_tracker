@@ -69,6 +69,10 @@ class BalanceCard extends StatelessWidget {
     required this.monthExpense,
     required this.isHidden,
     required this.onToggleHidden,
+    this.onTap,
+    this.onOpeningBalanceTap,
+    this.onIncomeTap,
+    this.onExpenseTap,
   });
 
   final Decimal currentBalance;
@@ -77,6 +81,10 @@ class BalanceCard extends StatelessWidget {
   final Decimal monthExpense;
   final bool isHidden;
   final VoidCallback onToggleHidden;
+  final VoidCallback? onTap;
+  final VoidCallback? onOpeningBalanceTap;
+  final VoidCallback? onIncomeTap;
+  final VoidCallback? onExpenseTap;
 
   static const String _mask = '••••••';
 
@@ -119,131 +127,147 @@ class BalanceCard extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          child: Stack(
-            children: <Widget>[
-              Positioned(
-                right: -30,
-                top: -30,
-                child: Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: onCard.withValues(alpha: 0.05),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              child: Stack(
+                children: <Widget>[
+                  Positioned(
+                    right: -30,
+                    top: -30,
+                    child: Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: onCard.withValues(alpha: 0.05),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.md,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Row(
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.md,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: onCard.withValues(alpha: 0.9),
-                          ),
+                        Row(
+                          children: <Widget>[
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: onCard.withValues(alpha: 0.9),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                'Current balance',
+                                style: text.labelLarge?.copyWith(
+                                  color: onCard.withValues(alpha: 0.85),
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: onCard.withValues(alpha: 0.15),
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                iconSize: 20,
+                                tooltip: isHidden ? 'Show balance' : 'Hide balance',
+                                color: onCard,
+                                icon: Icon(
+                                  isHidden
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                ),
+                                onPressed: onToggleHidden,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
+                        const SizedBox(height: AppSpacing.xs),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
                           child: Text(
-                            'Current balance',
-                            style: text.labelLarge?.copyWith(
-                              color: onCard.withValues(alpha: 0.85),
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.3,
+                            show(currentBalance),
+                            style: text.displaySmall?.copyWith(
+                              color: onCard,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.8,
                             ),
                           ),
                         ),
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: onCard.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            padding: EdgeInsets.zero,
-                            iconSize: 20,
-                            tooltip: isHidden ? 'Show balance' : 'Hide balance',
-                            color: onCard,
-                            icon: Icon(
-                              isHidden
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
+                        const SizedBox(height: AppSpacing.sm),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: onOpeningBalanceTap,
+                            borderRadius: BorderRadius.circular(AppRadius.full),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm + 2,
+                                vertical: AppSpacing.xs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: onCard.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(AppRadius.full),
+                              ),
+                              child: Text(
+                                'Opening balance ${show(openingBalance)}',
+                                style: text.labelMedium?.copyWith(
+                                  color: onCard.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
-                            onPressed: onToggleHidden,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              Expanded(
+                                child: _CardFlow(
+                                  onCard: onCard,
+                                  icon: Icons.arrow_downward_rounded,
+                                  label: 'Income this month',
+                                  value: show(monthIncome),
+                                  onTap: onIncomeTap,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: _CardFlow(
+                                  onCard: onCard,
+                                  icon: Icons.arrow_upward_rounded,
+                                  label: 'Expense this month',
+                                  value: show(monthExpense),
+                                  onTap: onExpenseTap,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        show(currentBalance),
-                        style: text.displaySmall?.copyWith(
-                          color: onCard,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.8,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm + 2,
-                        vertical: AppSpacing.xs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: onCard.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(AppRadius.full),
-                      ),
-                      child: Text(
-                        'Opening balance ${show(openingBalance)}',
-                        style: text.labelMedium?.copyWith(
-                          color: onCard.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          Expanded(
-                            child: _CardFlow(
-                              onCard: onCard,
-                              icon: Icons.arrow_downward_rounded,
-                              label: 'Income this month',
-                              value: show(monthIncome),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: _CardFlow(
-                              onCard: onCard,
-                              icon: Icons.arrow_upward_rounded,
-                              label: 'Expense this month',
-                              value: show(monthExpense),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -257,6 +281,7 @@ class _CardFlow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.onTap,
   });
 
   /// Text colour on the balance card.
@@ -264,20 +289,26 @@ class _CardFlow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md - 2,
-        vertical: AppSpacing.sm + 2,
-      ),
-      decoration: BoxDecoration(
-        color: onCard.withValues(alpha: 0.14),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: onCard.withValues(alpha: 0.1), width: 1),
-      ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md - 2,
+            vertical: AppSpacing.sm + 2,
+          ),
+          decoration: BoxDecoration(
+            color: onCard.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: onCard.withValues(alpha: 0.1), width: 1),
+          ),
       child: Row(
         children: <Widget>[
           IconBadge(
@@ -319,7 +350,9 @@ class _CardFlow extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),
+  ),
+);
   }
 }
 

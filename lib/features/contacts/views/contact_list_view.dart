@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
@@ -67,6 +68,7 @@ class ContactListContent extends GetView<ContactController> {
               const SliverToBoxAdapter(child: _Summary()),
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
               const SliverToBoxAdapter(child: _SearchAndFilter()),
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
               if (rows.isEmpty)
                 const SliverFillRemaining(
                   hasScrollBody: false,
@@ -90,7 +92,7 @@ class ContactListContent extends GetView<ContactController> {
                       ),
                 ),
               const SliverToBoxAdapter(
-                child: SizedBox(height: AppSpacing.fabClearance),
+                child: SizedBox(height: 120),
               ),
             ],
           ),
@@ -105,30 +107,201 @@ class _Summary extends GetView<ContactController> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
     final FinanceColors money = FinanceColors.of(context);
-    return Obx(
-      () => Row(
-        children: <Widget>[
-          Expanded(
-            child: SummaryTile(
-              icon: Icons.call_received_rounded,
-              label: 'You will get',
-              value: AppFormatters.money(controller.summary.value.receivable),
-              color: money.receivable,
+    final TextTheme text = Theme.of(context).textTheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Obx(() {
+      final Decimal receivable = controller.summary.value.receivable;
+      final Decimal payable = controller.summary.value.payable;
+      final Decimal net = receivable - payable;
+      final bool isNetPositive = net >= Decimal.zero;
+
+      Widget heroCard({
+        required String label,
+        required String amount,
+        required String subtitle,
+        required IconData icon,
+        required Color color,
+        required bool isSelected,
+        required VoidCallback onTap,
+      }) {
+        return Material(
+          color: isSelected
+              ? color.withValues(alpha: isDark ? 0.25 : 0.15)
+              : (isDark ? colors.surfaceContainerLow : colors.surface),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            side: BorderSide(
+              color: isSelected
+                  ? color
+                  : colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
+              width: isSelected ? 1.5 : 1,
             ),
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: SummaryTile(
-              icon: Icons.call_made_rounded,
-              label: 'You will give',
-              value: AppFormatters.money(controller.summary.value.payable),
-              color: money.payable,
+          elevation: isDark ? 0 : 0.5,
+          shadowColor: Colors.black.withValues(alpha: 0.05),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: isDark ? 0.25 : 0.14),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(icon, size: 18, color: color),
+                      ),
+                      if (isSelected)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: const Text(
+                            'Active',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    label,
+                    style: text.labelMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      amount,
+                      style: text.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                        letterSpacing: -0.3,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: text.labelSmall?.copyWith(
+                      color: colors.onSurfaceVariant.withValues(alpha: 0.8),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: heroCard(
+                  label: 'You will get',
+                  amount: AppFormatters.money(receivable),
+                  subtitle:
+                      '${controller.receivableCount} ${controller.receivableCount == 1 ? 'contact' : 'contacts'}',
+                  icon: Icons.arrow_downward_rounded,
+                  color: money.receivable,
+                  isSelected:
+                      controller.filter.value == KhataFilter.receivable,
+                  onTap: () {
+                    controller.filter.value =
+                        controller.filter.value == KhataFilter.receivable
+                            ? KhataFilter.all
+                            : KhataFilter.receivable;
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: heroCard(
+                  label: 'You will give',
+                  amount: AppFormatters.money(payable),
+                  subtitle:
+                      '${controller.payableCount} ${controller.payableCount == 1 ? 'contact' : 'contacts'}',
+                  icon: Icons.arrow_upward_rounded,
+                  color: money.payable,
+                  isSelected: controller.filter.value == KhataFilter.payable,
+                  onTap: () {
+                    controller.filter.value =
+                        controller.filter.value == KhataFilter.payable
+                            ? KhataFilter.all
+                            : KhataFilter.payable;
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          // Net Position Banner
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark ? colors.surfaceContainerLow : colors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              border: Border.all(
+                color:
+                    colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.5),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: <Widget>[
+                Icon(
+                  isNetPositive
+                      ? Icons.check_circle_outline_rounded
+                      : Icons.info_outline_rounded,
+                  size: 16,
+                  color: isNetPositive ? money.receivable : money.payable,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    isNetPositive
+                        ? 'Net Position: You have +${AppFormatters.money(net)} to receive'
+                        : 'Net Position: You have -${AppFormatters.money(net.abs())} to pay',
+                    style: text.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colors.onSurface,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -137,35 +310,170 @@ class _SearchAndFilter extends GetView<ContactController> {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    final FinanceColors money = FinanceColors.of(context);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        TextField(
-          onChanged: (String v) => controller.searchText.value = v,
-          decoration: const InputDecoration(
-            hintText: 'Search name or mobile',
-            prefixIcon: Icon(Icons.search),
+        // Modern Search Field
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? colors.surfaceContainerLow : colors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
+              width: 1,
+            ),
+          ),
+          child: Obx(
+            () => TextField(
+              onChanged: (String v) => controller.searchText.value = v,
+              decoration: InputDecoration(
+                hintText: 'Search name or mobile...',
+                hintStyle: TextStyle(
+                  color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+                  fontSize: 14,
+                ),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: colors.onSurfaceVariant,
+                  size: 20,
+                ),
+                suffixIcon: controller.searchText.value.isEmpty
+                    ? null
+                    : IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        onPressed: () => controller.searchText.value = '',
+                      ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Obx(
-          () => Wrap(
-            spacing: AppSpacing.sm,
-            children: <Widget>[
-              for (final (KhataFilter f, String label)
-                  in <(KhataFilter, String)>[
-                    (KhataFilter.all, 'All'),
-                    (KhataFilter.receivable, 'You will get'),
-                    (KhataFilter.payable, 'You will give'),
-                  ])
-                ChoiceChip(
-                  label: Text(label),
-                  selected: controller.filter.value == f,
-                  onSelected: (_) => controller.filter.value = f,
+        // Filter Pills
+        Obx(() {
+          Widget filterPill({
+            required String label,
+            required KhataFilter filter,
+            required int count,
+            Color? activeColor,
+          }) {
+            final bool isSelected = controller.filter.value == filter;
+
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Material(
+                color: isSelected
+                    ? (isDark ? colors.primaryContainer : colors.primary)
+                    : (isDark ? colors.surfaceContainerLow : colors.surface),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  side: BorderSide(
+                    color: isSelected
+                        ? Colors.transparent
+                        : colors.outlineVariant
+                            .withValues(alpha: isDark ? 0.3 : 0.6),
+                    width: 1,
+                  ),
                 ),
-            ],
-          ),
-        ),
+                child: InkWell(
+                  onTap: () => controller.filter.value = filter,
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6.5,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w600,
+                            color: isSelected
+                                ? (isDark
+                                    ? colors.onPrimaryContainer
+                                    : colors.onPrimary)
+                                : colors.onSurface,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? (isDark
+                                    ? colors.primary.withValues(alpha: 0.3)
+                                    : Colors.white.withValues(alpha: 0.25))
+                                : (activeColor ?? colors.onSurfaceVariant)
+                                    .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$count',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: isSelected
+                                  ? (isDark
+                                      ? colors.onPrimaryContainer
+                                      : colors.onPrimary)
+                                  : (activeColor ?? colors.onSurfaceVariant),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: <Widget>[
+                filterPill(
+                  label: 'All',
+                  filter: KhataFilter.all,
+                  count: controller.allCount,
+                ),
+                filterPill(
+                  label: 'You will get',
+                  filter: KhataFilter.receivable,
+                  count: controller.receivableCount,
+                  activeColor: money.receivable,
+                ),
+                filterPill(
+                  label: 'You will give',
+                  filter: KhataFilter.payable,
+                  count: controller.payableCount,
+                  activeColor: money.payable,
+                ),
+                filterPill(
+                  label: 'Settled',
+                  filter: KhataFilter.settled,
+                  count: controller.settledCount,
+                ),
+              ],
+            ),
+          );
+        }),
       ],
     );
   }

@@ -13,6 +13,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
 
   @override
   Widget build(BuildContext context) {
+    final ChangePasswordController controller = this.controller;
     return AuthFormLayout(
       title: 'Change password',
       subtitle: 'Confirm your current password, then choose a new one.',

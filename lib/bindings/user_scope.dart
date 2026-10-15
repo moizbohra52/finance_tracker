@@ -4,9 +4,6 @@ import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/add_account_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/change_password_controller.dart';
-import 'package:finance_tracker/features/auth/controllers/forgot_password_controller.dart';
-import 'package:finance_tracker/features/auth/controllers/login_controller.dart';
-import 'package:finance_tracker/features/auth/controllers/register_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/reset_password_controller.dart';
 import 'package:finance_tracker/features/budgets/controllers/budget_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
@@ -74,10 +71,7 @@ final List<void Function()> _userScopedRemovers = <void Function()>[
   // routeIdArgument) and go with their routes when sign-out clears the stack.
   _remove<AccountController>,
   _remove<ContactFormController>,
-  // Auth screens, which hold typed passwords.
-  _remove<LoginController>,
-  _remove<RegisterController>,
-  _remove<ForgotPasswordController>,
+  // Auth screens for signed-in sessions.
   _remove<ResetPasswordController>,
   _remove<ChangePasswordController>,
   _remove<AddAccountController>,

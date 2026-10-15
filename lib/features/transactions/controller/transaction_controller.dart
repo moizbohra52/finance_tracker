@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
@@ -73,6 +74,20 @@ class TransactionController extends GetxController {
       accountFilter.value != null ||
       categoryFilter.value != null ||
       rangeFilter.value != null;
+
+  Decimal get totalInflow => items.fold(
+        Decimal.zero,
+        (Decimal sum, Transaction t) =>
+            t.type.isInflow && !TransferLegs.isLeg(t) ? sum + t.amount : sum,
+      );
+
+  Decimal get totalOutflow => items.fold(
+        Decimal.zero,
+        (Decimal sum, Transaction t) =>
+            !t.type.isInflow && !TransferLegs.isLeg(t) ? sum + t.amount : sum,
+      );
+
+  Decimal get netAmount => totalInflow - totalOutflow;
 
   // GetX does not dispose workers, and the notifier outlives this
   // controller, so without this a closed controller keeps reloading.

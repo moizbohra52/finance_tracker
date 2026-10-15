@@ -15,6 +15,7 @@ class AddAccountView extends GetView<AddAccountController> {
 
   @override
   Widget build(BuildContext context) {
+    final AddAccountController controller = this.controller;
     return AuthFormLayout(
       title: 'Another account',
       subtitle:

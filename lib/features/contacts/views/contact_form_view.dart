@@ -143,7 +143,10 @@ class _ContactFormViewState extends State<ContactFormView> {
                 AppTextField(
                   label: 'Notes (optional)',
                   controller: _notes,
-                  textInputAction: TextInputAction.next,
+                  minLines: 3,
+                  maxLines: 5,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(

@@ -4,14 +4,22 @@ import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:get/get.dart';
 
 /// One contact, their ledger entries and current balance.
 class ContactDetailController extends GetxController {
-  ContactDetailController(this._repository, this._notifier, this.contactId);
+  ContactDetailController(
+    this._repository,
+    this._transactionRepository,
+    this._notifier,
+    this.contactId,
+  );
 
   final ContactRepository _repository;
+  final TransactionRepository _transactionRepository;
   final DataChangeNotifier _notifier;
   final String contactId;
 
@@ -58,12 +66,22 @@ class ContactDetailController extends GetxController {
   }
 
   Future<bool> deleteContact() => deletion.run(() async {
+    for (final ContactTransaction e in entries) {
+      try {
+        final String txId = ContactFormController.linkedTransactionId(e.id);
+        await _transactionRepository.deleteTransaction(txId);
+      } catch (_) {}
+    }
     await _repository.deleteContact(contactId);
     _notifier.markChanged();
   });
 
   Future<bool> deleteEntry(String entryId) => deletion.run(() async {
     await _repository.deleteContactTransaction(entryId);
+    try {
+      final String txId = ContactFormController.linkedTransactionId(entryId);
+      await _transactionRepository.deleteTransaction(txId);
+    } catch (_) {}
     _notifier.markChanged();
   });
 }
