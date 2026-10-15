@@ -17,6 +17,29 @@ Store:
 - reminders
 - sync metadata
 
+### One database file per signed-in account (2026-10-15)
+Several accounts can be signed in on one device (account switching, see
+`docs/02_ARCHITECTURE.md`). Each has its own SQLite file,
+`<database>_<user id>.db` (`AppDatabase.fileNameFor`); the shared name
+(`finance_tracker.db` / `finance_tracker_dev.db`) is the signed-out file.
+- Repositories reach SQLite only through `AppDatabase.db`, which is always the
+  active account's file, so no repository changed.
+- Switching: `AccountSwitchController` removes the account's screens and
+  controllers, then inside `SyncEngine.whilePaused` (lets a running sync
+  finish, refuses new ones) activates the other session and calls
+  `AppDatabase.openFor`. `openFor` closes the old file and waits 300 ms before
+  opening the next: repository writes are several statements (row, then queue
+  item), so a write already under way fails on the closed file instead of
+  landing in the next account's file.
+- Unsent changes stay in their own account's file while another account is
+  active and upload when that account is active again. A switch works offline.
+- Sign-out deletes the signed-out account's file (as sign-out always cleared
+  this user's local data); an account whose session ended is removed the same
+  way. `SyncEngine.claimLocalData` stays as a safety net.
+- Upgrade: the first time an account opens and has no file yet, the shared
+  file becomes its file when its `local_owner` is that account (or unset), so
+  an update keeps unsent changes instead of downloading again.
+
 ## IDs
 Generate UUID client-side for locally created records. The client UUID is the
 server row's `id` (no separate client_id), so an upload is an upsert on `id`.

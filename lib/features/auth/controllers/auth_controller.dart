@@ -4,17 +4,20 @@ import 'package:finance_tracker/bindings/user_scope.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/features/auth/controllers/account_switch_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 
-/// App-wide session state. The single place that navigates on auth
+/// App-wide session state. The single place that reacts to auth
 /// transitions, so screens only call the repository and never route after
-/// sign-in or sign-out themselves.
+/// sign-in or sign-out themselves. What happens to the account itself (its
+/// database file, another signed-in account taking over at sign-out) is
+/// AccountSwitchController's part.
 class AuthController extends GetxController {
-  AuthController(this._authRepository);
+  AuthController(this._authRepository, this._accounts);
 
   final AuthRepository _authRepository;
+  final AccountSwitchController _accounts;
   StreamSubscription<AuthStatus>? _subscription;
 
   // Until the splash screen has routed, events are only recorded. The auth
@@ -26,7 +29,8 @@ class AuthController extends GetxController {
 
   bool get isSignedIn => _authRepository.isSignedIn;
 
-  /// Signs this device out. AuthController itself then returns to sign-in.
+  /// Signs the active account out of this device. AuthController itself then
+  /// moves on (to another signed-in account, or to sign-in).
   Future<void> signOut() => _authRepository.signOut();
 
   @override
@@ -52,29 +56,25 @@ class AuthController extends GetxController {
     }
     switch (status) {
       case AuthStatus.signedIn:
-        // Re-authentication inside the app (change password, delete account)
-        // also signs in. Preferences reload either way, and only guest screens
-        // are left.
-        loadUserScope();
-        if (AppRoutes.guestOnly.contains(Get.currentRoute)) {
-          Get.offAllNamed<void>(AppRoutes.dashboard);
-        }
+        unawaited(_onSignedIn());
       case AuthStatus.signedOut:
-        // Cleared after the sign-in screen replaces the app, so no screen is
-        // still reading a controller that is being removed.
-        _showSignIn();
+        // Shows another signed-in account or the sign-in screen, and clears
+        // the signed-out account's data once its screens are gone.
+        unawaited(_accounts.handleSignedOut());
       case AuthStatus.passwordRecovery:
         Get.offAllNamed<void>(AppRoutes.resetPassword);
     }
   }
 
-  void _showSignIn() {
-    // Not awaited: the returned future completes only when the sign-in screen
-    // itself is left, so waiting on it would never reach the reset.
-    Get.offAllNamed<void>(AppRoutes.login);
-    // The frame that removes the signed-in screens has passed once this runs,
-    // so no screen is still reading a controller being removed.
-    WidgetsBinding.instance.addPostFrameCallback((_) => resetUserScope());
+  /// Re-authentication inside the app (change password, delete account) also
+  /// signs in. Preferences reload either way, and only guest screens are
+  /// left. The account's database is opened before anything reads it.
+  Future<void> _onSignedIn() async {
+    await _accounts.handleSignedIn();
+    loadUserScope();
+    if (AppRoutes.guestOnly.contains(Get.currentRoute)) {
+      unawaited(Get.offAllNamed<void>(AppRoutes.dashboard));
+    }
   }
 
   void _onError(Object error) {

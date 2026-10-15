@@ -143,11 +143,17 @@ class LocalNotificationService {
   /// Running it twice with the same input leaves the same single set.
   /// Ids in [keep] are due but possibly not delivered yet: they are left
   /// exactly as they are, neither cancelled nor rescheduled.
+  ///
+  /// With several accounts signed in, only scheduled notifications whose
+  /// payload [owns] accepts are replaced; the others belong to other
+  /// accounts and stay. [owner] tags what is scheduled (see [cancelOwned]).
   Future<void> replaceSchedule(
     List<PlannedNotification> planned, {
     required Set<int> keep,
     required bool sound,
     required bool vibration,
+    String? owner,
+    bool Function(String? payload)? owns,
   }) async {
     if (!isSupported) return;
     final Set<int> wanted = <int>{
@@ -156,8 +162,10 @@ class LocalNotificationService {
     final List<PendingNotificationRequest> pending = await _plugin
         .pendingNotificationRequests();
     for (final PendingNotificationRequest request in pending) {
-      if (!wanted.contains(request.id) && !keep.contains(request.id)) {
-        await _plugin.cancel(id: request.id);
+      if (!wanted.contains(request.id) &&
+          !keep.contains(request.id) &&
+          (owns == null || owns(request.payload))) {
+        await _plugin.cancel(id: request.id, tag: owner);
       }
     }
     final AndroidScheduleMode mode = await canScheduleExact()
@@ -172,6 +180,7 @@ class LocalNotificationService {
           'Reminders',
           sound,
           vibration,
+          tag: owner,
         ),
         androidScheduleMode: mode,
         title: n.title,
@@ -191,13 +200,20 @@ class LocalNotificationService {
     required String payload,
     required bool sound,
     required bool vibration,
+    String? owner,
   }) async {
     if (!isSupported) return;
     await _plugin.show(
       id: id,
       title: title,
       body: body,
-      notificationDetails: _details('alerts', 'Alerts', sound, vibration),
+      notificationDetails: _details(
+        'alerts',
+        'Alerts',
+        sound,
+        vibration,
+        tag: owner,
+      ),
       payload: payload,
     );
   }
@@ -205,6 +221,43 @@ class LocalNotificationService {
   Future<void> cancelAll() async {
     if (!isSupported) return;
     await _plugin.cancelAll();
+  }
+
+  /// Cancels one account's notifications, scheduled and on screen, and
+  /// leaves the other accounts' alone. Scheduled ones are matched by payload
+  /// ([owns]); shown ones by the [owner] tag on Android, where the OS does
+  /// not return payloads, and by payload elsewhere.
+  Future<void> cancelOwned({
+    required String owner,
+    required bool Function(String? payload) owns,
+  }) async {
+    if (!isSupported) return;
+    final List<PendingNotificationRequest> pending = await _plugin
+        .pendingNotificationRequests();
+    for (final PendingNotificationRequest request in pending) {
+      if (owns(request.payload)) {
+        await _plugin.cancel(id: request.id, tag: owner);
+      }
+    }
+    final List<ActiveNotification> shown;
+    try {
+      shown = await _plugin.getActiveNotifications();
+    } on Object catch (error) {
+      // Older OS versions cannot list them; the shown ones then stay.
+      developer.log(
+        'Shown notifications could not be listed: ${error.runtimeType}',
+        name: 'notifications',
+      );
+      return;
+    }
+    for (final ActiveNotification notification in shown) {
+      final int? id = notification.id;
+      if (id == null) continue;
+      final bool mine = _isAndroid
+          ? notification.tag == owner
+          : owns(notification.payload);
+      if (mine) await _plugin.cancel(id: id, tag: notification.tag);
+    }
   }
 
   AndroidFlutterLocalNotificationsPlugin? get _android => _plugin
@@ -220,12 +273,16 @@ class LocalNotificationService {
   /// Android fixes sound and vibration per channel when the channel is first
   /// created, so each on/off combination gets its own channel id. The user
   /// can still fine-tune each channel in system settings.
+  ///
+  /// [tag] is the account the notification belongs to, so a sign-out can
+  /// remove exactly that account's shown notifications.
   NotificationDetails _details(
     String channel,
     String channelName,
     bool sound,
-    bool vibration,
-  ) => NotificationDetails(
+    bool vibration, {
+    String? tag,
+  }) => NotificationDetails(
     android: AndroidNotificationDetails(
       '${channel}_${sound ? 's' : 'q'}${vibration ? 'v' : 'n'}',
       channelName,
@@ -237,6 +294,7 @@ class LocalNotificationService {
       icon: _androidIcon,
       // Hides the text on a secure lock screen.
       visibility: NotificationVisibility.private,
+      tag: tag,
     ),
     iOS: DarwinNotificationDetails(presentSound: sound),
   );

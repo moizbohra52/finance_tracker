@@ -88,6 +88,30 @@ Test both authenticated and unauthenticated access, and attempt cross-user reads
   preferences (theme, notification flags, the device id), and the Supabase
   session is cleared by supabase_flutter.
 
+### Several accounts on one device (2026-10-15)
+- Up to 5 accounts can stay signed in (`SavedLoginStore.maxLogins`). The
+  sessions of the inactive ones (refresh + access token, as supabase_flutter
+  serialises them) are kept by `SavedLoginStore` under the
+  `auth.saved_logins` key of the app-private SharedPreferences file: the same
+  file and protection as supabase_flutter's own copy of the active session.
+  They are never logged; `AccountSession`/`SavedLogin` print only the user id.
+  Moving both to encrypted storage (Keystore/Keychain) is a possible
+  hardening for both at once.
+- Adding an account signs in on a separate, throw-away auth client
+  (`AuthRepository.signInDetached`), so the active session is never touched.
+  A saved session that expired is refreshed on a separate client too
+  (`activateSession`): a revoked one fails there instead of signing out the
+  active account. It is then removed with its local data.
+- Supabase refresh tokens are single-use, so before switching away the active
+  session is refreshed if it expires within 5 minutes and auto-refresh is
+  paused until the switch is done (`holdCurrentSession`): the saved copy is
+  never spent by a refresh while another account is active.
+- Sign-out signs out only the active account: its saved session goes, its
+  local database file is deleted and its notifications are cancelled. The
+  other accounts stay signed in and the most recently used one takes over.
+- RLS is unchanged: every request carries exactly one account's token, and
+  each account's local rows are in its own file.
+
 ### Account deletion ordering (Phase 10)
 `AuthRepository.deleteAccount` re-checks the password, then runs the
 `beforeDelete` hook (photo removal), then calls `delete_my_account`, then signs

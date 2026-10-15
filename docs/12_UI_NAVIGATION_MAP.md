@@ -16,6 +16,9 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | tab 3 | Reports (date filter, totals, charts, categories, accounts, monthly comparison) | `ReportsController` | bottom nav |
 | `/reports` | Reports (route form of tab 3) | `ReportsBinding` | Home "Reports" / "Details" |
 | `/profile` | Profile (not a tab since 2026-10-14) | `ProfileController` | app-bar avatar, app-bar menu |
+| account switcher (bottom sheet) | Signed-in accounts, switch, *Sign in to another account* | `AccountSwitchController` | long press on the app-bar avatar, app-bar menu *Switch account*, Profile and Settings *Switch account* |
+| `/add-account` | Sign in to another account (signed-in only) | `AddAccountController` | account switcher |
+| `/switch-account` | "Switching to ..." while the account changes (no guard) | `AccountSwitchController` | account switch, sign-out hand-over, notification of another account |
 | `/transactions` | Transaction list (route form of tab 1) | `TransactionBinding` | Home "See all" |
 | `/transaction-form` | Add income / add expense / edit (`TransactionFormArgs`) | `TransactionBinding` | Home quick actions, list FAB, detail Edit |
 | `/transfer-form` | Transfer between two accounts, or edit one (`TransferFormArgs`) | `TransactionBinding` | Home quick action *Transfer*, list FAB sheet, account detail, transfer detail Edit |

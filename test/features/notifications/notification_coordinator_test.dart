@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
+import 'package:finance_tracker/features/notifications/notification_target.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers/fake_finance.dart';
@@ -147,7 +148,11 @@ void main() {
       final Reminder r = inDays(2);
       await h.coordinator.syncReminders(<Reminder>[r]);
       expect(h.local.scheduled.keys, <int>[NotificationIds.forReminder(r.id)]);
-      expect(h.local.scheduled.values.single.payload, 'reminder:${r.id}');
+      // Tagged with the account, so a tap opens in the right one.
+      expect(
+        h.local.scheduled.values.single.payload,
+        'user-1|reminder:${r.id}',
+      );
     });
 
     test('syncing again never creates a second notification', () async {
@@ -347,7 +352,7 @@ void main() {
       await raiseBudget(h.coordinator);
       expect(finance.notifications['n-1']!['body'], contains('₹750.00'));
       expect(h.local.shown.single.body, isNot(contains('₹')));
-      expect(h.local.shown.single.payload, startsWith('budget_alert:'));
+      expect(h.local.shown.single.payload, startsWith('user-1|budget_alert:'));
     });
 
     test('is stored but not shown while permission is missing', () async {
@@ -489,6 +494,101 @@ void main() {
       h.push.foreground.add(const PushMessage(title: 'Hi'));
       await Future<void>.delayed(Duration.zero);
       expect(h.local.shown, isEmpty);
+    });
+  });
+
+  group('several signed-in accounts', () {
+    const String secondUser = 'user-2';
+
+    /// Makes user-2 the active account the way AccountSwitchController does.
+    Future<void> switchToSecond(NotificationCoordinator coordinator) async {
+      coordinator.beginAccountSwitch();
+      await auth.activateSession(
+        FakeAuthRepository.sessionOf(secondUser, 'ravi@example.com'),
+      );
+      coordinator.accountSwitched();
+    }
+
+    test("a switch keeps the previous account's reminders", () async {
+      final NotificationsHandle h = await start(granted: true);
+      final Reminder first = inDays(2);
+      await h.coordinator.syncReminders(<Reminder>[first]);
+
+      await switchToSecond(h.coordinator);
+      final Reminder second = inDays(
+        3,
+        id: 'a1b2c3d4-0000-4000-8000-000000000002',
+      );
+      await h.coordinator.syncReminders(<Reminder>[second]);
+
+      expect(
+        h.local.scheduled.values.map((PlannedNotification n) => n.payload),
+        unorderedEquals(<String>[
+          'user-1|reminder:${first.id}',
+          'user-2|reminder:${second.id}',
+        ]),
+      );
+    });
+
+    test('signing out of one account cancels only its notifications', () async {
+      final NotificationsHandle h = await start(
+        granted: true,
+        pushAvailable: true,
+      );
+      h.coordinator.hasOtherAccounts = (String userId) => true;
+      await h.coordinator.syncReminders(<Reminder>[inDays(2)]);
+      await switchToSecond(h.coordinator);
+      await h.coordinator.syncReminders(<Reminder>[
+        inDays(3, id: 'a1b2c3d4-0000-4000-8000-000000000002'),
+      ]);
+
+      await auth.signOut();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(h.local.scheduled.values.single.payload, startsWith('user-1|'));
+      expect(
+        h.push.deletedTokens,
+        0,
+        reason: 'the other account still receives pushes here',
+      );
+    });
+
+    test("a tap on another account's notification is handed over", () async {
+      final NotificationsHandle h = await start(granted: true);
+      final List<NotificationTarget> handedOver = <NotificationTarget>[];
+      h.coordinator
+        ..onOtherAccountTarget = handedOver.add
+        ..markShellReady();
+
+      h.local.tap('$secondUser|reminder:a1b2c3d4-0000-4000-8000-0000000000a1');
+
+      expect(handedOver.single.userId, secondUser);
+      expect(
+        handedOver.single.argument,
+        'a1b2c3d4-0000-4000-8000-0000000000a1',
+      );
+    });
+
+    test('a foreground push keeps the account it names', () async {
+      final NotificationsHandle h = await start(
+        granted: true,
+        pushAvailable: true,
+      );
+      h.push.foreground.add(
+        const PushMessage(
+          title: 'Reminder',
+          data: <String, dynamic>{
+            'type': 'reminder',
+            'reference_id': 'a1b2c3d4-0000-4000-8000-0000000000a1',
+            'user_id': secondUser,
+          },
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(
+        h.local.shown.single.payload,
+        '$secondUser|reminder:a1b2c3d4-0000-4000-8000-0000000000a1',
+      );
     });
   });
 }

@@ -16,6 +16,7 @@ import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
@@ -50,8 +51,11 @@ Future<void> main() async {
   );
   final SupabaseClient client = Supabase.instance.client;
 
-  // Initialize offline SQLite database
-  final AppDatabase database = await AppDatabase.open();
+  // The signed-in account's own database file (each signed-in account has
+  // one; see AccountSwitchController).
+  final AppDatabase database = await AppDatabase.open(
+    userId: client.auth.currentUser?.id,
+  );
   final ConnectivityService connectivityService = ConnectivityService();
   final DataChangeNotifier dataChangeNotifier = DataChangeNotifier();
 
@@ -62,9 +66,8 @@ Future<void> main() async {
     notifier: dataChangeNotifier,
   );
 
-  final StorageService storageService = StorageService(
-    await SharedPreferences.getInstance(),
-  );
+  final SharedPreferences preferences = await SharedPreferences.getInstance();
+  final StorageService storageService = StorageService(preferences);
   final ThemeController themeController = ThemeController(storageService);
   final AuthRepository authRepository = AuthRepository(client);
   final AppRepositories repositories = AppRepositories.supabase(
@@ -111,6 +114,7 @@ Future<void> main() async {
         syncEngine: syncEngine,
       ),
       storageService: storageService,
+      savedLogins: SavedLoginStore(preferences),
       themeController: themeController,
       connectivityService: connectivityService,
       repositories: repositories,
@@ -129,6 +133,7 @@ class FinanceTrackerApp extends StatelessWidget {
     required this.profileRepository,
     required this.userSettingsRepository,
     required this.storageService,
+    required this.savedLogins,
     required this.themeController,
     required this.connectivityService,
     required this.repositories,
@@ -141,6 +146,7 @@ class FinanceTrackerApp extends StatelessWidget {
          profileRepository: profileRepository,
          userSettingsRepository: userSettingsRepository,
          storageService: storageService,
+         savedLogins: savedLogins,
          themeController: themeController,
          connectivityService: connectivityService,
          repositories: repositories,
@@ -154,6 +160,7 @@ class FinanceTrackerApp extends StatelessWidget {
   final ProfileRepository profileRepository;
   final UserSettingsRepository userSettingsRepository;
   final StorageService storageService;
+  final SavedLoginStore savedLogins;
   final ThemeController themeController;
   final ConnectivityService connectivityService;
   final AppRepositories repositories;

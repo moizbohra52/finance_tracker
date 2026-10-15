@@ -140,8 +140,10 @@ the content as private on a secure lock screen. The notification center, which
 is behind sign-in, shows the full text.
 
 ### Deep links
-Local payload: `<type>:<id>` (`reminder:<uuid>`). Push data: `type` and
-`reference_id`. Both go through `NotificationTarget.resolve`:
+Local payload: `<user id>|<type>:<id>` (`<uuid>|reminder:<uuid>`); payloads
+from before 2026-10-15 have no `<user id>|` and belong to the active account.
+Push data: `type`, `reference_id` and `user_id`. Both go through
+`NotificationTarget.resolve`:
 
 | type | opens |
 |---|---|
@@ -154,7 +156,26 @@ Local payload: `<type>:<id>` (`reminder:<uuid>`). Push data: `type` and
 
 Ids are validated as UUIDs before use because push data comes from outside the
 app. A tap that arrives before the signed-in shell is on screen (cold start,
-signed out) is held and opened once the shell mounts; sign-out discards it.
+signed out, switching accounts) is held and opened once the shell mounts;
+sign-out discards it.
+
+### Several signed-in accounts (2026-10-15)
+- Every notification carries the account it is for: local payloads are
+  prefixed with the user id, and on Android the notification's `tag` is the
+  user id (Android does not return payloads of shown notifications).
+- Tapping a notification of another account that is signed in on the device
+  switches to that account first, then opens the target, and says "Switched
+  to <name>". This also works from a cold start. A notification of an account
+  that is not signed in here opens nothing and says so.
+- Reminders scheduled while an account was active stay scheduled while
+  another account is active: `replaceSchedule` only replaces the active
+  account's entries. They reflect that account's reminders as they were when
+  it was last active. On iOS the 64-pending limit is shared by all accounts.
+- Signing one account out cancels only its scheduled and shown notifications
+  and deactivates only its `device_tokens` row; the FCM token is deleted only
+  when no other account remains signed in (it is shared by the device).
+  Switching registers the token for the newly active account (one row per
+  user and device, as before).
 
 ### Push (FCM)
 - Client only. `PushService.initialize` calls `Firebase.initializeApp()`; with
@@ -173,7 +194,9 @@ signed out) is held and opened once the shell mounts; sign-out discards it.
   Supabase Edge Function using the FCM HTTP v1 API with a service account kept
   in Supabase secrets) sends to `device_tokens` rows where `active`, with a
   `notification` block containing a generic title/body and
-  `data: {type, reference_id}`, `android.notification.channel_id = alerts_sv`.
+  `data: {type, reference_id, user_id}`, `android.notification.channel_id =
+  alerts_sv`. `user_id` is the row's `user_id`: one device can be registered
+  for several accounts, and the app opens the push in that account.
   No sender exists yet, so no remote pushes are delivered today.
 
 ### Firebase setup (one time per environment)

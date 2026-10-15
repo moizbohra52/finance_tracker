@@ -56,6 +56,8 @@ class SyncEngine extends GetxService {
 
   bool _isSyncing = false;
   bool _pendingSyncRequest = false;
+  bool _paused = false;
+  Completer<void>? _running;
   StreamSubscription<NetworkStatus>? _networkSubscription;
 
   /// Maximum retry attempts before a queue item stays marked as failed.
@@ -125,8 +127,34 @@ class SyncEngine extends GetxService {
     }
   }
 
+  /// Runs [action] while no sync runs and none can start, after letting a
+  /// running one finish: the active account's database is being swapped for
+  /// another's (AccountSwitchController), and a sync must never read one
+  /// account's file with another account's session.
+  Future<T> whilePaused<T>(Future<T> Function() action) async {
+    _paused = true;
+    try {
+      while (_running != null) {
+        await _running!.future;
+      }
+      return await action();
+    } finally {
+      _paused = false;
+    }
+  }
+
+  /// Forgets the last account's sync results and counts the open database's
+  /// queue, after another account's database became the active one.
+  Future<void> resetStatus() async {
+    lastSyncedAt.value = null;
+    lastError.value = null;
+    state.value = SyncState.synced;
+    await refreshQueueStats();
+  }
+
   /// Performs full two-way synchronization: uploads pending queue then downloads delta.
   Future<void> syncAll() async {
+    if (_paused) return;
     if (_isSyncing) {
       _pendingSyncRequest = true;
       return;
@@ -144,6 +172,7 @@ class SyncEngine extends GetxService {
     }
 
     _isSyncing = true;
+    _running = Completer<void>();
     state.value = SyncState.syncing;
     lastError.value = null;
 
@@ -172,6 +201,8 @@ class SyncEngine extends GetxService {
       await refreshQueueStats();
     } finally {
       _isSyncing = false;
+      _running?.complete();
+      _running = null;
       if (_pendingSyncRequest) {
         _pendingSyncRequest = false;
         unawaited(syncAll());
@@ -180,9 +211,10 @@ class SyncEngine extends GetxService {
   }
 
   /// The local tables are not scoped by user, and an upload takes its
-  /// `user_id` from the session. Sign-out clears them (resetUserScope), but
-  /// that can be missed, e.g. when the session ends while the app is closed.
-  /// So before syncing for [userId], data left by another account is wiped.
+  /// `user_id` from the session. Each account has its own database file
+  /// (AccountSwitchController opens the right one), but a mismatch could
+  /// still happen, e.g. when a session ends while the app is closed. So
+  /// before syncing for [userId], data left by another account is wiped.
   @visibleForTesting
   Future<void> claimLocalData(String userId) async {
     final String? owner = await _db.getMetadata(AppDatabase.localOwnerKey);

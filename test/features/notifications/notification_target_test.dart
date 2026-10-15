@@ -147,4 +147,56 @@ void main() {
       );
     });
   });
+
+  group('the account a notification belongs to', () {
+    const String reminderId = 'a1b2c3d4-0000-4000-8000-0000000000a1';
+    const String owner = '5f0c6c1e-1111-4222-8333-444455556666';
+
+    test('a tagged payload keeps its account through a tap', () {
+      final String payload = NotificationTarget.payload(
+        'reminder',
+        reminderId,
+        userId: owner,
+      );
+      expect(payload, '$owner|reminder:$reminderId');
+      expect(NotificationTarget.ownerOf(payload), owner);
+      expect(
+        NotificationTarget.fromPayload(payload),
+        const NotificationTarget(AppRoutes.reminderDetail, reminderId, owner),
+      );
+    });
+
+    test('an older, untagged payload opens in the active account', () {
+      final NotificationTarget? target = NotificationTarget.fromPayload(
+        'reminder:$reminderId',
+      );
+      expect(target?.route, AppRoutes.reminderDetail);
+      expect(target?.userId, isNull);
+    });
+
+    test('tagging twice keeps the first owner', () {
+      final String tagged = NotificationTarget.withOwner('budget', owner);
+      expect(NotificationTarget.withOwner(tagged, 'other-user'), tagged);
+      expect(NotificationTarget.withOwner('budget', null), 'budget');
+    });
+
+    test('a push names its account in user_id', () {
+      expect(
+        NotificationTarget.fromData(<String, dynamic>{
+          'type': 'reminder',
+          'reference_id': reminderId,
+          'user_id': owner,
+        })?.userId,
+        owner,
+      );
+      expect(
+        NotificationTarget.fromData(<String, dynamic>{
+          'type': 'budget',
+          'user_id': '../not an id',
+        })?.userId,
+        isNull,
+        reason: 'push data comes from outside the app',
+      );
+    });
+  });
 }

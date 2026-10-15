@@ -40,6 +40,9 @@ class FakeLocalNotifications implements LocalNotificationService {
 
   final List<({int id, String title, String body, String payload})> shown =
       <({int id, String title, String body, String payload})>[];
+
+  /// The account tag of each shown notification, by id.
+  final Map<int, String?> shownOwners = <int, String?>{};
   int promptCount = 0;
   int settingsOpened = 0;
   int cancelAllCalls = 0;
@@ -96,12 +99,18 @@ class FakeLocalNotifications implements LocalNotificationService {
     required Set<int> keep,
     required bool sound,
     required bool vibration,
+    String? owner,
+    bool Function(String? payload)? owns,
   }) async {
     syncCalls++;
     scheduleRequests += planned.length;
-    // Like the OS: entries in `keep` stay as they are, the rest is replaced.
+    // Like the OS: entries in `keep` stay as they are, and so do other
+    // accounts' entries; the rest is replaced.
     scheduled
-      ..removeWhere((int id, PlannedNotification _) => !keep.contains(id))
+      ..removeWhere(
+        (int id, PlannedNotification n) =>
+            !keep.contains(id) && (owns == null || owns(n.payload)),
+      )
       ..addEntries(
         planned.map(
           (PlannedNotification n) =>
@@ -118,14 +127,31 @@ class FakeLocalNotifications implements LocalNotificationService {
     required String payload,
     required bool sound,
     required bool vibration,
+    String? owner,
   }) async {
     shown.add((id: id, title: title, body: body, payload: payload));
+    shownOwners[id] = owner;
   }
 
   @override
   Future<void> cancelAll() async {
     cancelAllCalls++;
     scheduled.clear();
+    shown.clear();
+  }
+
+  @override
+  Future<void> cancelOwned({
+    required String owner,
+    required bool Function(String? payload) owns,
+  }) async {
+    scheduled.removeWhere(
+      (int _, PlannedNotification n) => owns(n.payload),
+    );
+    shown.removeWhere(
+      (({int id, String title, String body, String payload}) n) =>
+          shownOwners[n.id] == owner,
+    );
   }
 }
 

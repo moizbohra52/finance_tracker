@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:finance_tracker/core/constants/app_constants.dart';
@@ -6,6 +7,7 @@ import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
+import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
 import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/models/user_settings.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
@@ -20,8 +22,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'fake_finance.dart';
 import 'fake_notifications.dart';
 
+/// Another account the fake server knows, for signing in to a second
+/// account on the same device.
+typedef FakeAccount = ({String userId, String password, String? name});
+
 /// In-memory AuthRepository. Successful sign-in/out calls emit the same
 /// status events Supabase would; [nextError] makes the next call fail.
+///
+/// The signed-in account is [userId] / [email]. Sessions handed out for
+/// other accounts are JSON of the account, so activating one makes that
+/// account current, as the real repository does; a session in [revoked]
+/// has ended on the server.
 class FakeAuthRepository implements AuthRepository {
   FakeAuthRepository({this._signedIn = false});
 
@@ -30,6 +41,16 @@ class FakeAuthRepository implements AuthRepository {
   bool _signedIn;
   AppException? nextError;
   bool signUpStartsSession = true;
+
+  String userId = 'user-1';
+  String email = 'asha@example.com';
+
+  /// Accounts [signInDetached] accepts, by email.
+  final Map<String, FakeAccount> otherAccounts = <String, FakeAccount>{};
+
+  /// User ids whose saved sessions no longer work.
+  final Set<String> revoked = <String>{};
+  int heldSessions = 0;
 
   @override
   Future<void> Function()? beforeSignOut;
@@ -52,10 +73,66 @@ class FakeAuthRepository implements AuthRepository {
   bool get isSignedIn => _signedIn;
 
   @override
-  String? get currentEmail => _signedIn ? 'asha@example.com' : null;
+  String? get currentEmail => _signedIn ? email : null;
 
   @override
-  String? get currentUserId => _signedIn ? 'user-1' : null;
+  String? get currentUserId => _signedIn ? userId : null;
+
+  static String sessionOf(String userId, String email) =>
+      jsonEncode(<String, String>{'user_id': userId, 'email': email});
+
+  @override
+  AccountSession? get currentSession => _signedIn
+      ? AccountSession(
+          userId: userId,
+          email: email,
+          session: sessionOf(userId, email),
+        )
+      : null;
+
+  @override
+  Future<AccountSession> signInDetached({
+    required String email,
+    required String password,
+  }) async {
+    calls.add('signInDetached');
+    final AppException? error = nextError;
+    nextError = null;
+    if (error != null) throw error;
+    final FakeAccount? account = otherAccounts[email];
+    if (account == null || account.password != password) {
+      throw const AuthFailure('Incorrect email or password.');
+    }
+    return AccountSession(
+      userId: account.userId,
+      email: email,
+      displayName: account.name,
+      session: sessionOf(account.userId, email),
+    );
+  }
+
+  @override
+  Future<AccountSession?> holdCurrentSession() async {
+    heldSessions++;
+    return currentSession;
+  }
+
+  @override
+  void resumeAutoRefresh() {}
+
+  @override
+  Future<AccountSession> activateSession(String session) async {
+    calls.add('activateSession');
+    final Map<String, dynamic> account =
+        jsonDecode(session) as Map<String, dynamic>;
+    final String id = account['user_id'] as String;
+    if (revoked.contains(id)) throw AuthFailure.sessionExpired;
+    // Like `initialSession`: no signed-in event.
+    _signedIn = true;
+    userId = id;
+    email = account['email'] as String;
+    return currentSession!;
+  }
 
   @override
   Stream<AuthStatus> get statusChanges => _status.stream;
@@ -274,6 +351,8 @@ Future<void> pumpApp(
       repositories: data.repositories,
       notificationCoordinator: handle.coordinator,
       storageService: preferences,
+      // The same preferences: supabase_flutter keeps its session there too.
+      savedLogins: SavedLoginStore(await SharedPreferences.getInstance()),
       themeController: ThemeController(preferences),
       connectivityService:
           connectivityService ??

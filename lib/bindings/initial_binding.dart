@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
@@ -17,6 +18,7 @@ import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
+import 'package:finance_tracker/features/auth/controllers/account_switch_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:get/get.dart';
@@ -29,6 +31,7 @@ class InitialBinding extends Bindings {
     required this.profileRepository,
     required this.userSettingsRepository,
     required this.storageService,
+    required this.savedLogins,
     required this.themeController,
     required this.connectivityService,
     required this.repositories,
@@ -42,6 +45,7 @@ class InitialBinding extends Bindings {
   final ProfileRepository profileRepository;
   final UserSettingsRepository userSettingsRepository;
   final StorageService storageService;
+  final SavedLoginStore savedLogins;
   final ThemeController themeController;
   final ConnectivityService connectivityService;
   final AppRepositories repositories;
@@ -66,7 +70,17 @@ class InitialBinding extends Bindings {
     Get.put<AuthRepository>(authRepository, permanent: true);
     Get.put<ProfileRepository>(profileRepository, permanent: true);
     Get.put<UserSettingsRepository>(userSettingsRepository, permanent: true);
-    Get.put(AuthController(authRepository), permanent: true);
+    final AccountSwitchController accounts = Get.put(
+      AccountSwitchController(
+        auth: authRepository,
+        store: savedLogins,
+        notifications: notificationCoordinator,
+        database: database,
+        syncEngine: syncEngine,
+      ),
+      permanent: true,
+    );
+    Get.put(AuthController(authRepository, accounts), permanent: true);
     Get.put<AccountRepository>(repositories.accounts, permanent: true);
     Get.put<CategoryRepository>(repositories.categories, permanent: true);
     Get.put<TransactionRepository>(repositories.transactions, permanent: true);

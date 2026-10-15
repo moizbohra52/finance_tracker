@@ -14,6 +14,10 @@ abstract final class AppRoutes {
   static const String profile = '/profile';
   static const String changePassword = '/change-password';
 
+  // Several signed-in accounts
+  static const String addAccount = '/add-account';
+  static const String switchAccount = '/switch-account';
+
   // Accounts
   static const String accounts = '/accounts';
   static const String accountForm = '/account-form';

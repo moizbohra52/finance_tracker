@@ -20,6 +20,7 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.profileAvatar,
     this.onProfileTap,
     this.onSettingsTap,
+    this.onSwitchAccountTap,
     this.onSignOutTap,
     this.transparent = false,
   });
@@ -38,6 +39,9 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Widget? profileAvatar;
   final VoidCallback? onProfileTap;
   final VoidCallback? onSettingsTap;
+
+  /// Shows a "Switch account" entry in the menu when set.
+  final VoidCallback? onSwitchAccountTap;
   final VoidCallback? onSignOutTap;
 
   @override
@@ -142,6 +146,9 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
                 case 'settings':
                   onSettingsTap?.call();
                   break;
+                case 'switch':
+                  onSwitchAccountTap?.call();
+                  break;
                 case 'signout':
                   onSignOutTap?.call();
                   break;
@@ -160,6 +167,12 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
                 label: 'Settings',
                 iconColorVariant: _IconColorVariant.secondary,
               ),
+              if (onSwitchAccountTap != null)
+                const _MenuItem(
+                  value: 'switch',
+                  icon: Icons.switch_account_rounded,
+                  label: 'Switch account',
+                ),
               const _MenuItem(
                 value: 'signout',
                 icon: Icons.logout_rounded,

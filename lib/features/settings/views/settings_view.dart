@@ -15,6 +15,7 @@ import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/core/widgets/sync_status_sheet.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
+import 'package:finance_tracker/features/auth/widgets/account_switcher_sheet.dart';
 import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_settings_section.dart';
 import 'package:finance_tracker/features/profile/widgets/delete_account_dialog.dart';
@@ -436,6 +437,7 @@ class _SecuritySection extends StatelessWidget {
           title: 'Change password',
           onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
         ),
+        const SwitchAccountTile(),
         SettingsTile(
           icon: Icons.logout_rounded,
           title: 'Sign out of this device',

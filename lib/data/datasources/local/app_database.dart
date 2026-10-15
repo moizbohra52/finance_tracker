@@ -1,3 +1,4 @@
+import 'dart:developer' as developer;
 import 'dart:io';
 
 import 'package:finance_tracker/core/constants/app_env.dart';
@@ -6,14 +7,57 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+/// Where each account's database lives: opening one (creating it when
+/// missing), closing it when another account becomes active, and deleting
+/// one. Null is the signed-out database.
+abstract interface class DatabaseFiles {
+  Future<Database> open(String? userId);
+  Future<void> close(Database database);
+  Future<void> delete(String userId);
+}
+
 /// Relational SQLite database for offline-first transactional finance data.
+///
+/// Every account signed in on the device has its own file, so switching
+/// accounts never mixes their rows or their unsent changes, and switching
+/// works offline (docs/07_OFFLINE_SYNC.md). Repositories always go through
+/// [db], which is the active account's file.
 class AppDatabase {
-  AppDatabase({Database? database}) : _db = database;
+  AppDatabase({
+    Database? database,
+    this._files,
+    this._userId,
+    this._switchSettle = const Duration(milliseconds: 300),
+  }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
   static const int databaseVersion = 1;
 
+  /// Database file name of [userId]; null is the signed-out file, which is
+  /// also the single file used before accounts had their own.
+  static String fileNameFor(String? userId) {
+    if (userId == null) return databaseName;
+    if (!_safeId.hasMatch(userId)) {
+      throw ArgumentError.value(userId, 'userId', 'not a user id');
+    }
+    return '${p.basenameWithoutExtension(databaseName)}_$userId.db';
+  }
+
+  static final RegExp _safeId = RegExp(r'^[0-9a-zA-Z-]{1,64}$');
+
+  /// Between closing one account's file and opening the next, so a write
+  /// that was already under way fails on the closed file instead of landing
+  /// in the next account's (repository writes are several statements).
+  final Duration _switchSettle;
+
+  /// Null when the database was given directly (tests): there is then one
+  /// shared database and per-account operations fall back to clearing it.
+  final DatabaseFiles? _files;
+  String? _userId;
   Database? _db;
+
+  /// The account whose file is open; null for the signed-out file.
+  String? get userId => _userId;
 
   Database get db {
     final Database? d = _db;
@@ -41,20 +85,13 @@ class AppDatabase {
     }
   }
 
-  /// Opens the local SQLite database.
-  static Future<AppDatabase> open({String? customPath}) async {
+  /// Opens [userId]'s database (the signed-out one for null) from the app's
+  /// database directory.
+  static Future<AppDatabase> open({String? userId}) async {
     initializePlatform();
-    final String path =
-        customPath ?? p.join(await getDatabasesPath(), databaseName);
-    final Database database = await openDatabase(
-      path,
-      version: databaseVersion,
-      onCreate: (Database db, int version) async {
-        await _createTables(db);
-        await _seedSystemCategories(db);
-      },
-    );
-    return AppDatabase(database: database);
+    final AppDatabase database = AppDatabase(files: _DeviceFiles());
+    await database.openFor(userId);
+    return database;
   }
 
   /// Creates in-memory database instance for testing.
@@ -64,20 +101,71 @@ class AppDatabase {
       inMemoryDatabasePath,
       options: OpenDatabaseOptions(
         version: databaseVersion,
-        onCreate: (Database db, int version) async {
-          await _createTables(db);
-          await _seedSystemCategories(db);
-        },
+        onCreate: _onCreate,
       ),
     );
     return AppDatabase(database: database);
   }
 
+  /// In-memory databases that behave like per-account files, for tests of
+  /// account switching: each account keeps its rows while another is active.
+  static Future<AppDatabase> inMemoryFiles({String? userId}) async {
+    sqfliteFfiInit();
+    final AppDatabase database = AppDatabase(
+      files: _MemoryFiles(),
+      switchSettle: Duration.zero,
+    );
+    await database.openFor(userId);
+    return database;
+  }
+
+  static Future<void> _onCreate(Database db, int version) async {
+    await _createTables(db);
+    await _seedSystemCategories(db);
+  }
+
+  /// Makes [userId]'s file the open database (null: the signed-out one),
+  /// closing the previous file. The caller makes sure nothing else uses the
+  /// database meanwhile (AccountSwitchController pauses sync and removes the
+  /// screens first).
+  Future<void> openFor(String? userId) async {
+    final DatabaseFiles? files = _files;
+    if (files == null) {
+      _userId = userId;
+      return;
+    }
+    if (isOpen && _userId == userId) return;
+    final Database? previous = _db;
+    _db = null;
+    if (previous != null) {
+      await files.close(previous);
+      await Future<void>.delayed(_switchSettle);
+    }
+    _db = await files.open(userId);
+    _userId = userId;
+  }
+
+  /// Removes everything stored on this device for [userId] (sign-out). Their
+  /// file must not be the open one. A single shared database is cleared
+  /// instead, and only while no account is active in it: another account's
+  /// leftovers there are wiped by SyncEngine.claimLocalData before it syncs.
+  Future<void> removeUser(String userId) async {
+    final DatabaseFiles? files = _files;
+    if (files == null) {
+      if (_userId == null) await clearAllUserData();
+      return;
+    }
+    if (isOpen && _userId == userId) {
+      throw StateError('The database of the active account is still open.');
+    }
+    await files.delete(userId);
+  }
+
   Future<void> close() async {
     if (_db != null && _db!.isOpen) {
       await _db!.close();
-      _db = null;
     }
+    _db = null;
   }
 
   static Future<void> _createTables(DatabaseExecutor db) async {
@@ -630,4 +718,97 @@ class AppDatabase {
     // Without its rows the next sign-in must pull everything again.
     await txn.delete('sync_metadata', where: "key LIKE 'cursor_%'");
   });
+}
+
+/// One SQLite file per account in the app's database directory.
+class _DeviceFiles implements DatabaseFiles {
+  @override
+  Future<Database> open(String? userId) async {
+    final String directory = await getDatabasesPath();
+    final String path = p.join(directory, AppDatabase.fileNameFor(userId));
+    if (userId != null && !await databaseExists(path)) {
+      await _adoptSharedFile(directory, userId, path);
+    }
+    return openDatabase(
+      path,
+      version: AppDatabase.databaseVersion,
+      onCreate: AppDatabase._onCreate,
+    );
+  }
+
+  @override
+  Future<void> close(Database database) => database.close();
+
+  @override
+  Future<void> delete(String userId) async {
+    final String path = p.join(
+      await getDatabasesPath(),
+      AppDatabase.fileNameFor(userId),
+    );
+    await deleteDatabase(path);
+  }
+
+  /// Before accounts had their own files, everything lived in the shared
+  /// file. If it holds [userId]'s data (or nobody's yet), it becomes their
+  /// file, so an update keeps unsent changes instead of downloading again.
+  Future<void> _adoptSharedFile(
+    String directory,
+    String userId,
+    String path,
+  ) async {
+    final String shared = p.join(directory, AppDatabase.fileNameFor(null));
+    if (!await databaseExists(shared)) return;
+    try {
+      final Database database = await openDatabase(shared);
+      String? owner;
+      try {
+        final List<Map<String, Object?>> rows = await database.query(
+          'sync_metadata',
+          columns: <String>['value'],
+          where: 'key = ?',
+          whereArgs: <Object>[AppDatabase.localOwnerKey],
+          limit: 1,
+        );
+        owner = rows.isEmpty ? null : rows.first['value'] as String?;
+      } finally {
+        await database.close();
+      }
+      if (owner != null && owner != userId) return;
+      for (final String suffix in <String>['', '-journal', '-wal', '-shm']) {
+        final File file = File('$shared$suffix');
+        if (file.existsSync()) await file.rename('$path$suffix');
+      }
+    } on Object catch (error) {
+      // The account starts from an empty file and downloads its data.
+      developer.log(
+        'Shared database not adopted: ${error.runtimeType}',
+        name: 'database',
+      );
+    }
+  }
+}
+
+/// In-memory stand-in for [_DeviceFiles]: databases stay open while another
+/// account is active, as files would stay on disk.
+class _MemoryFiles implements DatabaseFiles {
+  final Map<String?, Database> _open = <String?, Database>{};
+
+  @override
+  Future<Database> open(String? userId) async =>
+      _open[userId] ??= await databaseFactoryFfi.openDatabase(
+        inMemoryDatabasePath,
+        options: OpenDatabaseOptions(
+          version: AppDatabase.databaseVersion,
+          onCreate: AppDatabase._onCreate,
+          singleInstance: false,
+        ),
+      );
+
+  @override
+  Future<void> close(Database database) async {}
+
+  @override
+  Future<void> delete(String userId) async {
+    await _open.remove(userId)?.close();
+  }
 }

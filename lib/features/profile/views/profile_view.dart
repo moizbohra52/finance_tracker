@@ -10,6 +10,7 @@ import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/features/auth/widgets/account_switcher_sheet.dart';
 import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/profile/widgets/delete_account_dialog.dart';
@@ -234,6 +235,7 @@ class _ProfileForm extends StatelessWidget {
                   title: 'Change password',
                   onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
                 ),
+                const SwitchAccountTile(),
                 SettingsTile(
                   icon: Icons.logout_rounded,
                   title: 'Sign out',

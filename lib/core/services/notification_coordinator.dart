@@ -68,19 +68,44 @@ class NotificationCoordinator extends GetxService {
   bool get supportsVibrationSetting => _local.supportsVibrationSetting;
   bool get pushAvailable => _push.isAvailable;
 
+  /// Set by AccountSwitchController: whether accounts other than the given
+  /// one stay signed in on this device. Their scheduled notifications and the
+  /// device's push token must then survive that account signing out.
+  bool Function(String userId) hasOtherAccounts = _noOtherAccounts;
+
+  /// Set by AccountSwitchController: opens a tapped notification that
+  /// belongs to another signed-in account, switching to it first. Without it
+  /// such a tap opens in the active account.
+  void Function(NotificationTarget target)? onOtherAccountTarget;
+
+  static bool _noOtherAccounts(String _) => false;
+
   List<Reminder> _reminders = <Reminder>[];
   final Set<String> _raisedDue = <String>{};
   final List<StreamSubscription<Object?>> _subscriptions =
       <StreamSubscription<Object?>>[];
   AppLifecycleListener? _lifecycle;
   NotificationTarget? _pendingTarget;
-  bool _shellReady = false;
+
+  /// The signed-in shell on screen, if any. Kept by identity because a new
+  /// shell (after an account switch) can mount before the old one is gone.
+  Object? _shell;
   bool _syncing = false;
   bool _syncAgain = false;
+
+  /// The account whose reminders this device schedules. Other signed-in
+  /// accounts keep what was scheduled while they were active.
+  String? _ownerId;
+
+  /// True while the active account changes: nothing is scheduled or
+  /// cancelled then, so a half-finished switch touches no account's
+  /// notifications.
+  bool _switchingAccounts = false;
 
   /// Call once from main(), before the first frame, so a notification that
   /// launched the app is not missed.
   Future<void> initialize() async {
+    _ownerId = _auth.currentUserId;
     preferences.value = _loadPreferences();
     await _local.initialize(onTap: _onLocalTap);
     _pendingTarget = NotificationTarget.fromPayload(
@@ -209,6 +234,7 @@ class NotificationCoordinator extends GetxService {
   }
 
   Future<void> _apply() async {
+    if (_switchingAccounts) return;
     if (_syncing) {
       _syncAgain = true;
       return;
@@ -219,11 +245,27 @@ class NotificationCoordinator extends GetxService {
         _syncAgain = false;
         final NotificationPreferences prefs = preferences.value;
         final DateTime now = DateTime.now();
+        final String? owner = _ownerId;
         await _local.replaceSchedule(
-          ReminderNotificationPlanner.plan(_reminders, now, prefs),
+          <PlannedNotification>[
+            for (final PlannedNotification n
+                in ReminderNotificationPlanner.plan(_reminders, now, prefs))
+              PlannedNotification(
+                id: n.id,
+                title: n.title,
+                body: n.body,
+                payload: NotificationTarget.withOwner(n.payload, owner),
+                fireAt: n.fireAt,
+                repeat: n.repeat,
+              ),
+          ],
           keep: ReminderNotificationPlanner.inFlightIds(_reminders, now, prefs),
           sound: prefs.sound,
           vibration: prefs.vibration,
+          owner: owner,
+          owns: owner == null
+              ? null
+              : (String? payload) => _belongsTo(payload, owner),
         );
       } while (_syncAgain);
     } on Object catch (error) {
@@ -263,9 +305,14 @@ class NotificationCoordinator extends GetxService {
         title: title,
         // Amounts and names stay in the app; the device text is generic.
         body: _deviceBody(type),
-        payload: NotificationTarget.payload(type, referenceId),
+        payload: NotificationTarget.payload(
+          type,
+          referenceId,
+          userId: _ownerId,
+        ),
         sound: prefs.sound,
         vibration: prefs.vibration,
+        owner: _ownerId,
       );
     }
   }
@@ -310,28 +357,51 @@ class NotificationCoordinator extends GetxService {
   void _onLocalTap(String? payload) =>
       _open(NotificationTarget.fromPayload(payload));
 
+  /// Opens [target] now when the signed-in shell is on screen, else as soon
+  /// as it is (also used to open a tap once a switch to its account is done).
+  void open(NotificationTarget target) => _open(target);
+
+  bool get _shellReady => _shell != null;
+
   void _open(NotificationTarget? target) {
     if (target == null) return;
     if (_shellReady) {
-      _go(target);
+      _route(target);
     } else {
-      // Cold start or signed out: wait for the signed-in shell.
+      // Cold start, signed out or switching accounts: wait for the shell.
       _pendingTarget = target;
+    }
+  }
+
+  /// A notification of another signed-in account is handed over, so it
+  /// opens in that account and never shows one account's screen with
+  /// another's data.
+  void _route(NotificationTarget target) {
+    final String? owner = target.userId;
+    final void Function(NotificationTarget target)? otherAccount =
+        onOtherAccountTarget;
+    if (owner != null && owner != _auth.currentUserId && otherAccount != null) {
+      otherAccount(target);
+    } else {
+      _go(target);
     }
   }
 
   void _go(NotificationTarget target) =>
       Get.toNamed<void>(target.route, arguments: target.argument);
 
-  /// The signed-in shell is on screen: open whatever tap launched the app.
-  void markShellReady() {
-    _shellReady = true;
+  /// The signed-in [shell] is on screen: open whatever tap launched the app.
+  void markShellReady([Object? shell]) {
+    _shell = shell ?? this;
     final NotificationTarget? target = _pendingTarget;
     _pendingTarget = null;
-    if (target != null) _go(target);
+    if (target != null) _route(target);
   }
 
-  void markShellGone() => _shellReady = false;
+  /// [shell] is gone. A newer shell that is already on screen stays ready.
+  void markShellGone([Object? shell]) {
+    if (shell == null || identical(_shell, shell)) _shell = null;
+  }
 
   // ---------------------------------------------------------------------
   // Push
@@ -346,16 +416,22 @@ class NotificationCoordinator extends GetxService {
     }
     final Object? type = message.data['type'];
     final Object? id = message.data['reference_id'];
+    // A push names its account; one that does not opens in the active one.
+    final String? owner = NotificationTarget.userIdFromData(message.data);
     unawaited(
       _local.showNow(
         id: DateTime.now().millisecondsSinceEpoch & 0x7fffffff,
         title: title,
         body: message.body ?? '',
-        payload: type is String
-            ? NotificationTarget.payload(type, id is String ? id : null)
-            : NotificationType.recurring,
+        payload: NotificationTarget.withOwner(
+          type is String
+              ? NotificationTarget.payload(type, id is String ? id : null)
+              : NotificationType.recurring,
+          owner,
+        ),
         sound: prefs.sound,
         vibration: prefs.vibration,
+        owner: owner ?? _ownerId,
       ),
     );
   }
@@ -405,21 +481,87 @@ class NotificationCoordinator extends GetxService {
   void _onAuthStatus(AuthStatus status) {
     switch (status) {
       case AuthStatus.signedIn:
+        _ownerId = _auth.currentUserId;
+        _switchingAccounts = false;
         unawaited(_registerToken());
       case AuthStatus.signedOut:
         // The next user must not receive this user's reminders.
+        final String? leaving = _ownerId;
+        _ownerId = null;
         _reminders = <Reminder>[];
         _raisedDue.clear();
         _pendingTarget = null;
-        _shellReady = false;
-        unawaited(_local.cancelAll());
+        _shell = null;
+        if (leaving != null && hasOtherAccounts(leaving)) {
+          // Another signed-in account takes over (AccountSwitchController);
+          // its notifications stay.
+          _switchingAccounts = true;
+          unawaited(_cancelFor(leaving));
+        } else {
+          unawaited(_local.cancelAll());
+        }
       case AuthStatus.passwordRecovery:
         break;
     }
   }
 
+  /// The active account is about to change (AccountSwitchController). Until
+  /// [accountSwitched], nothing is scheduled or cancelled, and the leaving
+  /// account's scheduled reminders stay: it is still signed in.
+  void beginAccountSwitch() {
+    _switchingAccounts = true;
+    // Taps wait for the next account's shell.
+    _shell = null;
+    _reminders = <Reminder>[];
+    _raisedDue.clear();
+  }
+
+  /// Another account is now active: its reminders are scheduled from here
+  /// and this device receives its pushes.
+  void accountSwitched() {
+    _ownerId = _auth.currentUserId;
+    _switchingAccounts = false;
+    unawaited(_registerToken());
+  }
+
+  /// No account is left signed in (the accounts that were meant to take over
+  /// could not), so nothing may be delivered to this device any more.
+  Future<void> allAccountsSignedOut() async {
+    _ownerId = null;
+    _switchingAccounts = false;
+    _reminders = <Reminder>[];
+    _raisedDue.clear();
+    _pendingTarget = null;
+    await _local.cancelAll();
+    await _push.deleteToken();
+  }
+
+  /// [payload] belongs to [userId]. Untagged payloads predate accounts being
+  /// tagged and so belong to the account that was active then: the active
+  /// one.
+  static bool _belongsTo(String? payload, String userId) {
+    final String? owner = NotificationTarget.ownerOf(payload);
+    return owner == null || owner == userId;
+  }
+
+  Future<void> _cancelFor(String userId) async {
+    try {
+      await _local.cancelOwned(
+        owner: userId,
+        owns: (String? payload) => _belongsTo(payload, userId),
+      );
+    } on Object catch (error) {
+      developer.log(
+        'Notifications of a signed-out account not cancelled: '
+        '${error.runtimeType}',
+        name: 'notifications',
+      );
+    }
+  }
+
   /// Runs while the session is still valid, so the server can be told to stop
-  /// pushing to this install.
+  /// pushing to this install. The push token itself belongs to the device,
+  /// so it is deleted only when no other account still uses it.
   Future<void> _beforeSignOut() async {
     if (!_push.isAvailable) return;
     try {
@@ -430,6 +572,8 @@ class NotificationCoordinator extends GetxService {
         name: 'notifications',
       );
     }
+    final String? leaving = _auth.currentUserId;
+    if (leaving != null && hasOtherAccounts(leaving)) return;
     await _push.deleteToken();
   }
 

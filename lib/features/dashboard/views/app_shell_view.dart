@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
 import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
+import 'package:finance_tracker/features/auth/widgets/account_switcher_sheet.dart';
 import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
@@ -38,13 +39,13 @@ class _AppShellViewState extends State<AppShellView> {
     // From here a notification tap can open its screen on top of the shell,
     // and one that launched the app is opened now.
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _notifications.markShellReady(),
+      (_) => _notifications.markShellReady(this),
     );
   }
 
   @override
   void dispose() {
-    _notifications.markShellGone();
+    _notifications.markShellGone(this);
     super.dispose();
   }
 
@@ -137,10 +138,14 @@ class _AppShellViewState extends State<AppShellView> {
                     return Semantics(
                       button: true,
                       label: 'Open profile',
+                      onLongPressHint: 'Switch account',
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () => Get.toNamed<void>(AppRoutes.profile),
+                          // Like social apps: a long press on your own
+                          // picture lists the other signed-in accounts.
+                          onLongPress: () => showAccountSwitcher(context),
                           customBorder: const CircleBorder(),
                           child: ProfileAvatar(
                             initial: initial,
@@ -217,6 +222,7 @@ class _AppShellViewState extends State<AppShellView> {
               showMenu: true,
               onProfileTap: () => Get.toNamed<void>(AppRoutes.profile),
               onSettingsTap: () => Get.toNamed<void>(AppRoutes.settings),
+              onSwitchAccountTap: () => showAccountSwitcher(context),
               onSignOutTap: () => confirmAndSignOut(context),
             ),
             body: SafeArea(

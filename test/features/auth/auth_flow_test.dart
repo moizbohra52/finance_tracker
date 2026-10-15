@@ -1,5 +1,7 @@
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/features/auth/controllers/account_switch_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
 import 'package:finance_tracker/features/auth/views/forgot_password_view.dart';
 import 'package:finance_tracker/features/auth/views/login_view.dart';
@@ -11,7 +13,10 @@ import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../helpers/fake_finance.dart';
+import '../../helpers/fake_notifications.dart';
 import '../../helpers/fakes.dart';
 
 Finder _field(String label) => find.widgetWithText(TextFormField, label);
@@ -71,7 +76,20 @@ void main() {
     test(
       'a recovery link that arrives before the splash routes is kept',
       () async {
-        final AuthController controller = Get.put(AuthController(auth));
+        final NotificationsHandle notifications = await buildCoordinator(
+          FakeFinance(),
+          auth: auth,
+        );
+        final AuthController controller = Get.put(
+          AuthController(
+            auth,
+            AccountSwitchController(
+              auth: auth,
+              store: SavedLoginStore(await SharedPreferences.getInstance()),
+              notifications: notifications.coordinator,
+            ),
+          ),
+        );
 
         auth.emit(AuthStatus.passwordRecovery);
         await Future<void>.delayed(Duration.zero);

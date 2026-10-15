@@ -9,6 +9,7 @@ import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/domain/services/avatar_rules.dart';
+import 'package:finance_tracker/features/auth/controllers/account_switch_controller.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:get/get.dart';
@@ -192,6 +193,10 @@ class ProfileController extends GetxController {
     mobileController.text = profile.mobile ?? '';
     displayName.value = profile.fullName ?? '';
     avatarPath.value = profile.avatarPath;
+    // The account switcher names this account by its profile name.
+    if (Get.isRegistered<AccountSwitchController>()) {
+      Get.find<AccountSwitchController>().updateActiveName(profile.fullName);
+    }
   }
 
   @override

@@ -2,12 +2,14 @@ import 'package:finance_tracker/bindings/feature_bindings.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_form_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_list_view.dart';
+import 'package:finance_tracker/features/auth/controllers/add_account_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/change_password_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/forgot_password_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/login_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/register_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/reset_password_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/splash_controller.dart';
+import 'package:finance_tracker/features/auth/views/add_account_view.dart';
 import 'package:finance_tracker/features/auth/views/change_password_view.dart';
 import 'package:finance_tracker/features/auth/views/forgot_password_view.dart';
 import 'package:finance_tracker/features/auth/views/login_view.dart';
@@ -15,6 +17,7 @@ import 'package:finance_tracker/features/auth/views/onboarding_view.dart';
 import 'package:finance_tracker/features/auth/views/register_view.dart';
 import 'package:finance_tracker/features/auth/views/reset_password_view.dart';
 import 'package:finance_tracker/features/auth/views/splash_view.dart';
+import 'package:finance_tracker/features/auth/views/switch_account_view.dart';
 import 'package:finance_tracker/features/backup/views/backup_view.dart';
 import 'package:finance_tracker/features/budgets/views/budget_form_view.dart';
 import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
@@ -53,7 +56,7 @@ abstract final class AppPages {
       name: AppRoutes.splash,
       page: () => const SplashView(),
       binding: BindingsBuilder<void>(() {
-        Get.put(SplashController(Get.find()));
+        Get.put(SplashController(Get.find(), Get.find()));
       }),
     ),
 
@@ -154,6 +157,20 @@ abstract final class AppPages {
       binding: BindingsBuilder<void>(
         () => Get.lazyPut(() => ChangePasswordController(Get.find())),
       ),
+    ),
+    // Several signed-in accounts. The switching screen has no guard: it shows
+    // between two sessions, while neither account's screens exist.
+    GetPage<dynamic>(
+      name: AppRoutes.addAccount,
+      page: () => const AddAccountView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: BindingsBuilder<void>(
+        () => Get.lazyPut(() => AddAccountController(Get.find())),
+      ),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.switchAccount,
+      page: () => const SwitchAccountView(),
     ),
     // Export and Backup
     GetPage<dynamic>(

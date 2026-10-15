@@ -89,7 +89,8 @@ Avoid:
 ## Auth navigation (Phase 02)
 `AuthController` (app-wide) is the only place that navigates on auth
 transitions: signed in → dashboard (from guest screens only), signed out →
-login, password recovery → reset password. Screens call the repository and
+login (or, since 2026-10-15, another signed-in account via
+`AccountSwitchController`), password recovery → reset password. Screens call the repository and
 let it route. The splash screen makes the first routing decision; the auth
 event stream replays history, so a cold-start reset link is never lost.
 
@@ -130,6 +131,32 @@ Controllers never touch the notification plugin: they call the coordinator
   replaced even though the registration stays.
 - Global infrastructure (repositories, the notifier, the notification
   coordinator, storage) is never removed.
+
+## Several signed-in accounts (2026-10-15)
+Like a social app, several accounts can be signed in on one device and the
+user switches between them (app-bar avatar long press or menu, Profile and
+Settings > *Switch account*). `AccountSwitchController`
+(`features/auth/controllers`, permanent) owns it:
+- `SavedLoginStore` (`data/datasources/local`) keeps every signed-in account
+  (`SavedLogin` entity: id, email, name, last used) and its session.
+- `AuthRepository` adds `signInDetached`, `holdCurrentSession`,
+  `activateSession` and `currentSession`; Supabase types stay inside it.
+- Each account has its own local database file (`docs/07_OFFLINE_SYNC.md`).
+- A switch shows `/switch-account`, waits for the previous screens' route
+  transition to end, runs `resetUserScope()`, activates the other session and
+  opens its file with sync paused, then `loadUserScope()` and the dashboard.
+- `AuthController` still receives every auth event, and hands sign-in and
+  sign-out to `AccountSwitchController`: a sign-in opens that account's file
+  before anything reads it; a sign-out removes the account and lets the most
+  recently used other account take over, or shows sign-in when none is left.
+  At start-up without a session, a saved account takes over (splash).
+- `NotificationCoordinator` asks it whether other accounts remain
+  (`hasOtherAccounts`) and hands it taps for other accounts
+  (`onOtherAccountTarget`); see `docs/08_NOTIFICATION_SYSTEM.md`.
+- `resetUserScope()` no longer touches the database; what happens to an
+  account's file is the controller's decision.
+- In the UI the action is "Sign in to another account", never "Add account",
+  which already means adding a cash/bank account.
 
 Formatting is centralised in `AppFormatters`, which reads `UserPreferences`.
 Widgets pass no symbols, locales or patterns of their own, except fixed labels
