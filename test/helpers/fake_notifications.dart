@@ -9,6 +9,7 @@ import 'package:finance_tracker/core/services/push_service.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fake_finance.dart';
@@ -64,6 +65,7 @@ class FakeLocalNotifications implements LocalNotificationService {
   @override
   Future<void> initialize({
     required void Function(String? payload) onTap,
+    DidReceiveBackgroundNotificationResponseCallback? onAction,
   }) async {
     this.onTap = onTap;
   }
@@ -145,9 +147,7 @@ class FakeLocalNotifications implements LocalNotificationService {
     required String owner,
     required bool Function(String? payload) owns,
   }) async {
-    scheduled.removeWhere(
-      (int _, PlannedNotification n) => owns(n.payload),
-    );
+    scheduled.removeWhere((int _, PlannedNotification n) => owns(n.payload));
     shown.removeWhere(
       (({int id, String title, String body, String payload}) n) =>
           shownOwners[n.id] == owner,

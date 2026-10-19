@@ -14,6 +14,17 @@ enum SnoozeOption {
   final String label;
 }
 
+/// The buttons on a reminder notification. [name] is the action id the OS
+/// hands back, so it must not change.
+enum ReminderAction {
+  done('Mark done'),
+  snooze('Snooze 1 hour');
+
+  const ReminderAction(this.label);
+
+  final String label;
+}
+
 /// Date maths and state rules for reminders. No I/O, no clock: every method
 /// takes `now`, so behaviour is deterministic in tests.
 abstract final class ReminderCalculator {
@@ -149,6 +160,19 @@ abstract final class ReminderCalculator {
       clearSnooze: true,
     );
   }
+
+  /// [r] after its notification button [action] was tapped: the same as Mark
+  /// done, or a one-hour snooze, in the app.
+  static Reminder applyAction(
+    Reminder r,
+    ReminderAction action,
+    DateTime now,
+  ) => switch (action) {
+    ReminderAction.done => complete(r, now),
+    ReminderAction.snooze => r.copyWith(
+      snoozedUntil: snoozeUntil(SnoozeOption.oneHour, now),
+    ),
+  };
 
   /// Brings a completed one-time reminder back as active.
   static Reminder reopen(Reminder r) => r.copyWith(isCompleted: false);

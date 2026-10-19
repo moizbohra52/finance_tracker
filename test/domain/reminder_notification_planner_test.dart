@@ -151,6 +151,88 @@ void main() {
       expect(n.repeat, ReminderRepeat.monthly);
     });
 
+    // The OS repeat ignores the date it is given and fires at the first match
+    // after now, so it is only used when that first match is fireAt.
+    PlannedNotification planOne(Reminder r, DateTime at) =>
+        ReminderNotificationPlanner.plan(<Reminder>[r], at, on).single;
+
+    test('a daily reminder done before today\'s time is a one-shot', () {
+      // Marked done at 08:00, so today's 09:00 is skipped; a daily OS repeat
+      // would still fire at 09:00 today.
+      final PlannedNotification n = planOne(
+        makeReminder(
+          remindAt: DateTime(2026, 10, 9, 9),
+          repeat: ReminderRepeat.daily,
+        ),
+        DateTime(2026, 10, 8, 8),
+      );
+      expect(n.fireAt, DateTime(2026, 10, 9, 9));
+      expect(n.repeat, ReminderRepeat.none);
+    });
+
+    test(
+      'a daily reminder due tomorrow after today\'s time keeps repeating',
+      () {
+        final PlannedNotification n = planOne(
+          makeReminder(
+            remindAt: DateTime(2026, 10, 9, 9),
+            repeat: ReminderRepeat.daily,
+          ),
+          now,
+        );
+        expect(n.fireAt, DateTime(2026, 10, 9, 9));
+        expect(n.repeat, ReminderRepeat.daily);
+      },
+    );
+
+    test('weekly and monthly series that start later are one-shots', () {
+      expect(
+        planOne(
+          makeReminder(
+            remindAt: DateTime(2026, 10, 22, 9),
+            repeat: ReminderRepeat.weekly,
+          ),
+          now,
+        ).repeat,
+        ReminderRepeat.none,
+      );
+      expect(
+        planOne(
+          makeReminder(
+            remindAt: DateTime(2026, 11, 20, 9),
+            repeat: ReminderRepeat.monthly,
+          ),
+          now,
+        ).repeat,
+        ReminderRepeat.none,
+      );
+    });
+
+    test('days some months or years lack still use the OS repeat', () {
+      // No 31 September and no 29 February before 2028: the OS skips those
+      // too, so its first match is the planned date.
+      expect(
+        planOne(
+          makeReminder(
+            remindAt: DateTime(2026, 10, 31, 9),
+            repeat: ReminderRepeat.monthly,
+          ),
+          now,
+        ).repeat,
+        ReminderRepeat.monthly,
+      );
+      expect(
+        planOne(
+          makeReminder(
+            remindAt: DateTime(2028, 2, 29, 9),
+            repeat: ReminderRepeat.yearly,
+          ),
+          now,
+        ).repeat,
+        ReminderRepeat.yearly,
+      );
+    });
+
     test('a snooze is a one-shot, even for a repeating reminder', () {
       final PlannedNotification n = ReminderNotificationPlanner.plan(
         <Reminder>[

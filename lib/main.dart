@@ -10,6 +10,7 @@ import 'package:finance_tracker/core/services/device_auth_service.dart';
 import 'package:finance_tracker/core/services/local_notification_service.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/services/push_service.dart';
+import 'package:finance_tracker/core/services/reminder_action_handler.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/app_accent_color.dart';
@@ -97,6 +98,13 @@ Future<void> main() async {
       name: 'notifications',
     );
   }
+
+  // A Mark done / Snooze on a notification changed a reminder in the
+  // background: reload what is on screen and send the change.
+  listenForReminderActions(() {
+    dataChangeNotifier.markChanged();
+    syncEngine.notifyNewQueueItem();
+  });
 
   // Before runApp, so its back-button handling comes before the navigator's
   // and a locked cold start shows the lock from the first frame.

@@ -404,4 +404,46 @@ void main() {
       );
     });
   });
+
+  group('notification buttons', () {
+    test('Mark done completes like the app does', () {
+      final Reminder daily = makeReminder(
+        remindAt: DateTime(2026, 10, 8, 9),
+        repeat: ReminderRepeat.daily,
+        snoozedUntil: DateTime(2026, 10, 8, 10),
+      );
+      final Reminder done = ReminderCalculator.applyAction(
+        daily,
+        ReminderAction.done,
+        now,
+      );
+      expect(done.remindAt, DateTime(2026, 10, 9, 9));
+      expect(done.snoozedUntil, isNull);
+      expect(
+        ReminderCalculator.applyAction(
+          makeReminder(remindAt: DateTime(2026, 10, 8, 9)),
+          ReminderAction.done,
+          now,
+        ).isCompleted,
+        isTrue,
+      );
+    });
+
+    test('Snooze moves the next nudge one hour on', () {
+      final Reminder snoozed = ReminderCalculator.applyAction(
+        makeReminder(remindAt: DateTime(2026, 10, 8, 9)),
+        ReminderAction.snooze,
+        now,
+      );
+      expect(snoozed.snoozedUntil, DateTime(2026, 10, 8, 13));
+      expect(snoozed.isCompleted, isFalse);
+    });
+
+    test('action ids are stable, the OS hands them back by name', () {
+      expect(ReminderAction.values.asNameMap().keys, <String>[
+        'done',
+        'snooze',
+      ]);
+    });
+  });
 }

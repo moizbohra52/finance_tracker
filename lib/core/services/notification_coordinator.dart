@@ -6,6 +6,7 @@ import 'package:finance_tracker/core/services/external_activity.dart';
 import 'package:finance_tracker/core/services/local_notification_service.dart';
 import 'package:finance_tracker/core/services/notification_permission_state.dart';
 import 'package:finance_tracker/core/services/push_service.dart';
+import 'package:finance_tracker/core/services/reminder_action_handler.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
@@ -107,8 +108,11 @@ class NotificationCoordinator extends GetxService {
   /// launched the app is not missed.
   Future<void> initialize() async {
     _ownerId = _auth.currentUserId;
-    preferences.value = _loadPreferences();
-    await _local.initialize(onTap: _onLocalTap);
+    preferences.value = readPreferences(_storage);
+    await _local.initialize(
+      onTap: _onLocalTap,
+      onAction: reminderActionInBackground,
+    );
     _pendingTarget = NotificationTarget.fromPayload(
       await _local.launchPayload(),
     );
@@ -153,8 +157,10 @@ class NotificationCoordinator extends GetxService {
   // ---------------------------------------------------------------------
   // Preferences
 
-  NotificationPreferences _loadPreferences() {
-    bool flag(String key) => _storage.readBool(key) ?? true;
+  /// Also read by the notification buttons' handler, which runs without
+  /// this service.
+  static NotificationPreferences readPreferences(StorageService storage) {
+    bool flag(String key) => storage.readBool(key) ?? true;
     return NotificationPreferences(
       enabled: flag(_enabledKey),
       reminders: flag(_remindersKey),
@@ -249,18 +255,7 @@ class NotificationCoordinator extends GetxService {
         final DateTime now = DateTime.now();
         final String? owner = _ownerId;
         await _local.replaceSchedule(
-          <PlannedNotification>[
-            for (final PlannedNotification n
-                in ReminderNotificationPlanner.plan(_reminders, now, prefs))
-              PlannedNotification(
-                id: n.id,
-                title: n.title,
-                body: n.body,
-                payload: NotificationTarget.withOwner(n.payload, owner),
-                fireAt: n.fireAt,
-                repeat: n.repeat,
-              ),
-          ],
+          planFor(_reminders, now, prefs, owner),
           keep: ReminderNotificationPlanner.inFlightIds(_reminders, now, prefs),
           sound: prefs.sound,
           vibration: prefs.vibration,
@@ -279,6 +274,29 @@ class NotificationCoordinator extends GetxService {
       _syncing = false;
     }
   }
+
+  /// The planner's notifications for [reminders], tagged with the account
+  /// they belong to. Also used by the notification buttons' handler.
+  static List<PlannedNotification> planFor(
+    List<Reminder> reminders,
+    DateTime now,
+    NotificationPreferences prefs,
+    String? owner,
+  ) => <PlannedNotification>[
+    for (final PlannedNotification n in ReminderNotificationPlanner.plan(
+      reminders,
+      now,
+      prefs,
+    ))
+      PlannedNotification(
+        id: n.id,
+        title: n.title,
+        body: n.body,
+        payload: NotificationTarget.withOwner(n.payload, owner),
+        fireAt: n.fireAt,
+        repeat: n.repeat,
+      ),
+  ];
 
   /// Stores a notification-center entry (once per [id], on every device) and,
   /// when this call created it, also shows it on this device. Nothing is

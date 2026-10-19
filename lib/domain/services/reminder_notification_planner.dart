@@ -132,7 +132,13 @@ abstract final class ReminderNotificationPlanner {
           payload: payloadFor(r.id),
           fireAt: fireAt,
           // A snooze is a single extra nudge; the series resumes afterwards.
-          repeat: snoozed ? ReminderRepeat.none : r.repeat,
+          // shortcut: a series the OS repeat cannot start at fireAt (done
+          // early, starts later) is a one-shot and resumes repeating at the
+          // next sync, so an occurrence after it is missed if the app is not
+          // opened in between; schedule several one-shots ahead if that bites.
+          repeat: snoozed || !_osRepeatStartsAt(fireAt, r.repeat, now)
+              ? ReminderRepeat.none
+              : r.repeat,
         ),
       );
     }
@@ -141,5 +147,57 @@ abstract final class ReminderNotificationPlanner {
           a.fireAt.compareTo(b.fireAt),
     );
     return out.length <= maxScheduled ? out : out.sublist(0, maxScheduled);
+  }
+
+  /// Whether an OS repeat for [repeat] scheduled now first fires at [fireAt].
+  /// Android and iOS ignore the date they are given and fire at the first
+  /// instant after now with the same time (and weekday, day of month, or
+  /// date), so they agree only when the match before [fireAt] is past.
+  static bool _osRepeatStartsAt(
+    DateTime fireAt,
+    ReminderRepeat repeat,
+    DateTime now,
+  ) {
+    DateTime back(int k) => switch (repeat) {
+      ReminderRepeat.none => fireAt,
+      ReminderRepeat.daily => DateTime(
+        fireAt.year,
+        fireAt.month,
+        fireAt.day - k,
+        fireAt.hour,
+        fireAt.minute,
+      ),
+      ReminderRepeat.weekly => DateTime(
+        fireAt.year,
+        fireAt.month,
+        fireAt.day - 7 * k,
+        fireAt.hour,
+        fireAt.minute,
+      ),
+      ReminderRepeat.monthly => DateTime(
+        fireAt.year,
+        fireAt.month - k,
+        fireAt.day,
+        fireAt.hour,
+        fireAt.minute,
+      ),
+      ReminderRepeat.yearly => DateTime(
+        fireAt.year - k,
+        fireAt.month,
+        fireAt.day,
+        fireAt.hour,
+        fireAt.minute,
+      ),
+    };
+    if (!repeat.repeats) return true;
+    // Months without the 31st and years without 29 February do not match
+    // (DateTime rolls them over into the next month), as on the OS.
+    final bool skips =
+        repeat == ReminderRepeat.monthly || repeat == ReminderRepeat.yearly;
+    for (int k = 1; k <= 8; k++) {
+      final DateTime earlier = back(k);
+      if (!skips || earlier.day == fireAt.day) return earlier.isBefore(now);
+    }
+    return true;
   }
 }

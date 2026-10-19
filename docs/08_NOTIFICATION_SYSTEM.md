@@ -88,6 +88,15 @@ Notification creation must be idempotent when generated from recurring/budget ru
   closed. **Limit:** for monthly/yearly reminders on the 29th-31st (29 Feb) the
   OS repeat follows the platform rule and may skip short months; the app
   recomputes the exact month-end-clamped date every time it opens.
+- **The OS repeat ignores the date it is given** (Android
+  `getNextFireDateMatchingDateTimeComponents`, iOS calendar triggers): it fires
+  at the first matching time *after now*. So the planner uses it only when that
+  first match is the planned date. Otherwise (a repeating reminder marked done
+  before today's time, a weekly/monthly series that starts later) the next
+  occurrence is a one-shot, and the series switches back to the OS repeat at
+  the next sync. Before 2026-10-19 the OS repeat was always used, so "Mark
+  done" early still fired that day. **Limit:** if the app is not opened between
+  that one-shot and the occurrence after it, the later one is missed.
 - **Late delivery.** Android delivers inexact alarms late (about 30 s here,
   up to ~15 min in Doze). A notification that came due within the last 15
   minutes (`ReminderCalculator.deliveryGrace`) is *in flight*: a resync, for
@@ -107,6 +116,31 @@ Notification creation must be idempotent when generated from recurring/budget ru
   late); Settings > Notifications shows an "Exact reminder times" row that
   opens the system screen. `USE_EXACT_ALARM` was not used: Google Play limits
   it to alarm/calendar apps.
+
+### Notification buttons (Android, 2026-10-19)
+Reminder notifications carry **Mark done** and **Snooze 1 hour**
+(`ReminderAction`; the enum name is the action id the OS hands back). Tapping
+one clears the notification without opening the app.
+- The plugin calls `reminderActionInBackground`
+  (`core/services/reminder_action_handler.dart`) in a background isolate, even
+  while the app is open, so it uses no GetX service. It opens the account's
+  own database file named in the payload (only if it exists: never creates
+  one) on a separate connection (`singleInstance: false`; sqflite shares single
+  instances across isolates), applies `ReminderCalculator.applyAction` (the
+  same as Mark done / a one-hour snooze in the app) and saves through
+  `ReminderRepository.update`, which queues the sync like any edit.
+- Then it reschedules only that reminder (`replaceSchedule` with `owns`
+  limited to its payload), using the device preferences re-read from storage.
+- If the app is running it is told through an `IsolateNameServer` port
+  (`listenForReminderActions` in `main.dart`): `DataChangeNotifier` reloads the
+  screens and `SyncEngine.notifyNewQueueItem` sends the change. Otherwise the
+  change is picked up and synced at the next launch.
+- A deleted or already completed reminder is left alone. A failed write is
+  logged (type only); the notification is already gone, the reminder unchanged.
+- The buttons work on a locked phone without the app lock. Android hides
+  actions of `private` notifications on a secure lock screen.
+- iOS: not wired (needs a Darwin category and background plugin registration
+  in `AppDelegate`), so iOS notifications have no buttons.
 
 ### Permission
 `NotificationPermissionState`: `granted`, `denied` (not allowed, may still
@@ -210,5 +244,5 @@ sign-out discards it.
 4. Never place FCM server credentials or the Supabase service-role key in the app.
 
 ### Not in this phase
-Notification action buttons (Done / Snooze from the notification), the FCM
-sender, a notification-center delete, and synced notification settings.
+Notification buttons on iOS, the FCM sender, a notification-center delete,
+and synced notification settings.

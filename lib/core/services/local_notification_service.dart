@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 
 import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -36,9 +37,12 @@ class LocalNotificationService {
   bool get supportsVibrationSetting => isSupported && _isAndroid;
 
   /// Sets up the plugin. [onTap] receives the payload of a notification the
-  /// user tapped while the app was running or in the background.
+  /// user tapped while the app was running or in the background. [onAction]
+  /// receives taps on the buttons of a reminder notification, always in a
+  /// background isolate, so it must be a top-level function.
   Future<void> initialize({
     required void Function(String? payload) onTap,
+    DidReceiveBackgroundNotificationResponseCallback? onAction,
   }) async {
     if (!isSupported) return;
     await refreshTimezone();
@@ -55,6 +59,7 @@ class LocalNotificationService {
       ),
       onDidReceiveNotificationResponse: (NotificationResponse response) =>
           onTap(response.payload),
+      onDidReceiveBackgroundNotificationResponse: onAction,
     );
     // Push messages the system shows while the app is closed use this channel
     // (named in AndroidManifest.xml), so it must exist before the first one.
@@ -181,6 +186,12 @@ class LocalNotificationService {
           sound,
           vibration,
           tag: owner,
+          actions: <AndroidNotificationAction>[
+            // Handled without opening the app; tapping one also clears the
+            // notification.
+            for (final ReminderAction action in ReminderAction.values)
+              AndroidNotificationAction(action.name, action.label),
+          ],
         ),
         androidScheduleMode: mode,
         title: n.title,
@@ -282,6 +293,7 @@ class LocalNotificationService {
     bool sound,
     bool vibration, {
     String? tag,
+    List<AndroidNotificationAction>? actions,
   }) => NotificationDetails(
     android: AndroidNotificationDetails(
       '${channel}_${sound ? 's' : 'q'}${vibration ? 'v' : 'n'}',
@@ -295,6 +307,7 @@ class LocalNotificationService {
       // Hides the text on a secure lock screen.
       visibility: NotificationVisibility.private,
       tag: tag,
+      actions: actions,
     ),
     iOS: DarwinNotificationDetails(presentSound: sound),
   );
