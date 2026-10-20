@@ -4,6 +4,8 @@
 	<dict>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Face ID unlocks Track Day when app lock is on.</string>
+		<key>NSContactsUsageDescription</key>
+		<string>Select contacts to easily add customers or vendors to your Khata ledger.</string>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>

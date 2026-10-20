@@ -17,6 +17,7 @@ class AppTextField extends StatefulWidget {
     this.obscureText = false,
     this.enabled = true,
     this.autofocus = false,
+    this.suffixIcon,
     this.validator,
     this.onChanged,
     this.onFieldSubmitted,
@@ -46,6 +47,7 @@ class AppTextField extends StatefulWidget {
   final bool obscureText;
   final bool enabled;
   final bool autofocus;
+  final Widget? suffixIcon;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onFieldSubmitted;
@@ -95,7 +97,7 @@ class _AppTextFieldState extends State<AppTextField> {
                 ),
                 onPressed: () => setState(() => _isObscured = !_isObscured),
               )
-            : null,
+            : widget.suffixIcon,
       ),
     );
   }

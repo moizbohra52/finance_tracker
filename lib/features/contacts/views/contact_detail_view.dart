@@ -350,12 +350,26 @@ class _ContactInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<(String, String?)> rows = <(String, String?)>[
-      ('Mobile', contact.mobile),
-      ('Email', contact.email),
-      ('Address', contact.address),
-      ('Notes', contact.notes),
-    ].where(((String, String?) r) => (r.$2 ?? '').isNotEmpty).toList();
+    final List<(String, String?)> rows = <(String, String?)>[];
+    final String? rawMobile = contact.mobile?.trim();
+    if (rawMobile != null && rawMobile.isNotEmpty) {
+      final List<String> numbers = rawMobile
+          .split(RegExp(r'[,;]'))
+          .map((String s) => s.trim())
+          .where((String s) => s.isNotEmpty)
+          .toList();
+      if (numbers.length > 1) {
+        for (int i = 0; i < numbers.length; i++) {
+          rows.add(('Mobile ${i + 1}', numbers[i]));
+        }
+      } else if (numbers.isNotEmpty) {
+        rows.add(('Mobile', numbers.first));
+      }
+    }
+    if ((contact.email ?? '').isNotEmpty) rows.add(('Email', contact.email));
+    if ((contact.address ?? '').isNotEmpty) rows.add(('Address', contact.address));
+    if ((contact.notes ?? '').isNotEmpty) rows.add(('Notes', contact.notes));
+
     if (rows.isEmpty) return const SizedBox.shrink();
     final TextTheme text = Theme.of(context).textTheme;
     return Column(

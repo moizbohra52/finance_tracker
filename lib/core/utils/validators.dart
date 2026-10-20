@@ -43,7 +43,17 @@ abstract final class Validators {
   static String? optionalMobile(String? value) {
     final String mobile = value?.trim() ?? '';
     if (mobile.isEmpty) return null;
-    return _mobile.hasMatch(mobile) ? null : 'Enter a valid mobile number';
+    final Iterable<String> parts = mobile
+        .split(RegExp(r'[,;]'))
+        .map((String s) => s.trim())
+        .where((String s) => s.isNotEmpty);
+    if (parts.isEmpty) return null;
+    for (final String part in parts) {
+      if (!_mobile.hasMatch(part)) {
+        return 'Enter a valid mobile number';
+      }
+    }
+    return null;
   }
 
   static final RegExp _amount = RegExp(r'^\d{1,13}(\.\d{1,2})?$');

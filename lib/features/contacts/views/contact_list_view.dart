@@ -8,6 +8,8 @@ import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
+import 'package:finance_tracker/features/contacts/services/device_contacts_service.dart';
+import 'package:finance_tracker/features/contacts/views/device_contact_picker_sheet.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/contact_list_item.dart';
 import 'package:flutter/material.dart';
@@ -15,16 +17,35 @@ import 'package:get/get.dart';
 
 void openAddContact() => Get.toNamed<void>(AppRoutes.contactForm);
 
+Future<void> openImportDeviceContact(BuildContext context) async {
+  final DeviceContactData? picked = await showDeviceContactPicker(context);
+  if (picked != null) {
+    await Get.toNamed<void>(
+      AppRoutes.contactForm,
+      arguments: <String, dynamic>{'initialDeviceContact': picked},
+    );
+  }
+}
+
 /// Standalone khata route (back-navigable from the dashboard).
 class ContactListView extends StatelessWidget {
   const ContactListView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: AppAppBar(title: 'Khata'),
-      body: SafeArea(child: ContactListContent()),
-      floatingActionButton: FloatingActionButton.extended(
+    return Scaffold(
+      appBar: AppAppBar(
+        title: 'Khata',
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'Import from phone contacts',
+            icon: const Icon(Icons.contacts_outlined),
+            onPressed: () => openImportDeviceContact(context),
+          ),
+        ],
+      ),
+      body: const SafeArea(child: ContactListContent()),
+      floatingActionButton: const FloatingActionButton.extended(
         onPressed: openAddContact,
         icon: Icon(Icons.person_add_alt_1_outlined),
         label: Text('Add contact'),
