@@ -17,6 +17,7 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
+import 'package:finance_tracker/features/contacts/views/send_reminder_sheet.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -55,6 +56,15 @@ class ContactDetailView extends GetView<ContactDetailController> {
           title: contact?.name ?? 'Contact',
           actions: <Widget>[
             if (contact != null) ...<Widget>[
+              IconButton(
+                tooltip: 'Send reminder via WhatsApp / SMS',
+                icon: const Icon(Icons.send_rounded),
+                onPressed: () => SendReminderSheet.show(
+                  context,
+                  contact: contact,
+                  balance: controller.balance.value,
+                ),
+              ),
               IconButton(
                 tooltip: 'Add reminder',
                 icon: const Icon(Icons.alarm_add_outlined),
@@ -138,7 +148,10 @@ class ContactDetailView extends GetView<ContactDetailController> {
                 ],
               ),
             const SizedBox(height: AppSpacing.lg),
-            _ContactInfo(contact: contact),
+            _ContactInfo(
+              contact: contact,
+              balance: controller.balance.value,
+            ),
           ],
         ),
       ),
@@ -187,6 +200,21 @@ class _BalanceHeader extends GetView<ContactDetailController> {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            if (balance != Decimal.zero) ...<Widget>[
+              const SizedBox(height: AppSpacing.md),
+              FilledButton.tonalIcon(
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                icon: const Icon(Icons.send_rounded, size: 18),
+                label: const Text('Send Reminder (WhatsApp / SMS)'),
+                onPressed: () => SendReminderSheet.show(
+                  context,
+                  contact: contact,
+                  balance: balance,
+                ),
+              ),
+            ],
           ],
         ),
       );
@@ -344,9 +372,10 @@ class _EntryTile extends GetView<ContactDetailController> {
 }
 
 class _ContactInfo extends StatelessWidget {
-  const _ContactInfo({required this.contact});
+  const _ContactInfo({required this.contact, required this.balance});
 
   final Contact contact;
+  final Decimal balance;
 
   @override
   Widget build(BuildContext context) {
@@ -384,13 +413,28 @@ class _ContactInfo extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: <Widget>[
                       SizedBox(
                         width: 80,
                         child: Text(r.$1, style: text.bodyMedium),
                       ),
                       Expanded(child: Text(r.$2!, style: text.titleSmall)),
+                      if (r.$1.startsWith('Mobile'))
+                        IconButton(
+                          tooltip: 'Send reminder via WhatsApp',
+                          icon: const Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 20,
+                            color: Color(0xFF25D366),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => SendReminderSheet.show(
+                            context,
+                            contact: contact,
+                            balance: balance,
+                          ),
+                        ),
                     ],
                   ),
                 ),

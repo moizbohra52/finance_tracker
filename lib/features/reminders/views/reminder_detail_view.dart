@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
@@ -8,8 +9,10 @@ import 'package:finance_tracker/core/widgets/app_pickers.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
+import 'package:finance_tracker/features/contacts/views/send_reminder_sheet.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_permission_banner.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/reminders/widgets/reminder_visuals.dart';
@@ -88,11 +91,27 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
   Widget build(BuildContext context) {
     return Obx(() {
       final Reminder? reminder = controller.byId(_id);
+      final Contact? contactEntity = reminder?.contactId == null
+          ? null
+          : controller.contacts.firstWhereOrNull(
+              (Contact c) => c.id == reminder!.contactId,
+            );
       return Scaffold(
         appBar: AppAppBar(
           title: 'Reminder',
           actions: <Widget>[
             if (reminder != null) ...<Widget>[
+              if (contactEntity != null)
+                IconButton(
+                  tooltip: 'Send reminder via WhatsApp / SMS',
+                  icon: const Icon(Icons.send_rounded),
+                  onPressed: () => SendReminderSheet.show(
+                    context,
+                    contact: contactEntity,
+                    balance: reminder.amount ?? Decimal.zero,
+                    customNote: reminder.title,
+                  ),
+                ),
               IconButton(
                 tooltip: 'Edit reminder',
                 icon: const Icon(Icons.edit_outlined),
@@ -109,12 +128,12 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
             ],
           ],
         ),
-        body: SafeArea(child: _body(context, reminder)),
+        body: SafeArea(child: _body(context, reminder, contactEntity)),
       );
     });
   }
 
-  Widget _body(BuildContext context, Reminder? reminder) {
+  Widget _body(BuildContext context, Reminder? reminder, Contact? contactEntity) {
     if (controller.isLoading.value) {
       return const LoadingState(message: 'Loading reminder');
     }
@@ -209,6 +228,22 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
               ],
             ),
           ),
+          if (contactEntity != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: const Icon(Icons.send_rounded, size: 18),
+              label: const Text('Send Reminder (WhatsApp / SMS)'),
+              onPressed: () => SendReminderSheet.show(
+                context,
+                contact: contactEntity,
+                balance: reminder.amount ?? Decimal.zero,
+                customNote: reminder.title,
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.lg),
           SubmitErrorMessage(controller.action),
           Obx(
