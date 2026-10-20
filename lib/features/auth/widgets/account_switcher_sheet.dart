@@ -57,6 +57,37 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
     unawaited(Get.toNamed<void>(AppRoutes.addAccount));
   }
 
+  void _confirmRemove(BuildContext context, SavedLogin login) {
+    showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Remove account?'),
+        content: Text(
+          'Remove ${login.label} (${login.email}) from this device? '
+          'You can sign in to it again later.',
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(dialogContext).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    ).then((bool? confirmed) {
+      if (confirmed == true) {
+        controller.removeSavedAccount(login.userId);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
@@ -93,6 +124,9 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
                 onTap: login.userId == activeId
                     ? () => Navigator.of(context).pop()
                     : () => _switch(context, login),
+                onRemove: login.userId == activeId
+                    ? null
+                    : () => _confirmRemove(context, login),
               ),
             const Divider(height: AppSpacing.md),
             ListTile(
@@ -122,11 +156,13 @@ class _AccountRow extends StatefulWidget {
     required this.login,
     required this.active,
     required this.onTap,
+    this.onRemove,
   });
 
   final SavedLogin login;
   final bool active;
   final VoidCallback onTap;
+  final VoidCallback? onRemove;
 
   @override
   State<_AccountRow> createState() => _AccountRowState();
@@ -200,7 +236,17 @@ class _AccountRowState extends State<_AccountRow> {
         ),
         trailing: widget.active
             ? Icon(Icons.check_circle_rounded, color: colors.primary)
-            : null,
+            : widget.onRemove != null
+                ? IconButton(
+                    icon: Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: colors.onSurfaceVariant,
+                    ),
+                    tooltip: 'Remove account',
+                    onPressed: widget.onRemove,
+                  )
+                : null,
         onTap: widget.onTap,
       ),
     );

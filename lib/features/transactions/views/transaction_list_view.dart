@@ -727,7 +727,7 @@ class _GroupedList extends GetView<TransactionController> {
                     mainAxisSize: MainAxisSize.min,
                     children: <Widget>[
                       Text(
-                        label.toUpperCase(),
+                        label,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w800,
                           color:

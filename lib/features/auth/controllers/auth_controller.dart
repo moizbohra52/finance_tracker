@@ -29,9 +29,14 @@ class AuthController extends GetxController {
 
   bool get isSignedIn => _authRepository.isSignedIn;
 
+  String? _signingOutUserId;
+
   /// Signs the active account out of this device. AuthController itself then
   /// moves on (to another signed-in account, or to sign-in).
-  Future<void> signOut() => _authRepository.signOut();
+  Future<void> signOut([String? userId]) async {
+    _signingOutUserId = userId ?? _authRepository.currentUserId ?? _accounts.activeUserId;
+    await _authRepository.signOut();
+  }
 
   @override
   void onInit() {
@@ -58,9 +63,11 @@ class AuthController extends GetxController {
       case AuthStatus.signedIn:
         unawaited(_onSignedIn());
       case AuthStatus.signedOut:
+        final String? leaving = _signingOutUserId;
+        _signingOutUserId = null;
         // Shows another signed-in account or the sign-in screen, and clears
         // the signed-out account's data once its screens are gone.
-        unawaited(_accounts.handleSignedOut());
+        unawaited(_accounts.handleSignedOut(leaving));
       case AuthStatus.passwordRecovery:
         Get.offAllNamed<void>(AppRoutes.resetPassword);
     }

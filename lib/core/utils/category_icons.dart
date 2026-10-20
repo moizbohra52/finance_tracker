@@ -52,7 +52,7 @@ abstract final class CategoryIcons {
     TransactionType.payment_made => Icons.call_made_rounded,
     TransactionType.adjustment_in ||
     TransactionType.adjustment_out => Icons.tune_rounded,
-    TransactionType.opening_balance => Icons.flag_outlined,
+    TransactionType.opening_balance => Icons.account_balance_wallet_rounded,
   };
 }
 
@@ -75,7 +75,8 @@ extension TransactionTypeLabel on TransactionType {
     TransactionType.income ||
     TransactionType.transfer_in ||
     TransactionType.adjustment_in ||
-    TransactionType.payment_received => true,
+    TransactionType.payment_received ||
+    TransactionType.opening_balance => true,
     _ => false,
   };
 }

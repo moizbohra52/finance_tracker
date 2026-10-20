@@ -17,6 +17,7 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/entities/transaction_summary.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 
 /// In-memory finance data shared by the fake repositories. [nextError] makes
@@ -270,6 +271,51 @@ class FakeTransactionRepository implements TransactionRepository {
     endDate: end?.subtract(const Duration(milliseconds: 1)),
     limit: 100000,
   );
+
+  @override
+  Future<TransactionSummary> getTransactionSummary({
+    String? accountId,
+    String? categoryId,
+    String? contactId,
+    TransactionType? type,
+    String? search,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final List<Transaction> all = await getTransactions(
+      accountId: accountId,
+      categoryId: categoryId,
+      contactId: contactId,
+      type: type,
+      search: search,
+      startDate: startDate,
+      endDate: endDate,
+      limit: 1000000,
+    );
+    Decimal inflow = Decimal.zero;
+    Decimal outflow = Decimal.zero;
+    for (final Transaction t in all) {
+      final bool isInflow = t.type == TransactionType.income ||
+          t.type == TransactionType.transfer_in ||
+          t.type == TransactionType.adjustment_in ||
+          t.type == TransactionType.payment_received ||
+          t.type == TransactionType.opening_balance;
+      final bool isOutflow = t.type == TransactionType.expense ||
+          t.type == TransactionType.transfer_out ||
+          t.type == TransactionType.adjustment_out ||
+          t.type == TransactionType.payment_made;
+      if (isInflow) {
+        inflow += t.amount;
+      } else if (isOutflow) {
+        outflow += t.amount;
+      }
+    }
+    return TransactionSummary(
+      totalInflow: inflow,
+      totalOutflow: outflow,
+      totalCount: all.length,
+    );
+  }
 
   @override
   Future<Transaction> getTransactionById(String id) async {

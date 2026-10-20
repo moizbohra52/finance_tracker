@@ -232,11 +232,17 @@ class AccountSwitchController extends GetxController {
   /// ended. Its local data goes, as it always has at sign-out
   /// (docs/04_SECURITY_RLS.md). The most recently used other account takes
   /// over; with none, the sign-in screen shows.
-  Future<void> handleSignedOut() async {
-    final String? leaving = _activeId;
+  Future<void> handleSignedOut([String? userId]) async {
+    final String? leaving = userId ?? _activeId ?? _auth.currentUserId;
     _activeId = null;
     if (leaving != null) await _forget(leaving, deleteData: false);
     await _takeOver(_others(leaving), discard: leaving);
+  }
+
+  /// Explicitly removes an account saved on this device and deletes its local database.
+  Future<void> removeSavedAccount(String userId) async {
+    if (userId == activeUserId) return;
+    await _forget(userId, deleteData: true);
   }
 
   /// At start-up without a session: the most recently used saved account

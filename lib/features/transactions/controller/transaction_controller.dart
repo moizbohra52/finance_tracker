@@ -1,7 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
-import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
@@ -10,6 +9,7 @@ import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/entities/transaction_summary.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:get/get.dart';
@@ -75,19 +75,13 @@ class TransactionController extends GetxController {
       categoryFilter.value != null ||
       rangeFilter.value != null;
 
-  Decimal get totalInflow => items.fold(
-        Decimal.zero,
-        (Decimal sum, Transaction t) =>
-            t.type.isInflow && !TransferLegs.isLeg(t) ? sum + t.amount : sum,
-      );
+  final Rx<Decimal> _totalInflow = Decimal.zero.obs;
+  final Rx<Decimal> _totalOutflow = Decimal.zero.obs;
+  final RxInt totalCount = 0.obs;
 
-  Decimal get totalOutflow => items.fold(
-        Decimal.zero,
-        (Decimal sum, Transaction t) =>
-            !t.type.isInflow && !TransferLegs.isLeg(t) ? sum + t.amount : sum,
-      );
-
-  Decimal get netAmount => totalInflow - totalOutflow;
+  Decimal get totalInflow => _totalInflow.value;
+  Decimal get totalOutflow => _totalOutflow.value;
+  Decimal get netAmount => _totalInflow.value - _totalOutflow.value;
 
   // GetX does not dispose workers, and the notifier outlives this
   // controller, so without this a closed controller keeps reloading.
@@ -178,15 +172,41 @@ class TransactionController extends GetxController {
         offset: offset,
       );
 
-  /// Reloads from the first page. A [silent] reload keeps the list visible.
+  Future<TransactionSummary> _fetchSummary() =>
+      _transactionRepository.getTransactionSummary(
+        type: typeFilter.value,
+        accountId: accountFilter.value,
+        categoryId: categoryFilter.value,
+        search: searchText.value,
+        startDate: rangeFilter.value?.start,
+        endDate: rangeFilter.value == null
+            ? null
+            : DateTime(
+                rangeFilter.value!.end.year,
+                rangeFilter.value!.end.month,
+                rangeFilter.value!.end.day,
+                23,
+                59,
+                59,
+              ),
+      );
+
+  /// Reloads from the first page and computes totals for the full dataset.
+  /// A [silent] reload keeps the list visible.
   Future<void> load({bool silent = false}) async {
     final int generation = ++_generation;
     if (!silent) isLoading.value = true;
     error.value = null;
     try {
-      final List<Transaction> page = await _fetch(0);
+      final (List<Transaction> page, TransactionSummary summary) = await wait2(
+        _fetch(0),
+        _fetchSummary(),
+      );
       if (generation != _generation) return;
       items.assignAll(page);
+      _totalInflow.value = summary.totalInflow;
+      _totalOutflow.value = summary.totalOutflow;
+      totalCount.value = summary.totalCount;
       hasMore.value = page.length == pageSize;
     } on AppException catch (failure) {
       if (generation == _generation) error.value = failure.message;

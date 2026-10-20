@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
+import 'package:finance_tracker/core/constants/app_env.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/domain/entities/saved_login.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,7 +17,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SavedLoginStore {
   SavedLoginStore(this._preferences);
 
-  static const String _key = 'auth.saved_logins';
+  static String get _key => 'auth.saved_logins_${AppEnv.current.name}';
+  static const String _legacyKey = 'auth.saved_logins';
 
   /// Like social apps, a device keeps a handful of accounts: each one keeps
   /// its own local database and its own scheduled reminders.
@@ -24,14 +27,29 @@ class SavedLoginStore {
   final SharedPreferences _preferences;
   List<_Entry>? _cache;
 
-  /// Every saved account, most recently used first.
-  List<SavedLogin> logins() =>
-      List<SavedLogin>.unmodifiable(_entries.map((_Entry e) => e.login));
+  /// Every saved account with a valid session in the current environment,
+  /// most recently used first.
+  List<SavedLogin> logins() => List<SavedLogin>.unmodifiable(
+        _entries
+            .where((_Entry e) => e.session != null && e.session!.isNotEmpty)
+            .map((_Entry e) => e.login),
+      );
 
-  SavedLogin? login(String userId) => _find(userId)?.login;
+  SavedLogin? login(String userId) {
+    final _Entry? entry = _find(userId);
+    if (entry == null || entry.session == null || entry.session!.isEmpty) {
+      return null;
+    }
+    return entry.login;
+  }
 
   /// The saved session of [userId], or null when there is none.
-  String? sessionFor(String userId) => _find(userId)?.session;
+  String? sessionFor(String userId) {
+    final _Entry? entry = _find(userId);
+    final String? session = entry?.session;
+    if (session == null || session.isEmpty) return null;
+    return session;
+  }
 
   /// Adds or updates [login]. A null [session] keeps the one already saved.
   /// Throws [StorageFailure] when it cannot be written.
@@ -72,22 +90,85 @@ class SavedLoginStore {
 
   List<_Entry> _read() {
     try {
-      final String? raw = _preferences.getString(_key);
+      String? raw = _preferences.getString(_key);
+      if (raw == null || raw.isEmpty) {
+        // Migrate legacy unscoped data if present and valid for this environment.
+        final String? legacy = _preferences.getString(_legacyKey);
+        if (legacy != null && legacy.isNotEmpty) {
+          final Object? decodedLegacy = jsonDecode(legacy);
+          if (decodedLegacy is List<Object?>) {
+            final List<_Entry> valid = <_Entry>[];
+            for (final Object? item in decodedLegacy) {
+              if (_Entry.fromJson(item) case final _Entry entry) {
+                if (entry.session != null &&
+                    _isSessionForCurrentEnv(entry.session!)) {
+                  valid.add(entry);
+                }
+              }
+            }
+            if (valid.isNotEmpty) {
+              unawaited(
+                _preferences.setString(
+                  _key,
+                  jsonEncode(<Map<String, Object?>>[
+                    for (final _Entry entry in valid) entry.toJson(),
+                  ]),
+                ),
+              );
+            }
+          }
+          unawaited(_preferences.remove(_legacyKey));
+          raw = _preferences.getString(_key);
+        }
+      }
       if (raw == null || raw.isEmpty) return <_Entry>[];
       final Object? decoded = jsonDecode(raw);
       if (decoded is! List<Object?>) return <_Entry>[];
       return _sorted(<_Entry>[
         for (final Object? item in decoded)
-          if (_Entry.fromJson(item) case final _Entry entry) entry,
+          if (_Entry.fromJson(item) case final _Entry entry)
+            if (entry.session == null ||
+                _isSessionForCurrentEnv(entry.session!))
+              entry,
       ]);
     } on Object catch (error) {
-      // Unreadable data only costs the saved accounts: their users sign in
-      // again. Never log the stored text, it holds sessions.
       developer.log(
         'Saved accounts could not be read: ${error.runtimeType}',
         name: 'auth',
       );
       return <_Entry>[];
+    }
+  }
+
+  /// Validates that a stored session token was issued for the active Supabase project.
+  /// If [sessionString] is not a JSON object containing a Supabase JWT (e.g. mock test session),
+  /// it is accepted as valid.
+  static bool _isSessionForCurrentEnv(String sessionString) {
+    try {
+      final Object? decoded = jsonDecode(sessionString);
+      if (decoded is! Map<String, dynamic>) return true;
+      final Object? accessToken = decoded['access_token'];
+      if (accessToken is! String || accessToken.isEmpty) {
+        // Simple test sessions or non-JWT mocks are allowed
+        return true;
+      }
+      final List<String> parts = accessToken.split('.');
+      if (parts.length < 2) return true;
+      final String normalized = base64Url.normalize(parts[1]);
+      final String payloadJson = utf8.decode(base64Url.decode(normalized));
+      final Object? payload = jsonDecode(payloadJson);
+      if (payload is! Map<String, dynamic>) return true;
+      final Object? iss = payload['iss'];
+      if (iss is! String || iss.isEmpty) return true;
+      final Uri? issUri = Uri.tryParse(iss);
+      final Uri? envUri = Uri.tryParse(AppEnv.supabaseUrl);
+      if (issUri != null && envUri != null && issUri.host.isNotEmpty) {
+        return issUri.host.toLowerCase() == envUri.host.toLowerCase();
+      }
+      return true;
+    } catch (_) {
+      // Non-JSON strings (e.g. test dummy tokens) are treated as valid.
+      return true;
     }
   }
 

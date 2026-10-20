@@ -51,5 +51,8 @@ Future<void> confirmAndSignOut(BuildContext context) async {
   );
 
   if (confirmed != true) return;
-  await Get.find<AuthController>().signOut();
+  final String? activeId = Get.isRegistered<AccountSwitchController>()
+      ? Get.find<AccountSwitchController>().activeUserId
+      : null;
+  await Get.find<AuthController>().signOut(activeId);
 }

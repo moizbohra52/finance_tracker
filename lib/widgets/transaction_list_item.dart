@@ -43,6 +43,11 @@ class TransactionListItem extends StatelessWidget {
     required String Function(String accountId) accountName,
   }) {
     if (categoryName != null) return categoryName;
+    if (t.type == TransactionType.opening_balance) {
+      return (t.description != null && t.description!.trim().isNotEmpty)
+          ? t.description!
+          : 'Opening balance';
+    }
     if (TransferLegs.isLeg(t)) {
       for (final Transaction other in nearby) {
         if (other.transferId == t.transferId && other.id != t.id) {
@@ -67,9 +72,10 @@ class TransactionListItem extends StatelessWidget {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bool isLeg = TransferLegs.isLeg(transaction);
+    final bool isOpening = transaction.type == TransactionType.opening_balance;
     final bool inflow = transaction.type.isInflow;
-    final bool isIncome = inflow && !isLeg;
-    final bool isExpense = !inflow && !isLeg;
+    final bool isIncome = (inflow && !isLeg) || isOpening;
+    final bool isExpense = !inflow && !isLeg && !isOpening;
 
     final Color badgeColor = isIncome
         ? money.income
@@ -86,14 +92,16 @@ class TransactionListItem extends StatelessWidget {
     final String sign = isIncome
         ? '+'
         : isExpense
-        ? '-'
-        : (inflow ? '+' : '-');
+        ? '−'
+        : (inflow ? '+' : '−');
 
     final String badgeLabel = isLeg
         ? (inflow ? 'Transfer in' : 'Transfer out')
         : transaction.type.label;
 
-    final IconData flowIcon = isIncome
+    final IconData flowIcon = isOpening
+        ? Icons.account_balance_wallet_rounded
+        : isIncome
         ? Icons.arrow_downward_rounded
         : isExpense
         ? Icons.arrow_upward_rounded

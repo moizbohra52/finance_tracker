@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/supabase_error_mapper.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
@@ -5,6 +6,7 @@ import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/models/transaction.dart';
 import 'package:finance_tracker/data/repositories/payloads.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/entities/transaction_summary.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -141,6 +143,159 @@ class TransactionRepository {
                 TransactionModel.fromJson(json).toEntity(),
           )
           .toList();
+    });
+  }
+
+  /// Computes the aggregate totals (total inflow, total outflow, and total count)
+  /// for all transactions matching the given filters, without pagination.
+  Future<TransactionSummary> getTransactionSummary({
+    String? accountId,
+    String? categoryId,
+    String? contactId,
+    TransactionType? type,
+    String? search,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    if (_db != null) {
+      final List<String> whereClauses = <String>[
+        'deleted_at IS NULL',
+        'type IN (${_knownTypes.map((t) => "'$t'").join(', ')})',
+      ];
+      final List<Object> whereArgs = <Object>[];
+
+      if (accountId != null) {
+        whereClauses.add('account_id = ?');
+        whereArgs.add(accountId);
+      }
+      if (categoryId != null) {
+        whereClauses.add('category_id = ?');
+        whereArgs.add(categoryId);
+      }
+      if (contactId != null) {
+        whereClauses.add('contact_id = ?');
+        whereArgs.add(contactId);
+      }
+      if (type != null) {
+        whereClauses.add('type = ?');
+        whereArgs.add(type.name);
+      }
+      if (startDate != null) {
+        whereClauses.add('transaction_date >= ?');
+        whereArgs.add(startDate.toUtc().toIso8601String());
+      }
+      if (endDate != null) {
+        whereClauses.add('transaction_date <= ?');
+        whereArgs.add(endDate.toUtc().toIso8601String());
+      }
+      final String term = (search ?? '').replaceAll(_filterSyntax, ' ').trim();
+      if (term.isNotEmpty) {
+        whereClauses.add('(note LIKE ? OR description LIKE ?)');
+        whereArgs.add('%$term%');
+        whereArgs.add('%$term%');
+      }
+
+      final List<Map<String, dynamic>> rows = await _db.db.query(
+        'transactions',
+        columns: <String>['type', 'amount', 'transfer_id'],
+        where: whereClauses.join(' AND '),
+        whereArgs: whereArgs,
+      );
+
+      Decimal inflow = Decimal.zero;
+      Decimal outflow = Decimal.zero;
+
+      for (final Map<String, dynamic> row in rows) {
+        final String rawType = row['type'] as String;
+        final String rawAmount = row['amount'] as String;
+        final Decimal amount = Decimal.tryParse(rawAmount) ?? Decimal.zero;
+
+        final bool isInflow = rawType == 'income' ||
+            rawType == 'transfer_in' ||
+            rawType == 'adjustment_in' ||
+            rawType == 'payment_received' ||
+            rawType == 'opening_balance';
+
+        final bool isOutflow = rawType == 'expense' ||
+            rawType == 'transfer_out' ||
+            rawType == 'adjustment_out' ||
+            rawType == 'payment_made';
+
+        if (isInflow) {
+          inflow += amount;
+        } else if (isOutflow) {
+          outflow += amount;
+        }
+      }
+
+      return TransactionSummary(
+        totalInflow: inflow,
+        totalOutflow: outflow,
+        totalCount: rows.length,
+      );
+    }
+
+    return guardSupabase(() async {
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> query = _supabaseClient
+          .from('transactions')
+          .select('type, amount, transfer_id')
+          .isFilter('deleted_at', null)
+          .inFilter('type', _knownTypes);
+
+      if (accountId != null) query = query.eq('account_id', accountId);
+      if (categoryId != null) query = query.eq('category_id', categoryId);
+      if (contactId != null) query = query.eq('contact_id', contactId);
+      if (type != null) query = query.eq('type', type.name);
+      if (startDate != null) {
+        query = query.gte(
+          'transaction_date',
+          startDate.toUtc().toIso8601String(),
+        );
+      }
+      if (endDate != null) {
+        query = query.lte(
+          'transaction_date',
+          endDate.toUtc().toIso8601String(),
+        );
+      }
+      final String term = (search ?? '').replaceAll(_filterSyntax, ' ').trim();
+      if (term.isNotEmpty) {
+        query = query.or('note.ilike.%$term%,description.ilike.%$term%');
+      }
+
+      final List<Map<String, dynamic>> rows = await query;
+      Decimal inflow = Decimal.zero;
+      Decimal outflow = Decimal.zero;
+
+      for (final Map<String, dynamic> row in rows) {
+        final String rawType = row['type'] as String;
+        final Object? rawAmount = row['amount'];
+        final Decimal amount =
+            Decimal.tryParse(rawAmount?.toString() ?? '0') ?? Decimal.zero;
+
+        final bool isInflow = rawType == 'income' ||
+            rawType == 'transfer_in' ||
+            rawType == 'adjustment_in' ||
+            rawType == 'payment_received' ||
+            rawType == 'opening_balance';
+
+        final bool isOutflow = rawType == 'expense' ||
+            rawType == 'transfer_out' ||
+            rawType == 'adjustment_out' ||
+            rawType == 'payment_made';
+
+        if (isInflow) {
+          inflow += amount;
+        } else if (isOutflow) {
+          outflow += amount;
+        }
+      }
+
+      return TransactionSummary(
+        totalInflow: inflow,
+        totalOutflow: outflow,
+        totalCount: rows.length,
+      );
     });
   }
 

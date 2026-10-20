@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer' as developer;
 
 import 'package:finance_tracker/bindings/initial_binding.dart';
@@ -47,6 +48,20 @@ Future<void> main() async {
     'Starting ${AppConstants.appName} | Environment: [${AppEnv.current.name.toUpperCase()}] | Local DB: ${AppEnv.databaseName}',
     name: 'AppEnv',
   );
+  final SharedPreferences preferences = await SharedPreferences.getInstance();
+  final String? lastEnv = preferences.getString('app.last_env');
+  final String currentEnv = AppEnv.current.name;
+
+  if (lastEnv != null && lastEnv != currentEnv) {
+    developer.log(
+      'Environment switch detected: [$lastEnv] -> [$currentEnv]. '
+      'Sanitizing foreign session to prevent data/auth conflicts.',
+      name: 'AppEnv',
+    );
+    await _sanitizeEnvironmentStorage(preferences);
+  }
+  await preferences.setString('app.last_env', currentEnv);
+
   // Restores the persisted session from local storage before the first frame
   // (no network needed), so the splash screen can route immediately.
   await Supabase.initialize(
@@ -54,6 +69,17 @@ Future<void> main() async {
     publishableKey: AppEnv.supabasePublishableKey,
   );
   final SupabaseClient client = Supabase.instance.client;
+
+  // Extra guard: If Supabase still restored a session from a foreign URL, clear it locally.
+  final Session? restored = client.auth.currentSession;
+  if (restored != null &&
+      !_isSessionValidForEnv(restored.accessToken, AppEnv.supabaseUrl)) {
+    developer.log(
+      'Foreign Supabase session detected at startup. Clearing local session.',
+      name: 'AppEnv',
+    );
+    await client.auth.signOut(scope: SignOutScope.local);
+  }
 
   // The signed-in account's own database file (each signed-in account has
   // one; see AccountSwitchController).
@@ -70,7 +96,6 @@ Future<void> main() async {
     notifier: dataChangeNotifier,
   );
 
-  final SharedPreferences preferences = await SharedPreferences.getInstance();
   final StorageService storageService = StorageService(preferences);
   final ThemeController themeController = ThemeController(storageService);
   final AuthRepository authRepository = AuthRepository(client);
@@ -213,3 +238,53 @@ class FinanceTrackerApp extends StatelessWidget {
     });
   }
 }
+
+/// Validates that an access token was issued by the target Supabase URL.
+bool _isSessionValidForEnv(String? accessToken, String targetUrl) {
+  if (accessToken == null || accessToken.isEmpty) return true;
+  try {
+    final List<String> parts = accessToken.split('.');
+    if (parts.length < 2) return true;
+    final String normalized = base64Url.normalize(parts[1]);
+    final String payloadJson = utf8.decode(base64Url.decode(normalized));
+    final Object? payload = jsonDecode(payloadJson);
+    if (payload is! Map<String, dynamic>) return true;
+    final Object? iss = payload['iss'];
+    if (iss is! String || iss.isEmpty) return true;
+    final Uri? issUri = Uri.tryParse(iss);
+    final Uri? targetUri = Uri.tryParse(targetUrl);
+    if (issUri != null && targetUri != null && issUri.host.isNotEmpty) {
+      return issUri.host.toLowerCase() == targetUri.host.toLowerCase();
+    }
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Cleans up foreign environment sessions from SharedPreferences when switching
+/// between dev (debug) and prod (release) builds on the same device.
+Future<void> _sanitizeEnvironmentStorage(SharedPreferences preferences) async {
+  final Set<String> keys = preferences.getKeys();
+  for (final String key in keys) {
+    if (key == 'supabase.auth.token' ||
+        (key.startsWith('sb-') && key.endsWith('-auth-token'))) {
+      final String? raw = preferences.getString(key);
+      if (raw != null) {
+        try {
+          final Object? decoded = jsonDecode(raw);
+          if (decoded is Map<String, dynamic>) {
+            final Object? token = decoded['access_token'];
+            if (token is String &&
+                !_isSessionValidForEnv(token, AppEnv.supabaseUrl)) {
+              await preferences.remove(key);
+            }
+          }
+        } catch (_) {
+          await preferences.remove(key);
+        }
+      }
+    }
+  }
+}
+

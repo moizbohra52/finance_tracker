@@ -16,7 +16,7 @@ import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/main.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -406,22 +406,43 @@ Future<void> pumpApp(
 
 /// Scrolls [finder] into view, taps it and waits for the UI to settle.
 Future<void> tapAndSettle(WidgetTester tester, Finder finder) async {
-  if (finder.evaluate().isEmpty) {
-    // Lazily built lists only create rows near the viewport.
-    await tester.scrollUntilVisible(
-      finder,
-      200,
-      scrollable: find
-          .byWidgetPredicate(
-            (Widget widget) =>
-                widget is Scrollable &&
-                widget.axisDirection == AxisDirection.down,
-          )
-          .first,
+  Future<void> scrollIntoView() async {
+    final Finder editableScrollables = find.descendant(
+      of: find.byType(EditableText),
+      matching: find.byType(Scrollable),
     );
+    final Set<Element> excluded = editableScrollables.evaluate().toSet();
+    final Finder pageScrollable = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is Scrollable &&
+          widget.axisDirection == AxisDirection.down,
+    );
+    final List<Element> candidates = pageScrollable
+        .evaluate()
+        .where((Element e) => !excluded.contains(e))
+        .toList();
+    if (candidates.isNotEmpty) {
+      await tester.scrollUntilVisible(
+        finder,
+        200,
+        scrollable: find.byElementPredicate((Element e) => e == candidates.last),
+      );
+    }
   }
-  await tester.ensureVisible(finder);
-  await tester.pumpAndSettle();
+
+  if (finder.evaluate().isEmpty) {
+    await scrollIntoView();
+  }
+  try {
+    await tester.ensureVisible(finder);
+    await tester.pumpAndSettle();
+  } catch (_) {}
+
+  if (finder.evaluate().isEmpty) {
+    await scrollIntoView();
+    await tester.pumpAndSettle();
+  }
+
   await tester.tap(finder);
   await tester.pumpAndSettle();
 }

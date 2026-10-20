@@ -163,7 +163,13 @@ class _Details extends StatelessWidget {
                   _Row('From', list.accountName(transfer.fromAccountId)),
                   _Row('To', list.accountName(transfer.toAccountId)),
                 ] else ...<Widget>[
-                  _Row('Category', category?.name ?? 'Uncategorised'),
+                  _Row(
+                    'Category',
+                    category?.name ??
+                        (transaction.type == TransactionType.opening_balance
+                            ? 'Opening Balance'
+                            : 'Uncategorised'),
+                  ),
                   _Row('Account', list.accountName(transaction.accountId)),
                 ],
                 _Row(
