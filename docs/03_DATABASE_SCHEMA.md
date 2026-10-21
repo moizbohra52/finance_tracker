@@ -72,7 +72,7 @@ transaction_date TIMESTAMPTZ
 note TEXT
 description TEXT
 payment_method TEXT
-attachment_url TEXT nullable
+attachment_url TEXT nullable (receipt photo: storage object name `<user id>/<transaction id>` in the private `receipts` bucket, not a URL)
 transfer_id UUID nullable -- shared by both legs of a transfer
 created_at
 updated_at
@@ -257,6 +257,13 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    preference column, so an unknown `upi_id` column fails the upload. The
    local SQLite file moves to version 2 (`AppDatabase.upgrade` adds the same
    column), the first local schema upgrade.
+
+10. `20261021100000_receipts_bucket.sql` - the private `receipts` storage
+   bucket (2 MiB, jpeg/png/webp) with owner-only policies, same pattern as
+   `avatars` (see docs/04_SECURITY_RLS.md). No table change:
+   `transactions.attachment_url` already exists and now holds the receipt's
+   object name. Apply before shipping receipts; without the bucket, uploads
+   fail and photos stay queued on the phone (nothing is lost).
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

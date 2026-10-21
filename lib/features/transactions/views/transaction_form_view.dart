@@ -17,6 +17,7 @@ import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/categories/controller/category_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
+import 'package:finance_tracker/features/transactions/widgets/receipt_field.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/category_picker.dart';
 import 'package:flutter/material.dart';
@@ -45,6 +46,10 @@ class _TransactionFormViewState extends State<TransactionFormView> {
   String? _categoryId;
   late DateTime _date;
   late TimeOfDay _time;
+
+  // Applied on Save, so leaving the form discards them.
+  ({Uint8List bytes, String fileName})? _newReceipt;
+  bool _removeReceipt = false;
 
   @override
   void initState() {
@@ -110,6 +115,8 @@ class _TransactionFormViewState extends State<TransactionFormView> {
       categoryId: _categoryId,
       date: combinedDate,
       note: note.isEmpty ? null : note,
+      newReceipt: _newReceipt,
+      removeReceipt: _removeReceipt && _newReceipt == null,
     );
     if (!saved) return;
     AppSnackbar.show(
@@ -235,10 +242,9 @@ class _TransactionFormViewState extends State<TransactionFormView> {
                 prefixStyle: text.displaySmall,
                 hintText: '0.00',
                 hintStyle: text.displaySmall?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.35),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                 ),
               ),
             ),
@@ -294,6 +300,14 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               maxLines: 5,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ReceiptField(
+              existingPath: _existing?.attachmentUrl,
+              transactionId: _existing?.id ?? _id,
+              onPicked: (({Uint8List bytes, String fileName})? receipt) =>
+                  _newReceipt = receipt,
+              onRemoved: () => _removeReceipt = true,
             ),
             const SizedBox(height: AppSpacing.lg),
             SubmitErrorMessage(_controller.save),

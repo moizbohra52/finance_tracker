@@ -14,6 +14,7 @@ class TransactionModel {
   final String? description;
   final String? paymentMethod;
   final String? transferId;
+  final String? attachmentUrl;
   final String createdAt;
   final String updatedAt;
   final String? deletedAt;
@@ -31,6 +32,7 @@ class TransactionModel {
     this.description,
     this.paymentMethod,
     this.transferId,
+    this.attachmentUrl,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -50,6 +52,7 @@ class TransactionModel {
         description: json['description'] as String?,
         paymentMethod: json['payment_method'] as String?,
         transferId: json['transfer_id'] as String?,
+        attachmentUrl: json['attachment_url'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
         deletedAt: json['deleted_at'] as String?,
@@ -68,6 +71,7 @@ class TransactionModel {
     'description': description,
     'payment_method': paymentMethod,
     'transfer_id': transferId,
+    'attachment_url': attachmentUrl,
     'created_at': createdAt,
     'updated_at': updatedAt,
     'deleted_at': deletedAt,
@@ -86,6 +90,7 @@ class TransactionModel {
     description: description,
     paymentMethod: paymentMethod,
     transferId: transferId,
+    attachmentUrl: attachmentUrl,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
     deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
@@ -105,6 +110,7 @@ class TransactionModel {
         description: transaction.description,
         paymentMethod: transaction.paymentMethod,
         transferId: transaction.transferId,
+        attachmentUrl: transaction.attachmentUrl,
         createdAt: transaction.createdAt.toIso8601String(),
         updatedAt: transaction.updatedAt.toIso8601String(),
         deletedAt: transaction.deletedAt?.toIso8601String(),

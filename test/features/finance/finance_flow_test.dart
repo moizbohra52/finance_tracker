@@ -45,6 +45,20 @@ FakeFinance _seeded() {
   return f;
 }
 
+/// Saving scrolls the form down to its button; the amount field's error is
+/// then above the fold.
+Future<void> _scrollFormUpTo(WidgetTester tester, Finder finder) =>
+    tester.scrollUntilVisible(
+      finder,
+      -200,
+      scrollable: find
+          .descendant(
+            of: find.byType(TransactionFormView),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+
 Future<void> _tapNav(WidgetTester tester, IconData icon) async {
   await tester.tap(
     find.descendant(
@@ -180,11 +194,13 @@ void main() {
 
       await tapAndSettle(tester, find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
+      await _scrollFormUpTo(tester, find.text('Enter an amount'));
       expect(find.text('Enter an amount'), findsOneWidget);
 
       await tester.enterText(find.widgetWithText(TextFormField, 'Amount'), '0');
       await tapAndSettle(tester, find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
+      await _scrollFormUpTo(tester, find.text('Amount must be more than zero'));
       expect(find.text('Amount must be more than zero'), findsOneWidget);
       expect(f.transactions, hasLength(2));
     });

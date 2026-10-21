@@ -9,6 +9,7 @@ import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
@@ -61,6 +62,9 @@ class TransactionBinding extends Bindings {
       Get.find<AccountRepository>(),
       Get.find<CategoryRepository>(),
       Get.find<DataChangeNotifier>(),
+      receipts: Get.isRegistered<ReceiptStore>()
+          ? Get.find<ReceiptStore>()
+          : null,
     ),
   );
 }
@@ -234,7 +238,13 @@ class ShellBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<ProfileController>(
-      () => ProfileController(Get.find(), Get.find()),
+      () => ProfileController(
+        Get.find(),
+        Get.find(),
+        receipts: Get.isRegistered<ReceiptStore>()
+            ? Get.find<ReceiptStore>()
+            : null,
+      ),
       fenix: true,
     );
     _putIfAbsent(

@@ -23,6 +23,7 @@ import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/features/app_lock/widgets/app_lock_gate.dart';
@@ -104,6 +105,14 @@ Future<void> main() async {
     database: database,
     syncEngine: syncEngine,
   );
+  final ReceiptStore receiptStore = ReceiptStore(
+    client,
+    repositories.transactions,
+  );
+  syncEngine
+    ..uploadFiles = receiptStore.uploadPending
+    ..pendingFiles = receiptStore.pendingPhotoCount;
+  receiptStore.onQueued = syncEngine.notifyNewQueueItem;
   final NotificationCoordinator notificationCoordinator =
       NotificationCoordinator(
         local: LocalNotificationService(),
@@ -167,6 +176,7 @@ Future<void> main() async {
       database: database,
       syncEngine: syncEngine,
       dataChangeNotifier: dataChangeNotifier,
+      receiptStore: receiptStore,
     ),
   );
 }
@@ -187,6 +197,7 @@ class FinanceTrackerApp extends StatelessWidget {
     this.database,
     this.syncEngine,
     this.dataChangeNotifier,
+    ReceiptStore? receiptStore,
   }) : initialBinding = InitialBinding(
          authRepository: authRepository,
          profileRepository: profileRepository,
@@ -201,6 +212,7 @@ class FinanceTrackerApp extends StatelessWidget {
          database: database,
          syncEngine: syncEngine,
          dataChangeNotifier: dataChangeNotifier,
+         receiptStore: receiptStore,
        );
 
   final AuthRepository authRepository;
@@ -287,4 +299,3 @@ Future<void> _sanitizeEnvironmentStorage(SharedPreferences preferences) async {
     }
   }
 }
-

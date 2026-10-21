@@ -14,6 +14,7 @@ import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
@@ -41,6 +42,7 @@ class InitialBinding extends Bindings {
     this.database,
     this.syncEngine,
     this.dataChangeNotifier,
+    this.receiptStore,
   });
 
   final AuthRepository authRepository;
@@ -57,6 +59,9 @@ class InitialBinding extends Bindings {
   final SyncEngine? syncEngine;
   final DataChangeNotifier? dataChangeNotifier;
 
+  /// Null in tests that run without Supabase storage.
+  final ReceiptStore? receiptStore;
+
   @override
   void dependencies() {
     final DataChangeNotifier notifier =
@@ -66,6 +71,9 @@ class InitialBinding extends Bindings {
     }
     if (syncEngine != null) {
       Get.put<SyncEngine>(syncEngine!, permanent: true);
+    }
+    if (receiptStore != null) {
+      Get.put<ReceiptStore>(receiptStore!, permanent: true);
     }
     Get.put<StorageService>(storageService, permanent: true);
     Get.put<ThemeController>(themeController, permanent: true);
@@ -80,6 +88,7 @@ class InitialBinding extends Bindings {
         notifications: notificationCoordinator,
         database: database,
         syncEngine: syncEngine,
+        receipts: receiptStore,
       ),
       permanent: true,
     );

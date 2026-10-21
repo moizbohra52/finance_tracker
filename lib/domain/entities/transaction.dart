@@ -26,6 +26,10 @@ class Transaction {
   final String? description;
   final String? paymentMethod;
   final String? transferId; // shared by both legs of a transfer
+
+  /// Storage object name of the receipt photo (`<user id>/<id>` in the
+  /// private receipts bucket), not a URL. Null when there is none.
+  final String? attachmentUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -43,6 +47,7 @@ class Transaction {
     this.description,
     this.paymentMethod,
     this.transferId,
+    this.attachmentUrl,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -62,6 +67,7 @@ class Transaction {
       description: json['description'] as String?,
       paymentMethod: json['payment_method'] as String?,
       transferId: json['transfer_id'] as String?,
+      attachmentUrl: json['attachment_url'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       deletedAt: json['deleted_at'] != null
@@ -109,6 +115,7 @@ class Transaction {
       'description': description,
       'payment_method': paymentMethod,
       'transfer_id': transferId,
+      'attachment_url': attachmentUrl,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
@@ -151,6 +158,7 @@ class Transaction {
     String? description,
     String? paymentMethod,
     String? transferId,
+    String? attachmentUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -168,6 +176,7 @@ class Transaction {
       description: description ?? this.description,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       transferId: transferId ?? this.transferId,
+      attachmentUrl: attachmentUrl ?? this.attachmentUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,

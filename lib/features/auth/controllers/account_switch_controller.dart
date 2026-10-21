@@ -9,6 +9,7 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/domain/entities/saved_login.dart';
 import 'package:finance_tracker/features/notifications/notification_target.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
@@ -40,6 +41,7 @@ class AccountSwitchController extends GetxController {
     required this._notifications,
     this._database,
     this._syncEngine,
+    this._receipts,
   });
 
   final AuthRepository _auth;
@@ -47,6 +49,7 @@ class AccountSwitchController extends GetxController {
   final NotificationCoordinator _notifications;
   final AppDatabase? _database;
   final SyncEngine? _syncEngine;
+  final ReceiptStore? _receipts;
 
   /// Every account signed in on this device, most recently used first.
   final RxList<SavedLogin> logins = <SavedLogin>[].obs;
@@ -185,8 +188,9 @@ class AccountSwitchController extends GetxController {
     if (login == null) return;
 
     final String? name = fullName?.trim();
-    final String? effectiveName =
-        (name != null && name.isNotEmpty) ? name : login.displayName;
+    final String? effectiveName = (name != null && name.isNotEmpty)
+        ? name
+        : login.displayName;
     final String? effectiveAvatar = avatarUrl ?? login.avatarUrl;
 
     if (login.displayName == effectiveName &&
@@ -456,6 +460,7 @@ class AccountSwitchController extends GetxController {
 
   Future<void> _removeLocalData(String userId) async {
     await _database?.removeUser(userId);
+    await _receipts?.deleteLocal(userId);
   }
 
   /// Saved accounts other than [userId] that can be switched to.
@@ -506,10 +511,7 @@ class AccountSwitchController extends GetxController {
       }
 
       animation.addStatusListener(onStatus);
-      await done.future.timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {},
-      );
+      await done.future.timeout(const Duration(seconds: 2), onTimeout: () {});
       animation.removeStatusListener(onStatus);
     }
     // The replaced routes are disposed in the frame after the transition.

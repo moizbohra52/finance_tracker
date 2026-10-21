@@ -84,6 +84,18 @@ Test both authenticated and unauthenticated access, and attempt cross-user reads
   before the account is deleted. Storage objects are not removed by the
   database cascade, so this step is what removes them. If it fails (for example
   offline), the file remains and is not shown to anyone; it is a known gap.
+### Receipts bucket (2026-10-21)
+- Bucket `receipts`: **private**, 2 MiB per file, `image/jpeg`, `image/png`,
+  `image/webp` only. Objects are named `<user id>/<transaction id>`; the same
+  four owner-only policies as `avatars`, with `bucket_id = 'receipts'`.
+- Shown only through one-hour signed links (`ReceiptStore.signedLink`).
+- Deleting the account lists and removes every object under the user's
+  folder (`ReceiptStore.deleteAll`) in the same step as the avatar, best
+  effort. If that fails (for example offline) the files remain, readable by
+  nobody; the same known gap as avatars.
+- Sign-out or removing an account from the device deletes that account's
+  receipt photos kept on the phone.
+
 - Sign-out clears no stored secrets: the only values on the device are
   preferences (theme, notification flags, the device id), and the Supabase
   session is cleared by supabase_flutter.

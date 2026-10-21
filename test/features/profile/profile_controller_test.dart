@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:finance_tracker/core/errors/app_exception.dart';
@@ -5,6 +6,8 @@ import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../helpers/fake_finance.dart';
+import '../../helpers/fake_receipts.dart';
 import '../../helpers/fakes.dart';
 
 /// The signed-in user's profile, with a photo at [avatarPath].
@@ -197,6 +200,34 @@ void main() {
         expect(auth.isSignedIn, isFalse);
       },
     );
+
+    test('deleting the account also removes the receipt photos', () async {
+      final Directory root = await Directory.systemTemp.createTemp('rcpt');
+      addTearDown(() => root.delete(recursive: true));
+      final FakeReceiptStore receipts = FakeReceiptStore(
+        FakeFinance().repositories.transactions,
+        root,
+      );
+      controller = ProfileController(profiles, auth, receipts: receipts);
+      await controller.loadProfile();
+
+      expect(await controller.deleteAccount('right-pass1'), isTrue);
+      expect(receipts.deleteAllCalls, 1);
+    });
+
+    test('a wrong password removes no receipt photos', () async {
+      final Directory root = await Directory.systemTemp.createTemp('rcpt');
+      addTearDown(() => root.delete(recursive: true));
+      final FakeReceiptStore receipts = FakeReceiptStore(
+        FakeFinance().repositories.transactions,
+        root,
+      );
+      controller = ProfileController(profiles, auth, receipts: receipts);
+      auth.nextError = const AuthFailure('Wrong password');
+
+      expect(await controller.deleteAccount('wrong-pass1'), isFalse);
+      expect(receipts.deleteAllCalls, 0);
+    });
 
     test('a failed photo removal does not stop the deletion', () async {
       await controller.uploadAvatar('me.jpg', photo);

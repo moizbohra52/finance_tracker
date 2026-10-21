@@ -19,6 +19,12 @@ void main() {
     await database.close();
   });
 
+  test('receipt photos waiting to upload count as unsynced', () async {
+    syncEngine.pendingFiles = () async => 2;
+    await syncEngine.refreshQueueStats();
+    expect(syncEngine.pendingCount.value, 2);
+  });
+
   test('SyncEngine initializes with zero pending items', () async {
     await syncEngine.refreshQueueStats();
     expect(syncEngine.pendingCount.value, equals(0));

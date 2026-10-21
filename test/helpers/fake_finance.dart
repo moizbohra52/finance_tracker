@@ -114,6 +114,7 @@ class FakeFinance {
     String? categoryId,
     String? note,
     DateTime? date,
+    String? attachmentUrl,
   }) {
     final Transaction t = Transaction(
       id: id,
@@ -124,6 +125,7 @@ class FakeFinance {
       amount: Decimal.parse(amount),
       transactionDate: date ?? DateTime.now(),
       note: note,
+      attachmentUrl: attachmentUrl,
       createdAt: DateTime(2026),
       updatedAt: DateTime(2026),
     );

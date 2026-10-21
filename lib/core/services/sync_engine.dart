@@ -48,6 +48,13 @@ class SyncEngine extends GetxService {
   final ConnectivityService? _connectivity;
   final DataChangeNotifier? _notifier;
 
+  /// Uploads files (receipt photos) before the row queue; set once the
+  /// repositories exist (main.dart).
+  Future<void> Function()? uploadFiles;
+
+  /// Files waiting for [uploadFiles], counted with the queue.
+  Future<int> Function()? pendingFiles;
+
   final Rx<SyncState> state = SyncState.synced.obs;
   final RxInt pendingCount = 0.obs;
   final RxInt failedCount = 0.obs;
@@ -95,7 +102,8 @@ class SyncEngine extends GetxService {
   /// Refreshes the reactive pending queue count.
   Future<void> refreshQueueStats() async {
     try {
-      final int pending = await _db.getPendingQueueCount();
+      final int pending =
+          await _db.getPendingQueueCount() + (await pendingFiles?.call() ?? 0);
       pendingCount.value = pending;
 
       final List<Map<String, dynamic>> failedRows = await _db.db.rawQuery(
@@ -180,7 +188,9 @@ class SyncEngine extends GetxService {
       // 0. Never upload or show another account's local rows as this one's.
       await claimLocalData(_client.auth.currentUser!.id);
 
-      // 1. Upload local changes
+      // 1. Upload local changes. Objects first, so an uploaded row never
+      // names a missing file.
+      await uploadFiles?.call();
       await uploadPending();
 
       // 2. Download remote changes

@@ -11,12 +11,14 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
+import 'package:finance_tracker/features/transactions/widgets/receipt_preview.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -177,6 +179,9 @@ class _Details extends StatelessWidget {
                   AppFormatters.dateTime(transaction.transactionDate),
                 ),
                 if (note != null && note.isNotEmpty) _Row('Note', note),
+                // Shows nothing when there is no receipt.
+                if (transfer == null && Get.isRegistered<ReceiptStore>())
+                  ReceiptPreview(transaction: transaction),
               ],
             ),
           ),

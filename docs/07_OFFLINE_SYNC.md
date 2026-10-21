@@ -68,6 +68,16 @@ The queue is uploaded in FIFO order, 100 items per read, until it is empty.
 An item that keeps failing does not hold back the items after it, except a
 `replace` item (see Backup restore), which stops the sync until it succeeds.
 
+Receipt photos are files, not queue rows. A photo attached offline is kept in
+`<app documents>/receipts/<user id>/pending/`, which is their queue
+(`ReceiptStore`). Each sync uploads that folder first, before the row queue,
+so a row never names a file the server does not have yet. An upload is an
+overwrite of `<user id>/<transaction id>`, so a retry never adds a second
+file. A photo leaves the folder only after it is uploaded and its
+transaction's `attachment_url` is set; a removed receipt leaves a `.remove`
+marker there until its server file is deleted. Only the signed-in user's
+folder is sent.
+
 ## Backup restore
 A restored backup is uploaded like any other change, so the server ends up
 matching the device (`BackupService.restoreBackup`):

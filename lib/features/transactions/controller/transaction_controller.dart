@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
@@ -5,11 +7,13 @@ import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
+import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction_summary.dart';
+import 'package:finance_tracker/domain/services/avatar_rules.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:get/get.dart';
@@ -34,13 +38,17 @@ class TransactionController extends GetxController {
     this._transactionRepository,
     this._accountRepository,
     this._categoryRepository,
-    this._notifier,
-  );
+    this._notifier, {
+    this._receipts,
+  });
 
   final TransactionRepository _transactionRepository;
   final AccountRepository _accountRepository;
   final CategoryRepository _categoryRepository;
   final DataChangeNotifier _notifier;
+
+  /// Null where receipts are not available (tests without storage).
+  final ReceiptStore? _receipts;
 
   static const int pageSize = 30;
   static const Uuid _uuid = Uuid();
@@ -248,6 +256,7 @@ class TransactionController extends GetxController {
 
   /// Creates or updates a transaction. The id is generated once per form
   /// ([id]) so a retried save upserts the same row instead of duplicating it.
+  /// [newReceipt] replaces the receipt photo; [removeReceipt] drops it.
   Future<bool> saveTransaction({
     required String id,
     Transaction? existing,
@@ -257,9 +266,25 @@ class TransactionController extends GetxController {
     required String? categoryId,
     required DateTime date,
     required String? note,
+    ({Uint8List bytes, String fileName})? newReceipt,
+    bool removeReceipt = false,
   }) {
     return save.run(() async {
+      if (newReceipt != null) {
+        final AvatarProblem? problem = AvatarRules.check(
+          fileName: newReceipt.fileName,
+          byteLength: newReceipt.bytes.length,
+        );
+        if (problem != null) throw StorageFailure(problem.message);
+      }
       final DateTime now = DateTime.now();
+      // The row, not the form's copy: a sync may have linked a photo since
+      // the form opened.
+      final String? attachmentUrl = existing == null || removeReceipt
+          ? null
+          : (await _transactionRepository.getTransactionById(
+              id,
+            )).attachmentUrl;
       final Transaction transaction = Transaction(
         id: id,
         userId: existing?.userId ?? '',
@@ -273,6 +298,7 @@ class TransactionController extends GetxController {
         description: existing?.description,
         paymentMethod: existing?.paymentMethod,
         transferId: existing?.transferId,
+        attachmentUrl: attachmentUrl,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );
@@ -282,13 +308,56 @@ class TransactionController extends GetxController {
         await _transactionRepository.updateTransaction(transaction);
       }
       _notifier.markChanged();
+      await _keepReceipt(id, newReceipt, removeReceipt);
     });
+  }
+
+  /// After the row is saved, so a failed save leaves no photo behind. A
+  /// retried save of the same form stages the photo again.
+  Future<void> _keepReceipt(
+    String id,
+    ({Uint8List bytes, String fileName})? newReceipt,
+    bool removeReceipt,
+  ) async {
+    final ReceiptStore? receipts = _receipts;
+    if (receipts == null) return;
+    try {
+      if (newReceipt != null) {
+        await receipts.stage(id, newReceipt.bytes, newReceipt.fileName);
+      } else if (removeReceipt) {
+        await receipts.markRemoved(id);
+      }
+    } on AppException {
+      rethrow;
+    } on Object {
+      throw const StorageFailure(
+        'The transaction was saved, but the receipt photo could not be kept. '
+        'Save again to retry.',
+      );
+    }
   }
 
   Future<bool> deleteTransaction(String transactionId) {
     return deletion.run(() async {
+      final ReceiptStore? receipts = _receipts;
+      bool hadReceipt = false;
+      if (receipts != null) {
+        final Transaction tx = await _transactionRepository.getTransactionById(
+          transactionId,
+        );
+        hadReceipt =
+            tx.attachmentUrl != null ||
+            await receipts.localFile(transactionId) != null;
+      }
       await _transactionRepository.deleteTransaction(transactionId);
       _notifier.markChanged();
+      if (hadReceipt) {
+        try {
+          await receipts!.markRemoved(transactionId);
+        } on Object {
+          // Best effort: the row is gone; the file is left, shown to nobody.
+        }
+      }
     });
   }
 
