@@ -175,10 +175,12 @@ class _ContactFormViewState extends State<ContactFormView> {
       final int phoneCount = contact.phones.length;
       if (phoneCount > 1) {
         AppSnackbar.show(
-          'Filled details from contacts ($phoneCount numbers added)',
+          'Filled details from contacts (@count numbers added)'.trParams(<String, String>{
+            'count': '$phoneCount',
+          }),
         );
       } else {
-        AppSnackbar.show('Filled details from contacts');
+        AppSnackbar.show('Filled details from contacts'.tr);
       }
     }
   }
@@ -217,7 +219,7 @@ class _ContactFormViewState extends State<ContactFormView> {
       openingBalanceType: _openingType,
     );
     if (!saved) return;
-    AppSnackbar.show(_existing == null ? 'Contact added' : 'Contact updated');
+    AppSnackbar.show(_existing == null ? 'Contact added'.tr : 'Contact updated'.tr);
     Get.back<void>();
   }
 
@@ -260,7 +262,9 @@ class _ContactFormViewState extends State<ContactFormView> {
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
-                    'Phone contacts suggestions (${_suggestions.length})',
+                    'Phone contacts suggestions (@count)'.trParams(<String, String>{
+                      'count': '${_suggestions.length}',
+                    }),
                     style: text.labelSmall?.copyWith(
                       color: colors.primary,
                       fontWeight: FontWeight.w700,
@@ -310,7 +314,10 @@ class _ContactFormViewState extends State<ContactFormView> {
               subtitle: s.phones.isNotEmpty
                   ? Text(
                       s.hasMultiplePhones
-                          ? '${s.phones.first} (+${s.phones.length - 1} more)'
+                          ? '@phone (+@count more)'.trParams(<String, String>{
+                              'phone': s.phones.first,
+                              'count': '${s.phones.length - 1}',
+                            })
                           : s.phones.first,
                       style: text.bodySmall?.copyWith(
                         color: colors.onSurfaceVariant,
@@ -329,7 +336,7 @@ class _ContactFormViewState extends State<ContactFormView> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '${s.phones.length} numbers',
+                        '@count numbers'.trParams(<String, String>{'count': '${s.phones.length}'}),
                         style: text.labelSmall?.copyWith(
                           fontSize: 9.5,
                           fontWeight: FontWeight.bold,
@@ -356,7 +363,7 @@ class _ContactFormViewState extends State<ContactFormView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      'View all matches in contact picker',
+                      'View all matches in contact picker'.tr,
                       style: text.labelSmall?.copyWith(
                         color: colors.primary,
                         fontWeight: FontWeight.w600,
@@ -411,14 +418,14 @@ class _ContactFormViewState extends State<ContactFormView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Pick from Phone Contacts',
+                        'Pick from Phone Contacts'.tr,
                         style: text.bodyMedium?.copyWith(
                           color: colors.primary,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
-                        'Auto-fill name, all phone numbers & details',
+                        'Auto-fill name, all phone numbers & details'.tr,
                         style: text.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                           fontSize: 11.5,
@@ -451,8 +458,8 @@ class _ContactFormViewState extends State<ContactFormView> {
               Expanded(
                 child: AppTextField(
                   label: _mobileControllers.length > 1
-                      ? 'Mobile ${i + 1} (optional)'
-                      : 'Mobile (optional)',
+                      ? 'Mobile @number (optional)'.trParams(<String, String>{'number': '${i + 1}'})
+                      : 'Mobile (optional)'.tr,
                   controller: _mobileControllers[i],
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
@@ -464,7 +471,7 @@ class _ContactFormViewState extends State<ContactFormView> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: IconButton(
-                    tooltip: 'Remove this number',
+                    tooltip: 'Remove this number'.tr,
                     icon: Icon(
                       Icons.remove_circle_outline_rounded,
                       color: colors.error,
@@ -500,7 +507,7 @@ class _ContactFormViewState extends State<ContactFormView> {
               });
             },
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Add another mobile number'),
+            label: Text('Add another mobile number'.tr),
           ),
         ),
       ],
@@ -515,11 +522,11 @@ class _ContactFormViewState extends State<ContactFormView> {
 
     return Scaffold(
       appBar: AppAppBar(
-        title: editing ? 'Edit contact' : 'Add contact',
+        title: editing ? 'Edit contact'.tr : 'Add contact'.tr,
         actions: <Widget>[
           if (!editing)
             IconButton(
-              tooltip: 'Choose from phone contacts',
+              tooltip: 'Choose from phone contacts'.tr,
               icon: const Icon(Icons.contacts_outlined),
               onPressed: _openDeviceContactPicker,
             ),
@@ -539,15 +546,15 @@ class _ContactFormViewState extends State<ContactFormView> {
               children: <Widget>[
                 if (!editing) _buildImportBanner(colors, text),
                 AppTextField(
-                  label: 'Name',
+                  label: 'Name'.tr,
                   controller: _name,
                   autofocus: !editing,
                   textInputAction: TextInputAction.next,
-                  validator: (String? v) => Validators.name(v, 'a name'),
+                  validator: (String? v) => Validators.name(v, 'a name'.tr),
                   onChanged: _onNameChanged,
                   suffixIcon: !editing
                       ? IconButton(
-                          tooltip: 'Pick from contacts',
+                          tooltip: 'Pick from contacts'.tr,
                           icon: const Icon(Icons.contacts_outlined),
                           onPressed: _openDeviceContactPicker,
                         )
@@ -558,7 +565,7 @@ class _ContactFormViewState extends State<ContactFormView> {
                 _buildMobileSection(colors, text),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Email (optional)',
+                  label: 'Email (optional)'.tr,
                   controller: _email,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -567,13 +574,13 @@ class _ContactFormViewState extends State<ContactFormView> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Address (optional)',
+                  label: 'Address (optional)'.tr,
                   controller: _address,
                   textInputAction: TextInputAction.next,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Notes (optional)',
+                  label: 'Notes (optional)'.tr,
                   controller: _notes,
                   minLines: 3,
                   maxLines: 5,
@@ -582,19 +589,19 @@ class _ContactFormViewState extends State<ContactFormView> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'Opening balance',
+                  'Opening balance'.tr,
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 SegmentedButton<String>(
-                  segments: const <ButtonSegment<String>>[
+                  segments: <ButtonSegment<String>>[
                     ButtonSegment<String>(
                       value: 'receivable',
-                      label: Text('They owe me'),
+                      label: Text('They owe me'.tr),
                     ),
                     ButtonSegment<String>(
                       value: 'payable',
-                      label: Text('I owe them'),
+                      label: Text('I owe them'.tr),
                     ),
                   ],
                   selected: <String>{_openingType},
@@ -603,19 +610,19 @@ class _ContactFormViewState extends State<ContactFormView> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Opening amount',
+                  label: 'Opening amount'.tr,
                   controller: _opening,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  helperText: 'What was already owed before you started here.',
+                  helperText: 'What was already owed before you started here.'.tr,
                   validator: Validators.nonNegativeAmount,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SubmitErrorMessage(_controller.save),
                 Obx(
                   () => AppButton(
-                    label: editing ? 'Save changes' : 'Add contact',
+                    label: editing ? 'Save changes'.tr : 'Add contact'.tr,
                     icon: Icons.check_rounded,
                     isLoading: _controller.save.isBusy.value,
                     onPressed: _submit,

@@ -59,7 +59,7 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
       setState(() {
         _isLoading = false;
         _errorMessage =
-            'Contact access is not supported on this device/platform.';
+            'Contact access is not supported on this device/platform.'.tr;
       });
       return;
     }
@@ -179,14 +179,14 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Select from Phone Contacts',
+                        'Select from Phone Contacts'.tr,
                         style: text.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Open system contact picker',
+                      tooltip: 'Open system contact picker'.tr,
                       icon: const Icon(Icons.open_in_new_rounded),
                       onPressed: _pickNative,
                     ),
@@ -211,7 +211,7 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                      hintText: 'Search by name or number...',
+                      hintText: 'Search by name or number...'.tr,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.sm,
@@ -237,13 +237,13 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                 child: Builder(
                   builder: (BuildContext context) {
                     if (_isLoading) {
-                      return const Center(
+                      return Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            CircularProgressIndicator(),
-                            SizedBox(height: AppSpacing.md),
-                            Text('Loading contacts...'),
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: AppSpacing.md),
+                            Text('Loading contacts...'.tr),
                           ],
                         ),
                       );
@@ -287,14 +287,14 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                               ),
                               const SizedBox(height: AppSpacing.md),
                               Text(
-                                'Permission Required',
+                                'Permission Required'.tr,
                                 style: text.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: AppSpacing.xs),
                               Text(
-                                'Please allow Track Day to read your contacts to auto-fill customer and vendor details into Khata.',
+                                'Please allow Track Day to read your contacts to auto-fill customer and vendor details into Khata.'.tr,
                                 textAlign: TextAlign.center,
                                 style: text.bodySmall?.copyWith(
                                   color: colors.onSurfaceVariant,
@@ -302,14 +302,14 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                               ),
                               const SizedBox(height: AppSpacing.lg),
                               AppButton(
-                                label: 'Grant Permission',
+                                label: 'Grant Permission'.tr,
                                 icon: Icons.lock_open_rounded,
                                 onPressed: _checkAndLoad,
                               ),
                               const SizedBox(height: AppSpacing.xs),
                               TextButton(
                                 onPressed: _service.openSettings,
-                                child: const Text('Open App Settings'),
+                                child: Text('Open App Settings'.tr),
                               ),
                             ],
                           ),
@@ -332,8 +332,8 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                               const SizedBox(height: AppSpacing.sm),
                               Text(
                                 _allContacts.isEmpty
-                                    ? 'No contacts found on your phone.'
-                                    : 'No contacts matching your search.',
+                                    ? 'No contacts found on your phone.'.tr
+                                    : 'No contacts matching your search.'.tr,
                                 textAlign: TextAlign.center,
                                 style: text.bodyMedium?.copyWith(
                                   color: colors.onSurfaceVariant,
@@ -346,7 +346,7 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                                     _searchController.clear();
                                     _onSearchChanged('');
                                   },
-                                  child: const Text('Clear search'),
+                                  child: Text('Clear search'.tr),
                                 ),
                               ],
                             ],
@@ -416,7 +416,9 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                                               BorderRadius.circular(8),
                                         ),
                                         child: Text(
-                                          '${contact.phones.length} numbers',
+                                          '@count numbers'.trParams(<String, String>{
+                                            'count': '${contact.phones.length}',
+                                          }),
                                           style: text.labelSmall?.copyWith(
                                             color:
                                                 colors.onSecondaryContainer,

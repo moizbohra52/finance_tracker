@@ -50,12 +50,12 @@ class _ReceiptFieldState extends State<ReceiptField> {
           children: <Widget>[
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take photo'),
+              title: Text('Take photo'.tr),
               onTap: () => Navigator.of(sheet).pop(ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
+              title: Text('Choose from gallery'.tr),
               onTap: () => Navigator.of(sheet).pop(ImageSource.gallery),
             ),
           ],
@@ -75,7 +75,7 @@ class _ReceiptFieldState extends State<ReceiptField> {
       );
     } on Exception {
       if (mounted) {
-        setState(() => _error = "Couldn't open the camera or gallery.");
+        setState(() => _error = "Couldn't open the camera or gallery.".tr);
       }
       return;
     }
@@ -123,15 +123,15 @@ class _ReceiptFieldState extends State<ReceiptField> {
                 children: <Widget>[
                   _Thumbnail(picked: _picked, local: local),
                   const SizedBox(width: AppSpacing.md),
-                  const Expanded(child: Text('Receipt photo')),
-                  TextButton(onPressed: _choose, child: const Text('Change')),
-                  TextButton(onPressed: _remove, child: const Text('Remove')),
+                  Expanded(child: Text('Receipt photo'.tr)),
+                  TextButton(onPressed: _choose, child: Text('Change'.tr)),
+                  TextButton(onPressed: _remove, child: Text('Remove'.tr)),
                 ],
               )
             else
               OutlinedButton.icon(
                 icon: const Icon(Icons.receipt_long_outlined),
-                label: const Text('Add receipt photo'),
+                label: Text('Add receipt photo'.tr),
                 onPressed: _choose,
               ),
             if (_error != null) ...<Widget>[

@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:get/get.dart';
 
 /// Form field validators. Each returns an error message, or null when valid.
 abstract final class Validators {
@@ -15,12 +16,14 @@ abstract final class Validators {
   );
 
   static String? requiredField(String? value, String fieldName) =>
-      (value == null || value.trim().isEmpty) ? 'Enter your $fieldName' : null;
+      (value == null || value.trim().isEmpty)
+      ? 'Enter your @field'.trParams(<String, String>{'field': fieldName})
+      : null;
 
   static String? email(String? value) {
     final String email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Enter your email';
-    if (!_email.hasMatch(email)) return 'Enter a valid email address';
+    if (email.isEmpty) return 'Enter your email'.tr;
+    if (!_email.hasMatch(email)) return 'Enter a valid email address'.tr;
     return null;
   }
 
@@ -28,20 +31,22 @@ abstract final class Validators {
   /// supabase/config.toml (minimum_password_length, password_requirements).
   static String? newPassword(String? value) {
     final String password = value ?? '';
-    if (password.isEmpty) return 'Enter a password';
+    if (password.isEmpty) return 'Enter a password'.tr;
     if (password.length < minPasswordLength) {
-      return 'Use at least $minPasswordLength characters';
+      return 'Use at least @count characters'.trParams(<String, String>{
+        'count': '$minPasswordLength',
+      });
     }
     if (!_letter.hasMatch(password) || !_digit.hasMatch(password)) {
-      return 'Use both letters and numbers';
+      return 'Use both letters and numbers'.tr;
     }
     return null;
   }
 
   static String? Function(String?) confirmPassword(String Function() password) {
     return (String? value) {
-      if (value == null || value.isEmpty) return 'Confirm your password';
-      return value == password() ? null : 'Passwords do not match';
+      if (value == null || value.isEmpty) return 'Confirm your password'.tr;
+      return value == password() ? null : 'Passwords do not match'.tr;
     };
   }
 
@@ -55,7 +60,7 @@ abstract final class Validators {
     if (parts.isEmpty) return null;
     for (final String part in parts) {
       if (!_mobile.hasMatch(part)) {
-        return 'Enter a valid mobile number';
+        return 'Enter a valid mobile number'.tr;
       }
     }
     return null;
@@ -67,28 +72,32 @@ abstract final class Validators {
   static String? optionalUpiId(String? value) {
     final String upiId = value?.trim() ?? '';
     if (upiId.isEmpty) return null;
-    return _upiId.hasMatch(upiId) ? null : 'Enter a UPI ID like name@bank';
+    return _upiId.hasMatch(upiId) ? null : 'Enter a UPI ID like name@bank'.tr;
   }
 
   static String? positiveAmount(String? value) {
     final String text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Enter an amount';
+    if (text.isEmpty) return 'Enter an amount'.tr;
     final Decimal? parsed = _amount.hasMatch(text)
         ? Decimal.tryParse(text)
         : null;
-    if (parsed == null) return 'Enter a valid amount, e.g. 250.50';
-    return parsed > Decimal.zero ? null : 'Amount must be more than zero';
+    if (parsed == null) return 'Enter a valid amount, e.g. 250.50'.tr;
+    return parsed > Decimal.zero ? null : 'Amount must be more than zero'.tr;
   }
 
   /// A money amount with at most two decimals; zero is allowed.
   static String? nonNegativeAmount(String? value) {
     final String text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Enter an amount (0 if none)';
-    return _amount.hasMatch(text) ? null : 'Enter a valid amount, e.g. 250.50';
+    if (text.isEmpty) return 'Enter an amount (0 if none)'.tr;
+    return _amount.hasMatch(text)
+        ? null
+        : 'Enter a valid amount, e.g. 250.50'.tr;
   }
 
   static String? name(String? value, String fieldName) =>
-      (value == null || value.trim().isEmpty) ? 'Enter $fieldName' : null;
+      (value == null || value.trim().isEmpty)
+      ? 'Enter @field'.trParams(<String, String>{'field': fieldName})
+      : null;
 
   static const int maxNameLength = 80;
   static final RegExp _personName = RegExp(
@@ -100,12 +109,14 @@ abstract final class Validators {
   /// letters in any script plus spaces, dots, apostrophes and hyphens.
   static String? profileName(String? value) {
     final String name = value?.trim() ?? '';
-    if (name.isEmpty) return 'Enter your name';
+    if (name.isEmpty) return 'Enter your name'.tr;
     if (name.length > maxNameLength) {
-      return 'Keep your name under $maxNameLength characters';
+      return 'Keep your name under @count characters'.trParams(<String, String>{
+        'count': '$maxNameLength',
+      });
     }
     return _personName.hasMatch(name)
         ? null
-        : 'Use letters, spaces, dots, apostrophes or hyphens only';
+        : 'Use letters, spaces, dots, apostrophes or hyphens only'.tr;
   }
 }

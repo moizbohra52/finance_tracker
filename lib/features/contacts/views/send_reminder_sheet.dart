@@ -6,8 +6,10 @@ import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/features/contacts/services/reminder_sender_service.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// WhatsApp brand green colour
 const Color _kWhatsAppColor = Color(0xFF25D366);
@@ -55,7 +57,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
   late final TextEditingController _phoneInputController;
   late final TextEditingController _messageController;
 
-  bool _isEnglish = false;
+  AppLanguage _language = AppFormatters.preferences.language;
   bool _isSending = false;
 
   @override
@@ -65,15 +67,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
     _selectedNumber = _numbers.isNotEmpty ? _numbers.first : '';
     _phoneInputController = TextEditingController(text: _selectedNumber);
 
-    final bool isReceivable = widget.balance >= Decimal.zero;
-    final String initialText = ReminderSenderService.buildHinglishMessage(
-      contactName: widget.contact.name,
-      amount: widget.balance.abs(),
-      isReceivable: isReceivable,
-      note: widget.customNote,
-      upiId: AppFormatters.preferences.upiId,
-    );
-    _messageController = TextEditingController(text: initialText);
+    _messageController = TextEditingController(text: _message(_language));
   }
 
   @override
@@ -83,27 +77,20 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
     super.dispose();
   }
 
-  void _switchLanguage(bool english) {
-    if (_isEnglish == english) return;
+  String _message(AppLanguage language) => ReminderSenderService.buildMessage(
+    language,
+    contactName: widget.contact.name,
+    amount: widget.balance.abs(),
+    isReceivable: widget.balance >= Decimal.zero,
+    note: widget.customNote,
+    upiId: AppFormatters.preferences.upiId,
+  );
+
+  void _switchLanguage(AppLanguage language) {
+    if (_language == language) return;
     setState(() {
-      _isEnglish = english;
-      final bool isReceivable = widget.balance >= Decimal.zero;
-      final String newText = english
-          ? ReminderSenderService.buildEnglishMessage(
-              contactName: widget.contact.name,
-              amount: widget.balance.abs(),
-              isReceivable: isReceivable,
-              note: widget.customNote,
-              upiId: AppFormatters.preferences.upiId,
-            )
-          : ReminderSenderService.buildHinglishMessage(
-              contactName: widget.contact.name,
-              amount: widget.balance.abs(),
-              isReceivable: isReceivable,
-              note: widget.customNote,
-              upiId: AppFormatters.preferences.upiId,
-            );
-      _messageController.text = newText;
+      _language = language;
+      _messageController.text = _message(language);
     });
   }
 
@@ -117,12 +104,12 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
   Future<void> _handleWhatsApp() async {
     final String phone = _getActivePhone();
     if (phone.isEmpty) {
-      AppSnackbar.show('Please enter a mobile number');
+      AppSnackbar.show('Please enter a mobile number'.tr);
       return;
     }
     final String text = _messageController.text.trim();
     if (text.isEmpty) {
-      AppSnackbar.show('Message cannot be empty');
+      AppSnackbar.show('Message cannot be empty'.tr);
       return;
     }
 
@@ -137,25 +124,25 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
     switch (status) {
       case ReminderSendStatus.success:
         Navigator.of(context).pop();
-        AppSnackbar.show('Opening WhatsApp...');
+        AppSnackbar.show('Opening WhatsApp...'.tr);
       case ReminderSendStatus.notInstalled:
-        AppSnackbar.show('WhatsApp is not installed on this device.');
+        AppSnackbar.show('WhatsApp is not installed on this device.'.tr);
       case ReminderSendStatus.noPhone:
-        AppSnackbar.show('Invalid phone number for WhatsApp.');
+        AppSnackbar.show('Invalid phone number for WhatsApp.'.tr);
       case ReminderSendStatus.failed:
-        AppSnackbar.show('Could not launch WhatsApp. Try SMS or Share.');
+        AppSnackbar.show('Could not launch WhatsApp. Try SMS or Share.'.tr);
     }
   }
 
   Future<void> _handleSms() async {
     final String phone = _getActivePhone();
     if (phone.isEmpty) {
-      AppSnackbar.show('Please enter a mobile number');
+      AppSnackbar.show('Please enter a mobile number'.tr);
       return;
     }
     final String text = _messageController.text.trim();
     if (text.isEmpty) {
-      AppSnackbar.show('Message cannot be empty');
+      AppSnackbar.show('Message cannot be empty'.tr);
       return;
     }
 
@@ -170,11 +157,11 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
     switch (status) {
       case ReminderSendStatus.success:
         Navigator.of(context).pop();
-        AppSnackbar.show('Opening Messaging app...');
+        AppSnackbar.show('Opening Messaging app...'.tr);
       case ReminderSendStatus.noPhone:
-        AppSnackbar.show('Invalid phone number for SMS.');
+        AppSnackbar.show('Invalid phone number for SMS.'.tr);
       case ReminderSendStatus.notInstalled || ReminderSendStatus.failed:
-        AppSnackbar.show('Could not open Messaging app. Try Share.');
+        AppSnackbar.show('Could not open Messaging app. Try Share.'.tr);
     }
   }
 
@@ -184,7 +171,9 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
     Navigator.of(context).pop();
     await ReminderSenderService.shareGeneral(
       message: text,
-      subject: 'Payment reminder for ${widget.contact.name}',
+      subject: 'Payment reminder for @name'.trParams(<String, String>{
+        'name': widget.contact.name,
+      }),
     );
   }
 
@@ -194,7 +183,9 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
     final FinanceColors money = FinanceColors.of(context);
     final bool isReceivable = widget.balance >= Decimal.zero;
     final Color balanceColor = isReceivable ? money.receivable : money.payable;
-    final String balanceLabel = isReceivable ? 'You will get' : 'You will give';
+    final String balanceLabel = isReceivable
+        ? 'You will get'.tr
+        : 'You will give'.tr;
     final EdgeInsets insets = MediaQuery.of(context).viewInsets;
 
     return Container(
@@ -244,13 +235,13 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          'Send Free Reminder',
+                          'Send Free Reminder'.tr,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         Text(
-                          'Direct via WhatsApp or SMS (Zero cost)',
+                          'Direct via WhatsApp or SMS (Zero cost)'.tr,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -304,7 +295,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                   child: Text(
-                    'Select Mobile Number',
+                    'Select Mobile Number'.tr,
                     style: theme.textTheme.labelMedium,
                   ),
                 ),
@@ -326,43 +317,36 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                   child: Text(
-                    'Mobile Number (required)',
+                    'Mobile Number (required)'.tr,
                     style: theme.textTheme.labelMedium,
                   ),
                 ),
                 TextField(
                   controller: _phoneInputController,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.phone_outlined),
-                    hintText: 'Enter 10-digit mobile number',
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    hintText: 'Enter 10-digit mobile number'.tr,
                     isDense: true,
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
               ],
 
-              // Language selector chips
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Language selector chips, below the label: three do not fit
+              // beside it on a phone.
+              Text('Message Template'.tr, style: theme.textTheme.labelMedium),
+              const SizedBox(height: AppSpacing.xs),
+              Wrap(
+                spacing: AppSpacing.xs,
                 children: <Widget>[
-                  Text('Message Template', style: theme.textTheme.labelMedium),
-                  Row(
-                    children: <Widget>[
-                      ChoiceChip(
-                        label: const Text('Hinglish'),
-                        selected: !_isEnglish,
-                        onSelected: (bool s) => _switchLanguage(false),
-                      ),
-                      const SizedBox(width: AppSpacing.xs),
-                      ChoiceChip(
-                        label: const Text('English'),
-                        selected: _isEnglish,
-                        onSelected: (bool s) => _switchLanguage(true),
-                      ),
-                    ],
-                  ),
+                  for (final AppLanguage language in AppLanguage.values)
+                    ChoiceChip(
+                      label: Text(language.label),
+                      selected: _language == language,
+                      onSelected: (bool s) => _switchLanguage(language),
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -373,7 +357,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                 maxLines: 4,
                 style: theme.textTheme.bodyMedium,
                 decoration: InputDecoration(
-                  hintText: 'Type reminder message...',
+                  hintText: 'Type reminder message...'.tr,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
@@ -394,9 +378,12 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                 ),
                 onPressed: _isSending ? null : _handleWhatsApp,
                 icon: const Icon(Icons.chat_bubble_rounded),
-                label: const Text(
-                  'Send on WhatsApp',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                label: Text(
+                  'Send on WhatsApp'.tr,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -414,7 +401,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                       ),
                       onPressed: _isSending ? null : _handleSms,
                       icon: const Icon(Icons.sms_outlined),
-                      label: const Text('Send via SMS'),
+                      label: Text('Send via SMS'.tr),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
@@ -430,7 +417,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                     ),
                     onPressed: _isSending ? null : _handleShare,
                     icon: const Icon(Icons.share_outlined),
-                    label: const Text('Share'),
+                    label: Text('Share'.tr),
                   ),
                 ],
               ),

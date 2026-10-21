@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Section title with an optional trailing text action.
 class SectionHeader extends StatelessWidget {
@@ -107,7 +108,7 @@ class BalanceCard extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: 'Current balance ${show(currentBalance)}',
+      label: 'Current balance @amount'.trParams(<String, String>{'amount': show(currentBalance)}),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -167,7 +168,7 @@ class BalanceCard extends StatelessWidget {
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
-                                'Current balance',
+                                'Current balance'.tr,
                                 style: text.labelLarge?.copyWith(
                                   color: onCard.withValues(alpha: 0.85),
                                   fontWeight: FontWeight.w600,
@@ -185,7 +186,7 @@ class BalanceCard extends StatelessWidget {
                               child: IconButton(
                                 padding: EdgeInsets.zero,
                                 iconSize: 20,
-                                tooltip: isHidden ? 'Show balance' : 'Hide balance',
+                                tooltip: isHidden ? 'Show balance'.tr : 'Hide balance'.tr,
                                 color: onCard,
                                 icon: Icon(
                                   isHidden
@@ -226,7 +227,7 @@ class BalanceCard extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(AppRadius.full),
                               ),
                               child: Text(
-                                'Opening balance ${show(openingBalance)}',
+                                'Opening balance @amount'.trParams(<String, String>{'amount': show(openingBalance)}),
                                 style: text.labelMedium?.copyWith(
                                   color: onCard.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.w500,
@@ -244,7 +245,7 @@ class BalanceCard extends StatelessWidget {
                                 child: _CardFlow(
                                   onCard: onCard,
                                   icon: Icons.arrow_downward_rounded,
-                                  label: 'Income this month',
+                                  label: 'Income this month'.tr,
                                   value: show(monthIncome),
                                   onTap: onIncomeTap,
                                 ),
@@ -254,7 +255,7 @@ class BalanceCard extends StatelessWidget {
                                 child: _CardFlow(
                                   onCard: onCard,
                                   icon: Icons.arrow_upward_rounded,
-                                  label: 'Expense this month',
+                                  label: 'Expense this month'.tr,
                                   value: show(monthExpense),
                                   onTap: onExpenseTap,
                                 ),
@@ -621,7 +622,7 @@ class _SkeletonListState extends State<SkeletonList>
     final Color base = Theme.of(context).colorScheme.surfaceContainerHighest;
     final Widget item = _item(base);
     return Semantics(
-      label: 'Loading',
+      label: 'Loading'.tr,
       child: ExcludeSemantics(
         child: FadeTransition(
           opacity: Tween<double>(begin: 0.4, end: 1).animate(_pulse),

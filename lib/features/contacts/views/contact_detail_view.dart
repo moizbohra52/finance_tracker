@@ -35,14 +35,14 @@ class ContactDetailView extends GetView<ContactDetailController> {
   Future<void> _delete(BuildContext context, Contact contact) async {
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete ${contact.name}?',
+      title: 'Delete @name?'.trParams(<String, String>{'name': contact.name}),
       message:
-          'The contact and their ledger entries will be removed from your '
-          'khata.',
+          'The contact and their ledger entries will be removed from your khata.'
+              .tr,
     );
     if (!confirmed) return;
     if (await controller.deleteContact()) {
-      AppSnackbar.show('Contact deleted');
+      AppSnackbar.show('Contact deleted'.tr);
       Get.back<void>();
     }
   }
@@ -53,11 +53,11 @@ class ContactDetailView extends GetView<ContactDetailController> {
       final Contact? contact = controller.contact.value;
       return Scaffold(
         appBar: AppAppBar(
-          title: contact?.name ?? 'Contact',
+          title: contact?.name ?? 'Contact'.tr,
           actions: <Widget>[
             if (contact != null) ...<Widget>[
               IconButton(
-                tooltip: 'Send reminder via WhatsApp / SMS',
+                tooltip: 'Send reminder via WhatsApp / SMS'.tr,
                 icon: const Icon(Icons.send_rounded),
                 onPressed: () => SendReminderSheet.show(
                   context,
@@ -66,7 +66,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
                 ),
               ),
               IconButton(
-                tooltip: 'Add reminder',
+                tooltip: 'Add reminder'.tr,
                 icon: const Icon(Icons.alarm_add_outlined),
                 onPressed: () => Get.toNamed<void>(
                   AppRoutes.reminderForm,
@@ -77,7 +77,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
                 ),
               ),
               IconButton(
-                tooltip: 'Edit contact',
+                tooltip: 'Edit contact'.tr,
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: () => Get.toNamed<void>(
                   AppRoutes.contactForm,
@@ -85,7 +85,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
                 ),
               ),
               IconButton(
-                tooltip: 'Delete contact',
+                tooltip: 'Delete contact'.tr,
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () => _delete(context, contact),
               ),
@@ -99,17 +99,17 @@ class ContactDetailView extends GetView<ContactDetailController> {
 
   Widget _body(BuildContext context, Contact? contact) {
     if (controller.isLoading.value) {
-      return const LoadingState(message: 'Loading contact');
+      return LoadingState(message: 'Loading contact'.tr);
     }
     final String? error = controller.error.value;
     if (error != null) {
       return ErrorState(message: error, onRetry: controller.load);
     }
     if (contact == null) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.person_off_outlined,
-        title: 'Contact not found',
-        message: 'It may have been deleted.',
+        title: 'Contact not found'.tr,
+        message: 'It may have been deleted.'.tr,
       );
     }
     return AppContent(
@@ -121,7 +121,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
             const SizedBox(height: AppSpacing.md),
             _EntryActions(contact: contact),
             const SizedBox(height: AppSpacing.lg),
-            const SectionHeader(title: 'Ledger'),
+            SectionHeader(title: 'Ledger'.tr),
             const SizedBox(height: AppSpacing.sm),
             Obx(() {
               final String? deleteError = controller.deletion.error.value;
@@ -133,11 +133,11 @@ class ContactDetailView extends GetView<ContactDetailController> {
                     );
             }),
             if (controller.entries.isEmpty)
-              const AppCard(
+              AppCard(
                 child: EmptyState(
                   icon: Icons.menu_book_outlined,
-                  title: 'No entries yet',
-                  message: 'Add a credit or debit to start this ledger.',
+                  title: 'No entries yet'.tr,
+                  message: 'Add a credit or debit to start this ledger.'.tr,
                 ),
               )
             else
@@ -191,8 +191,8 @@ class _BalanceHeader extends GetView<ContactDetailController> {
             const SizedBox(height: AppSpacing.sm),
             Text(
               receivable
-                  ? 'You will get'
-                  : (payable ? 'You will give' : 'All settled'),
+                  ? 'You will get'.tr
+                  : (payable ? 'You will give'.tr : 'All settled'.tr),
               style: text.labelLarge,
             ),
             const SizedBox(height: AppSpacing.xs),
@@ -213,7 +213,7 @@ class _BalanceHeader extends GetView<ContactDetailController> {
                   ),
                 ),
                 icon: const Icon(Icons.send_rounded, size: 18),
-                label: const Text('Send Reminder (WhatsApp / SMS)'),
+                label: Text('Send Reminder (WhatsApp / SMS)'.tr),
                 onPressed: () => SendReminderSheet.show(
                   context,
                   contact: contact,
@@ -224,7 +224,7 @@ class _BalanceHeader extends GetView<ContactDetailController> {
             const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
-              label: const Text('Share statement (PDF)'),
+              label: Text('Share statement (PDF)'.tr),
               onPressed: controller.statement.isBusy.value
                   ? null
                   : _shareStatement,
@@ -258,7 +258,7 @@ class _EntryActions extends StatelessWidget {
           children: <Widget>[
             Expanded(
               child: AppButton(
-                label: 'Add credit',
+                label: 'Add credit'.tr,
                 icon: Icons.add_card_outlined,
                 onPressed: () => _add(ContactTransactionType.credit),
               ),
@@ -266,7 +266,7 @@ class _EntryActions extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: AppButton(
-                label: 'Add debit',
+                label: 'Add debit'.tr,
                 icon: Icons.remove_circle_outline,
                 variant: AppButtonVariant.secondary,
                 onPressed: () => _add(ContactTransactionType.debit),
@@ -280,11 +280,11 @@ class _EntryActions extends StatelessWidget {
           children: <Widget>[
             TextButton(
               onPressed: () => _add(ContactTransactionType.paymentReceived),
-              child: const Text('Payment received'),
+              child: Text('Payment received'.tr),
             ),
             TextButton(
               onPressed: () => _add(ContactTransactionType.paymentMade),
-              child: const Text('Payment made'),
+              child: Text('Payment made'.tr),
             ),
           ],
         ),
@@ -323,13 +323,14 @@ class _EntryTile extends GetView<ContactDetailController> {
   Future<void> _delete(BuildContext context) async {
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete entry?',
-      message:
-          '${contactEntryLabel(entry.type)} of '
-          '${AppFormatters.money(entry.amount)} will be removed.',
+      title: 'Delete entry?'.tr,
+      message: '@entry of @amount will be removed.'.trParams(<String, String>{
+        'entry': contactEntryLabel(entry.type),
+        'amount': AppFormatters.money(entry.amount),
+      }),
     );
     if (confirmed && await controller.deleteEntry(entry.id)) {
-      AppSnackbar.show('Entry deleted');
+      AppSnackbar.show('Entry deleted'.tr);
     }
   }
 
@@ -342,7 +343,7 @@ class _EntryTile extends GetView<ContactDetailController> {
     final String note = entry.note ?? '';
     final String due = entry.dueDate == null
         ? ''
-        : ' · Due ${AppFormatters.date(entry.dueDate!)}';
+        : ' · ${'Due @date'.trParams(<String, String>{'date': AppFormatters.date(entry.dueDate!)})}';
     return AppListTile(
       onTap: _edit,
       padding: const EdgeInsets.only(
@@ -370,12 +371,12 @@ class _EntryTile extends GetView<ContactDetailController> {
             ),
           ),
           IconButton(
-            tooltip: 'Edit entry',
+            tooltip: 'Edit entry'.tr,
             icon: const Icon(Icons.edit_outlined),
             onPressed: _edit,
           ),
           IconButton(
-            tooltip: 'Delete entry',
+            tooltip: 'Delete entry'.tr,
             icon: const Icon(Icons.delete_outline),
             onPressed: () => _delete(context),
           ),
@@ -393,7 +394,7 @@ class _ContactInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<(String, String?)> rows = <(String, String?)>[];
+    final List<(String, String?, bool)> rows = <(String, String?, bool)>[];
     final String? rawMobile = contact.mobile?.trim();
     if (rawMobile != null && rawMobile.isNotEmpty) {
       final List<String> numbers = rawMobile
@@ -403,29 +404,37 @@ class _ContactInfo extends StatelessWidget {
           .toList();
       if (numbers.length > 1) {
         for (int i = 0; i < numbers.length; i++) {
-          rows.add(('Mobile ${i + 1}', numbers[i]));
+          rows.add((
+            'Mobile @number'.trParams(<String, String>{'number': '${i + 1}'}),
+            numbers[i],
+            true,
+          ));
         }
       } else if (numbers.isNotEmpty) {
-        rows.add(('Mobile', numbers.first));
+        rows.add(('Mobile'.tr, numbers.first, true));
       }
     }
-    if ((contact.email ?? '').isNotEmpty) rows.add(('Email', contact.email));
-    if ((contact.address ?? '').isNotEmpty) {
-      rows.add(('Address', contact.address));
+    if ((contact.email ?? '').isNotEmpty) {
+      rows.add(('Email'.tr, contact.email, false));
     }
-    if ((contact.notes ?? '').isNotEmpty) rows.add(('Notes', contact.notes));
+    if ((contact.address ?? '').isNotEmpty) {
+      rows.add(('Address'.tr, contact.address, false));
+    }
+    if ((contact.notes ?? '').isNotEmpty) {
+      rows.add(('Notes'.tr, contact.notes, false));
+    }
 
     if (rows.isEmpty) return const SizedBox.shrink();
     final TextTheme text = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SectionHeader(title: 'Details'),
+        SectionHeader(title: 'Details'.tr),
         const SizedBox(height: AppSpacing.sm),
         AppCard(
           child: Column(
             children: <Widget>[
-              for (final (String, String?) r in rows)
+              for (final (String, String?, bool) r in rows)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                   child: Row(
@@ -436,9 +445,9 @@ class _ContactInfo extends StatelessWidget {
                         child: Text(r.$1, style: text.bodyMedium),
                       ),
                       Expanded(child: Text(r.$2!, style: text.titleSmall)),
-                      if (r.$1.startsWith('Mobile'))
+                      if (r.$3)
                         IconButton(
-                          tooltip: 'Send reminder via WhatsApp',
+                          tooltip: 'Send reminder via WhatsApp'.tr,
                           icon: const Icon(
                             Icons.chat_bubble_outline_rounded,
                             size: 20,

@@ -44,22 +44,22 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
             sheet,
             _AddChoice.income,
             Icons.south_west_rounded,
-            'Add income',
-            'Money received into an account',
+            'Add income'.tr,
+            'Money received into an account'.tr,
           ),
           option(
             sheet,
             _AddChoice.expense,
             Icons.north_east_rounded,
-            'Add expense',
-            'Money spent from an account',
+            'Add expense'.tr,
+            'Money spent from an account'.tr,
           ),
           option(
             sheet,
             _AddChoice.transfer,
             Icons.swap_horiz_rounded,
-            'Transfer between accounts',
-            'Move money, e.g. from bank to cash',
+            'Transfer between accounts'.tr,
+            'Move money, e.g. from bank to cash'.tr,
           ),
           const SizedBox(height: AppSpacing.sm),
         ],
@@ -90,12 +90,12 @@ class TransactionListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Transactions'),
+      appBar: AppAppBar(title: 'Transactions'.tr),
       body: const SafeArea(child: TransactionListContent()),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => showAddTransactionSheet(context),
         icon: const Icon(Icons.add),
-        label: const Text('Add transaction'),
+        label: Text('Add transaction'.tr),
       ),
     );
   }
@@ -159,9 +159,9 @@ class _TransactionListContentState extends State<TransactionListContent> {
                 return filtered
                     ? EmptyState(
                         icon: Icons.search_off_rounded,
-                        title: 'No matching transactions',
-                        message: 'Try a different search or clear the filters.',
-                        actionLabel: 'Clear filters',
+                        title: 'No matching transactions'.tr,
+                        message: 'Try a different search or clear the filters.'.tr,
+                        actionLabel: 'Clear filters'.tr,
                         onAction: () {
                           _search.clear();
                           _controller.searchText.value = '';
@@ -170,10 +170,10 @@ class _TransactionListContentState extends State<TransactionListContent> {
                       )
                     : EmptyState(
                         icon: Icons.receipt_long_outlined,
-                        title: 'No transactions yet',
+                        title: 'No transactions yet'.tr,
                         message:
-                            'Record your income and expenses to see them here.',
-                        actionLabel: 'Add transaction',
+                            'Record your income and expenses to see them here.'.tr,
+                        actionLabel: 'Add transaction'.tr,
                         onAction: () => showAddTransactionSheet(context),
                       );
               }
@@ -216,7 +216,7 @@ class _SearchBar extends GetView<TransactionController> {
               textInputAction: TextInputAction.search,
               onChanged: (String v) => controller.searchText.value = v,
               decoration: InputDecoration(
-                hintText: 'Search notes, accounts, categories...',
+                hintText: 'Search notes, accounts, categories...'.tr,
                 hintStyle: TextStyle(
                   color: colors.onSurfaceVariant.withValues(alpha: 0.7),
                   fontSize: 14,
@@ -262,7 +262,7 @@ class _SearchBar extends GetView<TransactionController> {
                 ),
                 padding: const EdgeInsets.all(12),
               ),
-              tooltip: 'Filter transactions',
+              tooltip: 'Filter transactions'.tr,
               icon: const Icon(Icons.tune_rounded),
               onPressed: () => showTransactionFilterSheet(context),
             ),
@@ -276,7 +276,7 @@ class _SearchBar extends GetView<TransactionController> {
             ),
             padding: const EdgeInsets.all(12),
           ),
-          tooltip: 'Calendar view',
+          tooltip: 'Calendar view'.tr,
           icon: const Icon(Icons.calendar_month_outlined),
           onPressed: () => Get.toNamed<void>(AppRoutes.transactionCalendar),
         ),
@@ -359,7 +359,7 @@ class _QuickTypeSelector extends GetView<TransactionController> {
         child: Row(
           children: <Widget>[
             pill(
-              label: 'All',
+              label: 'All'.tr,
               selected: current == null,
               icon: Icons.layers_outlined,
               color: colors.onSurfaceVariant,
@@ -371,7 +371,7 @@ class _QuickTypeSelector extends GetView<TransactionController> {
               ),
             ),
             pill(
-              label: 'Expense',
+              label: 'Expense'.tr,
               selected: current == TransactionType.expense,
               icon: Icons.arrow_upward_rounded,
               color: money.expense,
@@ -385,7 +385,7 @@ class _QuickTypeSelector extends GetView<TransactionController> {
               ),
             ),
             pill(
-              label: 'Income',
+              label: 'Income'.tr,
               selected: current == TransactionType.income,
               icon: Icons.arrow_downward_rounded,
               color: money.income,
@@ -399,7 +399,7 @@ class _QuickTypeSelector extends GetView<TransactionController> {
               ),
             ),
             pill(
-              label: 'Transfer',
+              label: 'Transfer'.tr,
               selected: current == TransactionType.transfer_out,
               icon: Icons.swap_horiz_rounded,
               color: colors.primary,
@@ -482,7 +482,7 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(
-                          'Income',
+                          'Income'.tr,
                           style: text.labelSmall?.copyWith(
                             color: colors.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
@@ -535,7 +535,7 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(
-                          'Expense',
+                          'Expense'.tr,
                           style: text.labelSmall?.copyWith(
                             color: colors.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
@@ -571,7 +571,7 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    'Net',
+                    'Net'.tr,
                     style: text.labelSmall?.copyWith(
                       color: colors.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
@@ -620,7 +620,7 @@ class _ActiveFilters extends GetView<TransactionController> {
           InputChip(
             label: Text(
               controller.categoryOf(controller.categoryFilter.value)?.name ??
-                  'Category',
+                  'Category'.tr,
             ),
             onDeleted: () => controller.applyFilters(
               type: controller.typeFilter.value,
@@ -651,7 +651,7 @@ class _ActiveFilters extends GetView<TransactionController> {
             children: <Widget>[
               ...chips,
               ActionChip(
-                label: const Text('Clear all'),
+                label: Text('Clear all'.tr),
                 onPressed: controller.clearFilters,
               ),
             ],

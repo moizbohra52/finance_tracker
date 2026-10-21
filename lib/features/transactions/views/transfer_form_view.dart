@@ -146,7 +146,7 @@ class _TransferFormViewState extends State<TransferFormView> {
       note: note.isEmpty ? null : note,
     );
     if (saved == null) return;
-    AppSnackbar.show(_isEditing ? 'Transfer updated' : 'Transfer saved');
+    AppSnackbar.show(_isEditing ? 'Transfer updated'.tr : 'Transfer saved'.tr);
     if (existing != null && saved.transferId != existing.transferId) {
       // The edit replaced the rows, so the detail screen below shows a
       // deleted leg: close it too.
@@ -163,11 +163,11 @@ class _TransferFormViewState extends State<TransferFormView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppAppBar(title: _isEditing ? 'Edit transfer' : 'Transfer'),
+      appBar: AppAppBar(title: _isEditing ? 'Edit transfer'.tr : 'Transfer'.tr),
       body: SafeArea(
         child: Obx(() {
           if (!_controller.lookupsLoaded.value || _loadingExisting) {
-            return const LoadingState(message: 'Loading accounts');
+            return LoadingState(message: 'Loading accounts'.tr);
           }
           final String? lookupError = _controller.lookupError.value;
           if (lookupError != null && _controller.accounts.isEmpty) {
@@ -181,20 +181,19 @@ class _TransferFormViewState extends State<TransferFormView> {
             return ErrorState(message: loadError, onRetry: _loadExisting);
           }
           if (_isEditing && _existing == null) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.search_off_rounded,
-              title: 'Transfer not found',
-              message: 'It may have been deleted.',
+              title: 'Transfer not found'.tr,
+              message: 'It may have been deleted.'.tr,
             );
           }
           if (_controller.accounts.length < 2) {
             return EmptyState(
               icon: Icons.swap_horiz_rounded,
-              title: 'Add another account',
+              title: 'Add another account'.tr,
               message:
-                  'A transfer moves money between two of your accounts, '
-                  'for example from a bank account to cash.',
-              actionLabel: 'Add account',
+                  'A transfer moves money between two of your accounts, for example from a bank account to cash.'.tr,
+              actionLabel: 'Add account'.tr,
               onAction: () => Get.toNamed<void>(AppRoutes.accountForm),
             );
           }
@@ -245,7 +244,7 @@ class _TransferFormViewState extends State<TransferFormView> {
               autovalidateMode: AutovalidateMode.onUserInteractionIfError,
               validator: Validators.positiveAmount,
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: 'Amount'.tr,
                 prefixText: '${AppFormatters.currencySymbol} ',
                 prefixStyle: text.displaySmall,
                 hintText: '0.00',
@@ -262,15 +261,15 @@ class _TransferFormViewState extends State<TransferFormView> {
               value: fromId,
               options: ids,
               labelOf: nameOf,
-              decoration: const InputDecoration(
-                labelText: 'From',
-                prefixIcon: Icon(Icons.north_east_rounded),
+              decoration: InputDecoration(
+                labelText: 'From'.tr,
+                prefixIcon: const Icon(Icons.north_east_rounded),
               ),
               onChanged: (String? v) => setState(() => _fromId = v),
             ),
             Center(
               child: IconButton(
-                tooltip: 'Swap accounts',
+                tooltip: 'Swap accounts'.tr,
                 icon: const Icon(Icons.swap_vert_rounded),
                 onPressed: () => _swap(fromId, toId),
               ),
@@ -283,13 +282,13 @@ class _TransferFormViewState extends State<TransferFormView> {
                   if (id != fromId) id,
               ],
               labelOf: nameOf,
-              decoration: const InputDecoration(
-                labelText: 'To',
-                prefixIcon: Icon(Icons.south_west_rounded),
+              decoration: InputDecoration(
+                labelText: 'To'.tr,
+                prefixIcon: const Icon(Icons.south_west_rounded),
               ),
               onChanged: (String? v) => setState(() => _toId = v),
               validator: (String? v) => v == null || v == fromId
-                  ? 'Choose a different account to receive the money'
+                  ? 'Choose a different account to receive the money'.tr
                   : null,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -298,7 +297,7 @@ class _TransferFormViewState extends State<TransferFormView> {
               children: <Widget>[
                 Expanded(
                   child: AppDateField(
-                    label: 'Date',
+                    label: 'Date'.tr,
                     value: _date,
                     lastDate: DateTime.now().add(const Duration(days: 1)),
                     onChanged: (DateTime picked) =>
@@ -308,7 +307,7 @@ class _TransferFormViewState extends State<TransferFormView> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: AppTimeField(
-                    label: 'Time',
+                    label: 'Time'.tr,
                     value: _time,
                     onChanged: (TimeOfDay picked) =>
                         setState(() => _time = picked),
@@ -318,7 +317,7 @@ class _TransferFormViewState extends State<TransferFormView> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
-              label: 'Note (optional)',
+              label: 'Note (optional)'.tr,
               controller: _note,
               minLines: 3,
               maxLines: 5,
@@ -327,7 +326,7 @@ class _TransferFormViewState extends State<TransferFormView> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'A transfer is not counted as income or expense.',
+              'A transfer is not counted as income or expense.'.tr,
               style: text.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -336,7 +335,7 @@ class _TransferFormViewState extends State<TransferFormView> {
             SubmitErrorMessage(_controller.save),
             Obx(
               () => AppButton(
-                label: _isEditing ? 'Save changes' : 'Transfer',
+                label: _isEditing ? 'Save changes'.tr : 'Transfer'.tr,
                 icon: Icons.swap_horiz_rounded,
                 isLoading: _controller.save.isBusy.value,
                 onPressed: _submit,

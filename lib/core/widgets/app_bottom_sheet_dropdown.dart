@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// A form field that looks like a dropdown but opens a bottom sheet for
 /// selection – consistent with the settings-page picker style.
@@ -94,7 +95,7 @@ class BottomSheetDropdown<T> extends StatelessWidget {
 
   Future<T?> _showSheet(BuildContext context, T? current) {
     final String title =
-        decoration.labelText ?? decoration.hintText ?? 'Choose';
+        decoration.labelText ?? decoration.hintText ?? 'Choose'.tr;
     return showModalBottomSheet<T>(
       context: context,
       showDragHandle: true,

@@ -75,6 +75,46 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Hindi reaches transactions, the form and khata', (
+    WidgetTester tester,
+  ) async {
+    userSettings.settings = const UserSettings(
+      dateFormat: 'd MMM y',
+      numberFormat: 'indian',
+      firstDayOfWeek: 'monday',
+      languageCode: 'hi',
+      defaultAccountId: null,
+    );
+    await start(tester);
+    await tester.pumpAndSettle();
+
+    await tapAndSettle(tester, navLabel(hindi['Transactions']!));
+    expect(
+      find.text(hindi['Record your income and expenses to see them here.']!),
+      findsOneWidget,
+    );
+
+    await tapAndSettle(tester, navLabel(hindi['Khata']!));
+    expect(
+      find.text(
+        hindi['Add the people you lend to or borrow from, then record credit and debit entries against them.']!,
+      ),
+      findsOneWidget,
+    );
+
+    unawaited(Get.toNamed<void>(AppRoutes.transactionForm));
+    await tester.pumpAndSettle();
+    expect(find.text(hindi['Note (optional)']!), findsOneWidget);
+    await tapAndSettle(tester, find.text(hindi['Save']!));
+    // The error is under the amount field, scrolled off by the tap on Save.
+    await tester.scrollUntilVisible(
+      find.text(hindi['Enter an amount']!),
+      -200,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(find.text(hindi['Enter an amount']!), findsOneWidget);
+  });
+
   testWidgets('a long quick action label is shown whole', (
     WidgetTester tester,
   ) async {

@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/services/external_activity.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -106,6 +107,69 @@ class ReminderSenderService {
           'Dhanyawad!';
     }
   }
+
+  /// Pre-built template message in Hindi (Devanagari). [upiId] adds a pay
+  /// link when the contact owes the user.
+  static String buildHindiMessage({
+    required String contactName,
+    required Decimal amount,
+    required bool isReceivable,
+    String? note,
+    String? upiId,
+  }) {
+    final String formattedAmount = AppFormatters.money(amount.abs());
+    final String noteText = (note != null && note.trim().isNotEmpty)
+        ? '\nनोट: ${note.trim()}'
+        : '';
+
+    if (isReceivable) {
+      return 'नमस्ते $contactName जी,\n'
+          'आपका $formattedAmount का हिसाब बाकी है।'
+          '$noteText'
+          '${_upiLines('UPI से भुगतान करें', upiId, amount)}\n'
+          'कृपया समय मिलते ही इसे चुका दें।\n'
+          'धन्यवाद!';
+    } else {
+      return 'नमस्ते $contactName जी,\n'
+          'आपका $formattedAmount का हिसाब हमारे पास बाकी है।'
+          '$noteText\n'
+          'कृपया अपनी UPI ID या बैंक की जानकारी भेजें ताकि हम भुगतान कर सकें।\n'
+          'धन्यवाद!';
+    }
+  }
+
+  /// The template message in [language]: the reminder starts in the app's
+  /// language, and the user can pick another before sending.
+  static String buildMessage(
+    AppLanguage language, {
+    required String contactName,
+    required Decimal amount,
+    required bool isReceivable,
+    String? note,
+    String? upiId,
+  }) => switch (language) {
+    AppLanguage.english => buildEnglishMessage(
+      contactName: contactName,
+      amount: amount,
+      isReceivable: isReceivable,
+      note: note,
+      upiId: upiId,
+    ),
+    AppLanguage.hindi => buildHindiMessage(
+      contactName: contactName,
+      amount: amount,
+      isReceivable: isReceivable,
+      note: note,
+      upiId: upiId,
+    ),
+    AppLanguage.hinglish => buildHinglishMessage(
+      contactName: contactName,
+      amount: amount,
+      isReceivable: isReceivable,
+      note: note,
+      upiId: upiId,
+    ),
+  };
 
   /// Pre-built template message in English. [upiId] adds a pay link when
   /// the contact owes the user.

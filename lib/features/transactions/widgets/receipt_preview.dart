@@ -64,7 +64,7 @@ class _ReceiptPreviewState extends State<ReceiptPreview> {
         final Widget content;
         if (error is NetworkFailure) {
           content = Text(
-            'Receipt will show when you are online',
+            'Receipt will show when you are online'.tr,
             style: text.bodyMedium,
           );
         } else if (error != null) {
@@ -72,11 +72,11 @@ class _ReceiptPreviewState extends State<ReceiptPreview> {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  "Couldn't load the receipt.",
+                  "Couldn't load the receipt.".tr,
                   style: text.bodyMedium,
                 ),
               ),
-              TextButton(onPressed: _retry, child: const Text('Retry')),
+              TextButton(onPressed: _retry, child: Text('Retry'.tr)),
             ],
           );
         } else if (receipt == null) {
@@ -93,7 +93,7 @@ class _ReceiptPreviewState extends State<ReceiptPreview> {
             children: <Widget>[
               SizedBox(
                 width: 96,
-                child: Text('Receipt', style: text.bodyMedium),
+                child: Text('Receipt'.tr, style: text.bodyMedium),
               ),
               Expanded(child: content),
             ],
@@ -124,7 +124,7 @@ class _Thumbnail extends StatelessWidget {
         fit: fit,
         // A damaged copy on the phone: say so instead of throwing.
         errorBuilder: (BuildContext context, Object error, StackTrace? _) =>
-            const Text("Couldn't load the receipt."),
+            Text("Couldn't load the receipt.".tr),
       );
     }
     return Image.network(
@@ -136,9 +136,9 @@ class _Thumbnail extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              const Flexible(child: Text("Couldn't load the receipt.")),
+              Flexible(child: Text("Couldn't load the receipt.".tr)),
               if (size != null)
-                TextButton(onPressed: onRetry, child: const Text('Retry')),
+                TextButton(onPressed: onRetry, child: Text('Retry'.tr)),
             ],
           ),
     );
@@ -148,7 +148,7 @@ class _Thumbnail extends StatelessWidget {
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (BuildContext _) => Scaffold(
-          appBar: const AppAppBar(title: 'Receipt'),
+          appBar: AppAppBar(title: 'Receipt'.tr),
           body: InteractiveViewer(maxScale: 5, child: Center(child: _image())),
         ),
       ),
@@ -162,7 +162,7 @@ class _Thumbnail extends StatelessWidget {
       children: <Widget>[
         Semantics(
           button: true,
-          label: 'Open receipt photo',
+          label: 'Open receipt photo'.tr,
           child: InkWell(
             onTap: () => _open(context),
             borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -175,7 +175,7 @@ class _Thumbnail extends StatelessWidget {
         if (receipt.pending) ...<Widget>[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Waiting to upload',
+            'Waiting to upload'.tr,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

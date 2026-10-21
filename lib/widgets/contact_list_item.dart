@@ -4,6 +4,7 @@ import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Modern contact balance card: initials squircle badge, contact name, phone,
 /// and high-contrast receivable/payable badges with directional indicators.
@@ -57,10 +58,10 @@ class ContactBalanceTile extends StatelessWidget {
         : null;
 
     final String statusLabel = isRec
-        ? 'YOU WILL GET'
+        ? 'YOU WILL GET'.tr
         : isPay
-        ? 'YOU WILL GIVE'
-        : 'SETTLED';
+        ? 'YOU WILL GIVE'.tr
+        : 'SETTLED'.tr;
 
     final IconData statusIcon = isRec
         ? Icons.arrow_downward_rounded
@@ -152,7 +153,7 @@ class ContactBalanceTile extends StatelessWidget {
                         )
                       else
                         Text(
-                          'No phone number',
+                          'No phone number'.tr,
                           style: text.labelSmall?.copyWith(
                             color: colors.onSurfaceVariant.withValues(alpha: 0.5),
                             fontStyle: FontStyle.italic,

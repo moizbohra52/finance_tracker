@@ -80,26 +80,26 @@ class _FilterSheetState extends State<_FilterSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Text('Filter transactions', style: text.titleMedium),
+            Text('Filter transactions'.tr, style: text.titleMedium),
             const SizedBox(height: AppSpacing.md),
-            Text('Type', style: text.labelLarge),
+            Text('Type'.tr, style: text.labelLarge),
             const SizedBox(height: AppSpacing.sm),
             Wrap(
               spacing: AppSpacing.sm,
               children: <Widget>[
                 ChoiceChip(
-                  label: const Text('All'),
+                  label: Text('All'.tr),
                   selected: _type == null,
                   onSelected: (_) => setState(() => _type = null),
                 ),
                 ChoiceChip(
-                  label: const Text('Income'),
+                  label: Text('Income'.tr),
                   selected: _type == TransactionType.income,
                   onSelected: (_) =>
                       setState(() => _type = TransactionType.income),
                 ),
                 ChoiceChip(
-                  label: const Text('Expense'),
+                  label: Text('Expense'.tr),
                   selected: _type == TransactionType.expense,
                   onSelected: (_) =>
                       setState(() => _type = TransactionType.expense),
@@ -111,9 +111,9 @@ class _FilterSheetState extends State<_FilterSheet> {
               value: _accountId ?? '',
               options: <String>['', for (final Account a in accounts) a.id],
               labelOf: (String id) => id.isEmpty
-                  ? 'All accounts'
+                  ? 'All accounts'.tr
                   : accounts.firstWhere((Account a) => a.id == id).name,
-              decoration: const InputDecoration(labelText: 'Account'),
+              decoration: InputDecoration(labelText: 'Account'.tr),
               onChanged: (String? v) =>
                   setState(() => _accountId = (v?.isEmpty ?? true) ? null : v),
             ),
@@ -123,9 +123,9 @@ class _FilterSheetState extends State<_FilterSheet> {
               value: categoryValue ?? '',
               options: <String>['', for (final Category c in categories) c.id],
               labelOf: (String id) => id.isEmpty
-                  ? 'All categories'
+                  ? 'All categories'.tr
                   : categories.firstWhere((Category c) => c.id == id).name,
-              decoration: const InputDecoration(labelText: 'Category'),
+              decoration: InputDecoration(labelText: 'Category'.tr),
               onChanged: (String? v) =>
                   setState(() => _categoryId = (v?.isEmpty ?? true) ? null : v),
             ),
@@ -135,7 +135,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               icon: const Icon(Icons.date_range_outlined),
               label: Text(
                 _range == null
-                    ? 'Any date'
+                    ? 'Any date'.tr
                     : '${AppFormatters.date(_range!.start)} – '
                           '${AppFormatters.date(_range!.end)}',
               ),
@@ -145,7 +145,7 @@ class _FilterSheetState extends State<_FilterSheet> {
               children: <Widget>[
                 Expanded(
                   child: AppButton(
-                    label: 'Reset',
+                    label: 'Reset'.tr,
                     variant: AppButtonVariant.secondary,
                     onPressed: () {
                       _controller.clearFilters();
@@ -155,7 +155,7 @@ class _FilterSheetState extends State<_FilterSheet> {
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: AppButton(label: 'Apply', onPressed: _apply),
+                  child: AppButton(label: 'Apply'.tr, onPressed: _apply),
                 ),
               ],
             ),

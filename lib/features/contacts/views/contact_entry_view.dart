@@ -19,20 +19,20 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 String contactEntryLabel(ContactTransactionType type) => switch (type) {
-  ContactTransactionType.credit => 'Credit',
-  ContactTransactionType.debit => 'Debit',
-  ContactTransactionType.paymentReceived => 'Payment received',
-  ContactTransactionType.paymentMade => 'Payment made',
-  ContactTransactionType.adjustment => 'Adjustment',
+  ContactTransactionType.credit => 'Credit'.tr,
+  ContactTransactionType.debit => 'Debit'.tr,
+  ContactTransactionType.paymentReceived => 'Payment received'.tr,
+  ContactTransactionType.paymentMade => 'Payment made'.tr,
+  ContactTransactionType.adjustment => 'Adjustment'.tr,
 };
 
 /// Plain-language effect of each entry type on the balance.
 String contactEntryHint(ContactTransactionType type) => switch (type) {
-  ContactTransactionType.credit => 'They owe you more.',
-  ContactTransactionType.debit => 'You owe them more.',
-  ContactTransactionType.paymentReceived => 'They paid you back.',
-  ContactTransactionType.paymentMade => 'You paid them back.',
-  ContactTransactionType.adjustment => 'Corrects the balance.',
+  ContactTransactionType.credit => 'They owe you more.'.tr,
+  ContactTransactionType.debit => 'You owe them more.'.tr,
+  ContactTransactionType.paymentReceived => 'They paid you back.'.tr,
+  ContactTransactionType.paymentMade => 'You paid them back.'.tr,
+  ContactTransactionType.adjustment => 'Corrects the balance.'.tr,
 };
 
 /// Add credit, debit or a settlement for the contact in the route arguments.
@@ -125,10 +125,14 @@ class _ContactEntryViewState extends State<ContactEntryView> {
     if (!saved) return;
     AppSnackbar.show(
       editing
-          ? 'Entry updated'
+          ? 'Entry updated'.tr
           : (_accountId != null
-              ? '${contactEntryLabel(_type)} recorded & account updated'
-              : '${contactEntryLabel(_type)} recorded'),
+              ? '@entry recorded & account updated'.trParams(<String, String>{
+                  'entry': contactEntryLabel(_type),
+                })
+              : '@entry recorded'.trParams(<String, String>{
+                  'entry': contactEntryLabel(_type),
+                })),
     );
     Get.back<void>();
   }
@@ -140,10 +144,10 @@ class _ContactEntryViewState extends State<ContactEntryView> {
     return Scaffold(
       appBar: AppAppBar(
         title: editing
-            ? 'Edit entry'
+            ? 'Edit entry'.tr
             : (_args?.contactName == null
-                ? 'Add entry'
-                : 'Entry for ${_args!.contactName}'),
+                ? 'Add entry'.tr
+                : 'Entry for @name'.trParams(<String, String>{'name': _args!.contactName!})),
       ),
       body: SafeArea(
         child: AppContent(
@@ -193,7 +197,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                   autovalidateMode: AutovalidateMode.onUserInteractionIfError,
                   validator: Validators.positiveAmount,
                   decoration: InputDecoration(
-                    labelText: 'Amount',
+                    labelText: 'Amount'.tr,
                     prefixText: '${AppFormatters.currencySymbol} ',
                     prefixStyle: text.displaySmall,
                     hintText: '0.00',
@@ -211,7 +215,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                   children: <Widget>[
                     Expanded(
                       child: AppDateField(
-                        label: 'Date',
+                        label: 'Date'.tr,
                         value: _date,
                         lastDate: DateTime.now().add(const Duration(days: 1)),
                         onChanged: (DateTime d) => setState(() => _date = d),
@@ -220,7 +224,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: AppTimeField(
-                        label: 'Time',
+                        label: 'Time'.tr,
                         value: _time,
                         onChanged: (TimeOfDay t) => setState(() => _time = t),
                       ),
@@ -229,14 +233,14 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppDateField(
-                  label: 'Due date (optional)',
+                  label: 'Due date (optional)'.tr,
                   value: _dueDate,
                   onChanged: (DateTime d) => setState(() => _dueDate = d),
                   onCleared: () => setState(() => _dueDate = null),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Note (optional)',
+                  label: 'Note (optional)'.tr,
                   controller: _note,
                   minLines: 3,
                   maxLines: 5,
@@ -252,11 +256,11 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                       _type == ContactTransactionType.credit ||
                       _type == ContactTransactionType.paymentMade;
                   final String label = isOutflow
-                      ? 'Paid from account (optional)'
-                      : 'Deposit into account (optional)';
+                      ? 'Paid from account (optional)'.tr
+                      : 'Deposit into account (optional)'.tr;
                   final String helper = isOutflow
-                      ? 'Deducts amount from this account'
-                      : 'Adds amount to this account';
+                      ? 'Deducts amount from this account'.tr
+                      : 'Adds amount to this account'.tr;
 
                   return BottomSheetDropdown<String?>(
                     value: _accountId,
@@ -265,15 +269,15 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                       for (final Account a in accounts) a.id,
                     ],
                     labelOf: (String? id) {
-                      if (id == null) return 'None (Khata only)';
+                      if (id == null) return 'None (Khata only)'.tr;
                       final Account? a = accounts.firstWhereOrNull(
                         (Account a) => a.id == id,
                       );
-                      return a?.name ?? 'Unknown account';
+                      return a?.name ?? 'Unknown account'.tr;
                     },
                     detailOf: (String? id) {
                       if (id == null) {
-                        return 'Only updates this contact\'s balance';
+                        return 'Only updates this contact\'s balance'.tr;
                       }
                       final Account? a = accounts.firstWhereOrNull(
                         (Account a) => a.id == id,
@@ -286,7 +290,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                       labelText: label,
                       helperText: _accountId != null
                           ? helper
-                          : 'Optional: record in bank or cash balance as well',
+                          : 'Optional: record in bank or cash balance as well'.tr,
                       helperMaxLines: 2,
                       prefixIcon: Icon(
                         isOutflow
@@ -299,7 +303,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                                 Icons.clear_rounded,
                                 size: 20,
                               ),
-                              tooltip: 'Clear account',
+                              tooltip: 'Clear account'.tr,
                               onPressed: () =>
                                   setState(() => _accountId = null),
                             )
@@ -314,8 +318,10 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                 Obx(
                   () => AppButton(
                     label: editing
-                        ? 'Save changes'
-                        : 'Save ${contactEntryLabel(_type).toLowerCase()}',
+                        ? 'Save changes'.tr
+                        : 'Save @entry'.trParams(<String, String>{
+                            'entry': contactEntryLabel(_type).toLowerCase(),
+                          }),
                     icon: Icons.check_rounded,
                     isLoading: _controller.save.isBusy.value,
                     onPressed: _args == null ? null : _submit,

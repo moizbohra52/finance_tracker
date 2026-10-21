@@ -6,6 +6,7 @@ import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Modern transaction card tile: squircle category badge, title, account chip,
 /// time, optional note preview, and prominent formatted amount with flow pill.
@@ -46,15 +47,15 @@ class TransactionListItem extends StatelessWidget {
     if (t.type == TransactionType.opening_balance) {
       return (t.description != null && t.description!.trim().isNotEmpty)
           ? t.description!
-          : 'Opening balance';
+          : 'Opening balance'.tr;
     }
     if (TransferLegs.isLeg(t)) {
       for (final Transaction other in nearby) {
         if (other.transferId == t.transferId && other.id != t.id) {
           final String account = accountName(other.accountId);
           return t.type == TransactionType.transfer_out
-              ? 'To $account'
-              : 'From $account';
+              ? 'To @account'.trParams(<String, String>{'account': account})
+              : 'From @account'.trParams(<String, String>{'account': account});
         }
       }
     }
@@ -96,7 +97,7 @@ class TransactionListItem extends StatelessWidget {
         : (inflow ? '+' : '−');
 
     final String badgeLabel = isLeg
-        ? (inflow ? 'Transfer in' : 'Transfer out')
+        ? (inflow ? 'Transfer in'.tr : 'Transfer out'.tr)
         : transaction.type.label;
 
     final IconData flowIcon = isOpening

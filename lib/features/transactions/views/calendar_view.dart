@@ -23,7 +23,7 @@ class CalendarView extends GetView<CalendarController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Calendar'),
+      appBar: AppAppBar(title: 'Calendar'.tr),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxPageWidth,
@@ -38,7 +38,7 @@ class CalendarView extends GetView<CalendarController> {
                 const _MonthHeader(),
                 const SizedBox(height: AppSpacing.sm),
                 if (controller.isLoading.value)
-                  const LoadingState(message: 'Loading your month')
+                  LoadingState(message: 'Loading your month'.tr)
                 else ...<Widget>[
                   const _MonthGrid(),
                   const SizedBox(height: AppSpacing.lg),
@@ -66,7 +66,7 @@ class _MonthHeader extends GetView<CalendarController> {
           Row(
             children: <Widget>[
               IconButton(
-                tooltip: 'Previous month',
+                tooltip: 'Previous month'.tr,
                 icon: const Icon(Icons.chevron_left_rounded),
                 onPressed: controller.previousMonth,
               ),
@@ -78,7 +78,7 @@ class _MonthHeader extends GetView<CalendarController> {
                 ),
               ),
               IconButton(
-                tooltip: 'Next month',
+                tooltip: 'Next month'.tr,
                 icon: const Icon(Icons.chevron_right_rounded),
                 onPressed: controller.nextMonth,
               ),
@@ -88,12 +88,20 @@ class _MonthHeader extends GetView<CalendarController> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
               Text(
-                'In ${AppFormatters.money(controller.summary.value.income)}',
+                'In @amount'.trParams(<String, String>{
+                  'amount': AppFormatters.money(
+                    controller.summary.value.income,
+                  ),
+                }),
                 style: text.labelLarge?.copyWith(color: money.income),
               ),
               const SizedBox(width: AppSpacing.lg),
               Text(
-                'Out ${AppFormatters.money(controller.summary.value.expense)}',
+                'Out @amount'.trParams(<String, String>{
+                  'amount': AppFormatters.money(
+                    controller.summary.value.expense,
+                  ),
+                }),
                 style: text.labelLarge?.copyWith(color: money.expense),
               ),
             ],
@@ -173,8 +181,14 @@ class _DayCell extends StatelessWidget {
       selected: selected,
       label: <String>[
         AppFormatters.date(day.start, pattern: 'd MMMM'),
-        if (spent) 'spent ${AppFormatters.money(day.expense)}',
-        if (received) 'received ${AppFormatters.money(day.income)}',
+        if (spent)
+          'spent @amount'.trParams(<String, String>{
+            'amount': AppFormatters.money(day.expense),
+          }),
+        if (received)
+          'received @amount'.trParams(<String, String>{
+            'amount': AppFormatters.money(day.income),
+          }),
       ].join(', '),
       excludeSemantics: true,
       child: Padding(
@@ -234,8 +248,10 @@ class _DayList extends GetView<CalendarController> {
           if (items.isEmpty)
             EmptyState(
               icon: Icons.event_available_outlined,
-              title: 'Nothing on this day',
-              message: 'No transactions on $day.',
+              title: 'Nothing on this day'.tr,
+              message: 'No transactions on @day.'.trParams(<String, String>{
+                'day': day,
+              }),
             )
           else
             AppListCard(

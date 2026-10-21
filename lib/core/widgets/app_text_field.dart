@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 /// Labelled form field. Validation errors appear on form submit and then
 /// update live while the user corrects them.
@@ -89,7 +90,7 @@ class _AppTextFieldState extends State<AppTextField> {
         helperText: widget.helperText,
         suffixIcon: widget.obscureText
             ? IconButton(
-                tooltip: _isObscured ? 'Show password' : 'Hide password',
+                tooltip: _isObscured ? 'Show password'.tr : 'Hide password'.tr,
                 icon: Icon(
                   _isObscured
                       ? Icons.visibility_outlined

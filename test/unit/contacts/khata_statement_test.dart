@@ -106,6 +106,17 @@ void main() {
       expect(message, contains('upi://pay?pa=asha@okaxis&am=250.00&cu=INR'));
     });
 
+    test('the Hindi message greets in Hindi and keeps the pay link', () {
+      final String message = ReminderSenderService.buildHindiMessage(
+        contactName: 'Ravi',
+        amount: Decimal.parse('250'),
+        isReceivable: true,
+        upiId: 'asha@okaxis',
+      );
+      expect(message, startsWith('नमस्ते Ravi जी,'));
+      expect(message, contains('upi://pay?pa=asha@okaxis&am=250.00&cu=INR'));
+    });
+
     test('has no pay link when the user owes, or has no UPI ID', () {
       expect(
         ReminderSenderService.buildEnglishMessage(

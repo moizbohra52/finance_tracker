@@ -35,11 +35,11 @@ class TransactionDetailView extends GetView<TransactionDetailController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Transaction'),
+      appBar: AppAppBar(title: 'Transaction'.tr),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
-            return const LoadingState(message: 'Loading transaction');
+            return LoadingState(message: 'Loading transaction'.tr);
           }
           final String? error = controller.error.value;
           if (error != null) {
@@ -47,10 +47,10 @@ class TransactionDetailView extends GetView<TransactionDetailController> {
           }
           final Transaction? t = controller.transaction.value;
           if (t == null) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.search_off_rounded,
-              title: 'Transaction not found',
-              message: 'It may have been deleted.',
+              title: 'Transaction not found'.tr,
+              message: 'It may have been deleted.'.tr,
             );
           }
           return _Details(transaction: t, transfer: controller.transfer.value);
@@ -79,14 +79,22 @@ class _Details extends StatelessWidget {
     final String amount = AppFormatters.money(transaction.amount);
     final bool confirmed = await confirmDestructive(
       context,
-      title: transfer == null ? 'Delete transaction?' : 'Delete transfer?',
+      title: transfer == null
+          ? 'Delete transaction?'.tr
+          : 'Delete transfer?'.tr,
       message: transfer == null
-          ? 'This ${transaction.type.label.toLowerCase()} of $amount will be '
-                'removed from your balance.'
-          : 'This transfer of $amount from '
-                '${list.accountName(transfer.fromAccountId)} to '
-                '${list.accountName(transfer.toAccountId)} will be removed '
-                'from both accounts.',
+          ? 'This @type of @amount will be removed from your balance.'.trParams(
+              <String, String>{
+                'type': transaction.type.label.toLowerCase(),
+                'amount': amount,
+              },
+            )
+          : 'This transfer of @amount from @from to @to will be removed from both accounts.'
+                .trParams(<String, String>{
+                  'amount': amount,
+                  'from': list.accountName(transfer.fromAccountId),
+                  'to': list.accountName(transfer.toAccountId),
+                }),
     );
     if (!confirmed) return;
     final bool deleted = transfer == null
@@ -94,7 +102,7 @@ class _Details extends StatelessWidget {
         : await list.deleteTransfer(transfer.transferId);
     if (deleted) {
       AppSnackbar.show(
-        transfer == null ? 'Transaction deleted' : 'Transfer deleted',
+        transfer == null ? 'Transaction deleted'.tr : 'Transfer deleted'.tr,
       );
       Get.back<void>();
     }
@@ -151,7 +159,7 @@ class _Details extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  transfer != null ? 'Transfer' : transaction.type.label,
+                  transfer != null ? 'Transfer'.tr : transaction.type.label,
                   style: text.bodyMedium,
                 ),
               ],
@@ -162,23 +170,23 @@ class _Details extends StatelessWidget {
             child: Column(
               children: <Widget>[
                 if (transfer != null) ...<Widget>[
-                  _Row('From', list.accountName(transfer.fromAccountId)),
-                  _Row('To', list.accountName(transfer.toAccountId)),
+                  _Row('From'.tr, list.accountName(transfer.fromAccountId)),
+                  _Row('To'.tr, list.accountName(transfer.toAccountId)),
                 ] else ...<Widget>[
                   _Row(
-                    'Category',
+                    'Category'.tr,
                     category?.name ??
                         (transaction.type == TransactionType.opening_balance
-                            ? 'Opening Balance'
-                            : 'Uncategorised'),
+                            ? 'Opening Balance'.tr
+                            : 'Uncategorised'.tr),
                   ),
-                  _Row('Account', list.accountName(transaction.accountId)),
+                  _Row('Account'.tr, list.accountName(transaction.accountId)),
                 ],
                 _Row(
-                  'Date',
+                  'Date'.tr,
                   AppFormatters.dateTime(transaction.transactionDate),
                 ),
-                if (note != null && note.isNotEmpty) _Row('Note', note),
+                if (note != null && note.isNotEmpty) _Row('Note'.tr, note),
                 // Shows nothing when there is no receipt.
                 if (transfer == null && Get.isRegistered<ReceiptStore>())
                   ReceiptPreview(transaction: transaction),
@@ -197,13 +205,13 @@ class _Details extends StatelessWidget {
           }),
           if (_editable)
             AppButton(
-              label: 'Edit',
+              label: 'Edit'.tr,
               icon: Icons.edit_outlined,
               onPressed: _edit,
             ),
           if (_editable) const SizedBox(height: AppSpacing.md),
           AppButton(
-            label: 'Remind me',
+            label: 'Remind me'.tr,
             icon: Icons.alarm_add_outlined,
             variant: AppButtonVariant.secondary,
             onPressed: () => Get.toNamed<void>(
@@ -218,7 +226,7 @@ class _Details extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           Obx(
             () => AppButton(
-              label: 'Delete',
+              label: 'Delete'.tr,
               icon: Icons.delete_outline,
               variant: AppButtonVariant.destructive,
               isLoading: list.deletion.isBusy.value,

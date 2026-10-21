@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/utils/category_icons.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Category chips for the income/expense and recurring forms.
 ///
@@ -42,8 +43,8 @@ class CategoryPicker extends StatelessWidget {
         if (onAddNew != null)
           ActionChip(
             avatar: Icon(Icons.add_rounded, size: 18, color: colors.primary),
-            label: const Text('New'),
-            tooltip: 'Create a category',
+            label: Text('New'.tr),
+            tooltip: 'Create a category'.tr,
             onPressed: onAddNew,
           ),
       ],

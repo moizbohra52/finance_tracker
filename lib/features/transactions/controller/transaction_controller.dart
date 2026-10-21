@@ -145,7 +145,7 @@ class TransactionController extends GetxController {
     for (final Account a in accounts) {
       if (a.id == id) return a.name;
     }
-    return 'Account';
+    return 'Account'.tr;
   }
 
   /// Categories usable for [type] (income, expense or both).
@@ -330,9 +330,9 @@ class TransactionController extends GetxController {
     } on AppException {
       rethrow;
     } on Object {
-      throw const StorageFailure(
-        'The transaction was saved, but the receipt photo could not be kept. '
-        'Save again to retry.',
+      throw StorageFailure(
+        'The transaction was saved, but the receipt photo could not be kept. Save again to retry.'
+            .tr,
       );
     }
   }

@@ -35,20 +35,20 @@ class ContactListView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppAppBar(
-        title: 'Khata',
+        title: 'Khata'.tr,
         actions: <Widget>[
           IconButton(
-            tooltip: 'Import from phone contacts',
+            tooltip: 'Import from phone contacts'.tr,
             icon: const Icon(Icons.contacts_outlined),
             onPressed: () => openImportDeviceContact(context),
           ),
         ],
       ),
       body: const SafeArea(child: ContactListContent()),
-      floatingActionButton: const FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: openAddContact,
-        icon: Icon(Icons.person_add_alt_1_outlined),
-        label: Text('Add contact'),
+        icon: const Icon(Icons.person_add_alt_1_outlined),
+        label: Text('Add contact'.tr),
       ),
     );
   }
@@ -69,13 +69,12 @@ class ContactListContent extends GetView<ContactController> {
         return ErrorState(message: error, onRetry: controller.load);
       }
       if (!controller.hasContacts) {
-        return const EmptyState(
+        return EmptyState(
           icon: Icons.people_outline,
-          title: 'No contacts yet',
+          title: 'No contacts yet'.tr,
           message:
-              'Add the people you lend to or borrow from, then record credit '
-              'and debit entries against them.',
-          actionLabel: 'Add contact',
+              'Add the people you lend to or borrow from, then record credit and debit entries against them.'.tr,
+          actionLabel: 'Add contact'.tr,
           onAction: openAddContact,
         );
       }
@@ -91,12 +90,12 @@ class ContactListContent extends GetView<ContactController> {
               const SliverToBoxAdapter(child: _SearchAndFilter()),
               const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
               if (rows.isEmpty)
-                const SliverFillRemaining(
+                SliverFillRemaining(
                   hasScrollBody: false,
                   child: EmptyState(
                     icon: Icons.search_off_rounded,
-                    title: 'No matching contacts',
-                    message: 'Try a different name or filter.',
+                    title: 'No matching contacts'.tr,
+                    message: 'Try a different name or filter.'.tr,
                   ),
                 )
               else
@@ -194,9 +193,9 @@ class _Summary extends GetView<ContactController> {
                             color: color,
                             borderRadius: BorderRadius.circular(6),
                           ),
-                          child: const Text(
-                            'Active',
-                            style: TextStyle(
+                          child: Text(
+                            'Active'.tr,
+                            style: const TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
                               color: Colors.white,
@@ -247,10 +246,14 @@ class _Summary extends GetView<ContactController> {
             children: <Widget>[
               Expanded(
                 child: heroCard(
-                  label: 'You will get',
+                  label: 'You will get'.tr,
                   amount: AppFormatters.money(receivable),
                   subtitle:
-                      '${controller.receivableCount} ${controller.receivableCount == 1 ? 'contact' : 'contacts'}',
+                      controller.receivableCount == 1
+                      ? '1 contact'.tr
+                      : '@count contacts'.trParams(<String, String>{
+                          'count': '${controller.receivableCount}',
+                        }),
                   icon: Icons.arrow_downward_rounded,
                   color: money.receivable,
                   isSelected:
@@ -266,10 +269,14 @@ class _Summary extends GetView<ContactController> {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: heroCard(
-                  label: 'You will give',
+                  label: 'You will give'.tr,
                   amount: AppFormatters.money(payable),
                   subtitle:
-                      '${controller.payableCount} ${controller.payableCount == 1 ? 'contact' : 'contacts'}',
+                      controller.payableCount == 1
+                      ? '1 contact'.tr
+                      : '@count contacts'.trParams(<String, String>{
+                          'count': '${controller.payableCount}',
+                        }),
                   icon: Icons.arrow_upward_rounded,
                   color: money.payable,
                   isSelected: controller.filter.value == KhataFilter.payable,
@@ -309,8 +316,12 @@ class _Summary extends GetView<ContactController> {
                 Expanded(
                   child: Text(
                     isNetPositive
-                        ? 'Net Position: You have +${AppFormatters.money(net)} to receive'
-                        : 'Net Position: You have -${AppFormatters.money(net.abs())} to pay',
+                        ? 'Net Position: You have +@amount to receive'.trParams(<String, String>{
+                            'amount': AppFormatters.money(net),
+                          })
+                        : 'Net Position: You have -@amount to pay'.trParams(<String, String>{
+                            'amount': AppFormatters.money(net.abs()),
+                          }),
                     style: text.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colors.onSurface,
@@ -352,7 +363,7 @@ class _SearchAndFilter extends GetView<ContactController> {
             () => TextField(
               onChanged: (String v) => controller.searchText.value = v,
               decoration: InputDecoration(
-                hintText: 'Search name or mobile...',
+                hintText: 'Search name or mobile...'.tr,
                 hintStyle: TextStyle(
                   color: colors.onSurfaceVariant.withValues(alpha: 0.7),
                   fontSize: 14,
@@ -470,24 +481,24 @@ class _SearchAndFilter extends GetView<ContactController> {
             child: Row(
               children: <Widget>[
                 filterPill(
-                  label: 'All',
+                  label: 'All'.tr,
                   filter: KhataFilter.all,
                   count: controller.allCount,
                 ),
                 filterPill(
-                  label: 'You will get',
+                  label: 'You will get'.tr,
                   filter: KhataFilter.receivable,
                   count: controller.receivableCount,
                   activeColor: money.receivable,
                 ),
                 filterPill(
-                  label: 'You will give',
+                  label: 'You will give'.tr,
                   filter: KhataFilter.payable,
                   count: controller.payableCount,
                   activeColor: money.payable,
                 ),
                 filterPill(
-                  label: 'Settled',
+                  label: 'Settled'.tr,
                   filter: KhataFilter.settled,
                   count: controller.settledCount,
                 ),

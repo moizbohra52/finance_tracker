@@ -148,14 +148,14 @@ class ContactFormController extends GetxController {
 
       final String displayName = (contactName != null && contactName.trim().isNotEmpty)
           ? contactName.trim()
-          : 'Contact';
+          : 'Contact'.tr;
 
       final String defaultDescription = switch (type) {
-        ContactTransactionType.credit => 'Lent to $displayName',
-        ContactTransactionType.debit => 'Borrowed from $displayName',
-        ContactTransactionType.paymentReceived => 'Payment received from $displayName',
-        ContactTransactionType.paymentMade => 'Payment made to $displayName',
-        ContactTransactionType.adjustment => 'Adjustment: $displayName',
+        ContactTransactionType.credit => 'Lent to @name'.trParams(<String, String>{'name': displayName}),
+        ContactTransactionType.debit => 'Borrowed from @name'.trParams(<String, String>{'name': displayName}),
+        ContactTransactionType.paymentReceived => 'Payment received from @name'.trParams(<String, String>{'name': displayName}),
+        ContactTransactionType.paymentMade => 'Payment made to @name'.trParams(<String, String>{'name': displayName}),
+        ContactTransactionType.adjustment => 'Adjustment: @name'.trParams(<String, String>{'name': displayName}),
       };
 
       final Transaction tx = Transaction(

@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_contacts/flutter_contacts.dart' as fc;
+import 'package:get/get.dart';
 
 /// Represents normalized contact information imported or selected from the device.
 class DeviceContactData {
@@ -164,7 +165,7 @@ class DeviceContactsService {
             id: c.id ?? '',
             displayName: name.isNotEmpty
                 ? name
-                : (phones.isNotEmpty ? phones.first : 'Unnamed Contact'),
+                : (phones.isNotEmpty ? phones.first : 'Unnamed Contact'.tr),
             phones: phones,
             email: email,
             address: address,
@@ -263,7 +264,7 @@ class DeviceContactsService {
         id: picked.id ?? '',
         displayName: name.isNotEmpty
             ? name
-            : (phones.isNotEmpty ? phones.first : 'Unnamed Contact'),
+            : (phones.isNotEmpty ? phones.first : 'Unnamed Contact'.tr),
         phones: phones,
         email: email,
         address: address,

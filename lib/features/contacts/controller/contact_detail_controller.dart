@@ -109,7 +109,9 @@ class ContactDetailController extends GetxController {
         fileName: 'Khata_${safeName}_$date.pdf',
         bytes: bytes,
         mimeType: 'application/pdf',
-        subject: 'Khata statement - ${current.name}',
+        subject: 'Khata statement - @name'.trParams(<String, String>{
+          'name': current.name,
+        }),
       );
     } on AppException {
       rethrow;

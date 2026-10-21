@@ -45,6 +45,10 @@ Expose user-friendly messages.
   {'count': '$n'})`, not `'$n accounts'.tr`.
 - Translate where the text is built, inside `build` or a getter, not in a
   `static` or `const` value: those are fixed before the language changes.
+  A default parameter is const too: make it nullable and translate where it
+  is used (`title ?? 'Something went wrong'.tr`).
+- Never branch on a label's text (`label.startsWith('Mobile')`): once it is
+  translated the check fails. Carry a flag or an enum instead.
 - A screen whose text is translated is listed in `translatedFiles`
   (`test/core/translations/translation_coverage_test.dart`); that test
   fails on an untranslated literal or a missing key.

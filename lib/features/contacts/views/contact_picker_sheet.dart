@@ -17,7 +17,7 @@ Future<Contact?> pickContact() async {
     return null;
   }
   if (!controller.hasContacts) {
-    AppSnackbar.show('Add a contact first, then record a credit or debit.');
+    AppSnackbar.show('Add a contact first, then record a credit or debit.'.tr);
     await Get.toNamed<void>(AppRoutes.contactForm);
     return null;
   }
@@ -44,7 +44,7 @@ class _ContactPickerSheet extends GetView<ContactController> {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Text(
-                'Choose a contact',
+                'Choose a contact'.tr,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),

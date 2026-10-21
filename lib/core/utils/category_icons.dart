@@ -1,5 +1,6 @@
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Maps the stable icon keys stored on categories (see the seed migration)
 /// to Material icons.
@@ -59,15 +60,15 @@ abstract final class CategoryIcons {
 /// Presentation helpers for [TransactionType].
 extension TransactionTypeLabel on TransactionType {
   String get label => switch (this) {
-    TransactionType.income => 'Income',
-    TransactionType.expense => 'Expense',
-    TransactionType.transfer_in => 'Transfer in',
-    TransactionType.transfer_out => 'Transfer out',
-    TransactionType.adjustment_in => 'Adjustment in',
-    TransactionType.adjustment_out => 'Adjustment out',
-    TransactionType.opening_balance => 'Opening balance',
-    TransactionType.payment_received => 'Payment received',
-    TransactionType.payment_made => 'Payment made',
+    TransactionType.income => 'Income'.tr,
+    TransactionType.expense => 'Expense'.tr,
+    TransactionType.transfer_in => 'Transfer in'.tr,
+    TransactionType.transfer_out => 'Transfer out'.tr,
+    TransactionType.adjustment_in => 'Adjustment in'.tr,
+    TransactionType.adjustment_out => 'Adjustment out'.tr,
+    TransactionType.opening_balance => 'Opening balance'.tr,
+    TransactionType.payment_received => 'Payment received'.tr,
+    TransactionType.payment_made => 'Payment made'.tr,
   };
 
   /// Whether this type adds to an account balance.

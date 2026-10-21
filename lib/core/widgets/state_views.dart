@@ -2,6 +2,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Centered progress indicator for full-area loading. Lists and the
 /// dashboard should prefer skeletons once those layouts exist.
@@ -19,7 +20,7 @@ class LoadingState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            CircularProgressIndicator(semanticsLabel: message ?? 'Loading'),
+            CircularProgressIndicator(semanticsLabel: message ?? 'Loading'.tr),
             if (message != null) ...<Widget>[
               const SizedBox(height: AppSpacing.md),
               Text(
@@ -75,11 +76,11 @@ class ErrorState extends StatelessWidget {
   const ErrorState({
     super.key,
     required this.message,
-    this.title = 'Something went wrong',
+    this.title,
     this.onRetry,
   });
 
-  final String title;
+  final String? title;
   final String message;
   final VoidCallback? onRetry;
 
@@ -88,9 +89,9 @@ class ErrorState extends StatelessWidget {
     return _StatusMessage(
       icon: Icons.error_outline,
       iconColor: Theme.of(context).colorScheme.error,
-      title: title,
+      title: title ?? 'Something went wrong'.tr,
       message: message,
-      actionLabel: onRetry == null ? null : 'Try again',
+      actionLabel: onRetry == null ? null : 'Try again'.tr,
       onAction: onRetry,
       isPrimaryAction: false,
     );

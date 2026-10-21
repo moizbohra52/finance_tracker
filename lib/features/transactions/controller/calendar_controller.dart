@@ -73,7 +73,8 @@ class CalendarController extends GetxController {
       _categories.firstWhereOrNull((Category c) => c.id == id);
 
   String accountName(String id) =>
-      _accounts.firstWhereOrNull((Account a) => a.id == id)?.name ?? 'Account';
+      _accounts.firstWhereOrNull((Account a) => a.id == id)?.name ??
+      'Account'.tr;
 
   Future<void> load({bool silent = false}) async {
     if (!silent) isLoading.value = true;

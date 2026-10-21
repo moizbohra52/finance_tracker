@@ -2,6 +2,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Read-only field that opens the platform date picker.
 class AppDateField extends StatelessWidget {
@@ -44,14 +45,16 @@ class AppDateField extends StatelessWidget {
           labelText: label,
           suffixIcon: current != null && onCleared != null
               ? IconButton(
-                  tooltip: 'Clear $label',
+                  tooltip: 'Clear @label'.trParams(<String, String>{
+                    'label': label,
+                  }),
                   icon: const Icon(Icons.close),
                   onPressed: onCleared,
                 )
               : const Icon(Icons.calendar_today_outlined),
         ),
         child: Text(
-          current == null ? 'Not set' : AppFormatters.date(current),
+          current == null ? 'Not set'.tr : AppFormatters.date(current),
           style: Theme.of(context).textTheme.bodyLarge,
         ),
       ),
@@ -104,7 +107,7 @@ Future<bool> confirmDestructive(
   BuildContext context, {
   required String title,
   required String message,
-  String confirmLabel = 'Delete',
+  String? confirmLabel,
 }) async {
   final bool? confirmed = await showDialog<bool>(
     context: context,
@@ -115,7 +118,7 @@ Future<bool> confirmDestructive(
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -123,7 +126,7 @@ Future<bool> confirmDestructive(
             foregroundColor: Theme.of(dialogContext).colorScheme.onError,
           ),
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text(confirmLabel),
+          child: Text(confirmLabel ?? 'Delete'.tr),
         ),
       ],
     ),

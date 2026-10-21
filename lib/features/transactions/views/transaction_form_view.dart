@@ -121,8 +121,10 @@ class _TransactionFormViewState extends State<TransactionFormView> {
     if (!saved) return;
     AppSnackbar.show(
       _isEditing
-          ? 'Transaction updated'
-          : '${_type == TransactionType.income ? 'Income' : 'Expense'} added',
+          ? 'Transaction updated'.tr
+          : (_type == TransactionType.income
+                ? 'Income added'.tr
+                : 'Expense added'.tr),
     );
     Get.back<void>();
   }
@@ -146,13 +148,15 @@ class _TransactionFormViewState extends State<TransactionFormView> {
     return Scaffold(
       appBar: AppAppBar(
         title: _isEditing
-            ? 'Edit transaction'
-            : (_type == TransactionType.income ? 'Add income' : 'Add expense'),
+            ? 'Edit transaction'.tr
+            : (_type == TransactionType.income
+                  ? 'Add income'.tr
+                  : 'Add expense'.tr),
       ),
       body: SafeArea(
         child: Obx(() {
           if (!_controller.lookupsLoaded.value) {
-            return const LoadingState(message: 'Loading accounts');
+            return LoadingState(message: 'Loading accounts'.tr);
           }
           final String? lookupError = _controller.lookupError.value;
           if (lookupError != null && _controller.accounts.isEmpty) {
@@ -164,11 +168,11 @@ class _TransactionFormViewState extends State<TransactionFormView> {
           if (_controller.accounts.isEmpty) {
             return EmptyState(
               icon: Icons.account_balance_wallet_outlined,
-              title: 'Add an account first',
+              title: 'Add an account first'.tr,
               message:
-                  'Transactions are recorded against an account such as Cash '
-                  'or a bank account.',
-              actionLabel: 'Add account',
+                  'Transactions are recorded against an account such as Cash or a bank account.'
+                      .tr,
+              actionLabel: 'Add account'.tr,
               onAction: () => Get.toNamed<void>(AppRoutes.accountForm),
             );
           }
@@ -198,16 +202,16 @@ class _TransactionFormViewState extends State<TransactionFormView> {
             const SizedBox(height: AppSpacing.xs),
             if (!_isEditing)
               SegmentedButton<TransactionType>(
-                segments: const <ButtonSegment<TransactionType>>[
+                segments: <ButtonSegment<TransactionType>>[
                   ButtonSegment<TransactionType>(
                     value: TransactionType.expense,
-                    icon: Icon(Icons.north_east_rounded),
-                    label: Text('Expense'),
+                    icon: const Icon(Icons.north_east_rounded),
+                    label: Text('Expense'.tr),
                   ),
                   ButtonSegment<TransactionType>(
                     value: TransactionType.income,
-                    icon: Icon(Icons.south_west_rounded),
-                    label: Text('Income'),
+                    icon: const Icon(Icons.south_west_rounded),
+                    label: Text('Income'.tr),
                   ),
                 ],
                 selected: <TransactionType>{_type},
@@ -237,7 +241,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               autovalidateMode: AutovalidateMode.onUserInteractionIfError,
               validator: Validators.positiveAmount,
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: 'Amount'.tr,
                 prefixText: '${AppFormatters.currencySymbol} ',
                 prefixStyle: text.displaySmall,
                 hintText: '0.00',
@@ -249,7 +253,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Category', style: text.labelLarge),
+            Text('Category'.tr, style: text.labelLarge),
             const SizedBox(height: AppSpacing.sm),
             CategoryPicker(
               categories: categories,
@@ -264,9 +268,10 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               options: <String>[for (final Account a in accounts) a.id],
               labelOf: (String id) =>
                   accounts.firstWhere((Account a) => a.id == id).name,
-              decoration: const InputDecoration(labelText: 'Account'),
+              decoration: InputDecoration(labelText: 'Account'.tr),
               onChanged: (String? v) => setState(() => _accountId = v),
-              validator: (String? v) => v == null ? 'Choose an account' : null,
+              validator: (String? v) =>
+                  v == null ? 'Choose an account'.tr : null,
             ),
             const SizedBox(height: AppSpacing.md),
             Row(
@@ -274,7 +279,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               children: <Widget>[
                 Expanded(
                   child: AppDateField(
-                    label: 'Date',
+                    label: 'Date'.tr,
                     value: _date,
                     lastDate: DateTime.now().add(const Duration(days: 1)),
                     onChanged: (DateTime picked) =>
@@ -284,7 +289,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: AppTimeField(
-                    label: 'Time',
+                    label: 'Time'.tr,
                     value: _time,
                     onChanged: (TimeOfDay picked) =>
                         setState(() => _time = picked),
@@ -294,7 +299,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
-              label: 'Note (optional)',
+              label: 'Note (optional)'.tr,
               controller: _note,
               minLines: 3,
               maxLines: 5,
@@ -313,7 +318,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
             SubmitErrorMessage(_controller.save),
             Obx(
               () => AppButton(
-                label: _isEditing ? 'Save changes' : 'Save',
+                label: _isEditing ? 'Save changes'.tr : 'Save'.tr,
                 icon: Icons.check_rounded,
                 isLoading: _controller.save.isBusy.value,
                 onPressed: _submit,
