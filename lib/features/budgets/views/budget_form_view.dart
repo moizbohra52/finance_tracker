@@ -93,19 +93,21 @@ class _BudgetFormViewState extends State<BudgetFormView> {
       alert100: _alert100,
     );
     if (!saved) return;
-    AppSnackbar.show(_existing == null ? 'Budget added' : 'Budget updated');
+    AppSnackbar.show(
+      _existing == null ? 'Budget added'.tr : 'Budget updated'.tr,
+    );
     Get.back<void>();
   }
 
   Future<void> _delete() async {
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete this budget?',
-      message: 'Your transactions are not affected.',
+      title: 'Delete this budget?'.tr,
+      message: 'Your transactions are not affected.'.tr,
     );
     if (!confirmed) return;
     if (await _controller.deleteBudget(_existing!.id)) {
-      AppSnackbar.show('Budget deleted');
+      AppSnackbar.show('Budget deleted'.tr);
       Get.back<void>();
     }
   }
@@ -122,7 +124,7 @@ class _BudgetFormViewState extends State<BudgetFormView> {
         : null;
 
     return Scaffold(
-      appBar: AppAppBar(title: editing ? 'Edit budget' : 'Add budget'),
+      appBar: AppAppBar(title: editing ? 'Edit budget'.tr : 'Add budget'.tr),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxContentWidth + 120,
@@ -143,16 +145,16 @@ class _BudgetFormViewState extends State<BudgetFormView> {
                     for (final Category c in categories) c.id,
                   ],
                   labelOf: (String id) => id.isEmpty
-                      ? 'All expenses'
+                      ? 'All expenses'.tr
                       : categories.firstWhere((Category c) => c.id == id).name,
-                  decoration: const InputDecoration(labelText: 'Applies to'),
+                  decoration: InputDecoration(labelText: 'Applies to'.tr),
                   onChanged: (String? v) => setState(
                     () => _categoryId = (v?.isEmpty ?? true) ? null : v,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Budget amount',
+                  label: 'Budget amount'.tr,
                   controller: _amount,
                   autofocus: !editing,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -162,16 +164,16 @@ class _BudgetFormViewState extends State<BudgetFormView> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 SegmentedButton<BudgetPeriodType>(
-                  segments: const <ButtonSegment<BudgetPeriodType>>[
+                  segments: <ButtonSegment<BudgetPeriodType>>[
                     ButtonSegment<BudgetPeriodType>(
                       value: BudgetPeriodType.monthly,
-                      icon: Icon(Icons.calendar_month_outlined),
-                      label: Text('Monthly'),
+                      icon: const Icon(Icons.calendar_month_outlined),
+                      label: Text('Monthly'.tr),
                     ),
                     ButtonSegment<BudgetPeriodType>(
                       value: BudgetPeriodType.custom,
-                      icon: Icon(Icons.date_range_outlined),
-                      label: Text('Custom'),
+                      icon: const Icon(Icons.date_range_outlined),
+                      label: Text('Custom'.tr),
                     ),
                   ],
                   selected: <BudgetPeriodType>{_periodType},
@@ -181,20 +183,20 @@ class _BudgetFormViewState extends State<BudgetFormView> {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   custom
-                      ? 'One fixed period with a start and an end date.'
-                      : 'Repeats every calendar month from the start month.',
+                      ? 'One fixed period with a start and an end date.'.tr
+                      : 'Repeats every calendar month from the start month.'.tr,
                   style: text.bodySmall,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppDateField(
-                  label: custom ? 'Start date' : 'Starts',
+                  label: custom ? 'Start date'.tr : 'Starts'.tr,
                   value: _start,
                   onChanged: (DateTime d) => setState(() => _start = d),
                 ),
                 if (custom) ...<Widget>[
                   const SizedBox(height: AppSpacing.md),
                   AppDateField(
-                    label: 'End date',
+                    label: 'End date'.tr,
                     value: _end,
                     onChanged: (DateTime d) => setState(() => _end = d),
                   ),
@@ -209,22 +211,22 @@ class _BudgetFormViewState extends State<BudgetFormView> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                Text('Alert me at', style: text.titleSmall),
+                Text('Alert me at'.tr, style: text.titleSmall),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('75% spent'),
+                  title: Text('75% spent'.tr),
                   value: _alert75,
                   onChanged: (bool v) => setState(() => _alert75 = v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('90% spent'),
+                  title: Text('90% spent'.tr),
                   value: _alert90,
                   onChanged: (bool v) => setState(() => _alert90 = v),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('100% spent (over budget)'),
+                  title: Text('100% spent (over budget)'.tr),
                   value: _alert100,
                   onChanged: (bool v) => setState(() => _alert100 = v),
                 ),
@@ -232,7 +234,7 @@ class _BudgetFormViewState extends State<BudgetFormView> {
                 SubmitErrorMessage(_controller.save),
                 Obx(
                   () => AppButton(
-                    label: editing ? 'Save changes' : 'Add budget',
+                    label: editing ? 'Save changes'.tr : 'Add budget'.tr,
                     icon: Icons.check_rounded,
                     isLoading: _controller.save.isBusy.value,
                     onPressed: _submit,
@@ -243,7 +245,7 @@ class _BudgetFormViewState extends State<BudgetFormView> {
                   SubmitErrorMessage(_controller.deletion),
                   Obx(
                     () => AppButton(
-                      label: 'Delete budget',
+                      label: 'Delete budget'.tr,
                       icon: Icons.delete_outline,
                       variant: AppButtonVariant.destructive,
                       isLoading: _controller.deletion.isBusy.value,

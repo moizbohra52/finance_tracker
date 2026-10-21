@@ -2,6 +2,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/domain/services/report_period.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Reusable period selector: preset chips plus a custom range picker.
 /// Stateless; the owner holds the [period] and reacts to the callbacks.
@@ -52,7 +53,7 @@ class DateFilterBar extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.sm),
                   child: ChoiceChip(
-                    label: Text(p.label),
+                    label: Text(p.label.tr),
                     labelStyle: TextStyle(
                       fontWeight: period.preset == p
                           ? FontWeight.w600

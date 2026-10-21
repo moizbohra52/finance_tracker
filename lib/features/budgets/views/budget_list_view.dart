@@ -26,7 +26,7 @@ class BudgetListView extends GetView<BudgetController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Budgets'),
+      appBar: AppAppBar(title: 'Budgets'.tr),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
@@ -39,13 +39,13 @@ class BudgetListView extends GetView<BudgetController> {
             return LoadFailureView(message: error, onRetry: controller.load);
           }
           if (controller.statuses.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.savings_outlined,
-              title: 'No budgets yet',
+              title: 'No budgets yet'.tr,
               message:
-                  'Set a monthly or custom limit for all spending or for one '
-                  'category, and see how much is left.',
-              actionLabel: 'Add budget',
+                  'Set a monthly or custom limit for all spending or for one category, and see how much is left.'
+                      .tr,
+              actionLabel: 'Add budget'.tr,
               onAction: openAddBudget,
             );
           }
@@ -65,10 +65,10 @@ class BudgetListView extends GetView<BudgetController> {
           );
         }),
       ),
-      floatingActionButton: const FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: openAddBudget,
-        icon: Icon(Icons.add),
-        label: Text('Add budget'),
+        icon: const Icon(Icons.add),
+        label: Text('Add budget'.tr),
       ),
     );
   }
@@ -112,9 +112,10 @@ class _BudgetCard extends GetView<BudgetController> {
         : '${AppFormatters.date(status.period.start)} – '
               '${AppFormatters.date(status.period.lastDay)}';
     final String stateNote = switch (status.state) {
-      BudgetState.upcoming =>
-        'Starts ${AppFormatters.date(status.period.start)}',
-      BudgetState.ended => 'Ended',
+      BudgetState.upcoming => 'Starts @date'.trParams(<String, String>{
+        'date': AppFormatters.date(status.period.start),
+      }),
+      BudgetState.ended => 'Ended'.tr,
       BudgetState.active => period,
     };
     final bool over = status.remaining < Decimal.zero;
@@ -160,8 +161,10 @@ class _BudgetCard extends GetView<BudgetController> {
             children: <Widget>[
               Expanded(
                 child: Text(
-                  '${AppFormatters.money(status.spent)} of '
-                  '${AppFormatters.money(budget.amount)}',
+                  '@spent of @amount'.trParams(<String, String>{
+                    'spent': AppFormatters.money(status.spent),
+                    'amount': AppFormatters.money(budget.amount),
+                  }),
                   style: text.bodyMedium?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -179,8 +182,12 @@ class _BudgetCard extends GetView<BudgetController> {
           const SizedBox(height: AppSpacing.xs),
           Text(
             over
-                ? 'Over by ${AppFormatters.money(status.remaining.abs())}'
-                : '${AppFormatters.money(status.remaining)} left',
+                ? 'Over by @amount'.trParams(<String, String>{
+                    'amount': AppFormatters.money(status.remaining.abs()),
+                  })
+                : '@amount left'.trParams(<String, String>{
+                    'amount': AppFormatters.money(status.remaining),
+                  }),
             style: text.titleSmall?.copyWith(
               color: over ? money.expense : colors.primary,
               fontWeight: FontWeight.w700,

@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/domain/services/report_calculator.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Compact axis label: 12.5k, 3L, 2Cr. Display only.
 String compactAmount(double v) {
@@ -12,9 +13,11 @@ String compactAmount(double v) {
   final String sign = v < 0 ? '-' : '';
   String f(double x) =>
       x == x.roundToDouble() ? '${x.round()}' : x.toStringAsFixed(1);
-  if (a >= 10000000) return '$sign${f(a / 10000000)}Cr';
-  if (a >= 100000) return '$sign${f(a / 100000)}L';
-  if (a >= 1000) return '$sign${f(a / 1000)}k';
+  // Indian short units, written the same in Hindi and Hinglish.
+  const String crore = 'Cr', lakh = 'L', thousand = 'k';
+  if (a >= 10000000) return '$sign${f(a / 10000000)}$crore';
+  if (a >= 100000) return '$sign${f(a / 100000)}$lakh';
+  if (a >= 1000) return '$sign${f(a / 1000)}$thousand';
   return '$sign${f(a)}';
 }
 
@@ -112,7 +115,7 @@ class TrendLineChart extends StatelessWidget {
           ),
         );
     return Semantics(
-      label: 'Income and expense trend chart',
+      label: 'Income and expense trend chart'.tr,
       child: LineChart(
         LineChartData(
           minY: 0,
@@ -156,7 +159,7 @@ class IncomeExpenseBarChart extends StatelessWidget {
       borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
     );
     return Semantics(
-      label: 'Income versus expense bar chart',
+      label: 'Income versus expense bar chart'.tr,
       child: BarChart(
         BarChartData(
           maxY: _maxY(points),
@@ -228,7 +231,10 @@ class ShareDonut extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     return Semantics(
-      label: '$centerLabel $centerValue breakdown chart',
+      label: '@label @value breakdown chart'.trParams(<String, String>{
+        'label': centerLabel,
+        'value': centerValue,
+      }),
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[

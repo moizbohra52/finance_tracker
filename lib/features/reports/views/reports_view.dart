@@ -26,9 +26,9 @@ class ReportsPage extends StatelessWidget {
   const ReportsPage({super.key});
 
   @override
-  Widget build(BuildContext context) => const Scaffold(
-    appBar: AppAppBar(title: 'Reports'),
-    body: SafeArea(child: ReportsView()),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppAppBar(title: 'Reports'.tr),
+    body: const SafeArea(child: ReportsView()),
   );
 }
 
@@ -93,7 +93,7 @@ class _Totals extends GetView<ReportsController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.south_west_rounded,
-                  label: 'Income',
+                  label: 'Income'.tr,
                   value: AppFormatters.money(s.income),
                   color: money.income,
                 ),
@@ -102,7 +102,7 @@ class _Totals extends GetView<ReportsController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.north_east_rounded,
-                  label: 'Expense',
+                  label: 'Expense'.tr,
                   value: AppFormatters.money(s.expense),
                   color: money.expense,
                 ),
@@ -114,7 +114,7 @@ class _Totals extends GetView<ReportsController> {
             icon: positive
                 ? Icons.trending_up_rounded
                 : Icons.trending_down_rounded,
-            label: 'Net change',
+            label: 'Net change'.tr,
             value: AppFormatters.signedMoney(s.net, positive: positive),
             color: positive ? money.income : money.expense,
           ),
@@ -124,7 +124,7 @@ class _Totals extends GetView<ReportsController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.call_received_rounded,
-                  label: 'Receivable',
+                  label: 'Receivable'.tr,
                   value: AppFormatters.money(controller.khata.value.receivable),
                   color: money.receivable,
                 ),
@@ -133,7 +133,7 @@ class _Totals extends GetView<ReportsController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.call_made_rounded,
-                  label: 'Payable',
+                  label: 'Payable'.tr,
                   value: AppFormatters.money(controller.khata.value.payable),
                   color: money.payable,
                 ),
@@ -181,7 +181,7 @@ class _ChartCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: EmptyState(
                 icon: Icons.bar_chart_rounded,
-                title: 'Nothing to show yet',
+                title: 'Nothing to show yet'.tr,
                 message: emptyMessage,
               ),
             ),
@@ -199,9 +199,9 @@ class _TrendCard extends GetView<ReportsController> {
     final FinanceColors money = FinanceColors.of(context);
     return Obx(
       () => _ChartCard(
-        title: 'Income vs expense',
+        title: 'Income vs expense'.tr,
         hasData: controller.hasData,
-        emptyMessage: 'No income or expense in this period.',
+        emptyMessage: 'No income or expense in this period.'.tr,
         child: Column(
           children: <Widget>[
             SizedBox(
@@ -215,8 +215,8 @@ class _TrendCard extends GetView<ReportsController> {
             Wrap(
               spacing: AppSpacing.md,
               children: <Widget>[
-                LegendDot(color: money.income, label: 'Income'),
-                LegendDot(color: money.expense, label: 'Expense'),
+                LegendDot(color: money.income, label: 'Income'.tr),
+                LegendDot(color: money.expense, label: 'Expense'.tr),
               ],
             ),
           ],
@@ -240,22 +240,22 @@ class _CategoryCard extends GetView<ReportsController> {
         (Decimal sum, CategoryTotal t) => sum + t.amount,
       );
       return _ChartCard(
-        title: isExpense ? 'Spending by category' : 'Income by category',
+        title: isExpense ? 'Spending by category'.tr : 'Income by category'.tr,
         hasData: totals.isNotEmpty,
         emptyMessage: isExpense
-            ? 'No expenses in this period.'
-            : 'No income in this period.',
+            ? 'No expenses in this period.'.tr
+            : 'No income in this period.'.tr,
         trailing: SegmentedButton<TransactionType>(
           showSelectedIcon: false,
           style: const ButtonStyle(visualDensity: VisualDensity.compact),
-          segments: const <ButtonSegment<TransactionType>>[
+          segments: <ButtonSegment<TransactionType>>[
             ButtonSegment<TransactionType>(
               value: TransactionType.expense,
-              label: Text('Expense'),
+              label: Text('Expense'.tr),
             ),
             ButtonSegment<TransactionType>(
               value: TransactionType.income,
-              label: Text('Income'),
+              label: Text('Income'.tr),
             ),
           ],
           selected: <TransactionType>{controller.categoryType.value},
@@ -272,7 +272,7 @@ class _CategoryCard extends GetView<ReportsController> {
                   for (int i = 0; i < totals.length; i++)
                     ChartPalette.at(context, i),
                 ],
-                centerLabel: isExpense ? 'Spent' : 'Earned',
+                centerLabel: isExpense ? 'Spent'.tr : 'Earned'.tr,
                 centerValue: AppFormatters.money(total),
               ),
             ),
@@ -291,7 +291,7 @@ class _CategoryCard extends GetView<ReportsController> {
   BreakdownRow _row(BuildContext context, CategoryTotal t, int index) {
     final Category? category = controller.categoryOf(t.categoryId);
     return BreakdownRow(
-      label: category?.name ?? 'Uncategorised',
+      label: category?.name ?? 'Uncategorised'.tr,
       icon: CategoryIcons.of(category?.icon, controller.categoryType.value),
       amount: AppFormatters.money(t.amount),
       share: t.share,
@@ -309,9 +309,9 @@ class _AccountCard extends GetView<ReportsController> {
     final TextTheme text = Theme.of(context).textTheme;
     return Obx(
       () => _ChartCard(
-        title: 'By account',
+        title: 'By account'.tr,
         hasData: controller.accountTotals.isNotEmpty,
-        emptyMessage: 'No account activity in this period.',
+        emptyMessage: 'No account activity in this period.'.tr,
         child: Column(
           children: <Widget>[
             for (final AccountTotal a in controller.accountTotals)
@@ -353,9 +353,9 @@ class _MonthlyCard extends GetView<ReportsController> {
         (TrendPoint p) => p.income > Decimal.zero || p.expense > Decimal.zero,
       );
       return _ChartCard(
-        title: 'Monthly comparison',
+        title: 'Monthly comparison'.tr,
         hasData: hasData,
-        emptyMessage: 'Add transactions to compare the last 6 months.',
+        emptyMessage: 'Add transactions to compare the last 6 months.'.tr,
         child: Column(
           children: <Widget>[
             SizedBox(
@@ -369,8 +369,8 @@ class _MonthlyCard extends GetView<ReportsController> {
             Wrap(
               spacing: AppSpacing.md,
               children: <Widget>[
-                LegendDot(color: money.income, label: 'Income'),
-                LegendDot(color: money.expense, label: 'Expense'),
+                LegendDot(color: money.income, label: 'Income'.tr),
+                LegendDot(color: money.expense, label: 'Expense'.tr),
               ],
             ),
           ],

@@ -40,7 +40,7 @@ class _CategoryListViewState extends State<CategoryListView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Categories'),
+      appBar: AppAppBar(title: 'Categories'.tr),
       body: SafeArea(
         child: Obx(() {
           if (_controller.isLoading.value) {
@@ -67,16 +67,16 @@ class _CategoryListViewState extends State<CategoryListView> {
                 padding: const EdgeInsets.only(bottom: AppSpacing.fabClearance),
                 children: <Widget>[
                   SegmentedButton<CategoryType>(
-                    segments: const <ButtonSegment<CategoryType>>[
+                    segments: <ButtonSegment<CategoryType>>[
                       ButtonSegment<CategoryType>(
                         value: CategoryType.expense,
-                        icon: Icon(Icons.north_east_rounded),
-                        label: Text('Expense'),
+                        icon: const Icon(Icons.north_east_rounded),
+                        label: Text('Expense'.tr),
                       ),
                       ButtonSegment<CategoryType>(
                         value: CategoryType.income,
-                        icon: Icon(Icons.south_west_rounded),
-                        label: Text('Income'),
+                        icon: const Icon(Icons.south_west_rounded),
+                        label: Text('Income'.tr),
                       ),
                     ],
                     selected: <CategoryType>{_type},
@@ -84,7 +84,7 @@ class _CategoryListViewState extends State<CategoryListView> {
                         setState(() => _type = s.first),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  const SectionHeader(title: 'Your categories'),
+                  SectionHeader(title: 'Your categories'.tr),
                   const SizedBox(height: AppSpacing.sm),
                   if (own.isEmpty)
                     InlineMessage(
@@ -92,10 +92,10 @@ class _CategoryListViewState extends State<CategoryListView> {
                       icon: Icons.category_outlined,
                       announce: false,
                       message: _type == CategoryType.income
-                          ? 'Add your own, such as "Side income" or "Rent '
-                                'received". They appear when you add income.'
-                          : 'Add your own, such as "Pet care" or "Gym". They '
-                                'appear when you add an expense.',
+                          ? 'Add your own, such as "Side income" or "Rent received". They appear when you add income.'
+                                .tr
+                          : 'Add your own, such as "Pet care" or "Gym". They appear when you add an expense.'
+                                .tr,
                     )
                   else
                     AppListCard(
@@ -112,7 +112,7 @@ class _CategoryListViewState extends State<CategoryListView> {
                       ],
                     ),
                   const SizedBox(height: AppSpacing.lg),
-                  const SectionHeader(title: 'Built-in'),
+                  SectionHeader(title: 'Built-in'.tr),
                   const SizedBox(height: AppSpacing.sm),
                   AppListCard(
                     children: <Widget>[
@@ -128,7 +128,7 @@ class _CategoryListViewState extends State<CategoryListView> {
                           trailing: Icon(
                             Icons.lock_outline_rounded,
                             size: 18,
-                            semanticLabel: 'Built-in, cannot be changed',
+                            semanticLabel: 'Built-in, cannot be changed'.tr,
                             color: Theme.of(
                               context,
                             ).colorScheme.onSurfaceVariant,
@@ -145,7 +145,7 @@ class _CategoryListViewState extends State<CategoryListView> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _open(null),
         icon: const Icon(Icons.add),
-        label: const Text('Add category'),
+        label: Text('Add category'.tr),
       ),
     );
   }

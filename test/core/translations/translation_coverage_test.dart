@@ -2,6 +2,11 @@ import 'dart:io';
 
 import 'package:finance_tracker/core/translations/hindi.dart';
 import 'package:finance_tracker/core/translations/hinglish.dart';
+import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
+import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
+import 'package:finance_tracker/domain/services/reminder_calculator.dart';
+import 'package:finance_tracker/domain/services/report_period.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Screens whose text is translated. Later parts add their files here.
@@ -49,6 +54,29 @@ const List<String> translatedFiles = <String>[
   'lib/features/transactions/views/transfer_form_view.dart',
   'lib/features/transactions/widgets/receipt_field.dart',
   'lib/features/transactions/widgets/receipt_preview.dart',
+  // Part 3: accounts, categories, reports, budgets, recurring, reminders
+  'lib/core/utils/recurring_labels.dart',
+  'lib/core/widgets/category_breakdown.dart',
+  'lib/core/widgets/charts.dart',
+  'lib/core/widgets/date_filter_bar.dart',
+  'lib/core/widgets/offline_widgets.dart',
+  'lib/widgets/account_list_item.dart',
+  'lib/features/accounts/views/account_detail_view.dart',
+  'lib/features/accounts/views/account_form_view.dart',
+  'lib/features/accounts/views/account_list_view.dart',
+  'lib/features/budgets/views/budget_form_view.dart',
+  'lib/features/budgets/views/budget_list_view.dart',
+  'lib/features/categories/controller/category_controller.dart',
+  'lib/features/categories/views/category_form_view.dart',
+  'lib/features/categories/views/category_list_view.dart',
+  'lib/features/recurring/views/recurring_form_view.dart',
+  'lib/features/recurring/views/recurring_list_view.dart',
+  'lib/features/reminders/controllers/reminder_controller.dart',
+  'lib/features/reminders/views/reminder_detail_view.dart',
+  'lib/features/reminders/views/reminder_form_view.dart',
+  'lib/features/reminders/views/reminder_list_view.dart',
+  'lib/features/reminders/widgets/reminder_visuals.dart',
+  'lib/features/reports/views/reports_view.dart',
 ];
 
 /// A string literal (either quote) followed by `.tr` or `.trParams`.
@@ -64,7 +92,7 @@ final RegExp _interpolated = RegExp(
 /// User-visible text passed as a plain literal (no `.tr` after it), directly,
 /// as a branch of `? :` / `??`, returned, or as a switch arm.
 final RegExp _plain = RegExp(
-  r"""(?:\bText\(\s*|\b(?:title|subtitle|label|tooltip|message|hintText|labelText|helperText|semanticLabel|actionLabel|confirmLabel|cancelLabel):\s*|AppSnackbar\.show\(\s*|\?\s*|\s:\s*|\breturn\s+|=>\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,):;]""",
+  r"""(?:\bText\(\s*|\b(?:title|subtitle|label|tooltip|message|hintText|labelText|helperText|semanticLabel|actionLabel|confirmLabel|cancelLabel|emptyMessage):\s*|AppSnackbar\.show\(\s*|\?\s*|\s:\s*|\breturn\s+|=>\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,):;]""",
 );
 
 String _unescape(String key) =>
@@ -76,6 +104,42 @@ Map<String, String> _sources() => <String, String>{
 };
 
 void main() {
+  test('validators get a translated field name', () {
+    // The message is translated, so an English field name would mix the two.
+    final RegExp call = RegExp(
+      r"Validators\.(?:requiredField|name)\([^,()]+,\s*'[^']*'\s*\)",
+    );
+    final List<String> found = <String>[
+      for (final FileSystemEntity f in Directory(
+        'lib',
+      ).listSync(recursive: true))
+        if (f is File && f.path.endsWith('.dart'))
+          for (final Match m in call.allMatches(f.readAsStringSync()))
+            '${f.path}: ${m.group(0)}',
+    ];
+    expect(found, isEmpty);
+  });
+
+  test('every enum label shown on a screen is in both maps', () {
+    // Shown with `label.tr`, so the key is a value the scan above cannot see.
+    final List<String> labels = <String>[
+      for (final RecurringFrequency f in RecurringFrequency.values) f.label,
+      for (final ReminderType t in ReminderType.values) t.label,
+      for (final ReminderRepeat r in ReminderRepeat.values) r.label,
+      for (final ReminderStatus s in ReminderStatus.values) s.label,
+      for (final SnoozeOption o in SnoozeOption.values) o.label,
+      for (final DatePreset p in DatePreset.values) p.label,
+      for (final WeekStart w in WeekStart.values) w.label,
+      for (final CurrencyOption c in Currencies.supported) c.name,
+    ];
+    expect(
+      labels.where(
+        (String l) => !hindi.containsKey(l) || !hinglish.containsKey(l),
+      ),
+      isEmpty,
+    );
+  });
+
   test('every key used in part 1 screens is in both maps', () {
     final List<String> missing = <String>[
       for (final MapEntry<String, String> file in _sources().entries)
@@ -97,17 +161,17 @@ void main() {
   });
 
   test('part 1 screens have no untranslated text literal', () {
-    // Text made only of values ('$message$note') has nothing to translate.
+    // Text made only of values ('$message$note') has nothing to translate,
+    // and a snake_case literal ('other_income') is a key, not text.
     final RegExp values = RegExp(r'\$\{[^}]*\}|\$\w+');
+    final RegExp key = RegExp(r'''^['"][a-z0-9]+(?:_[a-z0-9]+)+['"]''');
     final List<String> found = <String>[
       for (final MapEntry<String, String> file in _sources().entries)
         for (final Match m in _plain.allMatches(file.value))
-          if (RegExp('[A-Za-z]').hasMatch(
-            m
-                .group(0)!
-                .replaceFirst(RegExp(r'^[^\x27"]*'), '')
-                .replaceAll(values, ''),
-          ))
+          if (m.group(0)!.replaceFirst(RegExp(r'^[^\x27"]*'), '')
+              case final String literal
+              when !key.hasMatch(literal) &&
+                  RegExp('[A-Za-z]').hasMatch(literal.replaceAll(values, '')))
             '${file.key}: ${m.group(0)}',
     ];
     expect(found, isEmpty);

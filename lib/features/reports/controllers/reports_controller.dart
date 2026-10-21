@@ -91,7 +91,7 @@ class ReportsController extends GetxController {
     for (final Account a in _accounts) {
       if (a.id == id) return a.name;
     }
-    return 'Account';
+    return 'Account'.tr;
   }
 
   /// The earliest/latest instants that must be loaded for [p] plus the

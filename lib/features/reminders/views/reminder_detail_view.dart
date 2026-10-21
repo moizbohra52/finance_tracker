@@ -41,11 +41,11 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
   Future<void> _delete(BuildContext context, Reminder reminder) async {
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete this reminder?',
-      message: 'It will no longer alert you.',
+      title: 'Delete this reminder?'.tr,
+      message: 'It will no longer alert you.'.tr,
     );
     if (confirmed && await controller.deleteReminder(reminder.id)) {
-      AppSnackbar.show('Reminder deleted');
+      AppSnackbar.show('Reminder deleted'.tr);
       Get.back<void>();
     }
   }
@@ -60,14 +60,14 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Text(
-                'Remind me again in',
+                'Remind me again in'.tr,
                 style: Theme.of(sheet).textTheme.titleMedium,
               ),
             ),
             for (final SnoozeOption o in SnoozeOption.values)
               ListTile(
                 leading: const Icon(Icons.snooze_outlined),
-                title: Text(o.label),
+                title: Text(o.label.tr),
                 onTap: () => Navigator.of(sheet).pop(o),
               ),
           ],
@@ -75,14 +75,14 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
       ),
     );
     if (option != null && await controller.snooze(reminder, option)) {
-      AppSnackbar.show('Snoozed');
+      AppSnackbar.show('Snoozed'.tr);
     }
   }
 
   Future<void> _complete(Reminder reminder) async {
     if (await controller.complete(reminder)) {
       AppSnackbar.show(
-        reminder.repeat.repeats ? 'Done. Next one scheduled' : 'Marked as done',
+        reminder.repeat.repeats ? 'Done. Next one scheduled'.tr : 'Marked as done'.tr,
       );
     }
   }
@@ -98,12 +98,12 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
             );
       return Scaffold(
         appBar: AppAppBar(
-          title: 'Reminder',
+          title: 'Reminder'.tr,
           actions: <Widget>[
             if (reminder != null) ...<Widget>[
               if (contactEntity != null)
                 IconButton(
-                  tooltip: 'Send reminder via WhatsApp / SMS',
+                  tooltip: 'Send reminder via WhatsApp / SMS'.tr,
                   icon: const Icon(Icons.send_rounded),
                   onPressed: () => SendReminderSheet.show(
                     context,
@@ -113,7 +113,7 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                   ),
                 ),
               IconButton(
-                tooltip: 'Edit reminder',
+                tooltip: 'Edit reminder'.tr,
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: () => Get.toNamed<void>(
                   AppRoutes.reminderForm,
@@ -121,7 +121,7 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                 ),
               ),
               IconButton(
-                tooltip: 'Delete reminder',
+                tooltip: 'Delete reminder'.tr,
                 icon: const Icon(Icons.delete_outline),
                 onPressed: () => _delete(context, reminder),
               ),
@@ -135,16 +135,16 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
 
   Widget _body(BuildContext context, Reminder? reminder, Contact? contactEntity) {
     if (controller.isLoading.value) {
-      return const LoadingState(message: 'Loading reminder');
+      return LoadingState(message: 'Loading reminder'.tr);
     }
     if (reminder == null) {
       final String? error = controller.error.value;
       return error != null
           ? ErrorState(message: error, onRetry: controller.load)
-          : const EmptyState(
+          : EmptyState(
               icon: Icons.notifications_off_outlined,
-              title: 'Reminder not found',
-              message: 'It may have been deleted.',
+              title: 'Reminder not found'.tr,
+              message: 'It may have been deleted.'.tr,
             );
     }
     final TextTheme text = Theme.of(context).textTheme;
@@ -178,7 +178,7 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  status.label,
+                  status.label.tr,
                   style: text.labelLarge?.copyWith(
                     color: reminderStatusColor(colors, status),
                   ),
@@ -190,21 +190,21 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
           AppCard(
             child: Column(
               children: <Widget>[
-                _Row('Type', reminder.type.label),
-                _Row('When', AppFormatters.dateTime(reminder.remindAt)),
+                _Row('Type'.tr, reminder.type.label.tr),
+                _Row('When'.tr, AppFormatters.dateTime(reminder.remindAt)),
                 if (reminder.snoozedUntil != null &&
                     status == ReminderStatus.snoozed)
                   _Row(
-                    'Snoozed until',
+                    'Snoozed until'.tr,
                     AppFormatters.dateTime(reminder.snoozedUntil!),
                   ),
-                _Row('Repeat', reminder.repeat.label),
+                _Row('Repeat'.tr, reminder.repeat.label.tr),
                 if (reminder.amount != null)
-                  _Row('Amount', AppFormatters.money(reminder.amount!)),
+                  _Row('Amount'.tr, AppFormatters.money(reminder.amount!)),
                 if (reminder.contactId != null)
                   _Row(
-                    'Contact',
-                    contact ?? 'Contact',
+                    'Contact'.tr,
+                    contact ?? 'Contact'.tr,
                     onTap: () => Get.toNamed<void>(
                       AppRoutes.contactDetail,
                       arguments: reminder.contactId,
@@ -212,19 +212,19 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                   ),
                 if (reminder.transactionId != null)
                   _Row(
-                    'Transaction',
-                    'View transaction',
+                    'Transaction'.tr,
+                    'View transaction'.tr,
                     onTap: () => Get.toNamed<void>(
                       AppRoutes.transactionDetail,
                       arguments: reminder.transactionId,
                     ),
                   ),
                 _Row(
-                  'Notification',
-                  reminder.notificationEnabled ? 'On' : 'Off',
+                  'Notification'.tr,
+                  reminder.notificationEnabled ? 'On'.tr : 'Off'.tr,
                 ),
                 if (description != null && description.isNotEmpty)
-                  _Row('Notes', description),
+                  _Row('Notes'.tr, description),
               ],
             ),
           ),
@@ -235,7 +235,7 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
               icon: const Icon(Icons.send_rounded, size: 18),
-              label: const Text('Send Reminder (WhatsApp / SMS)'),
+              label: Text('Send Reminder (WhatsApp / SMS)'.tr),
               onPressed: () => SendReminderSheet.show(
                 context,
                 contact: contactEntity,
@@ -249,7 +249,7 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
           Obx(
             () => done
                 ? AppButton(
-                    label: 'Mark as not done',
+                    label: 'Mark as not done'.tr,
                     icon: Icons.undo_rounded,
                     variant: AppButtonVariant.secondary,
                     isLoading: controller.action.isBusy.value,
@@ -258,14 +258,14 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                 : Column(
                     children: <Widget>[
                       AppButton(
-                        label: 'Mark as done',
+                        label: 'Mark as done'.tr,
                         icon: Icons.check_rounded,
                         isLoading: controller.action.isBusy.value,
                         onPressed: () => _complete(reminder),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       AppButton(
-                        label: 'Snooze',
+                        label: 'Snooze'.tr,
                         icon: Icons.snooze_outlined,
                         variant: AppButtonVariant.secondary,
                         onPressed: controller.action.isBusy.value

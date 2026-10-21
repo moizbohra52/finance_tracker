@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/translations/hindi.dart';
 import 'package:finance_tracker/core/translations/hinglish.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/data/models/user_settings.dart';
+import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -113,6 +115,78 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     expect(find.text(hindi['Enter an amount']!), findsOneWidget);
+  });
+
+  testWidgets('Hindi reaches accounts, budgets, recurring and reminders', (
+    WidgetTester tester,
+  ) async {
+    userSettings.settings = const UserSettings(
+      dateFormat: 'd MMM y',
+      numberFormat: 'indian',
+      firstDayOfWeek: 'monday',
+      languageCode: 'hi',
+      defaultAccountId: null,
+    );
+    await start(tester);
+    await tester.pumpAndSettle();
+
+    for (final (String route, String text) in <(String, String)>[
+      (AppRoutes.accounts, hindi['Add account']!),
+      (AppRoutes.budgets, hindi['No budgets yet']!),
+      (AppRoutes.recurring, hindi['No recurring transactions']!),
+      (AppRoutes.reminders, hindi['No reminders']!),
+    ]) {
+      unawaited(Get.toNamed<void>(route));
+      await tester.pumpAndSettle();
+      expect(find.text(text), findsWidgets, reason: route);
+      Get.back<void>();
+      await tester.pumpAndSettle();
+    }
+  });
+
+  testWidgets('in Hindi each mobile number keeps its WhatsApp button', (
+    WidgetTester tester,
+  ) async {
+    userSettings.settings = const UserSettings(
+      dateFormat: 'd MMM y',
+      numberFormat: 'indian',
+      firstDayOfWeek: 'monday',
+      languageCode: 'hi',
+      defaultAccountId: null,
+    );
+    final FakeFinance finance = FakeFinance()..addAccount('Cash', '0');
+    finance.contacts.add(
+      Contact(
+        id: 'c1',
+        userId: 'u1',
+        name: 'Ravi',
+        mobile: '9876543210, 9123456780',
+        openingBalance: Decimal.zero,
+        openingBalanceType: 'receivable',
+        createdAt: DateTime(2026),
+        updatedAt: DateTime(2026),
+      ),
+    );
+    await pumpApp(
+      tester,
+      auth: FakeAuthRepository(signedIn: true),
+      userSettings: userSettings,
+      finance: finance,
+    );
+    await tester.pumpAndSettle();
+    unawaited(Get.toNamed<void>(AppRoutes.contactDetail, arguments: 'c1'));
+    await tester.pumpAndSettle();
+
+    final Finder whatsApp = find.byTooltip(
+      hindi['Send reminder via WhatsApp']!,
+    );
+    await tester.dragUntilVisible(
+      find.text(hindi['Details']!),
+      find.byType(ListView).last,
+      const Offset(0, -200),
+    );
+    await tester.pumpAndSettle();
+    expect(whatsApp, findsNWidgets(2));
   });
 
   testWidgets('a long quick action label is shown whole', (

@@ -72,8 +72,8 @@ class BudgetController extends GetxController {
 
   /// "All expenses" or the category name.
   String nameOf(Budget b) => b.categoryId == null
-      ? 'All expenses'
-      : categoryOf(b.categoryId)?.name ?? 'Category';
+      ? 'All expenses'.tr
+      : categoryOf(b.categoryId)?.name ?? 'Category'.tr;
 
   List<Category> get expenseCategories => categories
       .where(

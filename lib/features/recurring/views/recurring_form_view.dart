@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/recurring_labels.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_sheet_dropdown.dart';
@@ -107,7 +108,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
   Future<void> _submit() async {
     final bool valid = _formKey.currentState?.validate() ?? false;
     final String? dateError = _end != null && _end!.isBefore(_start)
-        ? 'The end date must not be before the start date'
+        ? 'The end date must not be before the start date'.tr
         : null;
     setState(() => _dateError = dateError);
     final String? accountId = _effectiveAccount(_controller.accounts);
@@ -127,21 +128,20 @@ class _RecurringFormViewState extends State<RecurringFormView> {
       note: note.isEmpty ? null : note,
     );
     if (!saved) return;
-    AppSnackbar.show(_editing ? 'Recurring updated' : 'Recurring added');
+    AppSnackbar.show(_editing ? 'Recurring updated'.tr : 'Recurring added'.tr);
     Get.back<void>();
   }
 
   Future<void> _delete() async {
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete this schedule?',
+      title: 'Delete this schedule?'.tr,
       message:
-          'No new transactions will be created. Transactions already '
-          'recorded stay.',
+          'No new transactions will be created. Transactions already recorded stay.'.tr,
     );
     if (!confirmed) return;
     if (await _controller.deleteRule(_existing!.id)) {
-      AppSnackbar.show('Recurring deleted');
+      AppSnackbar.show('Recurring deleted'.tr);
       Get.back<void>();
     }
   }
@@ -163,11 +163,11 @@ class _RecurringFormViewState extends State<RecurringFormView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppAppBar(title: _editing ? 'Edit recurring' : 'Add recurring'),
+      appBar: AppAppBar(title: _editing ? 'Edit recurring'.tr : 'Add recurring'.tr),
       body: SafeArea(
         child: Obx(() {
           if (!_controller.lookupsLoaded.value) {
-            return const LoadingState(message: 'Loading accounts');
+            return LoadingState(message: 'Loading accounts'.tr);
           }
           if (_controller.error.value != null && _controller.accounts.isEmpty) {
             return ErrorState(
@@ -178,10 +178,10 @@ class _RecurringFormViewState extends State<RecurringFormView> {
           if (_controller.accounts.isEmpty) {
             return EmptyState(
               icon: Icons.account_balance_wallet_outlined,
-              title: 'Add an account first',
+              title: 'Add an account first'.tr,
               message:
-                  'A recurring transaction is recorded against an account.',
-              actionLabel: 'Add account',
+                  'A recurring transaction is recorded against an account.'.tr,
+              actionLabel: 'Add account'.tr,
               onAction: () => Get.toNamed<void>(AppRoutes.accountForm),
             );
           }
@@ -211,16 +211,16 @@ class _RecurringFormViewState extends State<RecurringFormView> {
           children: <Widget>[
             const SizedBox(height: AppSpacing.xs),
             SegmentedButton<TransactionType>(
-              segments: const <ButtonSegment<TransactionType>>[
+              segments: <ButtonSegment<TransactionType>>[
                 ButtonSegment<TransactionType>(
                   value: TransactionType.expense,
-                  icon: Icon(Icons.north_east_rounded),
-                  label: Text('Expense'),
+                  icon: const Icon(Icons.north_east_rounded),
+                  label: Text('Expense'.tr),
                 ),
                 ButtonSegment<TransactionType>(
                   value: TransactionType.income,
-                  icon: Icon(Icons.south_west_rounded),
-                  label: Text('Income'),
+                  icon: const Icon(Icons.south_west_rounded),
+                  label: Text('Income'.tr),
                 ),
               ],
               selected: <TransactionType>{_type},
@@ -250,7 +250,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
               autovalidateMode: AutovalidateMode.onUserInteractionIfError,
               validator: Validators.positiveAmount,
               decoration: InputDecoration(
-                labelText: 'Amount',
+                labelText: 'Amount'.tr,
                 prefixText: '${AppFormatters.currencySymbol} ',
                 prefixStyle: text.displaySmall,
                 hintText: '0.00',
@@ -263,7 +263,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Category', style: text.labelLarge),
+            Text('Category'.tr, style: text.labelLarge),
             const SizedBox(height: AppSpacing.sm),
             CategoryPicker(
               categories: categories,
@@ -278,7 +278,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
               options: <String>[for (final Account a in accounts) a.id],
               labelOf: (String id) =>
                   accounts.firstWhere((Account a) => a.id == id).name,
-              decoration: const InputDecoration(labelText: 'Account'),
+              decoration: InputDecoration(labelText: 'Account'.tr),
               onChanged: (String? v) => setState(() => _accountId = v),
             ),
             const SizedBox(height: AppSpacing.md),
@@ -286,13 +286,13 @@ class _RecurringFormViewState extends State<RecurringFormView> {
               value: _repeat,
               options: _Repeat.values,
               labelOf: (_Repeat r) => switch (r) {
-                _Repeat.daily => 'Daily',
-                _Repeat.weekly => 'Weekly',
-                _Repeat.monthly => 'Monthly',
-                _Repeat.yearly => 'Yearly',
-                _Repeat.custom => 'Custom…',
+                _Repeat.daily => 'Daily'.tr,
+                _Repeat.weekly => 'Weekly'.tr,
+                _Repeat.monthly => 'Monthly'.tr,
+                _Repeat.yearly => 'Yearly'.tr,
+                _Repeat.custom => 'Custom…'.tr,
               },
-              decoration: const InputDecoration(labelText: 'Repeats'),
+              decoration: InputDecoration(labelText: 'Repeats'.tr),
               onChanged: (_Repeat? v) => setState(() => _repeat = v ?? _repeat),
             ),
             if (_repeat == _Repeat.custom) ...<Widget>[
@@ -303,7 +303,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
                   SizedBox(
                     width: 120,
                     child: AppTextField(
-                      label: 'Every',
+                      label: 'Every'.tr,
                       controller: _interval,
                       keyboardType: TextInputType.number,
                       inputFormatters: <TextInputFormatter>[
@@ -312,7 +312,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
                       validator: (String? v) {
                         final int? n = int.tryParse((v ?? '').trim());
                         return n == null || n < 1 || n > 365
-                            ? '1 to 365'
+                            ? '1 to 365'.tr
                             : null;
                       },
                     ),
@@ -322,8 +322,8 @@ class _RecurringFormViewState extends State<RecurringFormView> {
                     child: BottomSheetDropdown<RecurringFrequency>(
                       value: _unit,
                       options: RecurringFrequency.values,
-                      labelOf: (RecurringFrequency f) => '${f.unit}s',
-                      decoration: const InputDecoration(labelText: 'Unit'),
+                      labelOf: (RecurringFrequency f) => f.units,
+                      decoration: InputDecoration(labelText: 'Unit'.tr),
                       onChanged: (RecurringFrequency? v) =>
                           setState(() => _unit = v ?? _unit),
                     ),
@@ -333,7 +333,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
             ],
             const SizedBox(height: AppSpacing.md),
             AppDateField(
-              label: 'Starts',
+              label: 'Starts'.tr,
               value: _start,
               // New schedules start today or later; nothing is back-filled.
               firstDate: _start.isBefore(todayDay) ? _start : todayDay,
@@ -341,7 +341,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppDateField(
-              label: 'Ends (optional)',
+              label: 'Ends (optional)'.tr,
               value: _end,
               onChanged: (DateTime d) => setState(() => _end = d),
               onCleared: () => setState(() => _end = null),
@@ -357,9 +357,9 @@ class _RecurringFormViewState extends State<RecurringFormView> {
             ],
             const SizedBox(height: AppSpacing.md),
             AppTextField(
-              label: 'Note (optional)',
+              label: 'Note (optional)'.tr,
               controller: _note,
-              helperText: 'For example: Rent, Netflix, Salary',
+              helperText: 'For example: Rent, Netflix, Salary'.tr,
               minLines: 3,
               maxLines: 5,
               keyboardType: TextInputType.multiline,
@@ -369,7 +369,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
             SubmitErrorMessage(_controller.save),
             Obx(
               () => AppButton(
-                label: _editing ? 'Save changes' : 'Save',
+                label: _editing ? 'Save changes'.tr : 'Save'.tr,
                 icon: Icons.check_rounded,
                 isLoading: _controller.save.isBusy.value,
                 onPressed: _submit,
@@ -380,7 +380,7 @@ class _RecurringFormViewState extends State<RecurringFormView> {
               SubmitErrorMessage(_controller.deletion),
               Obx(
                 () => AppButton(
-                  label: 'Delete schedule',
+                  label: 'Delete schedule'.tr,
                   icon: Icons.delete_outline,
                   variant: AppButtonVariant.destructive,
                   isLoading: _controller.deletion.isBusy.value,

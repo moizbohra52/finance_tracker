@@ -72,21 +72,21 @@ class _CategoryFormViewState extends State<CategoryFormView> {
       icon: _icon,
     );
     if (id == null) return;
-    AppSnackbar.show(_isEditing ? 'Category updated' : 'Category added');
+    AppSnackbar.show(_isEditing ? 'Category updated'.tr : 'Category added'.tr);
     Get.back<dynamic>(result: id);
   }
 
   Future<void> _delete(Category category) async {
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete category?',
+      title: 'Delete category?'.tr,
       message:
-          '"${category.name}" will be removed. Transactions, budgets and '
-          'schedules that use it keep their amounts.',
+          '"@name" will be removed. Transactions, budgets and schedules that use it keep their amounts.'
+              .trParams(<String, String>{'name': category.name}),
     );
     if (!confirmed) return;
     if (await _controller.deleteCategory(category)) {
-      AppSnackbar.show('Category deleted');
+      AppSnackbar.show('Category deleted'.tr);
       Get.back<void>();
     }
   }
@@ -96,7 +96,9 @@ class _CategoryFormViewState extends State<CategoryFormView> {
     final TextTheme text = Theme.of(context).textTheme;
     final Category? existing = _existing;
     return Scaffold(
-      appBar: AppAppBar(title: _isEditing ? 'Edit category' : 'New category'),
+      appBar: AppAppBar(
+        title: _isEditing ? 'Edit category'.tr : 'New category'.tr,
+      ),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxContentWidth + 120,
@@ -114,16 +116,16 @@ class _CategoryFormViewState extends State<CategoryFormView> {
                 // their meaning.
                 if (!_isEditing) ...<Widget>[
                   SegmentedButton<CategoryType>(
-                    segments: const <ButtonSegment<CategoryType>>[
+                    segments: <ButtonSegment<CategoryType>>[
                       ButtonSegment<CategoryType>(
                         value: CategoryType.expense,
-                        icon: Icon(Icons.north_east_rounded),
-                        label: Text('Expense'),
+                        icon: const Icon(Icons.north_east_rounded),
+                        label: Text('Expense'.tr),
                       ),
                       ButtonSegment<CategoryType>(
                         value: CategoryType.income,
-                        icon: Icon(Icons.south_west_rounded),
-                        label: Text('Income'),
+                        icon: const Icon(Icons.south_west_rounded),
+                        label: Text('Income'.tr),
                       ),
                     ],
                     selected: <CategoryType>{_type},
@@ -138,12 +140,12 @@ class _CategoryFormViewState extends State<CategoryFormView> {
                   const SizedBox(height: AppSpacing.lg),
                 ],
                 AppTextField(
-                  label: 'Name',
+                  label: 'Name'.tr,
                   controller: _name,
                   autofocus: !_isEditing,
                   helperText: _type == CategoryType.income
-                      ? 'An income category'
-                      : 'An expense category',
+                      ? 'An income category'.tr
+                      : 'An expense category'.tr,
                   textInputAction: TextInputAction.done,
                   inputFormatters: <TextInputFormatter>[
                     LengthLimitingTextInputFormatter(_maxNameLength),
@@ -155,7 +157,7 @@ class _CategoryFormViewState extends State<CategoryFormView> {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                Text('Icon', style: text.labelLarge),
+                Text('Icon'.tr, style: text.labelLarge),
                 const SizedBox(height: AppSpacing.sm),
                 _IconChoices(
                   selected: _icon,
@@ -165,7 +167,7 @@ class _CategoryFormViewState extends State<CategoryFormView> {
                 SubmitErrorMessage(_controller.save),
                 Obx(
                   () => AppButton(
-                    label: _isEditing ? 'Save changes' : 'Add category',
+                    label: _isEditing ? 'Save changes'.tr : 'Add category'.tr,
                     icon: Icons.check_rounded,
                     isLoading: _controller.save.isBusy.value,
                     onPressed: _submit,
@@ -176,7 +178,7 @@ class _CategoryFormViewState extends State<CategoryFormView> {
                   SubmitErrorMessage(_controller.deletion),
                   Obx(
                     () => AppButton(
-                      label: 'Delete category',
+                      label: 'Delete category'.tr,
                       icon: Icons.delete_outline,
                       variant: AppButtonVariant.destructive,
                       isLoading: _controller.deletion.isBusy.value,
@@ -213,7 +215,9 @@ class _IconChoices extends StatelessWidget {
           Semantics(
             button: true,
             selected: key == selected,
-            label: '${key.replaceAll('_', ' ')} icon',
+            label: '@name icon'.trParams(<String, String>{
+              'name': key.replaceAll('_', ' '),
+            }),
             excludeSemantics: true,
             child: InkWell(
               customBorder: const CircleBorder(),

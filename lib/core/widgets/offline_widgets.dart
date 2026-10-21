@@ -24,7 +24,7 @@ class OfflineBanner extends StatelessWidget {
 
     return Semantics(
       liveRegion: true,
-      label: 'Offline. Changes saved locally.',
+      label: 'Offline. Changes saved locally.'.tr,
       child: Material(
         color: colors.surfaceContainerHighest,
         child: InkWell(
@@ -45,7 +45,7 @@ class OfflineBanner extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Offline — changes saved locally',
+                    'Offline — changes saved locally'.tr,
                     style: text.bodySmall?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),
@@ -62,7 +62,9 @@ class OfflineBanner extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '$pending pending',
+                      '@count pending'.trParams(<String, String>{
+                        'count': '$pending',
+                      }),
                       style: text.labelSmall?.copyWith(
                         color: colors.primary,
                         fontWeight: FontWeight.w700,
@@ -141,7 +143,7 @@ class SyncStatusBar extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Syncing changes with cloud...',
+                  'Syncing changes with cloud...'.tr,
                   style: text.bodySmall?.copyWith(
                     color: colors.onPrimaryContainer,
                     fontWeight: FontWeight.w600,
@@ -174,7 +176,9 @@ class SyncStatusBar extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      'Sync failed · $pending changes pending',
+                      'Sync failed · @count changes pending'.trParams(
+                        <String, String>{'count': '$pending'},
+                      ),
                       style: text.bodySmall?.copyWith(
                         color: colors.onErrorContainer,
                         fontWeight: FontWeight.w600,
@@ -182,7 +186,7 @@ class SyncStatusBar extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Details',
+                    'Details'.tr,
                     style: text.labelSmall?.copyWith(
                       color: colors.onErrorContainer,
                       fontWeight: FontWeight.w700,
@@ -221,14 +225,16 @@ class SyncStatusBar extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(
-                      '$pending changes waiting to sync',
+                      '@count changes waiting to sync'.trParams(
+                        <String, String>{'count': '$pending'},
+                      ),
                       style: text.bodySmall?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                   Text(
-                    'Sync now',
+                    'Sync now'.tr,
                     style: text.labelSmall?.copyWith(
                       color: colors.primary,
                       fontWeight: FontWeight.w700,
@@ -290,7 +296,7 @@ class OfflineState extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'You’re offline',
+                'You’re offline'.tr,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
@@ -299,7 +305,7 @@ class OfflineState extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Connect to a network and try again.',
+                'Connect to a network and try again.'.tr,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -308,7 +314,7 @@ class OfflineState extends StatelessWidget {
               if (onRetry != null) ...<Widget>[
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
-                  label: 'Try again',
+                  label: 'Try again'.tr,
                   variant: AppButtonVariant.secondary,
                   isExpanded: false,
                   onPressed: onRetry,

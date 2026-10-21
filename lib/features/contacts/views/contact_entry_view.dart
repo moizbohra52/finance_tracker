@@ -14,6 +14,7 @@ import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
+import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -283,7 +284,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                         (Account a) => a.id == id,
                       );
                       return a != null
-                          ? '${a.type.name.toUpperCase()} · $helper'
+                          ? '${accountTypeLabel(a.type)} · $helper'
                           : '';
                     },
                     decoration: InputDecoration(

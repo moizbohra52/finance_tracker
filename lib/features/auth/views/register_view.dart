@@ -61,7 +61,7 @@ class _RegisterForm extends GetView<RegisterController> {
                   textInputAction: TextInputAction.next,
                   autofillHints: const <String>[AutofillHints.name],
                   validator: (String? value) =>
-                      Validators.requiredField(value, 'name'),
+                      Validators.requiredField(value, 'name'.tr),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(

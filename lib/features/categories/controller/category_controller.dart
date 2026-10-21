@@ -80,7 +80,7 @@ class CategoryController extends GetxController {
   /// the same kind (built-in ones included, ignoring case), else null.
   String? nameError(String name, CategoryType type, {String? exceptId}) {
     final String wanted = name.trim().toLowerCase();
-    if (wanted.isEmpty) return 'Enter a name';
+    if (wanted.isEmpty) return 'Enter a name'.tr;
     final bool taken = categories.any(
       (Category c) =>
           c.id != exceptId &&
@@ -89,7 +89,7 @@ class CategoryController extends GetxController {
               c.type == CategoryType.both ||
               type == CategoryType.both),
     );
-    return taken ? 'A category with this name already exists' : null;
+    return taken ? 'A category with this name already exists'.tr : null;
   }
 
   /// Creates a category, or updates [existing] (its kind never changes, so

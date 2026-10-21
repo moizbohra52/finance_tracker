@@ -49,8 +49,8 @@ class ReminderFormArgs {
       contactId: contactId,
       amount: balance == Decimal.zero ? null : balance.abs(),
       title: owedToUser
-          ? 'Collect payment'
-          : (owedByUser ? 'Pay dues' : 'Khata follow-up'),
+          ? 'Collect payment'.tr
+          : (owedByUser ? 'Pay dues'.tr : 'Khata follow-up'.tr),
     );
   }
 

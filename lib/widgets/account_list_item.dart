@@ -4,6 +4,7 @@ import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 IconData accountTypeIcon(AccountType type) => switch (type) {
   AccountType.cash => Icons.payments_outlined,
@@ -14,11 +15,11 @@ IconData accountTypeIcon(AccountType type) => switch (type) {
 };
 
 String accountTypeLabel(AccountType type) => switch (type) {
-  AccountType.cash => 'Cash',
-  AccountType.bank => 'Bank',
-  AccountType.upi => 'UPI',
-  AccountType.card => 'Card',
-  AccountType.other => 'Other',
+  AccountType.cash => 'Cash'.tr,
+  AccountType.bank => 'Bank'.tr,
+  AccountType.upi => 'UPI'.tr,
+  AccountType.card => 'Card'.tr,
+  AccountType.other => 'Other'.tr,
 };
 
 /// One account row: type badge, name, detail and current balance.

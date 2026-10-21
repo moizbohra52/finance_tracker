@@ -2,15 +2,14 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 
 enum RecurringFrequency {
-  daily('day', 'Daily'),
-  weekly('week', 'Weekly'),
-  monthly('month', 'Monthly'),
-  yearly('year', 'Yearly');
+  daily('Daily'),
+  weekly('Weekly'),
+  monthly('Monthly'),
+  yearly('Yearly');
 
-  const RecurringFrequency(this.unit, this.label);
+  const RecurringFrequency(this.label);
 
-  /// Singular unit word, for "every 2 weeks".
-  final String unit;
+  /// English label, also the translation key (see recurring_labels.dart).
   final String label;
 }
 
@@ -58,11 +57,6 @@ class RecurringTransaction {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
-
-  /// "Daily", "Weekly", or "Every 2 weeks".
-  String get scheduleLabel => intervalCount == 1
-      ? frequency.label
-      : 'Every $intervalCount ${frequency.unit}s';
 
   RecurringTransaction copyWith({
     String? accountId,

@@ -69,7 +69,9 @@ class _AccountFormViewState extends State<AccountFormView> {
       openingBalanceDate: _openingDate,
     );
     if (!saved) return;
-    AppSnackbar.show(_existing == null ? 'Account added' : 'Account updated');
+    AppSnackbar.show(
+      _existing == null ? 'Account added'.tr : 'Account updated'.tr,
+    );
     Get.back<void>();
   }
 
@@ -77,7 +79,7 @@ class _AccountFormViewState extends State<AccountFormView> {
   Widget build(BuildContext context) {
     final bool editing = _existing != null;
     return Scaffold(
-      appBar: AppAppBar(title: editing ? 'Edit account' : 'Add account'),
+      appBar: AppAppBar(title: editing ? 'Edit account'.tr : 'Add account'.tr),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxContentWidth + 120,
@@ -92,35 +94,36 @@ class _AccountFormViewState extends State<AccountFormView> {
               children: <Widget>[
                 const SizedBox(height: AppSpacing.xs),
                 AppTextField(
-                  label: 'Account name',
+                  label: 'Account name'.tr,
                   controller: _name,
                   autofocus: !editing,
                   textInputAction: TextInputAction.next,
                   validator: (String? v) =>
-                      Validators.name(v, 'an account name'),
+                      Validators.name(v, 'an account name'.tr),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 BottomSheetDropdown<AccountType>(
                   value: _type,
                   options: AccountType.values,
                   labelOf: accountTypeLabel,
-                  decoration: const InputDecoration(labelText: 'Account type'),
+                  decoration: InputDecoration(labelText: 'Account type'.tr),
                   onChanged: (AccountType? v) =>
                       setState(() => _type = v ?? _type),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Opening balance',
+                  label: 'Opening balance'.tr,
                   controller: _opening,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  helperText: 'Money in this account when you start tracking.',
+                  helperText:
+                      'Money in this account when you start tracking.'.tr,
                   validator: Validators.nonNegativeAmount,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppDateField(
-                  label: 'Opening balance date',
+                  label: 'Opening balance date'.tr,
                   value: _openingDate,
                   lastDate: DateTime.now(),
                   onChanged: (DateTime d) => setState(() => _openingDate = d),
@@ -129,7 +132,7 @@ class _AccountFormViewState extends State<AccountFormView> {
                 SubmitErrorMessage(_controller.save),
                 Obx(
                   () => AppButton(
-                    label: editing ? 'Save changes' : 'Add account',
+                    label: editing ? 'Save changes'.tr : 'Add account'.tr,
                     icon: Icons.check_rounded,
                     isLoading: _controller.save.isBusy.value,
                     onPressed: _submit,

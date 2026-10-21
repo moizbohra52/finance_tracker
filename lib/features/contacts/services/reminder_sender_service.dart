@@ -78,7 +78,7 @@ class ReminderSenderService {
     return link == null ? '' : '\n$label: ${upiId!.trim()}\n$link';
   }
 
-  /// Pre-built template message in Hinglish / Hindi. [upiId] adds a pay
+  /// Pre-built template message in Hinglish (Hindi in Latin letters). [upiId] adds a pay
   /// link when the contact owes the user.
   static String buildHinglishMessage({
     required String contactName,

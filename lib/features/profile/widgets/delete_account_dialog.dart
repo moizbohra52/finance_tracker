@@ -71,7 +71,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
                 controller: _passwordController,
                 textInputAction: TextInputAction.done,
                 validator: (String? value) =>
-                    Validators.requiredField(value, 'password'),
+                    Validators.requiredField(value, 'password'.tr),
                 onFieldSubmitted: (_) => _confirm(),
               ),
               const SizedBox(height: AppSpacing.md),

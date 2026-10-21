@@ -43,7 +43,7 @@ class AddAccountView extends GetView<AddAccountController> {
                   textInputAction: TextInputAction.done,
                   autofillHints: const <String>[AutofillHints.password],
                   validator: (String? value) =>
-                      Validators.requiredField(value, 'password'),
+                      Validators.requiredField(value, 'password'.tr),
                   onFieldSubmitted: (_) => controller.submit(),
                 ),
               ],

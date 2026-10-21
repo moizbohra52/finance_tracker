@@ -21,7 +21,7 @@ class AccountListView extends GetView<AccountController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Accounts'),
+      appBar: AppAppBar(title: 'Accounts'.tr),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
@@ -34,13 +34,13 @@ class AccountListView extends GetView<AccountController> {
             return ErrorState(message: error, onRetry: controller.load);
           }
           if (controller.accounts.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.account_balance_wallet_outlined,
-              title: 'No accounts yet',
+              title: 'No accounts yet'.tr,
               message:
-                  'Add your first account with its opening balance to start '
-                  'tracking your money.',
-              actionLabel: 'Add account',
+                  'Add your first account with its opening balance to start tracking your money.'
+                      .tr,
+              actionLabel: 'Add account'.tr,
               onAction: openAddAccount,
             );
           }
@@ -62,9 +62,12 @@ class AccountListView extends GetView<AccountController> {
                     child: AccountTile(
                       account: account,
                       balance: balance,
-                      subtitle:
-                          '${accountTypeLabel(account.type)} · opening '
-                          '${AppFormatters.money(account.openingBalance)}',
+                      subtitle: '@type · opening @amount'.trParams(
+                        <String, String>{
+                          'type': accountTypeLabel(account.type),
+                          'amount': AppFormatters.money(account.openingBalance),
+                        },
+                      ),
                       onTap: () => Get.toNamed<void>(
                         AppRoutes.accountDetail,
                         arguments: account.id,
@@ -77,10 +80,10 @@ class AccountListView extends GetView<AccountController> {
           );
         }),
       ),
-      floatingActionButton: const FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: openAddAccount,
-        icon: Icon(Icons.add),
-        label: Text('Add account'),
+        icon: const Icon(Icons.add),
+        label: Text('Add account'.tr),
       ),
     );
   }

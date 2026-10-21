@@ -2,6 +2,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/category_icons.dart';
+import 'package:finance_tracker/core/utils/recurring_labels.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
@@ -26,7 +27,7 @@ class RecurringListView extends GetView<RecurringController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Recurring'),
+      appBar: AppAppBar(title: 'Recurring'.tr),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
@@ -39,13 +40,13 @@ class RecurringListView extends GetView<RecurringController> {
             return LoadFailureView(message: error, onRetry: controller.load);
           }
           if (controller.rules.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.event_repeat_outlined,
-              title: 'No recurring transactions',
+              title: 'No recurring transactions'.tr,
               message:
-                  'Add rent, salary, EMIs or subscriptions once and they are '
-                  'recorded for you on schedule.',
-              actionLabel: 'Add recurring',
+                  'Add rent, salary, EMIs or subscriptions once and they are recorded for you on schedule.'
+                      .tr,
+              actionLabel: 'Add recurring'.tr,
               onAction: openAddRecurring,
             );
           }
@@ -68,10 +69,10 @@ class RecurringListView extends GetView<RecurringController> {
           );
         }),
       ),
-      floatingActionButton: const FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: openAddRecurring,
-        icon: Icon(Icons.add),
-        label: Text('Add recurring'),
+        icon: const Icon(Icons.add),
+        label: Text('Add recurring'.tr),
       ),
     );
   }
@@ -89,8 +90,10 @@ class _RuleTile extends GetView<RecurringController> {
     final bool ended =
         !rule.active && RecurringStatus.hasEnded(rule, DateTime.now());
     final String next = rule.active
-        ? 'Next ${AppFormatters.date(rule.nextRunAt)}'
-        : (ended ? 'Ended' : 'Paused');
+        ? 'Next @date'.trParams(<String, String>{
+            'date': AppFormatters.date(rule.nextRunAt),
+          })
+        : (ended ? 'Ended'.tr : 'Paused'.tr);
     return AppCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       padding: EdgeInsets.zero,
@@ -118,7 +121,7 @@ class _RuleTile extends GetView<RecurringController> {
             ),
             if (!ended)
               Semantics(
-                label: rule.active ? 'Pause schedule' : 'Resume schedule',
+                label: rule.active ? 'Pause schedule'.tr : 'Resume schedule'.tr,
                 child: Switch(
                   value: rule.active,
                   onChanged: (bool v) => controller.setActive(rule, v),

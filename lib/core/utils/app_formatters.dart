@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 /// Locale-aware display formatting. Keep financial calculations in the domain
@@ -63,8 +64,8 @@ abstract final class AppFormatters {
   static String dayLabel(DateTime value, {DateTime? now}) {
     final DateTime today = _dayOnly(now ?? DateTime.now());
     final int diff = today.difference(_dayOnly(value)).inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
+    if (diff == 0) return 'Today'.tr;
+    if (diff == 1) return 'Yesterday'.tr;
     return date(value);
   }
 

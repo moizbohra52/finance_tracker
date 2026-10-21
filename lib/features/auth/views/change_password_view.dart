@@ -30,7 +30,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                   textInputAction: TextInputAction.next,
                   autofillHints: const <String>[AutofillHints.password],
                   validator: (String? value) =>
-                      Validators.requiredField(value, 'current password'),
+                      Validators.requiredField(value, 'current password'.tr),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(

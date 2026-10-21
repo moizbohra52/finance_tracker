@@ -29,7 +29,7 @@ class ReminderListView extends GetView<ReminderController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Reminders'),
+      appBar: AppAppBar(title: 'Reminders'.tr),
       body: SafeArea(
         child: Obx(() {
           if (controller.isLoading.value) {
@@ -42,13 +42,13 @@ class ReminderListView extends GetView<ReminderController> {
             return LoadFailureView(message: error, onRetry: controller.load);
           }
           if (controller.reminders.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.notifications_none_rounded,
-              title: 'No reminders',
+              title: 'No reminders'.tr,
               message:
-                  'Never miss a payment. Add a reminder for a bill, money '
-                  'you are owed, or anything else.',
-              actionLabel: 'Add reminder',
+                  'Never miss a payment. Add a reminder for a bill, money you are owed, or anything else.'
+                      .tr,
+              actionLabel: 'Add reminder'.tr,
               onAction: openAddReminder,
             );
           }
@@ -69,10 +69,10 @@ class ReminderListView extends GetView<ReminderController> {
           );
         }),
       ),
-      floatingActionButton: const FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: openAddReminder,
-        icon: Icon(Icons.add),
-        label: Text('Add reminder'),
+        icon: const Icon(Icons.add),
+        label: Text('Add reminder'.tr),
       ),
     );
   }
@@ -119,10 +119,10 @@ class _ReminderTile extends GetView<ReminderController> {
         ),
         subtitle:
             '${AppFormatters.dateTime(shown)}'
-            '${reminder.repeat.repeats ? ' · ${reminder.repeat.label}' : ''}',
+            '${reminder.repeat.repeats ? ' · ${reminder.repeat.label.tr}' : ''}',
         subtitleMaxLines: 2,
         caption: StatusPill(
-          label: status.label,
+          label: status.label.tr,
           color: reminderStatusColor(colors, status),
         ),
         trailing: Column(
@@ -141,8 +141,8 @@ class _ReminderTile extends GetView<ReminderController> {
             if (!done)
               Semantics(
                 label: reminder.notificationEnabled
-                    ? 'Turn notification off'
-                    : 'Turn notification on',
+                    ? 'Turn notification off'.tr
+                    : 'Turn notification on'.tr,
                 child: Switch(
                   value: reminder.notificationEnabled,
                   onChanged: (bool v) =>

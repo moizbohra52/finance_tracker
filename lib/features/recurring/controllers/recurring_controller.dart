@@ -84,7 +84,7 @@ class RecurringController extends GetxController {
     for (final Account a in accounts) {
       if (a.id == id) return a.name;
     }
-    return 'Account';
+    return 'Account'.tr;
   }
 
   List<Category> categoriesFor(TransactionType type) => categories

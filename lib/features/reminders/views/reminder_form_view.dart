@@ -98,10 +98,10 @@ class _ReminderFormViewState extends State<ReminderFormView> {
     // is allowed, so an overdue reminder can still be corrected.
     final bool moved = _existing == null || _existing!.remindAt != remindAt;
     final String? whenError = moved && !remindAt.isAfter(DateTime.now())
-        ? 'Pick a date and time in the future'
+        ? 'Pick a date and time in the future'.tr
         : null;
     final String? contactError = _type.involvesContact && _contactId == null
-        ? 'Choose who this is about'
+        ? 'Choose who this is about'.tr
         : null;
     setState(() {
       _whenError = whenError;
@@ -126,19 +126,19 @@ class _ReminderFormViewState extends State<ReminderFormView> {
       notificationEnabled: _notify,
     );
     if (!saved) return;
-    AppSnackbar.show(_editing ? 'Reminder updated' : 'Reminder added');
+    AppSnackbar.show(_editing ? 'Reminder updated'.tr : 'Reminder added'.tr);
     Get.back<void>();
   }
 
   Future<void> _delete() async {
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete this reminder?',
-      message: 'It will no longer alert you.',
+      title: 'Delete this reminder?'.tr,
+      message: 'It will no longer alert you.'.tr,
     );
     if (!confirmed) return;
     if (await _controller.deleteReminder(_existing!.id)) {
-      AppSnackbar.show('Reminder deleted');
+      AppSnackbar.show('Reminder deleted'.tr);
       // Past the detail screen, which no longer has a reminder to show.
       Get.back<void>();
       Get.back<void>();
@@ -154,7 +154,9 @@ class _ReminderFormViewState extends State<ReminderFormView> {
     final String? contactName = _controller.contactName(_contactId);
 
     return Scaffold(
-      appBar: AppAppBar(title: _editing ? 'Edit reminder' : 'Add reminder'),
+      appBar: AppAppBar(
+        title: _editing ? 'Edit reminder'.tr : 'Add reminder'.tr,
+      ),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxContentWidth + 120,
@@ -169,7 +171,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
               children: <Widget>[
                 const SizedBox(height: AppSpacing.xs),
                 if (_notify) const NotificationPermissionBanner(),
-                Text('Type', style: text.labelLarge),
+                Text('Type'.tr, style: text.labelLarge),
                 const SizedBox(height: AppSpacing.sm),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -177,7 +179,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                   children: <Widget>[
                     for (final ReminderType t in ReminderType.values)
                       ChoiceChip(
-                        label: Text(t.label),
+                        label: Text(t.label.tr),
                         selected: _type == t,
                         onSelected: (_) => setState(() => _type = t),
                       ),
@@ -185,12 +187,12 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppTextField(
-                  label: 'Title',
+                  label: 'Title'.tr,
                   controller: _title,
                   autofocus: !_editing,
                   textInputAction: TextInputAction.next,
                   validator: (String? v) =>
-                      Validators.requiredField(v, 'title'),
+                      Validators.requiredField(v, 'title'.tr),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
@@ -198,8 +200,8 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                   minLines: 3,
                   maxLines: 5,
                   textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Description (optional)',
+                  decoration: InputDecoration(
+                    labelText: 'Description (optional)'.tr,
                   ),
                 ),
                 if (_type.hasAmount) ...<Widget>[
@@ -217,7 +219,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                         ? null
                         : Validators.positiveAmount(v),
                     decoration: InputDecoration(
-                      labelText: 'Amount (optional)',
+                      labelText: 'Amount (optional)'.tr,
                       prefixText: '${AppFormatters.currencySymbol} ',
                       hintText: '0.00',
                     ),
@@ -230,15 +232,15 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                     onTap: _chooseContact,
                     child: InputDecorator(
                       decoration: InputDecoration(
-                        labelText: 'Contact',
+                        labelText: 'Contact'.tr,
                         errorText: _contactError,
                         suffixIcon: const Icon(Icons.person_search_outlined),
                       ),
                       child: Text(
                         contactName ??
                             (_contactId == null
-                                ? 'Choose a contact'
-                                : 'Contact'),
+                                ? 'Choose a contact'.tr
+                                : 'Contact'.tr),
                         style: text.bodyLarge,
                       ),
                     ),
@@ -250,7 +252,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                   children: <Widget>[
                     Expanded(
                       child: AppDateField(
-                        label: 'Date',
+                        label: 'Date'.tr,
                         value: _date,
                         firstDate: _date.isBefore(todayDay) ? _date : todayDay,
                         onChanged: (DateTime d) => setState(() => _date = d),
@@ -259,7 +261,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: AppTimeField(
-                        label: 'Time',
+                        label: 'Time'.tr,
                         value: _time,
                         onChanged: (TimeOfDay t) => setState(() => _time = t),
                       ),
@@ -277,16 +279,16 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                 BottomSheetDropdown<ReminderRepeat>(
                   value: _repeat,
                   options: ReminderRepeat.values,
-                  labelOf: (ReminderRepeat r) => r.label,
-                  decoration: const InputDecoration(labelText: 'Repeat'),
+                  labelOf: (ReminderRepeat r) => r.label.tr,
+                  decoration: InputDecoration(labelText: 'Repeat'.tr),
                   onChanged: (ReminderRepeat? v) =>
                       setState(() => _repeat = v ?? _repeat),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Notify me'),
-                  subtitle: const Text('Show a notification at this time'),
+                  title: Text('Notify me'.tr),
+                  subtitle: Text('Show a notification at this time'.tr),
                   value: _notify,
                   onChanged: (bool v) => setState(() => _notify = v),
                 ),
@@ -294,7 +296,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                 SubmitErrorMessage(_controller.save),
                 Obx(
                   () => AppButton(
-                    label: _editing ? 'Save changes' : 'Save',
+                    label: _editing ? 'Save changes'.tr : 'Save'.tr,
                     icon: Icons.check_rounded,
                     isLoading: _controller.save.isBusy.value,
                     onPressed: _submit,
@@ -305,7 +307,7 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                   SubmitErrorMessage(_controller.deletion),
                   Obx(
                     () => AppButton(
-                      label: 'Delete reminder',
+                      label: 'Delete reminder'.tr,
                       icon: Icons.delete_outline,
                       variant: AppButtonVariant.destructive,
                       isLoading: _controller.deletion.isBusy.value,

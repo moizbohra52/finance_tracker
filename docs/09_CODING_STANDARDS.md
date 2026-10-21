@@ -49,6 +49,9 @@ Expose user-friendly messages.
   is used (`title ?? 'Something went wrong'.tr`).
 - Never branch on a label's text (`label.startsWith('Mobile')`): once it is
   translated the check fails. Carry a flag or an enum instead.
+- An enum's English `label` stays const and is translated where it is shown
+  (`status.label.tr`); add the enum to the "every enum label" test so its
+  labels must be in both maps.
 - A screen whose text is translated is listed in `translatedFiles`
   (`test/core/translations/translation_coverage_test.dart`); that test
   fails on an untranslated literal or a missing key.

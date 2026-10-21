@@ -37,14 +37,14 @@ class AccountDetailView extends GetView<AccountDetailController> {
     final AccountController accounts = Get.find<AccountController>();
     final bool confirmed = await confirmDestructive(
       context,
-      title: 'Delete ${account.name}?',
+      title: 'Delete @name?'.trParams(<String, String>{'name': account.name}),
       message:
-          'The account is removed from your balances. Its past transactions '
-          'are kept in your history.',
+          'The account is removed from your balances. Its past transactions are kept in your history.'
+              .tr,
     );
     if (!confirmed) return;
     if (await accounts.deleteAccount(account.id)) {
-      AppSnackbar.show('Account deleted');
+      AppSnackbar.show('Account deleted'.tr);
       Get.back<void>();
     }
   }
@@ -54,7 +54,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
     return Obx(() {
       final Account? account = controller.account.value;
       return Scaffold(
-        appBar: AppAppBar(title: account?.name ?? 'Account'),
+        appBar: AppAppBar(title: account?.name ?? 'Account'.tr),
         body: SafeArea(child: _body(context, account)),
       );
     });
@@ -62,7 +62,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
 
   Widget _body(BuildContext context, Account? account) {
     if (controller.isLoading.value) {
-      return const LoadingState(message: 'Loading account');
+      return LoadingState(message: 'Loading account'.tr);
     }
     final String? error = controller.error.value;
     if (error != null) {
@@ -70,10 +70,10 @@ class AccountDetailView extends GetView<AccountDetailController> {
     }
     final AccountTransactionSummary? summary = controller.summary.value;
     if (account == null || summary == null) {
-      return const EmptyState(
+      return EmptyState(
         icon: Icons.account_balance_wallet_outlined,
-        title: 'Account not found',
-        message: 'It may have been deleted.',
+        title: 'Account not found'.tr,
+        message: 'It may have been deleted.'.tr,
       );
     }
     final FinanceColors money = FinanceColors.of(context);
@@ -95,7 +95,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                     size: AppSizes.iconLarge,
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Text('Current balance', style: text.labelLarge),
+                  Text('Current balance'.tr, style: text.labelLarge),
                   Text(
                     AppFormatters.money(summary.balance),
                     style: text.displaySmall?.copyWith(
@@ -104,8 +104,21 @@ class AccountDetailView extends GetView<AccountDetailController> {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Opening balance ${AppFormatters.money(account.openingBalance)}'
-                    '${account.openingBalanceDate == null ? '' : ' on ${AppFormatters.date(account.openingBalanceDate!)}'}',
+                    account.openingBalanceDate == null
+                        ? 'Opening balance @amount'.trParams(<String, String>{
+                            'amount': AppFormatters.money(
+                              account.openingBalance,
+                            ),
+                          })
+                        : 'Opening balance @amount on @date'
+                              .trParams(<String, String>{
+                                'amount': AppFormatters.money(
+                                  account.openingBalance,
+                                ),
+                                'date': AppFormatters.date(
+                                  account.openingBalanceDate!,
+                                ),
+                              }),
                     style: text.bodySmall,
                     textAlign: TextAlign.center,
                   ),
@@ -118,7 +131,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                 Expanded(
                   child: SummaryTile(
                     icon: Icons.south_west_rounded,
-                    label: 'Total income',
+                    label: 'Total income'.tr,
                     value: AppFormatters.money(summary.totalIncome),
                     color: money.income,
                   ),
@@ -127,7 +140,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                 Expanded(
                   child: SummaryTile(
                     icon: Icons.north_east_rounded,
-                    label: 'Total expense',
+                    label: 'Total expense'.tr,
                     value: AppFormatters.money(summary.totalExpense),
                     color: money.expense,
                   ),
@@ -135,14 +148,14 @@ class AccountDetailView extends GetView<AccountDetailController> {
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            const SectionHeader(title: 'Recent activity'),
+            SectionHeader(title: 'Recent activity'.tr),
             const SizedBox(height: AppSpacing.sm),
             if (controller.recent.isEmpty)
-              const AppCard(
+              AppCard(
                 child: EmptyState(
                   icon: Icons.receipt_long_outlined,
-                  title: 'No transactions yet',
-                  message: 'Income and expenses for this account show here.',
+                  title: 'No transactions yet'.tr,
+                  message: 'Income and expenses for this account show here.'.tr,
                 ),
               )
             else
@@ -179,7 +192,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                     );
             }),
             AppButton(
-              label: 'Transfer money',
+              label: 'Transfer money'.tr,
               icon: Icons.swap_horiz_rounded,
               variant: AppButtonVariant.secondary,
               onPressed: () => Get.toNamed<void>(
@@ -189,7 +202,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppButton(
-              label: 'Edit account & opening balance',
+              label: 'Edit account & opening balance'.tr,
               icon: Icons.edit_outlined,
               onPressed: () =>
                   Get.toNamed<void>(AppRoutes.accountForm, arguments: account),
@@ -197,7 +210,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
             const SizedBox(height: AppSpacing.md),
             Obx(
               () => AppButton(
-                label: 'Delete account',
+                label: 'Delete account'.tr,
                 icon: Icons.delete_outline,
                 variant: AppButtonVariant.destructive,
                 isLoading: accounts.deletion.isBusy.value,
