@@ -28,6 +28,7 @@ import 'package:finance_tracker/features/recurring/controllers/recurring_control
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
+import 'package:finance_tracker/features/transactions/controller/calendar_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
 import 'package:get/get.dart';
@@ -56,6 +57,18 @@ class TransactionBinding extends Bindings {
   @override
   void dependencies() => _putIfAbsent(
     () => TransactionController(
+      Get.find<TransactionRepository>(),
+      Get.find<AccountRepository>(),
+      Get.find<CategoryRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+class CalendarBinding extends Bindings {
+  @override
+  void dependencies() => Get.put<CalendarController>(
+    CalendarController(
       Get.find<TransactionRepository>(),
       Get.find<AccountRepository>(),
       Get.find<CategoryRepository>(),

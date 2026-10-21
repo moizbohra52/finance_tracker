@@ -7,6 +7,15 @@ Future<(A, B)> wait2<A, B>(Future<A> a, Future<B> b) async {
   return (r[0] as A, r[1] as B);
 }
 
+Future<(A, B, C)> wait3<A, B, C>(Future<A> a, Future<B> b, Future<C> c) async {
+  final List<Object?> r = await Future.wait<Object?>(<Future<Object?>>[
+    a,
+    b,
+    c,
+  ]);
+  return (r[0] as A, r[1] as B, r[2] as C);
+}
+
 Future<(A, B, C, D, E)> wait5<A, B, C, D, E>(
   Future<A> a,
   Future<B> b,

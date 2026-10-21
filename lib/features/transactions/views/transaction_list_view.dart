@@ -268,6 +268,18 @@ class _SearchBar extends GetView<TransactionController> {
             ),
           ),
         ),
+        const SizedBox(width: AppSpacing.sm),
+        IconButton.filledTonal(
+          style: IconButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            padding: const EdgeInsets.all(12),
+          ),
+          tooltip: 'Calendar view',
+          icon: const Icon(Icons.calendar_month_outlined),
+          onPressed: () => Get.toNamed<void>(AppRoutes.transactionCalendar),
+        ),
       ],
     );
   }

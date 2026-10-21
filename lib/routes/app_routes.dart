@@ -42,6 +42,7 @@ abstract final class AppRoutes {
   static const String transactions = '/transactions';
   static const String transactionForm = '/transaction-form';
   static const String transactionDetail = '/transaction-detail';
+  static const String transactionCalendar = '/transaction-calendar';
   static const String transferForm = '/transfer-form';
 
   // Categories

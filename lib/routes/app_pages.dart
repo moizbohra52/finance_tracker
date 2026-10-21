@@ -39,6 +39,7 @@ import 'package:finance_tracker/features/reminders/views/reminder_list_view.dart
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:finance_tracker/features/settings/views/information_views.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
+import 'package:finance_tracker/features/transactions/views/calendar_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
@@ -294,6 +295,12 @@ abstract final class AppPages {
       page: () => TransactionDetailView(id: routeIdArgument()),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: TransactionDetailBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.transactionCalendar,
+      page: () => const CalendarView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: CalendarBinding(),
     ),
     GetPage<dynamic>(
       name: AppRoutes.transferForm,
