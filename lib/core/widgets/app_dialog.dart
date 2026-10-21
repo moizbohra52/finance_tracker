@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Shared dialog shell for app-specific content and actions.
 class AppDialog extends StatelessWidget {
@@ -35,17 +36,17 @@ Future<bool> confirmExit(BuildContext context) async {
   final bool? confirmed = await showDialog<bool>(
     context: context,
     builder: (BuildContext dialogContext) => AppDialog(
-      title: 'Exit App',
+      title: 'Exit App'.tr,
       icon: const Icon(Icons.exit_to_app_rounded),
-      content: const Text('Are you sure you want to exit the app?'),
+      content: Text('Are you sure you want to exit the app?'.tr),
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr),
         ),
         FilledButton(
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('Exit'),
+          child: Text('Exit'.tr),
         ),
       ],
     ),

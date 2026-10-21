@@ -1,3 +1,5 @@
+import 'dart:ui' show Locale;
+
 import 'package:flutter/foundation.dart';
 
 /// A currency the app can display. Only these are offered in settings, so
@@ -93,6 +95,29 @@ enum WeekStart {
   );
 }
 
+/// The app's language. [stored] is what user_settings.language_code holds;
+/// [locale] selects the GetX translations (none for English, whose text is
+/// the key); [dateLocale] formats month and day names.
+enum AppLanguage {
+  english('en', 'English', Locale('en', 'IN'), 'en_IN'),
+  hindi('hi', 'हिंदी', Locale('hi', 'IN'), 'hi_IN'),
+  hinglish('hi-Latn', 'Hinglish', Locale('hi', 'Latn'), 'en_IN');
+
+  const AppLanguage(this.stored, this.label, this.locale, this.dateLocale);
+
+  final String stored;
+
+  /// The language's own name, never translated.
+  final String label;
+  final Locale locale;
+  final String dateLocale;
+
+  static AppLanguage fromStored(String? value) => values.firstWhere(
+    (AppLanguage language) => language.stored == value,
+    orElse: () => english,
+  );
+}
+
 /// Account display preferences. Currency lives in profiles.currency_code, the
 /// rest in user_settings. Read everywhere through AppFormatters and
 /// SettingsController, never from a widget.
@@ -103,7 +128,7 @@ class UserPreferences {
     this.dateStyle = DateStyle.dayMonthYear,
     this.numberStyle = NumberStyle.indian,
     this.weekStart = WeekStart.monday,
-    this.languageCode = 'en',
+    this.language = AppLanguage.english,
     this.defaultAccountId,
     this.upiId,
   });
@@ -115,8 +140,7 @@ class UserPreferences {
   final NumberStyle numberStyle;
   final WeekStart weekStart;
 
-  /// Only English is available; stored for when more languages arrive.
-  final String languageCode;
+  final AppLanguage language;
 
   /// Pre-selected account on new transactions. Null means the first account.
   final String? defaultAccountId;
@@ -129,7 +153,7 @@ class UserPreferences {
     DateStyle? dateStyle,
     NumberStyle? numberStyle,
     WeekStart? weekStart,
-    String? languageCode,
+    AppLanguage? language,
     String? defaultAccountId,
     bool clearDefaultAccount = false,
     String? upiId,
@@ -139,7 +163,7 @@ class UserPreferences {
     dateStyle: dateStyle ?? this.dateStyle,
     numberStyle: numberStyle ?? this.numberStyle,
     weekStart: weekStart ?? this.weekStart,
-    languageCode: languageCode ?? this.languageCode,
+    language: language ?? this.language,
     defaultAccountId: clearDefaultAccount
         ? null
         : (defaultAccountId ?? this.defaultAccountId),
@@ -153,7 +177,7 @@ class UserPreferences {
       other.dateStyle == dateStyle &&
       other.numberStyle == numberStyle &&
       other.weekStart == weekStart &&
-      other.languageCode == languageCode &&
+      other.language == language &&
       other.defaultAccountId == defaultAccountId &&
       other.upiId == upiId;
 
@@ -163,7 +187,7 @@ class UserPreferences {
     dateStyle,
     numberStyle,
     weekStart,
-    languageCode,
+    language,
     defaultAccountId,
     upiId,
   );

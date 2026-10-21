@@ -16,7 +16,11 @@ class NotificationBell extends GetView<NotificationCenterController> {
           ? '${NotificationRepository.unreadCap - 1}+'
           : '$count';
       return IconButton(
-        tooltip: count == 0 ? 'Notifications' : 'Notifications, $count unread',
+        tooltip: count == 0
+            ? 'Notifications'.tr
+            : 'Notifications, @count unread'.trParams(<String, String>{
+                'count': '$count',
+              }),
         icon: Badge(
           isLabelVisible: count > 0,
           label: Text(label),

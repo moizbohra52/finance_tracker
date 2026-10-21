@@ -14,6 +14,7 @@ import 'package:finance_tracker/data/models/user_settings.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/main.dart';
 import 'package:flutter/material.dart';
@@ -350,6 +351,7 @@ Future<void> pumpApp(
   AppLockController? appLock,
 }) async {
   await initializeDateFormatting(AppConstants.defaultLocale);
+  await initializeDateFormatting(AppLanguage.hindi.dateLocale);
   // A restart passes the same storage, so the saved values must survive:
   // the mock is only reset for a fresh start.
   final StorageService preferences;

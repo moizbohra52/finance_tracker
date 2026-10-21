@@ -84,7 +84,7 @@ void main() {
       expect(controller.preferences.value.dateStyle, DateStyle.dayMonthYear);
       expect(controller.preferences.value.numberStyle, NumberStyle.indian);
       expect(controller.preferences.value.weekStart, WeekStart.monday);
-      expect(controller.preferences.value.languageCode, 'en');
+      expect(controller.preferences.value.language, AppLanguage.english);
     });
 
     test('a failed load shows the error and keeps the defaults', () async {

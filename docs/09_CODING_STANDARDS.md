@@ -37,6 +37,18 @@ Expose user-friendly messages.
 - testable
 - avoid deeply nested build methods
 
+## User-visible text
+- Write it in English and wrap it: `'Settings'.tr`. The English text is the
+  key; `lib/core/translations/hindi.dart` and `hinglish.dart` hold the
+  Hindi and Hinglish text, and every key needs an entry in both.
+- Values go in params, never in the key: `'@count accounts'.trParams(
+  {'count': '$n'})`, not `'$n accounts'.tr`.
+- Translate where the text is built, inside `build` or a getter, not in a
+  `static` or `const` value: those are fixed before the language changes.
+- A screen whose text is translated is listed in `translatedFiles`
+  (`test/core/translations/translation_coverage_test.dart`); that test
+  fails on an untranslated literal or a missing key.
+
 ## State
 Use Rx only where reactivity is needed.
 Dispose resources properly.

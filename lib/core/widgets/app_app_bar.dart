@@ -2,6 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
 
 enum _IconColorVariant { primary, secondary, normal }
 
@@ -118,7 +119,7 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
         ...actions,
         if (showMenu)
           PopupMenuButton<String>(
-            tooltip: 'More options',
+            tooltip: 'More options'.tr,
             icon: Icon(
               Icons.more_vert_rounded,
               color: colors.onSurface,
@@ -155,28 +156,28 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
               }
             },
             itemBuilder: (BuildContext context) => [
-              const _MenuItem(
+              _MenuItem(
                 value: 'profile',
                 icon: Icons.person_rounded,
-                label: 'Profile',
+                label: 'Profile'.tr,
                 iconColorVariant: _IconColorVariant.primary,
               ),
-              const _MenuItem(
+              _MenuItem(
                 value: 'settings',
                 icon: Icons.settings_rounded,
-                label: 'Settings',
+                label: 'Settings'.tr,
                 iconColorVariant: _IconColorVariant.secondary,
               ),
               if (onSwitchAccountTap != null)
-                const _MenuItem(
+                _MenuItem(
                   value: 'switch',
                   icon: Icons.switch_account_rounded,
-                  label: 'Switch account',
+                  label: 'Switch account'.tr,
                 ),
-              const _MenuItem(
+              _MenuItem(
                 value: 'signout',
                 icon: Icons.logout_rounded,
-                label: 'Sign Out',
+                label: 'Sign Out'.tr,
                 isDestructive: true,
               ),
             ],

@@ -265,6 +265,13 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    object name. Apply before shipping receipts; without the bucket, uploads
    fail and photos stay queued on the phone (nothing is lost).
 
+11. `20261021110000_language_codes.sql` - widens the
+   `user_settings.language_code` CHECK to `('en', 'hi', 'hi-Latn')`: English,
+   Hindi and Hinglish (`hi-Latn`, Hindi in Latin script). No new column.
+   Apply before shipping the language picker; until then the server rejects
+   Hindi and Hinglish, and once sync gives up the next settings pull reverts
+   the language and any other setting saved with it.
+
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.
 

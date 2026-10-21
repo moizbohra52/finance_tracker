@@ -1,5 +1,4 @@
 import 'package:decimal/decimal.dart';
-import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:intl/intl.dart';
 
@@ -46,23 +45,17 @@ abstract final class AppFormatters {
 
   /// [pattern] overrides the account's date style for fixed labels such as
   /// chart axes ('MMM') and month titles ('MMMM y').
-  static String date(
-    DateTime value, {
-    String? pattern,
-    String locale = AppConstants.defaultLocale,
-  }) => DateFormat(
-    pattern ?? preferences.dateStyle.pattern,
-    locale,
-  ).format(value);
+  static String date(DateTime value, {String? pattern, String? locale}) =>
+      DateFormat(
+        pattern ?? preferences.dateStyle.pattern,
+        locale ?? preferences.language.dateLocale,
+      ).format(value);
 
-  static String dateTime(
-    DateTime value, {
-    String? pattern,
-    String locale = AppConstants.defaultLocale,
-  }) => DateFormat(
-    pattern ?? '${preferences.dateStyle.pattern}, h:mm a',
-    locale,
-  ).format(value);
+  static String dateTime(DateTime value, {String? pattern, String? locale}) =>
+      DateFormat(
+        pattern ?? '${preferences.dateStyle.pattern}, h:mm a',
+        locale ?? preferences.language.dateLocale,
+      ).format(value);
 
   static String time(DateTime value) => dateTime(value, pattern: 'h:mm a');
 

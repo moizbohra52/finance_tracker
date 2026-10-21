@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Primary destinations available to signed-in users.
 class AppNavigationDestination {
@@ -12,31 +13,31 @@ class AppNavigationDestination {
   final IconData icon;
   final IconData selectedIcon;
 
-  static const List<AppNavigationDestination> items =
-      <AppNavigationDestination>[
-        AppNavigationDestination(
-          icon: Icons.home_outlined,
-          selectedIcon: Icons.home_rounded,
-          label: 'Home',
-        ),
-        AppNavigationDestination(
-          icon: Icons.receipt_long_outlined,
-          selectedIcon: Icons.receipt_long_rounded,
-          label: 'Transactions',
-        ),
-        AppNavigationDestination(
-          icon: Icons.people_outline,
-          selectedIcon: Icons.people_rounded,
-          label: 'Khata',
-        ),
-        AppNavigationDestination(
-          icon: Icons.insights_outlined,
-          selectedIcon: Icons.insights_rounded,
-          label: 'Reports',
-        ),
-        // Profile is not a tab: the avatar in the app bar (and its menu)
-        // opens it, so a tab would only duplicate that entry point.
-      ];
+  /// A getter, so the labels follow a language change.
+  static List<AppNavigationDestination> get items => <AppNavigationDestination>[
+    AppNavigationDestination(
+      icon: Icons.home_outlined,
+      selectedIcon: Icons.home_rounded,
+      label: 'Home'.tr,
+    ),
+    AppNavigationDestination(
+      icon: Icons.receipt_long_outlined,
+      selectedIcon: Icons.receipt_long_rounded,
+      label: 'Transactions'.tr,
+    ),
+    AppNavigationDestination(
+      icon: Icons.people_outline,
+      selectedIcon: Icons.people_rounded,
+      label: 'Khata'.tr,
+    ),
+    AppNavigationDestination(
+      icon: Icons.insights_outlined,
+      selectedIcon: Icons.insights_rounded,
+      label: 'Reports'.tr,
+    ),
+    // Profile is not a tab: the avatar in the app bar (and its menu)
+    // opens it, so a tab would only duplicate that entry point.
+  ];
 }
 
 class AppBottomNavigation extends StatelessWidget {

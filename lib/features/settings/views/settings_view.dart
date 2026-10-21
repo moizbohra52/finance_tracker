@@ -39,35 +39,35 @@ class SettingsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Settings'),
+      appBar: AppAppBar(title: 'Settings'.tr),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxPageWidth,
           child: ListView(
             padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-            children: const <Widget>[
-              SizedBox(height: AppSpacing.md),
-              SettingsSectionTitle('Appearance'),
-              SizedBox(height: AppSpacing.sm),
-              _AppearanceCard(),
-              SizedBox(height: AppSpacing.lg),
-              SettingsSectionTitle('Region and format'),
-              SizedBox(height: AppSpacing.sm),
-              _RegionSection(),
-              SizedBox(height: AppSpacing.lg),
-              NotificationSettingsSection(),
-              SizedBox(height: AppSpacing.lg),
-              SettingsSectionTitle('Data & Backup'),
-              SizedBox(height: AppSpacing.sm),
-              _DataBackupSection(),
-              SizedBox(height: AppSpacing.lg),
-              SettingsSectionTitle('Security'),
-              SizedBox(height: AppSpacing.sm),
-              _SecuritySection(),
-              SizedBox(height: AppSpacing.lg),
-              SettingsSectionTitle('Information'),
-              SizedBox(height: AppSpacing.sm),
-              _InformationSection(),
+            children: <Widget>[
+              const SizedBox(height: AppSpacing.md),
+              SettingsSectionTitle('Appearance'.tr),
+              const SizedBox(height: AppSpacing.sm),
+              const _AppearanceCard(),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSectionTitle('Region and format'.tr),
+              const SizedBox(height: AppSpacing.sm),
+              const _RegionSection(),
+              const SizedBox(height: AppSpacing.lg),
+              const NotificationSettingsSection(),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSectionTitle('Data & Backup'.tr),
+              const SizedBox(height: AppSpacing.sm),
+              const _DataBackupSection(),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSectionTitle('Security'.tr),
+              const SizedBox(height: AppSpacing.sm),
+              const _SecuritySection(),
+              const SizedBox(height: AppSpacing.lg),
+              SettingsSectionTitle('Information'.tr),
+              const SizedBox(height: AppSpacing.sm),
+              const _InformationSection(),
             ],
           ),
         ),
@@ -88,21 +88,21 @@ class _AppearanceCard extends StatelessWidget {
         children: <Widget>[
           Obx(
             () => SegmentedButton<ThemeMode>(
-              segments: const <ButtonSegment<ThemeMode>>[
+              segments: <ButtonSegment<ThemeMode>>[
                 ButtonSegment<ThemeMode>(
                   value: ThemeMode.light,
-                  icon: Icon(Icons.light_mode_outlined),
-                  label: Text('Light'),
+                  icon: const Icon(Icons.light_mode_outlined),
+                  label: Text('Light'.tr),
                 ),
                 ButtonSegment<ThemeMode>(
                   value: ThemeMode.dark,
-                  icon: Icon(Icons.dark_mode_outlined),
-                  label: Text('Dark'),
+                  icon: const Icon(Icons.dark_mode_outlined),
+                  label: Text('Dark'.tr),
                 ),
                 ButtonSegment<ThemeMode>(
                   value: ThemeMode.system,
-                  icon: Icon(Icons.brightness_auto_outlined),
-                  label: Text('System'),
+                  icon: const Icon(Icons.brightness_auto_outlined),
+                  label: Text('System'.tr),
                 ),
               ],
               selected: <ThemeMode>{themeController.themeMode.value},
@@ -112,14 +112,20 @@ class _AppearanceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Logo colours', style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            'Logo colours'.tr,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
           const SizedBox(height: AppSpacing.sm),
           _AccentWrap(
             accents: AppAccentColor.logoColours,
             controller: themeController,
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('More colours', style: Theme.of(context).textTheme.labelLarge),
+          Text(
+            'More colours'.tr,
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
           const SizedBox(height: AppSpacing.sm),
           _AccentWrap(
             accents: AppAccentColor.otherColours,
@@ -173,7 +179,7 @@ class _AccentChoice extends StatelessWidget {
     return Semantics(
       selected: selected,
       button: true,
-      label: '${accent.label} accent',
+      label: '@name accent'.trParams(<String, String>{'name': accent.label}),
       child: ChoiceChip(
         avatar: CircleAvatar(
           radius: 9,
@@ -198,15 +204,15 @@ class _RegionSection extends GetView<SettingsController> {
 
   Future<void> _change(BuildContext context, UserPreferences next) async {
     final bool saved = await controller.savePreferences(next);
-    if (saved) AppSnackbar.show('Settings saved.');
+    if (saved) AppSnackbar.show('Settings saved.'.tr);
   }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const AppCard(
-          child: LoadingState(message: 'Loading your settings'),
+        return AppCard(
+          child: LoadingState(message: 'Loading your settings'.tr),
         );
       }
       final String? loadError = controller.loadError.value;
@@ -224,53 +230,53 @@ class _RegionSection extends GetView<SettingsController> {
             children: <Widget>[
               SettingsTile(
                 icon: Icons.payments_outlined,
-                title: 'Currency',
+                title: 'Currency'.tr,
                 value: _currencyLabel(prefs.currencyCode),
                 onTap: () => _pickCurrency(context, prefs),
               ),
               SettingsTile(
                 icon: Icons.calendar_today_outlined,
-                title: 'Date format',
+                title: 'Date format'.tr,
                 value: prefs.dateStyle.example,
                 onTap: () => _pickDateStyle(context, prefs),
               ),
               SettingsTile(
                 icon: Icons.format_list_numbered_rtl_rounded,
-                title: 'Number format',
+                title: 'Number format'.tr,
                 value: prefs.numberStyle.example,
                 onTap: () => _pickNumberStyle(context, prefs),
               ),
               SettingsTile(
                 icon: Icons.view_week_outlined,
-                title: 'First day of the week',
-                value: prefs.weekStart.label,
+                title: 'First day of the week'.tr,
+                value: prefs.weekStart.label.tr,
                 onTap: () => _pickWeekStart(context, prefs),
               ),
               SettingsTile(
                 icon: Icons.account_balance_wallet_outlined,
-                title: 'Default account',
-                subtitle: 'Pre-selected on new transactions',
+                title: 'Default account'.tr,
+                subtitle: 'Pre-selected on new transactions'.tr,
                 value: _accountName(prefs.defaultAccountId),
                 onTap: () => _pickDefaultAccount(context, prefs),
               ),
               SettingsTile(
                 icon: Icons.qr_code_2_rounded,
-                title: 'My UPI ID',
-                subtitle: 'Pay link in reminders and khata statements',
-                value: prefs.upiId ?? 'Not set',
+                title: 'My UPI ID'.tr,
+                subtitle: 'Pay link in reminders and khata statements'.tr,
+                value: prefs.upiId ?? 'Not set'.tr,
                 onTap: () => _editUpiId(context, prefs),
               ),
               SettingsTile(
                 icon: Icons.category_outlined,
-                title: 'Categories',
-                subtitle: 'Add your own income and expense categories',
+                title: 'Categories'.tr,
+                subtitle: 'Add your own income and expense categories'.tr,
                 onTap: () => Get.toNamed<void>(AppRoutes.categories),
               ),
-              const SettingsTile(
+              SettingsTile(
                 icon: Icons.translate_rounded,
-                title: 'Language',
-                subtitle: 'More languages are coming',
-                value: 'English',
+                title: 'Language'.tr,
+                value: prefs.language.label,
+                onTap: () => _pickLanguage(context, prefs),
               ),
             ],
           ),
@@ -285,11 +291,11 @@ class _RegionSection extends GetView<SettingsController> {
   }
 
   String _accountName(String? id) {
-    if (id == null) return 'First account';
+    if (id == null) return 'First account'.tr;
     for (final Account account in controller.accounts) {
       if (account.id == id) return account.name;
     }
-    return 'First account';
+    return 'First account'.tr;
   }
 
   Future<void> _pickCurrency(
@@ -298,10 +304,10 @@ class _RegionSection extends GetView<SettingsController> {
   ) async {
     final CurrencyOption? choice = await showChoiceSheet<CurrencyOption>(
       context,
-      title: 'Currency',
+      title: 'Currency'.tr,
       options: Currencies.supported,
       selected: Currencies.byCode(prefs.currencyCode),
-      labelOf: (CurrencyOption o) => '${o.name} (${o.code})',
+      labelOf: (CurrencyOption o) => '${o.name.tr} (${o.code})',
       detailOf: (CurrencyOption o) =>
           AppFormatters.currency(1234.5, currencyCode: o.code),
     );
@@ -316,7 +322,7 @@ class _RegionSection extends GetView<SettingsController> {
   ) async {
     final DateStyle? choice = await showChoiceSheet<DateStyle>(
       context,
-      title: 'Date format',
+      title: 'Date format'.tr,
       options: DateStyle.values,
       selected: prefs.dateStyle,
       labelOf: (DateStyle s) => s.example,
@@ -332,13 +338,13 @@ class _RegionSection extends GetView<SettingsController> {
   ) async {
     final NumberStyle? choice = await showChoiceSheet<NumberStyle>(
       context,
-      title: 'Number format',
+      title: 'Number format'.tr,
       options: NumberStyle.values,
       selected: prefs.numberStyle,
       labelOf: (NumberStyle s) => s.example,
       detailOf: (NumberStyle s) => s == NumberStyle.indian
-          ? 'Lakh grouping, as used in India'
-          : 'Thousands grouping',
+          ? 'Lakh grouping, as used in India'.tr
+          : 'Thousands grouping'.tr,
     );
     if (choice != null && context.mounted) {
       await _change(context, prefs.copyWith(numberStyle: choice));
@@ -351,13 +357,30 @@ class _RegionSection extends GetView<SettingsController> {
   ) async {
     final WeekStart? choice = await showChoiceSheet<WeekStart>(
       context,
-      title: 'First day of the week',
+      title: 'First day of the week'.tr,
       options: WeekStart.values,
       selected: prefs.weekStart,
-      labelOf: (WeekStart s) => s.label,
+      labelOf: (WeekStart s) => s.label.tr,
     );
     if (choice != null && context.mounted) {
       await _change(context, prefs.copyWith(weekStart: choice));
+    }
+  }
+
+  /// Each language is listed in its own script, so anyone can find theirs.
+  Future<void> _pickLanguage(
+    BuildContext context,
+    UserPreferences prefs,
+  ) async {
+    final AppLanguage? choice = await showChoiceSheet<AppLanguage>(
+      context,
+      title: 'Language'.tr,
+      options: AppLanguage.values,
+      selected: prefs.language,
+      labelOf: (AppLanguage l) => l.label,
+    );
+    if (choice != null && context.mounted) {
+      await _change(context, prefs.copyWith(language: choice));
     }
   }
 
@@ -383,7 +406,7 @@ class _RegionSection extends GetView<SettingsController> {
     UserPreferences prefs,
   ) async {
     final List<_AccountOption> options = <_AccountOption>[
-      const _AccountOption(null, 'First account'),
+      _AccountOption(null, 'First account'.tr),
       for (final Account account in controller.accounts)
         _AccountOption(account.id, account.name),
     ];
@@ -393,7 +416,7 @@ class _RegionSection extends GetView<SettingsController> {
     );
     final _AccountOption? choice = await showChoiceSheet<_AccountOption>(
       context,
-      title: 'Default account',
+      title: 'Default account'.tr,
       options: options,
       selected: selected,
       labelOf: (_AccountOption o) => o.name,
@@ -441,7 +464,7 @@ class _UpiIdDialogState extends State<_UpiIdDialog> {
   @override
   Widget build(BuildContext context) {
     return AppDialog(
-      title: 'My UPI ID',
+      title: 'My UPI ID'.tr,
       content: Form(
         key: _form,
         child: TextFormField(
@@ -449,10 +472,10 @@ class _UpiIdDialogState extends State<_UpiIdDialog> {
           autofocus: true,
           keyboardType: TextInputType.emailAddress,
           autocorrect: false,
-          decoration: const InputDecoration(
-            labelText: 'UPI ID',
-            hintText: 'name@bank',
-            helperText: 'Leave empty to remove',
+          decoration: InputDecoration(
+            labelText: 'UPI ID'.tr,
+            hintText: 'name@bank'.tr,
+            helperText: 'Leave empty to remove'.tr,
           ),
           validator: Validators.optionalUpiId,
           onFieldSubmitted: (_) => _save(),
@@ -461,9 +484,9 @@ class _UpiIdDialogState extends State<_UpiIdDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr),
         ),
-        FilledButton(onPressed: _save, child: const Text('Save')),
+        FilledButton(onPressed: _save, child: Text('Save'.tr)),
       ],
     );
   }
@@ -492,15 +515,16 @@ class _DataBackupSection extends StatelessWidget {
       children: <Widget>[
         SettingsTile(
           icon: Icons.file_download_outlined,
-          title: 'Export data',
+          title: 'Export data'.tr,
           subtitle:
-              'Export transactions, accounts & reports to CSV, Excel, or PDF',
+              'Export transactions, accounts & reports to CSV, Excel, or PDF'
+                  .tr,
           onTap: () => Get.toNamed<void>(AppRoutes.export),
         ),
         SettingsTile(
           icon: Icons.settings_backup_restore_outlined,
-          title: 'Backup & restore',
-          subtitle: 'Create a full offline backup or restore previous data',
+          title: 'Backup & restore'.tr,
+          subtitle: 'Create a full offline backup or restore previous data'.tr,
           onTap: () => Get.toNamed<void>(AppRoutes.backup),
         ),
       ],
@@ -519,20 +543,20 @@ class _SecuritySection extends StatelessWidget {
       children: <Widget>[
         SettingsTile(
           icon: Icons.lock_outline,
-          title: 'Change password',
+          title: 'Change password'.tr,
           onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
         ),
         if (Get.find<AppLockController>().isSupported) const AppLockTile(),
         const SwitchAccountTile(),
         SettingsTile(
           icon: Icons.logout_rounded,
-          title: 'Sign out of this device',
+          title: 'Sign out of this device'.tr,
           onTap: () => confirmAndSignOut(context),
         ),
         SettingsTile(
           icon: Icons.delete_forever_outlined,
-          title: 'Delete account',
-          subtitle: 'Permanently removes your data',
+          title: 'Delete account'.tr,
+          subtitle: 'Permanently removes your data'.tr,
           destructive: true,
           onTap: () => Get.dialog<void>(const DeleteAccountDialog()),
         ),
@@ -550,24 +574,26 @@ class _InformationSection extends StatelessWidget {
       children: <Widget>[
         SettingsTile(
           icon: Icons.privacy_tip_outlined,
-          title: 'Privacy policy',
+          title: 'Privacy policy'.tr,
           onTap: () => Get.toNamed<void>(AppRoutes.privacyPolicy),
         ),
         SettingsTile(
           icon: Icons.description_outlined,
-          title: 'Terms of service',
+          title: 'Terms of service'.tr,
           onTap: () => Get.toNamed<void>(AppRoutes.terms),
         ),
         SettingsTile(
           icon: Icons.sync_rounded,
-          title: 'Cloud sync',
-          subtitle: 'Sync queue & connection status',
+          title: 'Cloud sync'.tr,
+          subtitle: 'Sync queue & connection status'.tr,
           onTap: () => showSyncStatusSheet(context),
         ),
         SettingsTile(
           icon: Icons.info_outline_rounded,
-          title: 'About',
-          value: 'Version ${AppConstants.appVersion}',
+          title: 'About'.tr,
+          value: 'Version @version'.trParams(<String, String>{
+            'version': AppConstants.appVersion,
+          }),
           onTap: () => Get.toNamed<void>(AppRoutes.about),
         ),
       ],

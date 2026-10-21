@@ -36,13 +36,13 @@ class NotificationSettingsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text('Notifications', style: text.titleSmall),
+        Text('Notifications'.tr, style: text.titleSmall),
         const SizedBox(height: AppSpacing.sm),
         if (!coordinator.isSupported)
-          const AppCard(
+          AppCard(
             child: Text(
-              'Notifications are not available on this device. Reminders are '
-              'still saved and shown in the app.',
+              'Notifications are not available on this device. Reminders are still saved and shown in the app.'
+                  .tr,
             ),
           )
         else ...<Widget>[
@@ -68,43 +68,43 @@ class NotificationSettingsSection extends StatelessWidget {
               child: Column(
                 children: <Widget>[
                   tile(
-                    'Notifications',
-                    'Turn all notifications on or off',
+                    'Notifications'.tr,
+                    'Turn all notifications on or off'.tr,
                     prefs.enabled,
                     (bool v) => prefs.copyWith(enabled: v),
                   ),
                   tile(
-                    'Reminders',
-                    'Alert me when a reminder is due',
+                    'Reminders'.tr,
+                    'Alert me when a reminder is due'.tr,
                     prefs.reminders,
                     (bool v) => prefs.copyWith(reminders: v),
                     enabled: prefs.enabled,
                   ),
                   tile(
-                    'Budget alerts',
-                    'When spending reaches 75%, 90% or 100% of a budget',
+                    'Budget alerts'.tr,
+                    'When spending reaches 75%, 90% or 100% of a budget'.tr,
                     prefs.budgets,
                     (bool v) => prefs.copyWith(budgets: v),
                     enabled: prefs.enabled,
                   ),
                   tile(
-                    'Recurring transactions',
-                    'When a recurring transaction is recorded',
+                    'Recurring transactions'.tr,
+                    'When a recurring transaction is recorded'.tr,
                     prefs.recurring,
                     (bool v) => prefs.copyWith(recurring: v),
                     enabled: prefs.enabled,
                   ),
                   tile(
-                    'Sound',
-                    'Play a sound with notifications',
+                    'Sound'.tr,
+                    'Play a sound with notifications'.tr,
                     prefs.sound,
                     (bool v) => prefs.copyWith(sound: v),
                     enabled: prefs.enabled,
                   ),
                   if (coordinator.supportsVibrationSetting)
                     tile(
-                      'Vibration',
-                      'Vibrate with notifications',
+                      'Vibration'.tr,
+                      'Vibrate with notifications'.tr,
                       prefs.vibration,
                       (bool v) => prefs.copyWith(vibration: v),
                       enabled: prefs.enabled,
@@ -122,15 +122,15 @@ class NotificationSettingsSection extends StatelessWidget {
                       child: ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.alarm_on_outlined),
-                        title: const Text('Exact reminder times'),
-                        subtitle: const Text(
-                          'Without this, reminders can arrive a few minutes '
-                          'late.',
+                        title: Text('Exact reminder times'.tr),
+                        subtitle: Text(
+                          'Without this, reminders can arrive a few minutes late.'
+                              .tr,
                         ),
                         trailing: TextButton(
                           onPressed: () =>
                               unawaited(coordinator.openExactAlarmSettings()),
-                          child: const Text('Allow'),
+                          child: Text('Allow'.tr),
                         ),
                       ),
                     ),

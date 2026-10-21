@@ -25,9 +25,10 @@ class AppLockTile extends GetView<AppLockController> {
           icon: Icons.fingerprint_rounded,
           color: colors.primary,
         ),
-        title: 'App lock',
+        title: 'App lock'.tr,
         subtitle:
-            'Ask for fingerprint, face or screen lock every time the app opens',
+            'Ask for fingerprint, face or screen lock every time the app opens'
+                .tr,
         subtitleMaxLines: 2,
         trailing: Switch(
           value: controller.enabled.value,

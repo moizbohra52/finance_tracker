@@ -64,7 +64,7 @@ class _AppShellViewState extends State<AppShellView> {
     final String typed = profile.fullNameController.text.trim();
     if (typed.isNotEmpty) return typed;
     final String local = profile.email.split('@').first.trim();
-    return local.isNotEmpty ? local : 'User';
+    return local.isNotEmpty ? local : 'User'.tr;
   }
 
   Widget _destination(int index) => switch (index) {
@@ -80,12 +80,12 @@ class _AppShellViewState extends State<AppShellView> {
     1 => FloatingActionButton.extended(
       onPressed: () => showAddTransactionSheet(context),
       icon: const Icon(Icons.add),
-      label: const Text('Add transaction'),
+      label: Text('Add transaction'.tr),
     ),
-    2 => const FloatingActionButton.extended(
+    2 => FloatingActionButton.extended(
       onPressed: openAddContact,
-      icon: Icon(Icons.person_add_alt_1_outlined),
-      label: Text('Add contact'),
+      icon: const Icon(Icons.person_add_alt_1_outlined),
+      label: Text('Add contact'.tr),
     ),
     _ => null,
   };
@@ -105,7 +105,7 @@ class _AppShellViewState extends State<AppShellView> {
     final ProfileController profile = Get.find<ProfileController>();
     final ColorScheme colors = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
-    const List<AppNavigationDestination> destinations =
+    final List<AppNavigationDestination> destinations =
         AppNavigationDestination.items;
 
     return PopScope(
@@ -137,8 +137,8 @@ class _AppShellViewState extends State<AppShellView> {
 
                     return Semantics(
                       button: true,
-                      label: 'Open profile',
-                      onLongPressHint: 'Switch account',
+                      label: 'Open profile'.tr,
+                      onLongPressHint: 'Switch account'.tr,
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
@@ -173,7 +173,9 @@ class _AppShellViewState extends State<AppShellView> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        'Hello, $firstName',
+                        'Hello, @name'.trParams(<String, String>{
+                          'name': firstName,
+                        }),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.titleMedium?.copyWith(
@@ -183,7 +185,7 @@ class _AppShellViewState extends State<AppShellView> {
                         ),
                       ),
                       Text(
-                        'Track your finances',
+                        'Track your finances'.tr,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.labelSmall?.copyWith(
@@ -195,10 +197,10 @@ class _AppShellViewState extends State<AppShellView> {
                   );
                 }
                 final String tabTitle = switch (_selectedIndex) {
-                  1 => 'Transactions',
-                  2 => 'Khata',
-                  3 => 'Reports',
-                  _ => 'Dashboard',
+                  1 => 'Transactions'.tr,
+                  2 => 'Khata'.tr,
+                  3 => 'Reports'.tr,
+                  _ => 'Dashboard'.tr,
                 };
                 return Text(
                   tabTitle,
@@ -213,7 +215,7 @@ class _AppShellViewState extends State<AppShellView> {
               automaticallyImplyLeading: false,
               actions: <Widget>[
                 IconButton(
-                  tooltip: 'Search transactions',
+                  tooltip: 'Search transactions'.tr,
                   icon: const Icon(Icons.search_rounded),
                   onPressed: () => Get.toNamed<void>(AppRoutes.transactions),
                 ),

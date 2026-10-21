@@ -17,6 +17,7 @@ import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
+import 'package:finance_tracker/core/translations/app_translations.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
@@ -25,6 +26,7 @@ import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/features/app_lock/widgets/app_lock_gate.dart';
 import 'package:finance_tracker/routes/app_pages.dart';
@@ -38,6 +40,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // DateFormat needs symbols for any locale other than en_US.
   await initializeDateFormatting(AppConstants.defaultLocale);
+  await initializeDateFormatting(AppLanguage.hindi.dateLocale);
   if (!AppEnv.isConfigured) {
     throw StateError(
       '[AppEnv] Supabase credentials missing for [${AppEnv.current.name.toUpperCase()}] environment.\n'
@@ -242,6 +245,10 @@ class FinanceTrackerApp extends StatelessWidget {
         themeMode: themeController.themeMode.value,
         scaffoldMessengerKey: AppSnackbar.messengerKey,
         initialBinding: initialBinding,
+        // English until the account's preferences load (SettingsController).
+        translations: AppTranslations(),
+        locale: AppLanguage.english.locale,
+        fallbackLocale: AppLanguage.english.locale,
         initialRoute: AppPages.initial,
         getPages: AppPages.routes,
         builder: (BuildContext context, Widget? child) =>

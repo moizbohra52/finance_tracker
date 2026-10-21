@@ -17,15 +17,20 @@ Future<void> confirmAndSignOut(BuildContext context) async {
       ? Get.find<AccountSwitchController>().nextAfterSignOut
       : null;
 
-  final String title = pending > 0 ? 'Discard unsynced changes?' : 'Sign Out';
-  final String message = pending > 0
-      ? '$pending change${pending == 1 ? ' has' : 's have'} not reached the '
-          'server yet. Signing out removes them from this device. Connect to '
-          'the internet and let them sync to keep them.'
-      : 'Are you sure you want to sign out of your account?';
+  final String title = pending > 0
+      ? 'Discard unsynced changes?'.tr
+      : 'Sign Out'.tr;
+  final Map<String, String> count = <String, String>{'count': '$pending'};
+  final String message = pending == 0
+      ? 'Are you sure you want to sign out of your account?'.tr
+      : pending == 1
+      ? '@count change has not reached the server yet. Signing out removes them from this device. Connect to the internet and let them sync to keep them.'
+            .trParams(count)
+      : '@count changes have not reached the server yet. Signing out removes them from this device. Connect to the internet and let them sync to keep them.'
+            .trParams(count);
   final String switchNote = next == null
       ? ''
-      : '\n\nYou will switch to ${next.label} (${next.email}).';
+      : '\n\n${'You will switch to @name (@email).'.trParams(<String, String>{'name': next.label, 'email': next.email})}';
 
   final bool? confirmed = await showDialog<bool>(
     context: context,
@@ -36,7 +41,7 @@ Future<void> confirmAndSignOut(BuildContext context) async {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr),
         ),
         FilledButton(
           style: FilledButton.styleFrom(
@@ -44,7 +49,7 @@ Future<void> confirmAndSignOut(BuildContext context) async {
             foregroundColor: Theme.of(dialogContext).colorScheme.onError,
           ),
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('Sign out'),
+          child: Text('Sign out'.tr),
         ),
       ],
     ),

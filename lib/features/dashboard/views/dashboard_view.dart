@@ -51,7 +51,11 @@ class DashboardView extends GetView<HomeController> {
               const _GreetingHeader(),
               const SizedBox(height: AppSpacing.md),
               if (error != null) ...<Widget>[
-                InlineMessage(message: '$error Pull down to retry.'),
+                InlineMessage(
+                  message: '@error Pull down to retry.'.trParams(
+                    <String, String>{'error': error},
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.md),
               ],
               if (controller.accounts.isEmpty)
@@ -125,23 +129,17 @@ class _GreetingHeader extends StatelessWidget {
 
   static ({String text, IconData icon}) _greeting(DateTime now) {
     if (now.hour < 12) {
-      return (text: 'Good morning', icon: Icons.wb_sunny_rounded);
+      return (text: 'Good morning'.tr, icon: Icons.wb_sunny_rounded);
     } else if (now.hour < 17) {
-      return (text: 'Good afternoon', icon: Icons.wb_twilight_rounded);
+      return (text: 'Good afternoon'.tr, icon: Icons.wb_twilight_rounded);
     } else {
-      return (text: 'Good evening', icon: Icons.nights_stay_rounded);
+      return (text: 'Good evening'.tr, icon: Icons.nights_stay_rounded);
     }
   }
 
-  static String _formatDate(DateTime now) {
-    const List<String> weekdays = [
-      'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
-    ];
-    const List<String> months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return '${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
-  }
+  /// "Wed, 21 Oct", with day and month names in the app's language.
+  static String _formatDate(DateTime now) =>
+      AppFormatters.date(now, pattern: 'EEE, d MMM');
 
   static const List<({String quote, String author})> _quotes = [
     (
@@ -227,7 +225,9 @@ class _GreetingHeader extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: colors.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
                     borderRadius: BorderRadius.circular(AppRadius.full),
                     border: Border.all(
                       color: colors.outlineVariant.withValues(alpha: 0.2),
@@ -288,7 +288,7 @@ class _GreetingHeader extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   Expanded(
                     child: Text(
-                      '“${dailyQuote.quote}” — ${dailyQuote.author}',
+                      '“${dailyQuote.quote.tr}” — ${dailyQuote.author.tr}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: text.bodySmall?.copyWith(
@@ -344,13 +344,12 @@ class _FinancialPulseCard extends GetView<HomeController> {
                         colors.surfaceContainer,
                         colors.surfaceContainerHigh,
                       ]
-                    : <Color>[
-                        colors.surface,
-                        colors.surfaceContainerLowest,
-                      ],
+                    : <Color>[colors.surface, colors.surfaceContainerLowest],
               ),
               border: Border.all(
-                color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.45),
+                color: colors.outlineVariant.withValues(
+                  alpha: isDark ? 0.3 : 0.45,
+                ),
                 width: 1,
               ),
               boxShadow: <BoxShadow>[
@@ -381,7 +380,7 @@ class _FinancialPulseCard extends GetView<HomeController> {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      'Monthly Pace',
+                      'Monthly Pace'.tr,
                       style: text.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.2,
@@ -394,11 +393,15 @@ class _FinancialPulseCard extends GetView<HomeController> {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+                        color: colors.surfaceContainerHighest.withValues(
+                          alpha: 0.6,
+                        ),
                         borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Text(
-                        '$daysRemaining days left',
+                        '@days days left'.trParams(<String, String>{
+                          'days': '$daysRemaining',
+                        }),
                         style: text.labelSmall?.copyWith(
                           color: colors.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
@@ -424,9 +427,21 @@ class _FinancialPulseCard extends GetView<HomeController> {
                       child: Text(
                         hasActivity
                             ? (m.net >= Decimal.zero
-                                ? '🟢 On track: ₹${AppFormatters.money(m.net)} net saved this month'
-                                : '⚠️ Spent ₹${AppFormatters.money(m.expense)} across the month')
-                            : '💡 Day ${now.day} of $daysInMonth: Track expenses daily to stay in control',
+                                  ? '🟢 On track: @amount net saved this month'
+                                        .trParams(<String, String>{
+                                          'amount': AppFormatters.money(m.net),
+                                        })
+                                  : '⚠️ Spent @amount across the month'
+                                        .trParams(<String, String>{
+                                          'amount': AppFormatters.money(
+                                            m.expense,
+                                          ),
+                                        }))
+                            : '💡 Day @day of @total: Track expenses daily to stay in control'
+                                  .trParams(<String, String>{
+                                    'day': '${now.day}',
+                                    'total': '$daysInMonth',
+                                  }),
                         style: text.bodySmall?.copyWith(
                           color: colors.onSurfaceVariant,
                           fontSize: 12,
@@ -438,10 +453,12 @@ class _FinancialPulseCard extends GetView<HomeController> {
                     TextButton(
                       style: TextButton.styleFrom(
                         visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xs,
+                        ),
                       ),
                       onPressed: () => Get.toNamed<void>(AppRoutes.budgets),
-                      child: const Text('Budgets →'),
+                      child: Text('Budgets →'.tr),
                     ),
                   ],
                 ),
@@ -492,8 +509,8 @@ class _MonthlySummary extends GetView<HomeController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SectionHeader(
-          title: 'This month',
-          actionLabel: 'Reports',
+          title: 'This month'.tr,
+          actionLabel: 'Reports'.tr,
           onAction: () => Get.toNamed<void>(AppRoutes.reports),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -510,7 +527,7 @@ class _MonthlySummary extends GetView<HomeController> {
                 children: <Widget>[
                   Expanded(
                     child: _Figure(
-                      label: 'Income',
+                      label: 'Income'.tr,
                       value: show(AppFormatters.money(m.income)),
                       color: money.income,
                       onTap: () => _openTransactionsFiltered(
@@ -528,7 +545,7 @@ class _MonthlySummary extends GetView<HomeController> {
                   ),
                   Expanded(
                     child: _Figure(
-                      label: 'Expense',
+                      label: 'Expense'.tr,
                       value: show(AppFormatters.money(m.expense)),
                       color: money.expense,
                       onTap: () => _openTransactionsFiltered(
@@ -546,7 +563,7 @@ class _MonthlySummary extends GetView<HomeController> {
                   ),
                   Expanded(
                     child: _Figure(
-                      label: 'Net',
+                      label: 'Net'.tr,
                       value: show(
                         AppFormatters.signedMoney(m.net, positive: positive),
                       ),
@@ -561,7 +578,7 @@ class _MonthlySummary extends GetView<HomeController> {
         }),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Transfers are not counted as income or expense.',
+          'Transfers are not counted as income or expense.'.tr,
           style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
         ),
       ],
@@ -640,8 +657,8 @@ class _SpendingOverview extends GetView<HomeController> {
         Obx(() {
           final bool hasData = controller.monthCategories.isNotEmpty;
           return SectionHeader(
-            title: 'Spending overview',
-            actionLabel: hasData ? 'Details' : null,
+            title: 'Spending overview'.tr,
+            actionLabel: hasData ? 'Details'.tr : null,
             onAction: hasData
                 ? () => Get.toNamed<void>(AppRoutes.reports)
                 : null,
@@ -663,7 +680,7 @@ class _SpendingOverview extends GetView<HomeController> {
                   BreakdownRow(
                     label:
                         controller.categoryOf(top[i].categoryId)?.name ??
-                        'Uncategorised',
+                        'Uncategorised'.tr,
                     icon: CategoryIcons.of(
                       controller.categoryOf(top[i].categoryId)?.icon,
                       TransactionType.expense,
@@ -690,11 +707,12 @@ class _SpendingOverview extends GetView<HomeController> {
 class _EmptySpendingCard extends StatelessWidget {
   const _EmptySpendingCard();
 
-  static const List<({String label, IconData icon})> _quickCategories = [
-    (label: 'Food', icon: Icons.restaurant_rounded),
-    (label: 'Groceries', icon: Icons.shopping_basket_outlined),
-    (label: 'Bills', icon: Icons.receipt_outlined),
-    (label: 'Shopping', icon: Icons.shopping_bag_outlined),
+  // A getter, so the labels follow a language change.
+  static List<({String label, IconData icon})> get _quickCategories => [
+    (label: 'Food'.tr, icon: Icons.restaurant_rounded),
+    (label: 'Groceries'.tr, icon: Icons.shopping_basket_outlined),
+    (label: 'Bills'.tr, icon: Icons.receipt_outlined),
+    (label: 'Shopping'.tr, icon: Icons.shopping_bag_outlined),
   ];
 
   void _openExpenseForm() {
@@ -774,7 +792,7 @@ class _EmptySpendingCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            'No expenses recorded this month',
+            'No expenses recorded this month'.tr,
             textAlign: TextAlign.center,
             style: text.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
@@ -784,7 +802,8 @@ class _EmptySpendingCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Keep track of where your money goes. As soon as you log expenses, your category breakdown and visual chart will show here.',
+            'Keep track of where your money goes. As soon as you log expenses, your category breakdown and visual chart will show here.'
+                .tr,
             textAlign: TextAlign.center,
             style: text.bodySmall?.copyWith(
               color: colors.onSurfaceVariant,
@@ -839,7 +858,7 @@ class _EmptySpendingCard extends StatelessWidget {
           FilledButton.tonalIcon(
             onPressed: _openExpenseForm,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('Add your first expense'),
+            label: Text('Add your first expense'.tr),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg,
@@ -867,7 +886,8 @@ class _EmptySpendingCard extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    'Tip: Daily tracking uncovers 15–20% in hidden monthly savings!',
+                    'Tip: Daily tracking uncovers 15–20% in hidden monthly savings!'
+                        .tr,
                     style: text.bodySmall?.copyWith(
                       color: colors.onSurfaceVariant,
                       fontSize: 11.5,
@@ -896,7 +916,7 @@ class _PlanSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        const SectionHeader(title: 'Plan ahead'),
+        SectionHeader(title: 'Plan ahead'.tr),
         const SizedBox(height: AppSpacing.sm),
         Row(
           children: <Widget>[
@@ -904,8 +924,8 @@ class _PlanSection extends StatelessWidget {
               child: _EnhancedPlanTile(
                 icon: Icons.savings_outlined,
                 iconColor: money.income,
-                title: 'Budgets',
-                subtitle: 'Set limits and track spend',
+                title: 'Budgets'.tr,
+                subtitle: 'Set limits and track spend'.tr,
                 onTap: () => Get.toNamed<void>(AppRoutes.budgets),
               ),
             ),
@@ -914,8 +934,8 @@ class _PlanSection extends StatelessWidget {
               child: _EnhancedPlanTile(
                 icon: Icons.event_repeat_outlined,
                 iconColor: colors.primary,
-                title: 'Recurring',
-                subtitle: 'Rent, bills, EMIs on autopilot',
+                title: 'Recurring'.tr,
+                subtitle: 'Rent, bills, EMIs on autopilot'.tr,
                 onTap: () => Get.toNamed<void>(AppRoutes.recurring),
               ),
             ),
@@ -928,8 +948,8 @@ class _PlanSection extends StatelessWidget {
               child: _EnhancedPlanTile(
                 icon: Icons.notifications_active_outlined,
                 iconColor: money.payable,
-                title: 'Reminders',
-                subtitle: 'Never miss a due date',
+                title: 'Reminders'.tr,
+                subtitle: 'Never miss a due date'.tr,
                 onTap: () => Get.toNamed<void>(AppRoutes.reminders),
               ),
             ),
@@ -938,8 +958,8 @@ class _PlanSection extends StatelessWidget {
               child: _EnhancedPlanTile(
                 icon: Icons.notifications_outlined,
                 iconColor: money.receivable,
-                title: 'Notifications',
-                subtitle: 'Payment alerts received',
+                title: 'Notifications'.tr,
+                subtitle: 'Payment alerts received'.tr,
                 onTap: () => Get.toNamed<void>(AppRoutes.notifications),
               ),
             ),
@@ -1019,11 +1039,11 @@ class _NoAccountsCard extends StatelessWidget {
     return AppCard(
       child: EmptyState(
         icon: Icons.account_balance_wallet_outlined,
-        title: 'Add your first account',
+        title: 'Add your first account'.tr,
         message:
-            'Create a cash, bank or UPI account with its opening balance. '
-            'Then you can record income and expenses.',
-        actionLabel: 'Add account',
+            'Create a cash, bank or UPI account with its opening balance. Then you can record income and expenses.'
+                .tr,
+        actionLabel: 'Add account'.tr,
         onAction: () => Get.toNamed<void>(AppRoutes.accountForm),
       ),
     );
@@ -1057,34 +1077,34 @@ class _QuickActions extends StatelessWidget {
     final ColorScheme colors = Theme.of(context).colorScheme;
 
     final List<({IconData icon, String label, Color color, VoidCallback onTap})>
-        actions = [
+    actions = [
       (
         icon: Icons.south_west_rounded,
-        label: 'Income',
+        label: 'Income'.tr,
         color: money.income,
         onTap: () => _addTransaction(TransactionType.income),
       ),
       (
         icon: Icons.north_east_rounded,
-        label: 'Expense',
+        label: 'Expense'.tr,
         color: money.expense,
         onTap: () => _addTransaction(TransactionType.expense),
       ),
       (
         icon: Icons.add_card_outlined,
-        label: 'Credit',
+        label: 'Credit'.tr,
         color: money.receivable,
         onTap: () => _addEntry(ContactTransactionType.credit),
       ),
       (
         icon: Icons.remove_circle_outline,
-        label: 'Debit',
+        label: 'Debit'.tr,
         color: money.payable,
         onTap: () => _addEntry(ContactTransactionType.debit),
       ),
       (
         icon: Icons.swap_horiz_rounded,
-        label: 'Transfer',
+        label: 'Transfer'.tr,
         color: colors.primary,
         onTap: () => Get.toNamed<void>(AppRoutes.transferForm),
       ),
@@ -1096,6 +1116,7 @@ class _QuickActions extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           for (final a in actions)
             Expanded(
@@ -1120,9 +1141,12 @@ class _QuickActions extends StatelessWidget {
                           size: AppSizes.quickAction,
                         ),
                         const SizedBox(height: AppSpacing.sm),
+                        // Two lines: 'Udhaar diya' and 'Udhaar liya' would
+                        // otherwise both cut to the same 'Udhaar…'.
                         Text(
                           a.label,
-                          maxLines: 1,
+                          maxLines: 2,
+                          textAlign: TextAlign.center,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(fontWeight: FontWeight.w600),
@@ -1149,8 +1173,8 @@ class _TodaySummary extends GetView<HomeController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SectionHeader(
-          title: 'Today',
-          actionLabel: 'Details',
+          title: 'Today'.tr,
+          actionLabel: 'Details'.tr,
           onAction: () => _openTransactionsFiltered(range: _todayRange()),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -1162,8 +1186,10 @@ class _TodaySummary extends GetView<HomeController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.south_west_rounded,
-                  label: "Today's income",
-                  value: show(AppFormatters.money(controller.today.value.income)),
+                  label: "Today's income".tr,
+                  value: show(
+                    AppFormatters.money(controller.today.value.income),
+                  ),
                   color: money.income,
                   onTap: () => _openTransactionsFiltered(
                     type: TransactionType.income,
@@ -1175,8 +1201,10 @@ class _TodaySummary extends GetView<HomeController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.north_east_rounded,
-                  label: "Today's expense",
-                  value: show(AppFormatters.money(controller.today.value.expense)),
+                  label: "Today's expense".tr,
+                  value: show(
+                    AppFormatters.money(controller.today.value.expense),
+                  ),
                   color: money.expense,
                   onTap: () => _openTransactionsFiltered(
                     type: TransactionType.expense,
@@ -1202,8 +1230,8 @@ class _KhataSummary extends GetView<HomeController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SectionHeader(
-          title: 'Khata',
-          actionLabel: 'Open',
+          title: 'Khata'.tr,
+          actionLabel: 'Open'.tr,
           onAction: () => Get.toNamed<void>(AppRoutes.contacts),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -1215,14 +1243,14 @@ class _KhataSummary extends GetView<HomeController> {
               child: AppListTile(
                 onTap: () => Get.toNamed<void>(AppRoutes.contactForm),
                 leading: const IconBadge(icon: Icons.people_outline),
-                title: 'No contacts yet',
+                title: 'No contacts yet'.tr,
                 subtitle:
-                    'Track who owes you and who you owe. Add your first '
-                    'contact.',
+                    'Track who owes you and who you owe. Add your first contact.'
+                        .tr,
                 subtitleMaxLines: 3,
                 trailing: TextButton(
                   onPressed: () => Get.toNamed<void>(AppRoutes.contactForm),
-                  child: const Text('Add'),
+                  child: Text('Add'.tr),
                 ),
               ),
             );
@@ -1232,7 +1260,7 @@ class _KhataSummary extends GetView<HomeController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.call_received_rounded,
-                  label: 'You will get',
+                  label: 'You will get'.tr,
                   value: AppFormatters.money(controller.khata.value.receivable),
                   color: money.receivable,
                   onTap: () => Get.toNamed<void>(AppRoutes.contacts),
@@ -1242,7 +1270,7 @@ class _KhataSummary extends GetView<HomeController> {
               Expanded(
                 child: SummaryTile(
                   icon: Icons.call_made_rounded,
-                  label: 'You will give',
+                  label: 'You will give'.tr,
                   value: AppFormatters.money(controller.khata.value.payable),
                   color: money.payable,
                   onTap: () => Get.toNamed<void>(AppRoutes.contacts),
@@ -1265,8 +1293,8 @@ class _AccountsSection extends GetView<HomeController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SectionHeader(
-          title: 'Accounts',
-          actionLabel: 'Manage',
+          title: 'Accounts'.tr,
+          actionLabel: 'Manage'.tr,
           onAction: () => Get.toNamed<void>(AppRoutes.accounts),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -1300,8 +1328,8 @@ class _RecentTransactions extends GetView<HomeController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
         SectionHeader(
-          title: 'Recent transactions',
-          actionLabel: 'See all',
+          title: 'Recent transactions'.tr,
+          actionLabel: 'See all'.tr,
           onAction: () => Get.toNamed<void>(AppRoutes.transactions),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -1310,9 +1338,10 @@ class _RecentTransactions extends GetView<HomeController> {
             return AppCard(
               child: EmptyState(
                 icon: Icons.receipt_long_outlined,
-                title: 'No transactions yet',
-                message: 'Record your first income or expense to see it here.',
-                actionLabel: 'Add expense',
+                title: 'No transactions yet'.tr,
+                message:
+                    'Record your first income or expense to see it here.'.tr,
+                actionLabel: 'Add expense'.tr,
                 onAction: () => Get.toNamed<void>(
                   AppRoutes.transactionForm,
                   arguments: const TransactionFormArgs(),

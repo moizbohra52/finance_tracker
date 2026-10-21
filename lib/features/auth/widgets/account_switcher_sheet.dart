@@ -31,10 +31,12 @@ class SwitchAccountTile extends GetView<AccountSwitchController> {
     final int count = controller.logins.length;
     return SettingsTile(
       icon: Icons.switch_account_outlined,
-      title: 'Switch account',
+      title: 'Switch account'.tr,
       subtitle: count > 1
-          ? '$count accounts on this device'
-          : 'Sign in to another account',
+          ? '@count accounts on this device'.trParams(<String, String>{
+              'count': '$count',
+            })
+          : 'Sign in to another account'.tr,
       onTap: () => showAccountSwitcher(context),
     );
   });
@@ -61,15 +63,18 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
     showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) => AlertDialog(
-        title: const Text('Remove account?'),
+        title: Text('Remove account?'.tr),
         content: Text(
-          'Remove ${login.label} (${login.email}) from this device? '
-          'You can sign in to it again later.',
+          'Remove @name (@email) from this device? You can sign in to it again later.'
+              .trParams(<String, String>{
+                'name': login.label,
+                'email': login.email,
+              }),
         ),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -77,7 +82,7 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
               foregroundColor: Theme.of(dialogContext).colorScheme.onError,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Remove'),
+            child: Text('Remove'.tr),
           ),
         ],
       ),
@@ -113,7 +118,7 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
                 AppSpacing.sm,
               ),
               child: Text(
-                'Switch account',
+                'Switch account'.tr,
                 style: text.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
             ),
@@ -138,7 +143,7 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
                   color: colors.primary,
                 ),
               ),
-              title: const Text('Sign in to another account'),
+              title: Text('Sign in to another account'.tr),
               subtitle: controller.canAddAccount
                   ? null
                   : const Text(AccountSwitchController.limitMessage),
@@ -203,8 +208,8 @@ class _AccountRowState extends State<_AccountRow> {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final ProfileController? profile =
         widget.active && Get.isRegistered<ProfileController>()
-            ? Get.find<ProfileController>()
-            : null;
+        ? Get.find<ProfileController>()
+        : null;
 
     final String? fallbackAvatar = _localAvatar ?? widget.login.avatarUrl;
 
@@ -237,16 +242,16 @@ class _AccountRowState extends State<_AccountRow> {
         trailing: widget.active
             ? Icon(Icons.check_circle_rounded, color: colors.primary)
             : widget.onRemove != null
-                ? IconButton(
-                    icon: Icon(
-                      Icons.close_rounded,
-                      size: 20,
-                      color: colors.onSurfaceVariant,
-                    ),
-                    tooltip: 'Remove account',
-                    onPressed: widget.onRemove,
-                  )
-                : null,
+            ? IconButton(
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 20,
+                  color: colors.onSurfaceVariant,
+                ),
+                tooltip: 'Remove account'.tr,
+                onPressed: widget.onRemove,
+              )
+            : null,
         onTap: widget.onTap,
       ),
     );

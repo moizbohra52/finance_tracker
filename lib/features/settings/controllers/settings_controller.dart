@@ -13,6 +13,7 @@ import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:get/get.dart';
 
 /// The signed-in user's formatting and default-account preferences.
@@ -77,7 +78,7 @@ class SettingsController extends GetxController {
           dateFormat: next.dateStyle.pattern,
           numberFormat: next.numberStyle.stored,
           firstDayOfWeek: next.weekStart.stored,
-          languageCode: next.languageCode,
+          languageCode: next.language.stored,
           defaultAccountId: next.defaultAccountId,
           upiId: next.upiId,
         ),
@@ -122,6 +123,14 @@ class SettingsController extends GetxController {
   void _apply(UserPreferences next) {
     preferences.value = next;
     AppFormatters.preferences = next;
+    // Before any change the locale is unset, which shows English.
+    final Locale current = Get.locale ?? AppLanguage.english.locale;
+    if (current != next.language.locale) {
+      Get.locale = next.language.locale;
+      // Rebuilds every open screen in the new language. Run between frames:
+      // a reassemble requested during one fails.
+      unawaited(Future<void>.delayed(Duration.zero, Get.forceAppUpdate));
+    }
   }
 
   /// Stored strings that the app does not recognise fall back to the
@@ -134,8 +143,7 @@ class SettingsController extends GetxController {
     dateStyle: DateStyle.fromStored(settings.dateFormat),
     numberStyle: NumberStyle.fromStored(settings.numberFormat),
     weekStart: WeekStart.fromStored(settings.firstDayOfWeek),
-    languageCode:
-        settings.languageCode ?? UserPreferences.defaults.languageCode,
+    language: AppLanguage.fromStored(settings.languageCode),
     defaultAccountId: settings.defaultAccountId,
     upiId: settings.upiId,
   );

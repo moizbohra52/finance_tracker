@@ -363,15 +363,24 @@ void main() {
   });
 
   group('language and information', () {
-    testWidgets('only English is offered, and more is said to be coming', (
+    testWidgets('English, Hindi and Hinglish are offered', (
       WidgetTester tester,
     ) async {
       await account.launch(tester);
       await _openSettings(tester);
 
-      expect(find.text('More languages are coming'), findsOneWidget);
+      expect(find.text('More languages are coming'), findsNothing);
       await tapAndSettle(tester, find.text('Language'));
-      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.byType(BottomSheet), findsOneWidget);
+      for (final String name in <String>['English', 'हिंदी', 'Hinglish']) {
+        expect(
+          find.descendant(
+            of: find.byType(BottomSheet),
+            matching: find.text(name),
+          ),
+          findsOneWidget,
+        );
+      }
     });
 
     testWidgets('the policy pages say they are placeholders', (
