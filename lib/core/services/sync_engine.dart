@@ -514,6 +514,7 @@ class SyncEngine extends GetxService {
             'first_day_of_week': row['first_day_of_week'],
             'language_code': row['language_code'],
             'default_account_id': row['default_account_id'],
+            'upi_id': row['upi_id'],
             'notifications_enabled':
                 (row['notifications_enabled'] as bool? ?? true) ? 1 : 0,
             'created_at': row['created_at'] ?? DateTime.now().toIso8601String(),

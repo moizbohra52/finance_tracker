@@ -29,46 +29,17 @@ class Contact {
     this.deletedAt,
   });
 
+  /// Opening balance with its direction: positive when they owe us
+  /// (receivable), negative when we owe them (payable).
+  Decimal get signedOpeningBalance =>
+      openingBalanceType == 'payable' ? -openingBalance : openingBalance;
+
   // Get current balance based on opening balance and transactions
   // This would typically be calculated by a service/repository
   Decimal getCurrentBalance(List<ContactTransaction> transactions) {
-    Decimal balance = openingBalance;
-
-    // Apply opening balance type
-    if (openingBalanceType == 'payable') {
-      balance =
-          Decimal.zero -
-          balance; // Payable opening balance is negative (we owe)
-    }
-    // Receivable opening balance is positive (they owe us)
-
-    // Apply transactions
+    Decimal balance = signedOpeningBalance;
     for (final transaction in transactions) {
-      if (transaction.deletedAt == null) {
-        switch (transaction.type) {
-          case ContactTransactionType.credit:
-            // Credit increases what they owe us (receivable increases)
-            balance += transaction.amount;
-            break;
-          case ContactTransactionType.debit:
-            // Debit increases what we owe them (payable increases, receivable decreases)
-            balance -= transaction.amount;
-            break;
-          case ContactTransactionType.paymentReceived:
-            // Payment received decreases what they owe us
-            balance -= transaction.amount;
-            break;
-          case ContactTransactionType.paymentMade:
-            // Payment made decreases what we owe them
-            balance += transaction.amount;
-            break;
-          case ContactTransactionType.adjustment:
-            // Adjustment can be positive or negative based on context
-            // For simplicity, we'll treat it as directly affecting the balance
-            balance += transaction.amount;
-            break;
-        }
-      }
+      if (transaction.deletedAt == null) balance += transaction.signedAmount;
     }
 
     // Return absolute value for display, with sign indicating direction
@@ -128,4 +99,15 @@ class ContactTransaction {
     required this.updatedAt,
     this.deletedAt,
   });
+
+  /// How this entry moves the contact's balance: positive when they owe us
+  /// more (credit, or we paid back), negative when we owe them more (debit,
+  /// or they paid back). Adjustments apply as entered.
+  Decimal get signedAmount => switch (type) {
+    ContactTransactionType.credit ||
+    ContactTransactionType.paymentMade ||
+    ContactTransactionType.adjustment => amount,
+    ContactTransactionType.debit ||
+    ContactTransactionType.paymentReceived => -amount,
+  };
 }

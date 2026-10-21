@@ -71,6 +71,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
       amount: widget.balance.abs(),
       isReceivable: isReceivable,
       note: widget.customNote,
+      upiId: AppFormatters.preferences.upiId,
     );
     _messageController = TextEditingController(text: initialText);
   }
@@ -93,12 +94,14 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
               amount: widget.balance.abs(),
               isReceivable: isReceivable,
               note: widget.customNote,
+              upiId: AppFormatters.preferences.upiId,
             )
           : ReminderSenderService.buildHinglishMessage(
               contactName: widget.contact.name,
               amount: widget.balance.abs(),
               isReceivable: isReceivable,
               note: widget.customNote,
+              upiId: AppFormatters.preferences.upiId,
             );
       _messageController.text = newText;
     });
@@ -300,7 +303,10 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
               if (_numbers.length > 1) ...<Widget>[
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                  child: Text('Select Mobile Number', style: theme.textTheme.labelMedium),
+                  child: Text(
+                    'Select Mobile Number',
+                    style: theme.textTheme.labelMedium,
+                  ),
                 ),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -319,7 +325,10 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
               ] else if (_numbers.isEmpty) ...<Widget>[
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                  child: Text('Mobile Number (required)', style: theme.textTheme.labelMedium),
+                  child: Text(
+                    'Mobile Number (required)',
+                    style: theme.textTheme.labelMedium,
+                  ),
                 ),
                 TextField(
                   controller: _phoneInputController,

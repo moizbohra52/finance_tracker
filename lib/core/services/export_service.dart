@@ -997,4 +997,219 @@ class ExportService {
 
     return doc.save();
   }
+
+  // ===========================================================================
+  // KHATA STATEMENT PDF
+  // ===========================================================================
+
+  /// One contact's ledger, oldest first, with the balance after every entry.
+  /// [upiPayLink] adds a "scan to pay" QR; the caller builds it only when the
+  /// contact owes the user.
+  Future<List<int>> generateContactStatementPdf({
+    required Contact contact,
+    required List<ContactTransaction> entries,
+    String? userName,
+    String? upiPayLink,
+    String currencyCode = 'INR',
+  }) async {
+    final String owner = (userName == null || userName.trim().isEmpty)
+        ? 'You'
+        : userName.trim();
+    final List<ContactTransaction> ledger =
+        entries.where((ContactTransaction e) => e.deletedAt == null).toList()
+          ..sort((ContactTransaction a, ContactTransaction b) {
+            final int byDate = a.transactionDate.compareTo(b.transactionDate);
+            return byDate != 0 ? byDate : a.createdAt.compareTo(b.createdAt);
+          });
+
+    // Same plain format as the report: standard PDF fonts have no rupee sign.
+    String fmt(Decimal value) =>
+        '$currencyCode ${value.abs().toStringAsFixed(2)}';
+    String signed(Decimal value) =>
+        '${value < Decimal.zero ? '-' : '+'}${fmt(value)}';
+
+    Decimal balance = contact.signedOpeningBalance;
+    final List<List<String>> rows = <List<String>>[
+      <String>['', 'Opening balance', '', '', signed(balance)],
+    ];
+    for (final ContactTransaction e in ledger) {
+      final Decimal change = e.signedAmount;
+      balance += change;
+      final String note = e.note?.trim() ?? '';
+      final String label = switch (e.type) {
+        ContactTransactionType.credit => 'Lent',
+        ContactTransactionType.debit => 'Borrowed',
+        ContactTransactionType.paymentReceived => 'Payment received',
+        ContactTransactionType.paymentMade => 'Payment made',
+        ContactTransactionType.adjustment => 'Adjustment',
+      };
+      rows.add(<String>[
+        DateFormat('dd MMM yyyy').format(e.transactionDate),
+        note.isEmpty ? label : '$label - $note',
+        change > Decimal.zero ? fmt(change) : '',
+        change < Decimal.zero ? fmt(change) : '',
+        signed(balance),
+      ]);
+    }
+    final String summary = balance > Decimal.zero
+        ? '${contact.name} has to pay $owner ${fmt(balance)}'
+        : balance < Decimal.zero
+        ? '$owner has to pay ${contact.name} ${fmt(balance)}'
+        : 'All settled';
+
+    final PdfColor primaryColor = PdfColor.fromHex('#1E88E5');
+    final PdfColor textDark = PdfColor.fromHex('#212121');
+    final PdfColor textMuted = PdfColor.fromHex('#757575');
+    final PdfColor cardBg = PdfColor.fromHex('#F5F5F5');
+
+    final pw.Document doc = pw.Document();
+    doc.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        header: (pw.Context context) => pw.Container(
+          padding: const pw.EdgeInsets.only(bottom: 12),
+          margin: const pw.EdgeInsets.only(bottom: 16),
+          decoration: const pw.BoxDecoration(
+            border: pw.Border(
+              bottom: pw.BorderSide(color: PdfColors.grey300, width: 1),
+            ),
+          ),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: <pw.Widget>[
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: <pw.Widget>[
+                  pw.Text(
+                    'KHATA STATEMENT',
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  pw.Text(
+                    contact.name,
+                    style: pw.TextStyle(
+                      fontSize: 13,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textDark,
+                    ),
+                  ),
+                  if (contact.mobile != null && contact.mobile!.isNotEmpty)
+                    pw.Text(
+                      contact.mobile!,
+                      style: pw.TextStyle(fontSize: 9, color: textMuted),
+                    ),
+                ],
+              ),
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                children: <pw.Widget>[
+                  pw.Text(
+                    'From: $owner',
+                    style: pw.TextStyle(fontSize: 10, color: textMuted),
+                  ),
+                  pw.Text(
+                    'Generated: ${DateFormat('dd MMM yyyy').format(DateTime.now())}',
+                    style: pw.TextStyle(fontSize: 9, color: textMuted),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        footer: (pw.Context context) => pw.Align(
+          alignment: pw.Alignment.centerRight,
+          child: pw.Text(
+            'Page ${context.pageNumber} of ${context.pagesCount}',
+            style: pw.TextStyle(fontSize: 8, color: textMuted),
+          ),
+        ),
+        build: (pw.Context context) => <pw.Widget>[
+          pw.TableHelper.fromTextArray(
+            border: null,
+            headerStyle: pw.TextStyle(
+              fontSize: 9,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.white,
+            ),
+            headerDecoration: pw.BoxDecoration(color: primaryColor),
+            headers: <String>[
+              'Date',
+              'Details',
+              'Given',
+              'Received',
+              'Balance',
+            ],
+            rowDecoration: const pw.BoxDecoration(
+              border: pw.Border(
+                bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.5),
+              ),
+            ),
+            cellStyle: const pw.TextStyle(fontSize: 8),
+            cellPadding: const pw.EdgeInsets.symmetric(
+              vertical: 4,
+              horizontal: 6,
+            ),
+            cellAlignments: <int, pw.Alignment>{
+              2: pw.Alignment.centerRight,
+              3: pw.Alignment.centerRight,
+              4: pw.Alignment.centerRight,
+            },
+            data: rows,
+          ),
+          pw.SizedBox(height: 6),
+          pw.Text(
+            '+ means ${contact.name} owes $owner; - means $owner owes '
+            '${contact.name}.',
+            style: pw.TextStyle(fontSize: 8, color: textMuted),
+          ),
+          pw.SizedBox(height: 16),
+          pw.Container(
+            padding: const pw.EdgeInsets.all(12),
+            decoration: pw.BoxDecoration(
+              color: cardBg,
+              borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
+            ),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: <pw.Widget>[
+                pw.Expanded(
+                  child: pw.Text(
+                    summary,
+                    style: pw.TextStyle(
+                      fontSize: 12,
+                      fontWeight: pw.FontWeight.bold,
+                      color: textDark,
+                    ),
+                  ),
+                ),
+                if (upiPayLink != null)
+                  pw.Column(
+                    children: <pw.Widget>[
+                      pw.BarcodeWidget(
+                        barcode: pw.Barcode.qrCode(),
+                        data: upiPayLink,
+                        width: 96,
+                        height: 96,
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'Scan with any UPI app to pay',
+                        style: pw.TextStyle(fontSize: 8, color: textMuted),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return doc.save();
+  }
 }

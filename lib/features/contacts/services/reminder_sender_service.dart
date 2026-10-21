@@ -4,12 +4,7 @@ import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-enum ReminderSendStatus {
-  success,
-  noPhone,
-  notInstalled,
-  failed,
-}
+enum ReminderSendStatus { success, noPhone, notInstalled, failed }
 
 class ReminderSenderService {
   const ReminderSenderService._();
@@ -26,7 +21,10 @@ class ReminderSenderService {
 
   /// Cleans phone number for WhatsApp wa.me / deep links.
   /// Needs country code without '+', spaces, or leading zeroes.
-  static String formatForWhatsApp(String raw, {String defaultCountryCode = '91'}) {
+  static String formatForWhatsApp(
+    String raw, {
+    String defaultCountryCode = '91',
+  }) {
     String digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
     if (digits.isEmpty) return '';
 
@@ -52,12 +50,41 @@ class ReminderSenderService {
     return hasPlus ? '+$digits' : digits;
   }
 
-  /// Pre-built template message in Hinglish / Hindi.
+  /// UPI deep link that opens any UPI app with the payee and amount filled
+  /// in. Null without a UPI ID or a positive amount, or outside INR (UPI
+  /// pays only in rupees). [currencyCode] defaults to the user's currency.
+  static String? buildUpiLink({
+    required String? upiId,
+    required Decimal amount,
+    String? payeeName,
+    String? currencyCode,
+  }) {
+    final String pa = upiId?.trim() ?? '';
+    final String currency =
+        currencyCode ?? AppFormatters.preferences.currencyCode;
+    if (pa.isEmpty || amount <= Decimal.zero || currency != 'INR') return null;
+    // Built by hand: Uri would encode '@' and turn spaces into '+', which
+    // some UPI apps show literally. pa is validated, so it needs no escaping.
+    final String name = payeeName?.trim() ?? '';
+    return 'upi://pay?pa=$pa'
+        '${name.isEmpty ? '' : '&pn=${Uri.encodeComponent(name)}'}'
+        '&am=${amount.toStringAsFixed(2)}&cu=INR';
+  }
+
+  /// The "pay by UPI" lines of a reminder, or '' when no link can be built.
+  static String _upiLines(String label, String? upiId, Decimal amount) {
+    final String? link = buildUpiLink(upiId: upiId, amount: amount.abs());
+    return link == null ? '' : '\n$label: ${upiId!.trim()}\n$link';
+  }
+
+  /// Pre-built template message in Hinglish / Hindi. [upiId] adds a pay
+  /// link when the contact owes the user.
   static String buildHinglishMessage({
     required String contactName,
     required Decimal amount,
     required bool isReceivable,
     String? note,
+    String? upiId,
   }) {
     final String formattedAmount = AppFormatters.money(amount.abs());
     final String noteText = (note != null && note.trim().isNotEmpty)
@@ -67,7 +94,8 @@ class ReminderSenderService {
     if (isReceivable) {
       return 'Namaste $contactName ji,\n'
           'Aapka baki hisab $formattedAmount pending hai.'
-          '$noteText\n'
+          '$noteText'
+          '${_upiLines('UPI se pay karein', upiId, amount)}\n'
           'Kripya samay milte hi ise clear kar dein.\n'
           'Dhanyawad!';
     } else {
@@ -79,12 +107,14 @@ class ReminderSenderService {
     }
   }
 
-  /// Pre-built template message in English.
+  /// Pre-built template message in English. [upiId] adds a pay link when
+  /// the contact owes the user.
   static String buildEnglishMessage({
     required String contactName,
     required Decimal amount,
     required bool isReceivable,
     String? note,
+    String? upiId,
   }) {
     final String formattedAmount = AppFormatters.money(amount.abs());
     final String noteText = (note != null && note.trim().isNotEmpty)
@@ -94,7 +124,8 @@ class ReminderSenderService {
     if (isReceivable) {
       return 'Dear $contactName,\n'
           'This is a gentle reminder that your pending balance of $formattedAmount is due.'
-          '$noteText\n'
+          '$noteText'
+          '${_upiLines('Pay by UPI', upiId, amount)}\n'
           'Kindly clear the dues at your earliest convenience.\n'
           'Thank you!';
     } else {
@@ -119,7 +150,9 @@ class ReminderSenderService {
     final String encodedMsg = Uri.encodeComponent(message);
 
     // Try direct app deep-link first
-    final Uri deepLink = Uri.parse('whatsapp://send?phone=$cleaned&text=$encodedMsg');
+    final Uri deepLink = Uri.parse(
+      'whatsapp://send?phone=$cleaned&text=$encodedMsg',
+    );
     // Fallback to wa.me web-link which redirects straight to WhatsApp on device
     final Uri waMeLink = Uri.parse('https://wa.me/$cleaned?text=$encodedMsg');
 
@@ -161,9 +194,7 @@ class ReminderSenderService {
     final Uri smsUri = Uri(
       scheme: 'sms',
       path: cleaned,
-      queryParameters: <String, String>{
-        'body': message,
-      },
+      queryParameters: <String, String>{'body': message},
     );
 
     return ExternalActivity.run<ReminderSendStatus>(() async {
@@ -189,10 +220,7 @@ class ReminderSenderService {
   }) async {
     await ExternalActivity.run(() async {
       await SharePlus.instance.share(
-        ShareParams(
-          text: message,
-          subject: subject ?? 'Payment Reminder',
-        ),
+        ShareParams(text: message, subject: subject ?? 'Payment Reminder'),
       );
     });
   }

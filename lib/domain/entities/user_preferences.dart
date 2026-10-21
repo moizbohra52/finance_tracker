@@ -105,6 +105,7 @@ class UserPreferences {
     this.weekStart = WeekStart.monday,
     this.languageCode = 'en',
     this.defaultAccountId,
+    this.upiId,
   });
 
   static const UserPreferences defaults = UserPreferences();
@@ -120,6 +121,9 @@ class UserPreferences {
   /// Pre-selected account on new transactions. Null means the first account.
   final String? defaultAccountId;
 
+  /// The user's own UPI ID, used in "pay me" links. Null when not set.
+  final String? upiId;
+
   UserPreferences copyWith({
     String? currencyCode,
     DateStyle? dateStyle,
@@ -128,6 +132,8 @@ class UserPreferences {
     String? languageCode,
     String? defaultAccountId,
     bool clearDefaultAccount = false,
+    String? upiId,
+    bool clearUpiId = false,
   }) => UserPreferences(
     currencyCode: currencyCode ?? this.currencyCode,
     dateStyle: dateStyle ?? this.dateStyle,
@@ -137,6 +143,7 @@ class UserPreferences {
     defaultAccountId: clearDefaultAccount
         ? null
         : (defaultAccountId ?? this.defaultAccountId),
+    upiId: clearUpiId ? null : (upiId ?? this.upiId),
   );
 
   @override
@@ -147,7 +154,8 @@ class UserPreferences {
       other.numberStyle == numberStyle &&
       other.weekStart == weekStart &&
       other.languageCode == languageCode &&
-      other.defaultAccountId == defaultAccountId;
+      other.defaultAccountId == defaultAccountId &&
+      other.upiId == upiId;
 
   @override
   int get hashCode => Object.hash(
@@ -157,5 +165,6 @@ class UserPreferences {
     weekStart,
     languageCode,
     defaultAccountId,
+    upiId,
   );
 }

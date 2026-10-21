@@ -90,6 +90,7 @@ class BackupService {
           'first_day_of_week',
           'language_code',
           'default_account_id',
+          'upi_id',
         ],
         'profiles': <String>[
           'full_name',

@@ -31,6 +31,7 @@ accent_color TEXT
 language_code TEXT
 date_format TEXT
 number_format TEXT
+upi_id TEXT (nullable; the user's own UPI ID for pay links)
 notifications_enabled BOOLEAN
 created_at
 updated_at
@@ -246,6 +247,16 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    `language_code`, and the private `avatars` storage bucket with
    owner-only policies (see docs/04_SECURITY_RLS.md). Existing rows are
    unaffected: every new column is nullable or defaulted.
+
+9. `20261021090000_user_settings_upi_id.sql` - adds nullable
+   `user_settings.upi_id` (CHECK `handle@bank`, same pattern as
+   `Validators.optionalUpiId`). The app puts it in "pay me" UPI links in
+   payment reminders and in the QR on a contact's khata statement PDF, only
+   when that contact owes the user. Existing owner-only RLS covers it. **Apply
+   before shipping the app version that sends it**: settings sync writes every
+   preference column, so an unknown `upi_id` column fails the upload. The
+   local SQLite file moves to version 2 (`AppDatabase.upgrade` adds the same
+   column), the first local schema upgrade.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

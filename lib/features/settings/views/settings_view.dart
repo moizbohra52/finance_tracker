@@ -5,9 +5,11 @@ import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
@@ -252,6 +254,13 @@ class _RegionSection extends GetView<SettingsController> {
                 onTap: () => _pickDefaultAccount(context, prefs),
               ),
               SettingsTile(
+                icon: Icons.qr_code_2_rounded,
+                title: 'My UPI ID',
+                subtitle: 'Pay link in reminders and khata statements',
+                value: prefs.upiId ?? 'Not set',
+                onTap: () => _editUpiId(context, prefs),
+              ),
+              SettingsTile(
                 icon: Icons.category_outlined,
                 title: 'Categories',
                 subtitle: 'Add your own income and expense categories',
@@ -352,6 +361,21 @@ class _RegionSection extends GetView<SettingsController> {
     }
   }
 
+  /// An empty entry clears the UPI ID; dismissing the dialog (null) keeps it.
+  Future<void> _editUpiId(BuildContext context, UserPreferences prefs) async {
+    final String? entered = await showDialog<String>(
+      context: context,
+      builder: (BuildContext _) => _UpiIdDialog(initial: prefs.upiId),
+    );
+    if (entered == null || entered == (prefs.upiId ?? '') || !context.mounted) {
+      return;
+    }
+    await _change(
+      context,
+      prefs.copyWith(upiId: entered, clearUpiId: entered.isEmpty),
+    );
+  }
+
   /// "First account" is an option of its own, so dismissing the sheet (null)
   /// and choosing it (an option with a null id) stay distinct.
   Future<void> _pickDefaultAccount(
@@ -383,6 +407,65 @@ class _RegionSection extends GetView<SettingsController> {
         ),
       );
     }
+  }
+}
+
+/// Asks for the user's UPI ID. Pops the trimmed value, '' to clear it.
+class _UpiIdDialog extends StatefulWidget {
+  const _UpiIdDialog({required this.initial});
+
+  final String? initial;
+
+  @override
+  State<_UpiIdDialog> createState() => _UpiIdDialogState();
+}
+
+class _UpiIdDialogState extends State<_UpiIdDialog> {
+  final GlobalKey<FormState> _form = GlobalKey<FormState>();
+  late final TextEditingController _input = TextEditingController(
+    text: widget.initial,
+  );
+
+  @override
+  void dispose() {
+    _input.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    if (_form.currentState!.validate()) {
+      Navigator.of(context).pop(_input.text.trim());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppDialog(
+      title: 'My UPI ID',
+      content: Form(
+        key: _form,
+        child: TextFormField(
+          controller: _input,
+          autofocus: true,
+          keyboardType: TextInputType.emailAddress,
+          autocorrect: false,
+          decoration: const InputDecoration(
+            labelText: 'UPI ID',
+            hintText: 'name@bank',
+            helperText: 'Leave empty to remove',
+          ),
+          validator: Validators.optionalUpiId,
+          onFieldSubmitted: (_) => _save(),
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(onPressed: _save, child: const Text('Save')),
+      ],
+    );
   }
 }
 

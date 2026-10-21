@@ -48,6 +48,7 @@ void main() {
           firstDayOfWeek: 'sunday',
           languageCode: 'en',
           defaultAccountId: 'acc-2',
+          upiId: 'asha@okaxis',
         );
         await controller.load();
 
@@ -55,6 +56,7 @@ void main() {
           controller.preferences.value.dateStyle,
           DateStyle.dayMonthNumeric,
         );
+        expect(controller.preferences.value.upiId, 'asha@okaxis');
         expect(
           controller.preferences.value.numberStyle,
           NumberStyle.international,
@@ -114,6 +116,7 @@ void main() {
             dateStyle: DateStyle.isoDate,
             weekStart: WeekStart.sunday,
             defaultAccountId: 'acc-2',
+            upiId: 'asha@okaxis',
           ),
         );
 
@@ -123,6 +126,7 @@ void main() {
         expect(written.dateFormat, 'yyyy-MM-dd');
         expect(written.firstDayOfWeek, 'sunday');
         expect(written.defaultAccountId, 'acc-2');
+        expect(written.toJson()['upi_id'], 'asha@okaxis');
         expect(AppFormatters.preferences.currencyCode, 'USD');
         expect(notifier.version.value, 1, reason: 'other screens reload');
       },

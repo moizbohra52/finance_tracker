@@ -1,6 +1,7 @@
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,35 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  test('a new database has the UPI ID column', () async {
+    final List<Map<String, Object?>> columns = await database.db.rawQuery(
+      'PRAGMA table_info(user_settings)',
+    );
+    expect(columns.map((c) => c['name']), contains('upi_id'));
+  });
+
+  test('upgrading a version 1 file adds the UPI ID column', () async {
+    final Database old = await databaseFactoryFfi.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(
+        version: 1,
+        // Not the database setUp opened, which is already at the new version.
+        singleInstance: false,
+        onCreate: (Database db, int _) => db.execute(
+          'CREATE TABLE user_settings (id TEXT PRIMARY KEY, date_format TEXT)',
+        ),
+      ),
+    );
+    await old.insert('user_settings', <String, Object?>{'id': 'u'});
+
+    await AppDatabase.upgrade(old, 1, AppDatabase.databaseVersion);
+
+    final List<Map<String, Object?>> rows = await old.query('user_settings');
+    expect(rows.single['id'], 'u', reason: 'existing rows are kept');
+    expect(rows.single.containsKey('upi_id'), isTrue);
+    await old.close();
   });
 
   test('Sync queue enqueue, fetch pending, update status and clear', () async {

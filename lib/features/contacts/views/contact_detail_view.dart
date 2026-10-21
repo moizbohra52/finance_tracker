@@ -148,10 +148,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
                 ],
               ),
             const SizedBox(height: AppSpacing.lg),
-            _ContactInfo(
-              contact: contact,
-              balance: controller.balance.value,
-            ),
+            _ContactInfo(contact: contact, balance: controller.balance.value),
           ],
         ),
       ),
@@ -168,6 +165,12 @@ class _BalanceHeader extends GetView<ContactDetailController> {
   String get tag => id;
 
   final Contact contact;
+
+  Future<void> _shareStatement() async {
+    if (await controller.shareStatement()) return;
+    final String? error = controller.statement.error.value;
+    if (error != null) AppSnackbar.show(error);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +207,10 @@ class _BalanceHeader extends GetView<ContactDetailController> {
               const SizedBox(height: AppSpacing.md),
               FilledButton.tonalIcon(
                 style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                 ),
                 icon: const Icon(Icons.send_rounded, size: 18),
                 label: const Text('Send Reminder (WhatsApp / SMS)'),
@@ -215,6 +221,14 @@ class _BalanceHeader extends GetView<ContactDetailController> {
                 ),
               ),
             ],
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              label: const Text('Share statement (PDF)'),
+              onPressed: controller.statement.isBusy.value
+                  ? null
+                  : _shareStatement,
+            ),
           ],
         ),
       );
@@ -396,7 +410,9 @@ class _ContactInfo extends StatelessWidget {
       }
     }
     if ((contact.email ?? '').isNotEmpty) rows.add(('Email', contact.email));
-    if ((contact.address ?? '').isNotEmpty) rows.add(('Address', contact.address));
+    if ((contact.address ?? '').isNotEmpty) {
+      rows.add(('Address', contact.address));
+    }
     if ((contact.notes ?? '').isNotEmpty) rows.add(('Notes', contact.notes));
 
     if (rows.isEmpty) return const SizedBox.shrink();

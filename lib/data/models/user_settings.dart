@@ -10,6 +10,7 @@ class UserSettings {
     required this.firstDayOfWeek,
     required this.languageCode,
     required this.defaultAccountId,
+    this.upiId,
   });
 
   factory UserSettings.fromJson(Map<String, dynamic> json) => UserSettings(
@@ -18,18 +19,20 @@ class UserSettings {
     firstDayOfWeek: json['first_day_of_week'] as String?,
     languageCode: json['language_code'] as String?,
     defaultAccountId: json['default_account_id'] as String?,
+    upiId: json['upi_id'] as String?,
   );
 
   /// Columns read by [UserSettings.fromJson].
   static const String columns =
       'date_format, number_format, first_day_of_week, language_code, '
-      'default_account_id';
+      'default_account_id, upi_id';
 
   final String? dateFormat;
   final String? numberFormat;
   final String? firstDayOfWeek;
   final String? languageCode;
   final String? defaultAccountId;
+  final String? upiId;
 
   /// The values written on save. Every editable column is sent, so clearing
   /// the default account is an explicit null, not a missing field.
@@ -39,5 +42,6 @@ class UserSettings {
     'first_day_of_week': firstDayOfWeek,
     'language_code': languageCode,
     'default_account_id': defaultAccountId,
+    'upi_id': upiId,
   };
 }

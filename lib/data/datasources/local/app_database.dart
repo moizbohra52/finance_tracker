@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 1;
+  static const int databaseVersion = 2;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -102,6 +102,7 @@ class AppDatabase {
       options: OpenDatabaseOptions(
         version: databaseVersion,
         onCreate: _onCreate,
+        onUpgrade: upgrade,
       ),
     );
     return AppDatabase(database: database);
@@ -122,6 +123,19 @@ class AppDatabase {
   static Future<void> _onCreate(Database db, int version) async {
     await _createTables(db);
     await _seedSystemCategories(db);
+  }
+
+  /// Brings a file from an older app version up to [databaseVersion], one
+  /// step at a time, keeping its rows.
+  @visibleForTesting
+  static Future<void> upgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE user_settings ADD COLUMN upi_id TEXT');
+    }
   }
 
   /// Makes [userId]'s file the open database (null: the signed-out one),
@@ -367,6 +381,7 @@ class AppDatabase {
         first_day_of_week TEXT,
         language_code TEXT,
         default_account_id TEXT,
+        upi_id TEXT,
         notifications_enabled INTEGER DEFAULT 1,
         created_at TEXT,
         updated_at TEXT,
@@ -733,6 +748,7 @@ class _DeviceFiles implements DatabaseFiles {
       path,
       version: AppDatabase.databaseVersion,
       onCreate: AppDatabase._onCreate,
+      onUpgrade: AppDatabase.upgrade,
     );
   }
 
@@ -800,6 +816,7 @@ class _MemoryFiles implements DatabaseFiles {
         options: OpenDatabaseOptions(
           version: AppDatabase.databaseVersion,
           onCreate: AppDatabase._onCreate,
+          onUpgrade: AppDatabase.upgrade,
           singleInstance: false,
         ),
       );

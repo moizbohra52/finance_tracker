@@ -79,6 +79,7 @@ class SettingsController extends GetxController {
           firstDayOfWeek: next.weekStart.stored,
           languageCode: next.languageCode,
           defaultAccountId: next.defaultAccountId,
+          upiId: next.upiId,
         ),
       );
     } on AppException {
@@ -136,5 +137,6 @@ class SettingsController extends GetxController {
     languageCode:
         settings.languageCode ?? UserPreferences.defaults.languageCode,
     defaultAccountId: settings.defaultAccountId,
+    upiId: settings.upiId,
   );
 }

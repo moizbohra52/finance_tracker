@@ -9,6 +9,11 @@ abstract final class Validators {
   static final RegExp _digit = RegExp(r'\d');
   static final RegExp _mobile = RegExp(r'^\+?[0-9][0-9 -]{6,18}[0-9]$');
 
+  /// handle@bank. Mirrors the user_settings.upi_id CHECK in Supabase.
+  static final RegExp _upiId = RegExp(
+    r'^[a-zA-Z0-9._-]{2,256}@[a-zA-Z]{2,64}$',
+  );
+
   static String? requiredField(String? value, String fieldName) =>
       (value == null || value.trim().isEmpty) ? 'Enter your $fieldName' : null;
 
@@ -59,6 +64,12 @@ abstract final class Validators {
   static final RegExp _amount = RegExp(r'^\d{1,13}(\.\d{1,2})?$');
 
   /// A positive money amount with at most two decimals.
+  static String? optionalUpiId(String? value) {
+    final String upiId = value?.trim() ?? '';
+    if (upiId.isEmpty) return null;
+    return _upiId.hasMatch(upiId) ? null : 'Enter a UPI ID like name@bank';
+  }
+
   static String? positiveAmount(String? value) {
     final String text = value?.trim() ?? '';
     if (text.isEmpty) return 'Enter an amount';

@@ -119,6 +119,7 @@ class ContactDetailBinding extends Bindings {
         Get.find<TransactionRepository>(),
         Get.find<DataChangeNotifier>(),
         routeIdArgument(),
+        profileRepository: Get.find<ProfileRepository>(),
       ),
       tag: routeIdArgument(),
     );
