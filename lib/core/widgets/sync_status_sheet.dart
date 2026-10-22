@@ -90,7 +90,7 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Text(
-                    'Sync Status',
+                    'Sync Status'.tr,
                     style: text.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -135,20 +135,26 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                                 children: <Widget>[
                                   Text(
                                     isOffline
-                                        ? 'Offline'
+                                        ? 'Offline'.tr
                                         : state == SyncState.syncing
-                                        ? 'Syncing with cloud...'
+                                        ? 'Syncing with cloud...'.tr
                                         : state == SyncState.error
-                                        ? 'Sync Error'
-                                        : 'In Sync',
+                                        ? 'Sync Error'.tr
+                                        : 'In Sync'.tr,
                                     style: text.titleSmall?.copyWith(
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   Text(
                                     lastSync != null
-                                        ? 'Last synced ${AppFormatters.date(lastSync)}'
-                                        : 'Not synced yet',
+                                        ? 'Last synced @date'.trParams(
+                                            <String, String>{
+                                              'date': AppFormatters.date(
+                                                lastSync,
+                                              ),
+                                            },
+                                          )
+                                        : 'Not synced yet'.tr,
                                     style: text.bodySmall?.copyWith(
                                       color: colors.onSurfaceVariant,
                                     ),
@@ -158,7 +164,7 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                             ),
                             if (!isOffline && state != SyncState.syncing)
                               AppButton(
-                                label: 'Sync now',
+                                label: 'Sync now'.tr,
                                 variant: AppButtonVariant.secondary,
                                 isExpanded: false,
                                 onPressed: () async {
@@ -191,7 +197,9 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                 }),
               const SizedBox(height: AppSpacing.md),
               Text(
-                'Pending Queue (${_items.length})',
+                'Pending Queue (@count)'.trParams(<String, String>{
+                  'count': '${_items.length}',
+                }),
                 style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -210,14 +218,14 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                             ),
                             const SizedBox(height: AppSpacing.sm),
                             Text(
-                              'All changes are synced',
+                              'All changes are synced'.tr,
                               style: text.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'No pending operations in the sync queue.',
+                              'No pending operations in the sync queue.'.tr,
                               style: text.bodySmall?.copyWith(
                                 color: colors.onSurfaceVariant,
                               ),
@@ -247,14 +255,18 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                               ),
                             ),
                             title: Text(
-                              '${_capitalize(item.operation.name)} ${_formatEntityName(item.entity)}',
+                              _operationTitle(item.operation, item.entity),
                               style: text.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
                             subtitle: Text(
-                              'Queued ${AppFormatters.date(item.createdAt)}'
-                              '${item.retryCount > 0 ? " · ${item.retryCount} retries" : ""}',
+                              'Queued @date'.trParams(<String, String>{
+                                    'date': AppFormatters.date(item.createdAt),
+                                  }) +
+                                  (item.retryCount > 0
+                                      ? ' · ${'@count retries'.trParams(<String, String>{'count': '${item.retryCount}'})}'
+                                      : ''),
                               style: text.bodySmall?.copyWith(
                                 color: item.status == SyncItemStatus.failed
                                     ? colors.error
@@ -321,30 +333,39 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
   String _formatEntityName(String entity) {
     switch (entity) {
       case 'transactions':
-        return 'Transaction';
+        return 'Transaction'.tr;
       case 'accounts':
-        return 'Account';
+        return 'Account'.tr;
       case 'contacts':
-        return 'Contact';
+        return 'Contact'.tr;
       case 'contact_transactions':
-        return 'Khata Entry';
+        return 'Khata Entry'.tr;
       case 'budgets':
-        return 'Budget';
+        return 'Budget'.tr;
       case 'recurring_transactions':
-        return 'Recurring Rule';
+        return 'Recurring Rule'.tr;
       case 'reminders':
-        return 'Reminder';
+        return 'Reminder'.tr;
       case 'categories':
-        return 'Category';
+        return 'Category'.tr;
       case 'user_settings':
-        return 'Settings';
+        return 'Settings'.tr;
       default:
         return entity;
     }
   }
 
-  String _capitalize(String s) {
-    if (s.isEmpty) return s;
-    return '${s[0].toUpperCase()}${s.substring(1)}';
+  /// "Create Transaction"; each operation has its own key because the word
+  /// order differs in Hindi.
+  String _operationTitle(SyncOperation op, String entity) {
+    final Map<String, String> params = <String, String>{
+      'entity': _formatEntityName(entity),
+    };
+    return switch (op) {
+      SyncOperation.create => 'Create @entity'.trParams(params),
+      SyncOperation.update => 'Update @entity'.trParams(params),
+      SyncOperation.delete => 'Delete @entity'.trParams(params),
+      SyncOperation.replace => 'Replace @entity'.trParams(params),
+    };
   }
 }

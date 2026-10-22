@@ -193,7 +193,7 @@ class ExportController extends GetxController {
   Future<void> exportAndShare() async {
     if (isExporting.value) return;
     isExporting.value = true;
-    statusMessage.value = 'Preparing data for export...';
+    statusMessage.value = 'Preparing data for export...'.tr;
 
     try {
       final Map<String, String> accountNames = <String, String>{
@@ -230,7 +230,9 @@ class ExportController extends GetxController {
     } catch (e, stack) {
       debugPrint('Export error: $e\n$stack');
       AppSnackbar.show(
-        'Export failed: ${e.toString().replaceAll('Exception: ', '')}',
+        'Export failed: @error'.trParams(<String, String>{
+          'error': e.toString().replaceAll('Exception: ', ''),
+        }),
       );
     } finally {
       isExporting.value = false;
@@ -254,12 +256,12 @@ class ExportController extends GetxController {
     );
 
     if (txs.isEmpty) {
-      AppSnackbar.show('No transactions match the selected filters.');
+      AppSnackbar.show('No transactions match the selected filters.'.tr);
       return;
     }
 
-    statusMessage.value =
-        'Generating document for ${txs.length} transactions...';
+    statusMessage.value = 'Generating document for @count transactions...'
+        .trParams(<String, String>{'count': '${txs.length}'});
 
     if (selectedFormat.value == ExportFormat.csv) {
       final String csv = await compute(
@@ -310,17 +312,17 @@ class ExportController extends GetxController {
       );
     }
 
-    AppSnackbar.show('Export ready!');
+    AppSnackbar.show('Export ready!'.tr);
   }
 
   Future<void> _exportAccounts(String timeStamp) async {
     final List<Account> accs = await accountRepository.getAccounts();
     if (accs.isEmpty) {
-      AppSnackbar.show('No accounts found to export.');
+      AppSnackbar.show('No accounts found to export.'.tr);
       return;
     }
 
-    statusMessage.value = 'Generating accounts export...';
+    statusMessage.value = 'Generating accounts export...'.tr;
 
     if (selectedFormat.value == ExportFormat.csv) {
       final String csv = exportService.generateAccountsCsv(accs);
@@ -359,17 +361,17 @@ class ExportController extends GetxController {
       );
     }
 
-    AppSnackbar.show('Accounts export ready!');
+    AppSnackbar.show('Accounts export ready!'.tr);
   }
 
   Future<void> _exportContacts(String timeStamp) async {
     final List<Contact> contacts = await contactRepository.getContacts();
     if (contacts.isEmpty) {
-      AppSnackbar.show('No khata contacts found to export.');
+      AppSnackbar.show('No khata contacts found to export.'.tr);
       return;
     }
 
-    statusMessage.value = 'Generating khata contacts export...';
+    statusMessage.value = 'Generating khata contacts export...'.tr;
 
     // Calculate balances
     final Map<String, Decimal> netBalances = <String, Decimal>{};
@@ -422,14 +424,14 @@ class ExportController extends GetxController {
       );
     }
 
-    AppSnackbar.show('Khata export ready!');
+    AppSnackbar.show('Khata export ready!'.tr);
   }
 
   Future<void> _exportContactTransactions(String timeStamp) async {
     final List<ContactTransaction> txs = await contactRepository
         .getAllContactTransactions();
     if (txs.isEmpty) {
-      AppSnackbar.show('No khata transactions found to export.');
+      AppSnackbar.show('No khata transactions found to export.'.tr);
       return;
     }
 
@@ -467,7 +469,7 @@ class ExportController extends GetxController {
       );
     }
 
-    AppSnackbar.show('Khata transactions export ready!');
+    AppSnackbar.show('Khata transactions export ready!'.tr);
   }
 
   Future<void> _exportBudgets(
@@ -476,7 +478,7 @@ class ExportController extends GetxController {
   ) async {
     final List<Budget> budgets = await budgetRepository.getBudgets();
     if (budgets.isEmpty) {
-      AppSnackbar.show('No budgets found to export.');
+      AppSnackbar.show('No budgets found to export.'.tr);
       return;
     }
 
@@ -509,7 +511,7 @@ class ExportController extends GetxController {
       );
     }
 
-    AppSnackbar.show('Budgets export ready!');
+    AppSnackbar.show('Budgets export ready!'.tr);
   }
 
   Future<void> _exportFullReport(
@@ -517,7 +519,7 @@ class ExportController extends GetxController {
     Map<String, String> accountNames,
     Map<String, String> categoryNames,
   ) async {
-    statusMessage.value = 'Compiling full financial report...';
+    statusMessage.value = 'Compiling full financial report...'.tr;
     final ({DateTime? start, DateTime? end}) range = activeDateRange;
 
     final List<Transaction> txs = await transactionRepository.getTransactions(
@@ -583,7 +585,7 @@ class ExportController extends GetxController {
       );
     }
 
-    AppSnackbar.show('Full report ready!');
+    AppSnackbar.show('Full report ready!'.tr);
   }
 }
 

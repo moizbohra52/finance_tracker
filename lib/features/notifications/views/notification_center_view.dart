@@ -23,11 +23,11 @@ class NotificationCenterView extends GetView<NotificationCenterController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppAppBar(
-        title: 'Notifications',
+        title: 'Notifications'.tr,
         actions: <Widget>[
           Obx(
             () => IconButton(
-              tooltip: 'Mark all as read',
+              tooltip: 'Mark all as read'.tr,
               icon: const Icon(Icons.done_all_rounded),
               onPressed: controller.unread.value == 0
                   ? null
@@ -35,7 +35,7 @@ class NotificationCenterView extends GetView<NotificationCenterController> {
             ),
           ),
           IconButton(
-            tooltip: 'Notification settings',
+            tooltip: 'Notification settings'.tr,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => Get.toNamed<void>(AppRoutes.settings),
           ),
@@ -53,12 +53,12 @@ class NotificationCenterView extends GetView<NotificationCenterController> {
             return LoadFailureView(message: error, onRetry: controller.load);
           }
           if (controller.items.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.notifications_none_rounded,
-              title: 'You are all caught up',
+              title: 'You are all caught up'.tr,
               message:
-                  'Budget alerts, reminders and recurring transactions show '
-                  'up here.',
+                  'Budget alerts, reminders and recurring transactions show up here.'
+                      .tr,
             );
           }
           return AppContent(
@@ -83,8 +83,8 @@ class NotificationCenterView extends GetView<NotificationCenterController> {
                               : controller.loadMore,
                           child: Text(
                             controller.isLoadingMore.value
-                                ? 'Loading…'
-                                : 'Load more',
+                                ? 'Loading…'.tr
+                                : 'Load more'.tr,
                           ),
                         ),
                       ),
@@ -132,7 +132,7 @@ class _NotificationTile extends GetView<NotificationCenterController> {
         subtitleMaxLines: 3,
         trailing: unread
             ? Semantics(
-                label: 'Unread',
+                label: 'Unread'.tr,
                 child: Icon(Icons.circle, size: 10, color: colors.primary),
               )
             : null,

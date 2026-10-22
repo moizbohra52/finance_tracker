@@ -15,8 +15,8 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
   Widget build(BuildContext context) {
     final ChangePasswordController controller = this.controller;
     return AuthFormLayout(
-      title: 'Change password',
-      subtitle: 'Confirm your current password, then choose a new one.',
+      title: 'Change password'.tr,
+      subtitle: 'Confirm your current password, then choose a new one.'.tr,
       children: <Widget>[
         Form(
           key: controller.formKey,
@@ -24,7 +24,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
             child: Column(
               children: <Widget>[
                 AppTextField(
-                  label: 'Current password',
+                  label: 'Current password'.tr,
                   controller: controller.currentPasswordController,
                   obscureText: true,
                   textInputAction: TextInputAction.next,
@@ -34,8 +34,9 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'New password',
-                  helperText: 'At least 8 characters, with letters and numbers',
+                  label: 'New password'.tr,
+                  helperText:
+                      'At least 8 characters, with letters and numbers'.tr,
                   controller: controller.newPasswordController,
                   obscureText: true,
                   textInputAction: TextInputAction.next,
@@ -44,7 +45,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Confirm new password',
+                  label: 'Confirm new password'.tr,
                   controller: controller.confirmPasswordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
@@ -61,7 +62,7 @@ class ChangePasswordView extends GetView<ChangePasswordController> {
         SubmitErrorMessage(controller.submission),
         Obx(
           () => AppButton(
-            label: 'Change password',
+            label: 'Change password'.tr,
             isLoading: controller.submission.isBusy.value,
             onPressed: controller.changePassword,
           ),

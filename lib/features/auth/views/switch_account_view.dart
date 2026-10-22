@@ -35,8 +35,10 @@ class SwitchAccountView extends GetView<AccountSwitchController> {
                     const SizedBox(height: AppSpacing.lg),
                     Text(
                       login == null
-                          ? 'Switching account'
-                          : 'Switching to ${login.label}',
+                          ? 'Switching account'.tr
+                          : 'Switching to @name'.trParams(<String, String>{
+                              'name': login.label,
+                            }),
                       textAlign: TextAlign.center,
                       style: text.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,

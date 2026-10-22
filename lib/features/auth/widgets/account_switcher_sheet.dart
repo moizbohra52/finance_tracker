@@ -146,7 +146,7 @@ class AccountSwitcherSheet extends GetView<AccountSwitchController> {
               title: Text('Sign in to another account'.tr),
               subtitle: controller.canAddAccount
                   ? null
-                  : const Text(AccountSwitchController.limitMessage),
+                  : Text(AccountSwitchController.limitMessage),
               onTap: () => _add(context),
             ),
           ],

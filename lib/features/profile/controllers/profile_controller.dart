@@ -117,7 +117,7 @@ class ProfileController extends GetxController {
         ),
       );
     });
-    if (saved) AppSnackbar.show('Profile saved.');
+    if (saved) AppSnackbar.show('Profile saved.'.tr);
     return saved;
   }
 
@@ -158,7 +158,7 @@ class ProfileController extends GetxController {
       if (previous != null && previous != uploaded) {
         await _removeQuietly(previous);
       }
-      AppSnackbar.show('Profile photo updated.');
+      AppSnackbar.show('Profile photo updated.'.tr);
       return true;
     } on AppException catch (failure) {
       avatarError.value = failure.message;
@@ -182,7 +182,7 @@ class ProfileController extends GetxController {
         beforeDelete: _removeAvatarBeforeDelete,
       ),
     );
-    if (deleted) AppSnackbar.show('Your account has been deleted.');
+    if (deleted) AppSnackbar.show('Your account has been deleted.'.tr);
     return deleted;
   }
 

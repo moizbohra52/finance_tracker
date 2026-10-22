@@ -21,7 +21,7 @@ class ExportView extends GetView<ExportController> {
     final ColorScheme colors = theme.colorScheme;
 
     return Scaffold(
-      appBar: const AppAppBar(title: 'Export Data'),
+      appBar: AppAppBar(title: 'Export Data'.tr),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxPageWidth,
@@ -30,7 +30,7 @@ class ExportView extends GetView<ExportController> {
             children: <Widget>[
               // Section 1: Choose What to Export
               Text(
-                'What would you like to export?',
+                'What would you like to export?'.tr,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -42,7 +42,7 @@ class ExportView extends GetView<ExportController> {
 
               // Section 2: Choose File Format
               Text(
-                'Choose Export Format',
+                'Choose Export Format'.tr,
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -64,7 +64,7 @@ class ExportView extends GetView<ExportController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Text(
-                      'Filter Options',
+                      'Filter Options'.tr,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -121,8 +121,15 @@ class ExportView extends GetView<ExportController> {
                           : const Icon(Icons.share_outlined),
                       label: Text(
                         exporting
-                            ? 'Exporting...'
-                            : 'Export & Share (${controller.selectedFormat.value.name.toUpperCase()})',
+                            ? 'Exporting...'.tr
+                            : 'Export & Share (@format)'
+                                  .trParams(<String, String>{
+                                    'format': controller
+                                        .selectedFormat
+                                        .value
+                                        .name
+                                        .toUpperCase(),
+                                  }),
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: FilledButton.styleFrom(
@@ -153,38 +160,38 @@ class ExportView extends GetView<ExportController> {
     items = <({ExportType type, String title, String subtitle, IconData icon})>[
       (
         type: ExportType.transactions,
-        title: 'Transactions',
-        subtitle: 'Income, expense, and transfer records',
+        title: 'Transactions'.tr,
+        subtitle: 'Income, expense, and transfer records'.tr,
         icon: Icons.receipt_long_outlined,
       ),
       (
         type: ExportType.accounts,
-        title: 'Accounts',
-        subtitle: 'Account balances and summary',
+        title: 'Accounts'.tr,
+        subtitle: 'Account balances and summary'.tr,
         icon: Icons.account_balance_outlined,
       ),
       (
         type: ExportType.contacts,
-        title: 'Khata Contacts',
-        subtitle: 'Digital khata party list & net balances',
+        title: 'Khata Contacts'.tr,
+        subtitle: 'Digital khata party list & net balances'.tr,
         icon: Icons.contacts_outlined,
       ),
       (
         type: ExportType.contactTransactions,
-        title: 'Khata Transactions',
-        subtitle: 'Credit, debit, and payment history',
+        title: 'Khata Transactions'.tr,
+        subtitle: 'Credit, debit, and payment history'.tr,
         icon: Icons.swap_horiz_outlined,
       ),
       (
         type: ExportType.budgets,
-        title: 'Budgets',
-        subtitle: 'Monthly and custom spending limits',
+        title: 'Budgets'.tr,
+        subtitle: 'Monthly and custom spending limits'.tr,
         icon: Icons.pie_chart_outline_rounded,
       ),
       (
         type: ExportType.fullReport,
-        title: 'Full Financial Report',
-        subtitle: 'Combined summary across all records',
+        title: 'Full Financial Report'.tr,
+        subtitle: 'Combined summary across all records'.tr,
         icon: Icons.assessment_outlined,
       ),
     ];
@@ -249,21 +256,21 @@ class ExportView extends GetView<ExportController> {
             name: 'CSV',
             ext: '.csv',
             icon: Icons.table_chart_outlined,
-            desc: 'Comma-separated values, opens in Excel & Google Sheets',
+            desc: 'Comma-separated values, opens in Excel & Google Sheets'.tr,
           ),
           (
             format: ExportFormat.excel,
             name: 'Excel',
             ext: '.xlsx',
             icon: Icons.grid_on_outlined,
-            desc: 'Formatted spreadsheet with styled headers and totals',
+            desc: 'Formatted spreadsheet with styled headers and totals'.tr,
           ),
           (
             format: ExportFormat.pdf,
             name: 'PDF',
             ext: '.pdf',
             icon: Icons.picture_as_pdf_outlined,
-            desc: 'Clean, professional report suitable for sharing & printing',
+            desc: 'Clean, professional report suitable for sharing & printing'.tr,
           ),
         ];
 
@@ -332,7 +339,7 @@ class ExportView extends GetView<ExportController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           // Date Range Preset
-          Text('Date Range', style: Theme.of(context).textTheme.labelLarge),
+          Text('Date Range'.tr, style: Theme.of(context).textTheme.labelLarge),
           const SizedBox(height: AppSpacing.xs),
           Wrap(
             spacing: AppSpacing.xs,
@@ -340,7 +347,7 @@ class ExportView extends GetView<ExportController> {
             children: DateRangePreset.values.map((preset) {
               final bool isSelected = controller.datePreset.value == preset;
               return ChoiceChip(
-                label: Text(preset.label),
+                label: Text(preset.label.tr),
                 selected: isSelected,
                 onSelected: (bool selected) async {
                   if (selected) {
@@ -369,7 +376,9 @@ class ExportView extends GetView<ExportController> {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Selected: ${controller.dateRangeLabel}',
+            'Selected: @range'.trParams(<String, String>{
+              'range': controller.dateRangeLabel.tr,
+            }),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.primary,
               fontWeight: FontWeight.w500,
@@ -386,7 +395,7 @@ class ExportView extends GetView<ExportController> {
               ...controller.accounts.map((Account a) => a.id),
             ],
             labelOf: (String? id) {
-              if (id == null) return 'All Accounts';
+              if (id == null) return 'All Accounts'.tr;
               final Account? acc = controller.accounts.firstWhereOrNull(
                 (Account a) => a.id == id,
               );
@@ -395,9 +404,9 @@ class ExportView extends GetView<ExportController> {
             onChanged: (String? val) {
               controller.selectedAccountId.value = val;
             },
-            decoration: const InputDecoration(
-              labelText: 'Filter by Account',
-              prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+            decoration: InputDecoration(
+              labelText: 'Filter by Account'.tr,
+              prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
             ),
           ),
 
@@ -411,7 +420,7 @@ class ExportView extends GetView<ExportController> {
               ...controller.categories.map((Category c) => c.id),
             ],
             labelOf: (String? id) {
-              if (id == null) return 'All Categories';
+              if (id == null) return 'All Categories'.tr;
               final Category? cat = controller.categories.firstWhereOrNull(
                 (Category c) => c.id == id,
               );
@@ -420,9 +429,9 @@ class ExportView extends GetView<ExportController> {
             onChanged: (String? val) {
               controller.selectedCategoryId.value = val;
             },
-            decoration: const InputDecoration(
-              labelText: 'Filter by Category',
-              prefixIcon: Icon(Icons.category_outlined),
+            decoration: InputDecoration(
+              labelText: 'Filter by Category'.tr,
+              prefixIcon: const Icon(Icons.category_outlined),
             ),
           ),
 
@@ -439,16 +448,16 @@ class ExportView extends GetView<ExportController> {
               TransactionType.transfer_out,
             ],
             labelOf: (TransactionType? type) {
-              if (type == null) return 'All Types';
+              if (type == null) return 'All Types'.tr;
               switch (type) {
                 case TransactionType.income:
-                  return 'Income';
+                  return 'Income'.tr;
                 case TransactionType.expense:
-                  return 'Expense';
+                  return 'Expense'.tr;
                 case TransactionType.transfer_in:
-                  return 'Transfer In';
+                  return 'Transfer In'.tr;
                 case TransactionType.transfer_out:
-                  return 'Transfer Out';
+                  return 'Transfer Out'.tr;
                 default:
                   return type.name;
               }
@@ -456,9 +465,9 @@ class ExportView extends GetView<ExportController> {
             onChanged: (TransactionType? val) {
               controller.selectedTxType.value = val;
             },
-            decoration: const InputDecoration(
-              labelText: 'Filter by Transaction Type',
-              prefixIcon: Icon(Icons.filter_list_outlined),
+            decoration: InputDecoration(
+              labelText: 'Filter by Transaction Type'.tr,
+              prefixIcon: const Icon(Icons.filter_list_outlined),
             ),
           ),
         ],

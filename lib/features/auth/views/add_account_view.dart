@@ -17,10 +17,10 @@ class AddAccountView extends GetView<AddAccountController> {
   Widget build(BuildContext context) {
     final AddAccountController controller = this.controller;
     return AuthFormLayout(
-      title: 'Another account',
+      title: 'Another account'.tr,
       subtitle:
-          'Sign in to another account. You stay signed in to this one and '
-          'can switch back at any time.',
+          'Sign in to another account. You stay signed in to this one and can switch back at any time.'
+              .tr,
       children: <Widget>[
         Form(
           key: controller.formKey,
@@ -28,7 +28,7 @@ class AddAccountView extends GetView<AddAccountController> {
             child: Column(
               children: <Widget>[
                 AppTextField(
-                  label: 'Email',
+                  label: 'Email'.tr,
                   controller: controller.emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -37,7 +37,7 @@ class AddAccountView extends GetView<AddAccountController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Password',
+                  label: 'Password'.tr,
                   controller: controller.passwordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
@@ -54,7 +54,7 @@ class AddAccountView extends GetView<AddAccountController> {
         SubmitErrorMessage(controller.submission),
         Obx(
           () => AppButton(
-            label: 'Sign in and switch',
+            label: 'Sign in and switch'.tr,
             isLoading: controller.submission.isBusy.value,
             onPressed: controller.submit,
           ),

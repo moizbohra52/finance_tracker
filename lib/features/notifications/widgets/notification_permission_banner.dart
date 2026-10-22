@@ -42,24 +42,24 @@ class NotificationPermissionBanner extends StatelessWidget {
           !enabled
           ? (
               message:
-                  'Notifications are turned off, so reminders will not alert '
-                  'you.',
-              action: 'Turn on',
+                  'Notifications are turned off, so reminders will not alert you.'
+                      .tr,
+              action: 'Turn on'.tr,
               onTap: () => unawaited(_turnOn(coordinator)),
             )
           : state.canPrompt
           ? (
               message:
-                  'Allow notifications so reminders can alert you on time.',
-              action: 'Allow',
+                  'Allow notifications so reminders can alert you on time.'.tr,
+              action: 'Allow'.tr,
               onTap: () => unawaited(coordinator.requestPermission()),
             )
           : state.needsSettings
           ? (
               message:
-                  'Notifications are blocked for this app. Turn them on in '
-                  'your device settings to get reminders.',
-              action: 'Open settings',
+                  'Notifications are blocked for this app. Turn them on in your device settings to get reminders.'
+                      .tr,
+              action: 'Open settings'.tr,
               onTap: () => unawaited(coordinator.openSettings()),
             )
           : null;

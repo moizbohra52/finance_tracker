@@ -62,9 +62,9 @@ class AccountSwitchController extends GetxController {
   String? _activeId;
   bool _busy = false;
 
-  static const String limitMessage =
-      'You can keep up to ${SavedLoginStore.maxLogins} accounts on this '
-      'device. Sign out of one to add another.';
+  static String get limitMessage =>
+      'You can keep up to @count accounts on this device. Sign out of one to add another.'
+          .trParams(<String, String>{'count': '${SavedLoginStore.maxLogins}'});
 
   String? get activeUserId => _auth.currentUserId;
 
@@ -114,7 +114,9 @@ class AccountSwitchController extends GetxController {
     final String? session = _store.sessionFor(userId);
     if (login == null || session == null) {
       _reload();
-      AppSnackbar.show('That account is no longer signed in on this device.');
+      AppSnackbar.show(
+        'That account is no longer signed in on this device.'.tr,
+      );
       return;
     }
     _busy = true;
@@ -134,14 +136,16 @@ class AccountSwitchController extends GetxController {
       login,
       session,
       then: then,
-      announce: announce ? 'Switched to ${login.label}' : null,
+      announce: announce
+          ? 'Switched to @name'.trParams(<String, String>{'name': login.label})
+          : null,
     );
     if (!switched) {
       // The other session had ended; the previous account is still active.
       await _enterActive(
         announce:
-            'You were signed out of ${login.email}. Sign in to it again to '
-            'switch to it.',
+            'You were signed out of @email. Sign in to it again to switch to it.'
+                .trParams(<String, String>{'email': login.email}),
       );
     }
   }
@@ -153,13 +157,13 @@ class AccountSwitchController extends GetxController {
     required String password,
   }) async {
     if (_busy) return;
-    if (!canAddAccount) throw const AuthFailure(limitMessage);
+    if (!canAddAccount) throw AuthFailure(limitMessage);
     final AccountSession added = await _auth.signInDetached(
       email: email,
       password: password,
     );
     if (added.userId == activeUserId) {
-      throw const AuthFailure('You are already using this account.');
+      throw AuthFailure('You are already using this account.'.tr);
     }
     final SavedLogin? known = _store.login(added.userId);
     await _store.save(
@@ -348,7 +352,7 @@ class AccountSwitchController extends GetxController {
       );
     }
     await _enterActive(
-      announce: 'The account could not be switched. Please try again.',
+      announce: 'The account could not be switched. Please try again.'.tr,
     );
   }
 
@@ -396,8 +400,8 @@ class AccountSwitchController extends GetxController {
     if (owner == null) return;
     if (_store.sessionFor(owner) == null) {
       AppSnackbar.show(
-        'That notification is for an account that is not signed in on this '
-        'device.',
+        'That notification is for an account that is not signed in on this device.'
+            .tr,
       );
       return;
     }

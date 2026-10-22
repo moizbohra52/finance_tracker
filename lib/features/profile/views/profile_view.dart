@@ -28,9 +28,9 @@ class ProfileView extends GetView<ProfileController> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      appBar: AppAppBar(title: 'Profile'),
-      body: SafeArea(child: ProfileContent()),
+    return Scaffold(
+      appBar: AppAppBar(title: 'Profile'.tr),
+      body: const SafeArea(child: ProfileContent()),
     );
   }
 }
@@ -43,7 +43,7 @@ class ProfileContent extends GetView<ProfileController> {
   Widget build(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const LoadingState(message: 'Loading your profile');
+        return LoadingState(message: 'Loading your profile'.tr);
       }
       final String? loadError = controller.loadError.value;
       if (loadError != null) {
@@ -84,7 +84,7 @@ class _ProfileForm extends StatelessWidget {
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       uiSettings: <PlatformUiSettings>[
         AndroidUiSettings(
-          toolbarTitle: 'Crop profile photo',
+          toolbarTitle: 'Crop profile photo'.tr,
           toolbarColor: theme.colorScheme.surface,
           toolbarWidgetColor: theme.colorScheme.onSurface,
           activeControlsWidgetColor: theme.colorScheme.primary,
@@ -96,7 +96,7 @@ class _ProfileForm extends StatelessWidget {
           ],
         ),
         IOSUiSettings(
-          title: 'Crop profile photo',
+          title: 'Crop profile photo'.tr,
           cropStyle: CropStyle.circle,
           aspectRatioLockEnabled: true,
           resetAspectRatioEnabled: false,
@@ -135,8 +135,8 @@ class _ProfileForm extends StatelessWidget {
                 () => Semantics(
                   button: true,
                   label: controller.avatarLink.value == null
-                      ? 'Add a profile photo'
-                      : 'Change profile photo',
+                      ? 'Add a profile photo'.tr
+                      : 'Change profile photo'.tr,
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: controller.avatarBusy.value
@@ -156,8 +156,8 @@ class _ProfileForm extends StatelessWidget {
               child: Obx(
                 () => Text(
                   controller.avatarLink.value == null
-                      ? 'Add a photo'
-                      : 'Tap to change photo',
+                      ? 'Add a photo'.tr
+                      : 'Tap to change photo'.tr,
                   style: text.bodySmall?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),
@@ -173,7 +173,7 @@ class _ProfileForm extends StatelessWidget {
               );
             }),
             const SizedBox(height: AppSpacing.lg),
-            const SettingsSectionTitle('Personal details'),
+            SettingsSectionTitle('Personal details'.tr),
             const SizedBox(height: AppSpacing.sm),
             Form(
               key: controller.formKey,
@@ -181,7 +181,7 @@ class _ProfileForm extends StatelessWidget {
                 child: Column(
                   children: <Widget>[
                     AppTextField(
-                      label: 'Full name',
+                      label: 'Full name'.tr,
                       controller: controller.fullNameController,
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
@@ -189,7 +189,7 @@ class _ProfileForm extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Mobile (optional)',
+                      label: 'Mobile (optional)'.tr,
                       controller: controller.mobileController,
                       keyboardType: TextInputType.phone,
                       textInputAction: TextInputAction.done,
@@ -205,15 +205,15 @@ class _ProfileForm extends StatelessWidget {
               children: <Widget>[
                 SettingsTile(
                   icon: Icons.email_outlined,
-                  title: 'Email',
+                  title: 'Email'.tr,
                   value: controller.email,
                 ),
                 Obx(
                   () => SettingsTile(
                     icon: Icons.schedule_outlined,
-                    title: 'Time zone',
+                    title: 'Time zone'.tr,
                     value: controller.timezone.value.isEmpty
-                        ? 'Not available'
+                        ? 'Not available'.tr
                         : controller.timezone.value,
                   ),
                 ),
@@ -221,52 +221,52 @@ class _ProfileForm extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Your email and time zone are managed by your account and device.',
+              'Your email and time zone are managed by your account and device.'
+                  .tr,
               style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
             ),
             SubmitErrorMessage(controller.save),
             const SizedBox(height: AppSpacing.md),
             Obx(
               () => AppButton(
-                label: 'Save changes',
+                label: 'Save changes'.tr,
                 isLoading: controller.save.isBusy.value,
                 onPressed: controller.saveProfile,
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const SettingsSectionTitle('Security'),
+            SettingsSectionTitle('Security'.tr),
             const SizedBox(height: AppSpacing.sm),
             AppListCard(
               children: <Widget>[
                 SettingsTile(
                   icon: Icons.lock_outline,
-                  title: 'Change password',
+                  title: 'Change password'.tr,
                   onTap: () => Get.toNamed<void>(AppRoutes.changePassword),
                 ),
                 const SwitchAccountTile(),
                 SettingsTile(
                   icon: Icons.logout_rounded,
-                  title: 'Sign out',
+                  title: 'Sign out'.tr,
                   onTap: () => confirmAndSignOut(context),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.lg),
-            const SettingsSectionTitle('Danger zone', destructive: true),
+            SettingsSectionTitle('Danger zone'.tr, destructive: true),
             const SizedBox(height: AppSpacing.sm),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   Text(
-                    'Deleting your account permanently removes your profile, '
-                    'accounts, transactions, khata records, reminders and photo. '
-                    'This cannot be undone.',
+                    'Deleting your account permanently removes your profile, accounts, transactions, khata records, reminders and photo. This cannot be undone.'
+                        .tr,
                     style: text.bodyMedium,
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppButton(
-                    label: 'Delete account',
+                    label: 'Delete account'.tr,
                     icon: Icons.delete_forever_outlined,
                     variant: AppButtonVariant.destructive,
                     onPressed: () =>

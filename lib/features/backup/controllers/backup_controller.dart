@@ -41,7 +41,7 @@ class BackupController extends GetxController {
   Future<void> createBackupAndShare() async {
     if (isCreatingBackup.value) return;
     isCreatingBackup.value = true;
-    statusMessage.value = 'Creating secure backup...';
+    statusMessage.value = 'Creating secure backup...'.tr;
 
     try {
       final String? userId = authRepository?.currentUserId;
@@ -56,7 +56,7 @@ class BackupController extends GetxController {
       // Pretty print JSON in compute isolate to avoid UI freeze
       final String jsonString = await compute(_formatJson, backupPayload);
 
-      statusMessage.value = 'Preparing file for sharing...';
+      statusMessage.value = 'Preparing file for sharing...'.tr;
       await sharingService.saveAndShareString(
         fileName: fileName,
         content: jsonString,
@@ -67,10 +67,18 @@ class BackupController extends GetxController {
       final Map<String, dynamic>? meta =
           backupPayload['metadata'] as Map<String, dynamic>?;
       final int totalRecords = (meta?['total_records'] as num?)?.toInt() ?? 0;
-      AppSnackbar.show('Backup created successfully ($totalRecords records).');
+      AppSnackbar.show(
+        'Backup created successfully (@count records).'.trParams(
+          <String, String>{'count': '$totalRecords'},
+        ),
+      );
     } catch (e, stack) {
       debugPrint('Backup error: $e\n$stack');
-      AppSnackbar.show('Failed to create backup: $e');
+      AppSnackbar.show(
+        'Failed to create backup: @error'.trParams(<String, String>{
+          'error': '$e',
+        }),
+      );
     } finally {
       isCreatingBackup.value = false;
       statusMessage.value = '';
@@ -98,7 +106,9 @@ class BackupController extends GetxController {
       return validation;
     } catch (e) {
       debugPrint('File pick / validation error: $e');
-      AppSnackbar.show('Error reading file: $e');
+      AppSnackbar.show(
+        'Error reading file: @error'.trParams(<String, String>{'error': '$e'}),
+      );
       return null;
     }
   }
@@ -109,12 +119,12 @@ class BackupController extends GetxController {
     required bool replaceExisting,
   }) async {
     if (validationResult.data == null) {
-      AppSnackbar.show('Invalid backup data.');
+      AppSnackbar.show('Invalid backup data.'.tr);
       return false;
     }
 
     isRestoring.value = true;
-    statusMessage.value = 'Restoring data...';
+    statusMessage.value = 'Restoring data...'.tr;
 
     try {
       final String? userId = authRepository?.currentUserId;
@@ -134,16 +144,22 @@ class BackupController extends GetxController {
         unawaited(settingsController?.load());
 
         AppSnackbar.show(
-          'Restored ${result.totalRestored} records successfully!',
+          'Restored @count records successfully!'.trParams(<String, String>{
+            'count': '${result.totalRestored}',
+          }),
         );
         return true;
       } else {
-        AppSnackbar.show(result.errorMessage ?? 'Restore failed.');
+        AppSnackbar.show(result.errorMessage ?? 'Restore failed.'.tr);
         return false;
       }
     } catch (e, stack) {
       debugPrint('Restore execution error: $e\n$stack');
-      AppSnackbar.show('Failed to restore data: $e');
+      AppSnackbar.show(
+        'Failed to restore data: @error'.trParams(<String, String>{
+          'error': '$e',
+        }),
+      );
       return false;
     } finally {
       isRestoring.value = false;

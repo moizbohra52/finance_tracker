@@ -144,6 +144,34 @@ void main() {
     }
   });
 
+  // Backup is left out: it needs the local database, which pumpApp does not
+  // provide. The coverage test still checks its text.
+  testWidgets('Hindi reaches profile, export and notifications', (
+    WidgetTester tester,
+  ) async {
+    userSettings.settings = const UserSettings(
+      dateFormat: 'd MMM y',
+      numberFormat: 'indian',
+      firstDayOfWeek: 'monday',
+      languageCode: 'hi',
+      defaultAccountId: null,
+    );
+    await start(tester);
+    await tester.pumpAndSettle();
+
+    for (final (String route, String text) in <(String, String)>[
+      (AppRoutes.profile, hindi['Personal details']!),
+      (AppRoutes.export, hindi['What would you like to export?']!),
+      (AppRoutes.notifications, hindi['You are all caught up']!),
+    ]) {
+      unawaited(Get.toNamed<void>(route));
+      await tester.pumpAndSettle();
+      expect(find.text(text), findsWidgets, reason: route);
+      Get.back<void>();
+      await tester.pumpAndSettle();
+    }
+  });
+
   testWidgets('in Hindi each mobile number keeps its WhatsApp button', (
     WidgetTester tester,
   ) async {

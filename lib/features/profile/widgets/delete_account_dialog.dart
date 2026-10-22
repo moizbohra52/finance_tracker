@@ -50,7 +50,7 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
         Icons.warning_amber_rounded,
         color: Theme.of(context).colorScheme.error,
       ),
-      title: 'Delete your account?',
+      title: 'Delete your account?'.tr,
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -58,14 +58,13 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              const Text(
-                'This permanently deletes your profile, accounts, transactions, '
-                'khata records, reminders and profile photo. It cannot be '
-                'undone.',
+              Text(
+                'This permanently deletes your profile, accounts, transactions, khata records, reminders and profile photo. It cannot be undone.'
+                    .tr,
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Password',
+                label: 'Password'.tr,
                 obscureText: true,
                 autofocus: true,
                 controller: _passwordController,
@@ -86,12 +85,12 @@ class _DeleteAccountDialogState extends State<DeleteAccountDialog> {
             onPressed: _controller.deletion.isBusy.value
                 ? null
                 : () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
         ),
         Obx(
           () => AppButton(
-            label: 'Delete account',
+            label: 'Delete account'.tr,
             variant: AppButtonVariant.destructive,
             isExpanded: false,
             isLoading: _controller.deletion.isBusy.value,

@@ -19,29 +19,27 @@ class BackupView extends GetView<BackupController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppAppBar(title: 'Backup & Restore'),
+      appBar: AppAppBar(title: 'Backup & Restore'.tr),
       body: SafeArea(
         child: AppContent(
           maxWidth: AppSizes.maxPageWidth,
           child: ListView(
             children: <Widget>[
-              const SectionHeader(title: 'Create Backup'),
+              SectionHeader(title: 'Create Backup'.tr),
               const SizedBox(height: AppSpacing.sm),
               _buildBackupCard(context),
               const SizedBox(height: AppSpacing.lg),
-              const SectionHeader(title: 'Restore Data'),
+              SectionHeader(title: 'Restore Data'.tr),
               const SizedBox(height: AppSpacing.sm),
               _buildRestoreCard(context),
               const SizedBox(height: AppSpacing.lg),
-              const InlineMessage(
+              InlineMessage(
                 tone: InlineMessageTone.info,
                 icon: Icons.shield_outlined,
-                title: 'Data Security & Privacy',
+                title: 'Data Security & Privacy'.tr,
                 message:
-                    'Your backups are generated locally on this device. '
-                    'Passwords, login tokens, and authentication secrets are '
-                    'strictly excluded. You can store your backup file '
-                    'securely on Google Drive, iCloud, or external storage.',
+                    'Your backups are generated locally on this device. Passwords, login tokens, and authentication secrets are strictly excluded. You can store your backup file securely on Google Drive, iCloud, or external storage.'
+                        .tr,
                 announce: false,
               ),
             ],
@@ -56,14 +54,14 @@ class BackupView extends GetView<BackupController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          const AppListTile(
+          AppListTile(
             padding: EdgeInsets.zero,
-            leading: IconBadge(icon: Icons.cloud_upload_outlined),
-            title: 'Export Full Database Backup',
+            leading: const IconBadge(icon: Icons.cloud_upload_outlined),
+            title: 'Export Full Database Backup'.tr,
             titleMaxLines: 2,
             subtitle:
-                'Packages all your accounts, transactions, khata contacts, '
-                'budgets, and preferences into a standardized JSON file.',
+                'Packages all your accounts, transactions, khata contacts, budgets, and preferences into a standardized JSON file.'
+                    .tr,
             subtitleMaxLines: 4,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -78,8 +76,8 @@ class BackupView extends GetView<BackupController> {
                 ),
                 AppButton(
                   label: backingUp
-                      ? 'Creating Backup...'
-                      : 'Create & Share Backup',
+                      ? 'Creating Backup...'.tr
+                      : 'Create & Share Backup'.tr,
                   icon: Icons.download_rounded,
                   isLoading: backingUp,
                   onPressed: () => controller.createBackupAndShare(),
@@ -103,11 +101,11 @@ class BackupView extends GetView<BackupController> {
               icon: Icons.restore_outlined,
               color: Theme.of(context).colorScheme.secondary,
             ),
-            title: 'Restore from JSON Backup',
+            title: 'Restore from JSON Backup'.tr,
             titleMaxLines: 2,
             subtitle:
-                'Select a previously generated backup file. You can preview '
-                'all records and choose to merge or replace existing data.',
+                'Select a previously generated backup file. You can preview all records and choose to merge or replace existing data.'
+                    .tr,
             subtitleMaxLines: 4,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -122,8 +120,8 @@ class BackupView extends GetView<BackupController> {
                 ),
                 AppButton(
                   label: restoring
-                      ? 'Restoring Data...'
-                      : 'Select Backup File (.json)',
+                      ? 'Restoring Data...'.tr
+                      : 'Select Backup File (.json)'.tr,
                   icon: Icons.file_open_outlined,
                   variant: AppButtonVariant.secondary,
                   isLoading: restoring,
@@ -145,15 +143,12 @@ class BackupView extends GetView<BackupController> {
     if (!validation.isValid) {
       await Get.dialog<void>(
         AlertDialog(
-          title: const Text('Invalid Backup File'),
+          title: Text('Invalid Backup File'.tr),
           content: Text(
-            validation.errorMessage ?? 'The file could not be validated.',
+            validation.errorMessage ?? 'The file could not be validated.'.tr,
           ),
           actions: <Widget>[
-            TextButton(
-              onPressed: () => Get.back<void>(),
-              child: const Text('OK'),
-            ),
+            TextButton(onPressed: () => Get.back<void>(), child: Text('OK'.tr)),
           ],
         ),
       );

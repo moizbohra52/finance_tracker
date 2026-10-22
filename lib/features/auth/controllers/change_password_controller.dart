@@ -26,7 +26,7 @@ class ChangePasswordController extends GetxController {
       ),
     );
     if (succeeded) {
-      AppSnackbar.show('Your password has been changed.');
+      AppSnackbar.show('Your password has been changed.'.tr);
       Get.back<void>();
     }
   }

@@ -738,4 +738,205 @@ const Map<String, String> hinglish = <String, String>{
   '90% used': '90% use hua',
   'Over budget': 'Budget se zyada',
   'Choose an end date': 'Khatam hone ki tareekh chunein',
+
+  // Part 4: profile, accounts on this device, backup, export, notifications
+  'Sync Status': 'Sync status',
+  'Offline': 'Offline',
+  'Syncing with cloud...': 'Cloud se sync ho raha hai...',
+  'Sync Error': 'Sync mein gadbad',
+  'In Sync': 'Sync poora',
+  'Last synced @date': 'Aakhri sync @date',
+  'Not synced yet': 'Abhi sync nahi hua',
+  'Pending Queue (@count)': 'Baaki queue (@count)',
+  'All changes are synced': 'Saare badlav sync ho gaye',
+  'No pending operations in the sync queue.':
+      'Sync queue mein kuch baaki nahi.',
+  'Queued @date': '@date ko queue mein',
+  '@count retries': '@count baar dobara',
+  'Khata Entry': 'Khata entry',
+  'Budget': 'Budget',
+  'Recurring Rule': 'Niyamit len-den',
+  'Create @entity': '@entity banana',
+  'Update @entity': '@entity badalna',
+  'Delete @entity': '@entity hatana',
+  'Replace @entity': '@entity replace karna',
+  'You can keep up to @count accounts on this device. Sign out of one to add another.':
+      'Is device par zyada se zyada @count accounts rakh sakte hain. Naya jodne ke liye kisi ek se sign out karein.',
+  'That account is no longer signed in on this device.':
+      'Woh account ab is device par sign in nahi hai.',
+  'Switched to @name': '@name par chale gaye',
+  'You were signed out of @email. Sign in to it again to switch to it.':
+      'Aap @email se sign out ho gaye the. Us par jaane ke liye phir se sign in karein.',
+  'You are already using this account.':
+      'Aap pehle se yahi account use kar rahe hain.',
+  'That notification is for an account that is not signed in on this device.':
+      'Yeh notification aise account ki hai jo is device par sign in nahi hai.',
+  'Your password has been changed.': 'Aapka password badal gaya.',
+  'Another account': 'Doosra account',
+  'Sign in to another account. You stay signed in to this one and can switch back at any time.':
+      'Doosre account mein sign in karein. Is account se aap sign out nahi honge aur kabhi bhi wapas aa sakte hain.',
+  'Password': 'Password',
+  'Sign in and switch': 'Sign in karke badlein',
+  'Confirm your current password, then choose a new one.':
+      'Apna current password daalein, phir naya chunein.',
+  'Current password': 'Current password',
+  'New password': 'Naya password',
+  'At least 8 characters, with letters and numbers':
+      'Kam se kam 8 characters, letters aur numbers dono',
+  'Confirm new password': 'Naya password dobara',
+  'Switching account': 'Account badal rahe hain',
+  'Switching to @name': '@name par ja rahe hain',
+  'Creating secure backup...': 'Surakshit backup ban raha hai...',
+  'Preparing file for sharing...': 'Share ke liye file taiyaar ho rahi hai...',
+  'Backup created successfully (@count records).':
+      'Backup ban gaya (@count records).',
+  'Failed to create backup: @error': 'Backup nahi ban saka: @error',
+  'Error reading file: @error': 'File padhne mein gadbad: @error',
+  'Invalid backup data.': 'Backup ka data sahi nahi hai.',
+  'Restoring data...': 'Data wapas laaya ja raha hai...',
+  'Restored @count records successfully!': '@count records wapas aa gaye!',
+  'Restore failed.': 'Restore nahi ho saka.',
+  'Failed to restore data: @error': 'Data wapas nahi aa saka: @error',
+  'Backup & Restore': 'Backup aur restore',
+  'Create Backup': 'Backup banayein',
+  'Restore Data': 'Data wapas laayein',
+  'Data Security & Privacy': 'Data ki suraksha aur privacy',
+  'Your backups are generated locally on this device. Passwords, login tokens, and authentication secrets are strictly excluded. You can store your backup file securely on Google Drive, iCloud, or external storage.':
+      'Aapke backup isi device par bante hain. Password, login token aur doosri gupt jaankari inmein kabhi nahi hoti. Backup file ko aap Google Drive, iCloud ya external storage mein surakshit rakh sakte hain.',
+  'Export Full Database Backup': 'Poore data ka backup',
+  'Packages all your accounts, transactions, khata contacts, budgets, and preferences into a standardized JSON file.':
+      'Aapke saare accounts, len-den, khata contacts, budget aur settings ek JSON file mein rakhta hai.',
+  'Creating Backup...': 'Backup ban raha hai...',
+  'Create & Share Backup': 'Backup banayein aur share karein',
+  'Restore from JSON Backup': 'JSON backup se wapas laayein',
+  'Select a previously generated backup file. You can preview all records and choose to merge or replace existing data.':
+      'Pehle banayi gayi backup file chunein. Aap saare records dekhkar maujooda data mein jodna ya use badalna chun sakte hain.',
+  'Restoring Data...': 'Data wapas laaya ja raha hai...',
+  'Select Backup File (.json)': 'Backup file chunein (.json)',
+  'Invalid Backup File': 'Backup file sahi nahi',
+  'The file could not be validated.': 'File ki jaanch nahi ho saki.',
+  'OK': 'Theek hai',
+  'Unknown': 'Pata nahi',
+  'Backup Preview': 'Backup preview',
+  'Created: @date': 'Bana: @date',
+  'Total Records: @count': 'Kul records: @count',
+  'Records in this backup:': 'Is backup mein records:',
+  'Restore Mode:': 'Restore ka tareeka:',
+  'Merge with existing data': 'Maujooda data mein jodein',
+  'Keeps your current data, updating matching items and adding new ones. Changes also sync to your cloud account.':
+      'Aapka maujooda data rehta hai; milte-julte items update hote hain aur naye judte hain. Badlav aapke cloud account mein bhi sync hote hain.',
+  'Clean restore (Replace all data)': 'Poora restore (saara data badlein)',
+  'Deletes all your current entries on this device and in your cloud account, including other devices, then restores the backup.':
+      'Is device aur aapke cloud account (doosre devices samet) ki saari maujooda entries hatakar backup wapas laata hai.',
+  'I understand that my current data will be deleted from this device and the cloud, and replaced.':
+      'Mujhe pata hai ki mera maujooda data is device aur cloud se hatkar badal jayega.',
+  'I want to proceed with merging this backup data.':
+      'Haan, yeh backup data maujooda data mein jodein.',
+  'Replace & Restore': 'Replace karke restore karein',
+  'Khata Contacts': 'Khata contacts',
+  'Khata Transactions': 'Khata len-den',
+  'Recurring Plans': 'Niyamit len-den',
+  'Preferences & Settings': 'Preferences aur settings',
+  'Export Data': 'Data export',
+  'What would you like to export?': 'Aap kya export karna chahte hain?',
+  'Choose Export Format': 'Export format chunein',
+  'Filter Options': 'Filter options',
+  'Exporting...': 'Export ho raha hai...',
+  'Export & Share (@format)': 'Export aur share karein (@format)',
+  'Income, expense, and transfer records':
+      'Aamdani, kharcha aur transfer ke records',
+  'Account balances and summary': 'Account balance aur saransh',
+  'Digital khata party list & net balances':
+      'Khata ke logon ki list aur net balance',
+  'Credit, debit, and payment history':
+      'Udhaar diya, udhaar liya aur payment ki history',
+  'Monthly and custom spending limits': 'Monthly aur apni kharch limits',
+  'Full Financial Report': 'Poori financial report',
+  'Combined summary across all records': 'Saare records ka ek saath saransh',
+  'Date Range': 'Tareekh ki avadhi',
+  'Selected: @range': 'Chuna gaya: @range',
+  'All Accounts': 'Sab accounts',
+  'Filter by Account': 'Account se filter',
+  'All Categories': 'Sab categories',
+  'Filter by Category': 'Category se filter',
+  'All Types': 'Sab types',
+  'Transfer In': 'Transfer aaya',
+  'Transfer Out': 'Transfer gaya',
+  'Filter by Transaction Type': 'Len-den ke type se filter',
+  'All Time': 'Ab tak ka sab',
+  'This Week': 'Is hafte',
+  'This Month': 'Is mahine',
+  'Last Month': 'Pichhla mahina',
+  'Last 3 Months': 'Pichhle 3 mahine',
+  'Custom Range': 'Apni avadhi',
+  'Preparing data for export...': 'Export ke liye data taiyaar ho raha hai...',
+  'Export failed: @error': 'Export nahi ho saka: @error',
+  'No transactions match the selected filters.':
+      'Chune gaye filters se koi len-den nahi mila.',
+  'Generating document for @count transactions...':
+      '@count len-den ka document ban raha hai...',
+  'Export ready!': 'Export taiyaar!',
+  'No accounts found to export.': 'Export ke liye koi account nahi mila.',
+  'Generating accounts export...': 'Accounts ka export ban raha hai...',
+  'Accounts export ready!': 'Accounts export taiyaar!',
+  'No khata contacts found to export.':
+      'Export ke liye koi khata contact nahi mila.',
+  'Generating khata contacts export...':
+      'Khata contacts ka export ban raha hai...',
+  'Khata export ready!': 'Khata export taiyaar!',
+  'No khata transactions found to export.':
+      'Export ke liye koi khata len-den nahi mila.',
+  'Khata transactions export ready!': 'Khata len-den export taiyaar!',
+  'No budgets found to export.': 'Export ke liye koi budget nahi mila.',
+  'Budgets export ready!': 'Budget export taiyaar!',
+  'Compiling full financial report...':
+      'Poori financial report ban rahi hai...',
+  'Full report ready!': 'Poori report taiyaar!',
+  'Mark all as read': 'Sab read mark karein',
+  'Notification settings': 'Notification settings',
+  'You are all caught up': 'Sab dekh liya',
+  'Budget alerts, reminders and recurring transactions show up here.':
+      'Budget alerts, reminders aur niyamit len-den yahan dikhenge.',
+  'Loading…': 'Load ho raha hai…',
+  'Load more': 'Aur load karein',
+  'Unread': 'Unread',
+  'Notifications are turned off, so reminders will not alert you.':
+      'Notifications band hain, isliye reminders aapko yaad nahi dilayenge.',
+  'Allow notifications so reminders can alert you on time.':
+      'Notifications ki anumati dein taaki reminders samay par yaad dilayein.',
+  'Notifications are blocked for this app. Turn them on in your device settings to get reminders.':
+      'Is app ki notifications band hain. Reminders paane ke liye inhe device settings mein chalu karein.',
+  'Profile saved.': 'Profile save ho gayi.',
+  'Profile photo updated.': 'Profile photo update ho gayi.',
+  'Your account has been deleted.': 'Aapka account delete ho gaya.',
+  'Loading your profile': 'Aapki profile load ho rahi hai',
+  'Crop profile photo': 'Profile photo crop karein',
+  'Add a profile photo': 'Profile photo jodein',
+  'Change profile photo': 'Profile photo badlein',
+  'Add a photo': 'Photo jodein',
+  'Tap to change photo': 'Photo badalne ke liye tap karein',
+  'Personal details': 'Personal details',
+  'Full name': 'Poora naam',
+  'Time zone': 'Time zone',
+  'Not available': 'Uplabdh nahi',
+  'Your email and time zone are managed by your account and device.':
+      'Aapka email aur time zone aapke account aur device se tay hote hain.',
+  'Danger zone': 'Danger zone',
+  'Deleting your account permanently removes your profile, accounts, transactions, khata records, reminders and photo. This cannot be undone.':
+      'Account delete karne se aapki profile, accounts, len-den, khata records, reminders aur photo hamesha ke liye hat jayenge. Yeh wapas nahi ho sakta.',
+  'Delete your account?': 'Apna account delete karein?',
+  'This permanently deletes your profile, accounts, transactions, khata records, reminders and profile photo. It cannot be undone.':
+      'Isse aapki profile, accounts, len-den, khata records, reminders aur profile photo hamesha ke liye delete ho jayenge. Yeh wapas nahi ho sakta.',
+  'Profile photo': 'Profile photo',
+  'The account could not be switched. Please try again.':
+      'Account nahi badal saka. Kripya phir se koshish karein.',
+  'Comma-separated values, opens in Excel & Google Sheets':
+      'Comma se alag values, Excel aur Google Sheets mein khulti hain',
+  'Formatted spreadsheet with styled headers and totals':
+      'Header aur total ke saath saji hui spreadsheet',
+  'Clean, professional report suitable for sharing & printing':
+      'Share aur print karne layak saaf report',
+  'Turn on': 'Chalu karein',
+  'Open settings': 'Settings kholein',
+  'Uploading photo': 'Photo upload ho rahi hai',
 };

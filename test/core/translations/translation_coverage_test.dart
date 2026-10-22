@@ -7,6 +7,7 @@ import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:finance_tracker/domain/services/report_period.dart';
+import 'package:finance_tracker/features/export/controllers/export_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Screens whose text is translated. Later parts add their files here.
@@ -77,6 +78,25 @@ const List<String> translatedFiles = <String>[
   'lib/features/reminders/views/reminder_list_view.dart',
   'lib/features/reminders/widgets/reminder_visuals.dart',
   'lib/features/reports/views/reports_view.dart',
+  // Part 4: profile, signed-in auth screens, backup, export, notifications.
+  // export_controller.dart is not listed: its messages are translated, but
+  // titles inside exported files stay English (no Devanagari PDF font yet).
+  'lib/core/widgets/sync_status_sheet.dart',
+  'lib/features/auth/controllers/account_switch_controller.dart',
+  'lib/features/auth/controllers/change_password_controller.dart',
+  'lib/features/auth/views/add_account_view.dart',
+  'lib/features/auth/views/change_password_view.dart',
+  'lib/features/auth/views/switch_account_view.dart',
+  'lib/features/backup/controllers/backup_controller.dart',
+  'lib/features/backup/views/backup_view.dart',
+  'lib/features/backup/widgets/backup_preview_dialog.dart',
+  'lib/features/export/views/export_view.dart',
+  'lib/features/notifications/views/notification_center_view.dart',
+  'lib/features/notifications/widgets/notification_permission_banner.dart',
+  'lib/features/profile/controllers/profile_controller.dart',
+  'lib/features/profile/views/profile_view.dart',
+  'lib/features/profile/widgets/delete_account_dialog.dart',
+  'lib/features/profile/widgets/profile_avatar.dart',
 ];
 
 /// A string literal (either quote) followed by `.tr` or `.trParams`.
@@ -92,13 +112,14 @@ final RegExp _interpolated = RegExp(
 /// User-visible text passed as a plain literal (no `.tr` after it), directly,
 /// as a branch of `? :` / `??`, returned, or as a switch arm.
 final RegExp _plain = RegExp(
-  r"""(?:\bText\(\s*|\b(?:title|subtitle|label|tooltip|message|hintText|labelText|helperText|semanticLabel|actionLabel|confirmLabel|cancelLabel|emptyMessage):\s*|AppSnackbar\.show\(\s*|\?\s*|\s:\s*|\breturn\s+|=>\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,):;]""",
+  r"""(?:\bText\(\s*|\b(?:title|subtitle|label|tooltip|message|hintText|labelText|helperText|semanticLabel|actionLabel|confirmLabel|cancelLabel|emptyMessage|action|announce|desc|semanticsLabel|toolbarTitle):\s*|AppSnackbar\.show\(\s*|\?\s*|\s:\s*|\breturn\s+|=>\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,):;]""",
 );
 
 /// Text assigned (`error = 'x'`), passed positionally (`Section('x', …)`),
-/// or written as a list or record element. A map key (`'x':`) is not text.
+/// or written as a list or record element. A map key (`'x':`) and a log
+/// message (`developer.log('x')`, `debugPrint('x')`) are not text.
 final RegExp _positional = RegExp(
-  r"""(?:(?<![=!<>])=\s*|(?<!RegExp)(?<!DateFormat)\(\s*|,\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,);]""",
+  r"""(?:(?<![=!<>])=\s*|(?<!RegExp)(?<!DateFormat)(?<!log)(?<!debugPrint)\(\s*|,\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,);]""",
 );
 
 /// Literals that are not translated on purpose.
@@ -142,6 +163,7 @@ void main() {
       for (final ReminderStatus s in ReminderStatus.values) s.label,
       for (final SnoozeOption o in SnoozeOption.values) o.label,
       for (final DatePreset p in DatePreset.values) p.label,
+      for (final DateRangePreset p in DateRangePreset.values) p.label,
       for (final WeekStart w in WeekStart.values) w.label,
       for (final CurrencyOption c in Currencies.supported) c.name,
     ];

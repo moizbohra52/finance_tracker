@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Round profile photo. Shows the photo when there is a link and a fallback
 /// (initial or icon) while it loads, when there is no link, and when the link
@@ -63,7 +64,7 @@ class ProfileAvatar extends StatelessWidget {
     );
     final String? url = link;
     return Semantics(
-      label: 'Profile photo',
+      label: 'Profile photo'.tr,
       image: true,
       child: SizedBox.square(
         dimension: radius * 2,
@@ -94,7 +95,7 @@ class ProfileAvatar extends StatelessWidget {
                     child: CircularProgressIndicator(
                       strokeWidth: 3,
                       color: colors.onPrimary,
-                      semanticsLabel: 'Uploading photo',
+                      semanticsLabel: 'Uploading photo'.tr,
                     ),
                   ),
                 ),

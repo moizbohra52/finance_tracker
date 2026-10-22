@@ -2,6 +2,7 @@
 import 'package:finance_tracker/core/services/backup_service.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 /// Modal dialog showing preview of records in a backup file before restoration.
@@ -39,14 +40,14 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
 
     final String dateStr = v.createdAt != null
         ? DateFormat('MMM dd, yyyy · hh:mm a').format(v.createdAt!.toLocal())
-        : 'Unknown';
+        : 'Unknown'.tr;
 
     return AlertDialog(
-      title: const Row(
+      title: Row(
         children: <Widget>[
-          Icon(Icons.restore_page_outlined),
-          SizedBox(width: AppSpacing.sm),
-          Text('Backup Preview'),
+          const Icon(Icons.restore_page_outlined),
+          const SizedBox(width: AppSpacing.sm),
+          Text('Backup Preview'.tr),
         ],
       ),
       content: SizedBox(
@@ -66,9 +67,16 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text('Created: $dateStr', style: theme.textTheme.bodySmall),
                     Text(
-                      'Total Records: ${v.totalRecords}',
+                      'Created: @date'.trParams(<String, String>{
+                        'date': dateStr,
+                      }),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    Text(
+                      'Total Records: @count'.trParams(<String, String>{
+                        'count': '${v.totalRecords}',
+                      }),
                       style: theme.textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: colors.primary,
@@ -81,7 +89,7 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
               const SizedBox(height: AppSpacing.md),
 
               Text(
-                'Records in this backup:',
+                'Records in this backup:'.tr,
                 style: theme.textTheme.labelLarge,
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -125,16 +133,17 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
               const SizedBox(height: AppSpacing.md),
 
               // Restore Mode Selection
-              Text('Restore Mode:', style: theme.textTheme.labelLarge),
+              Text('Restore Mode:'.tr, style: theme.textTheme.labelLarge),
               const SizedBox(height: AppSpacing.xs),
 
               RadioListTile<bool>(
                 value: false,
                 groupValue: _replaceExisting,
                 onChanged: (bool? val) => _selectMode(val ?? false),
-                title: const Text('Merge with existing data'),
-                subtitle: const Text(
-                  'Keeps your current data, updating matching items and adding new ones. Changes also sync to your cloud account.',
+                title: Text('Merge with existing data'.tr),
+                subtitle: Text(
+                  'Keeps your current data, updating matching items and adding new ones. Changes also sync to your cloud account.'
+                      .tr,
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -144,13 +153,14 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
                 groupValue: _replaceExisting,
                 onChanged: (bool? val) => _selectMode(val ?? true),
                 title: Text(
-                  'Clean restore (Replace all data)',
+                  'Clean restore (Replace all data)'.tr,
                   style: TextStyle(
                     color: _replaceExisting ? colors.error : null,
                   ),
                 ),
-                subtitle: const Text(
-                  'Deletes all your current entries on this device and in your cloud account, including other devices, then restores the backup.',
+                subtitle: Text(
+                  'Deletes all your current entries on this device and in your cloud account, including other devices, then restores the backup.'
+                      .tr,
                 ),
                 contentPadding: EdgeInsets.zero,
               ),
@@ -166,7 +176,8 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
                 title: Text(
                   _replaceExisting
                       ? 'I understand that my current data will be deleted from this device and the cloud, and replaced.'
-                      : 'I want to proceed with merging this backup data.',
+                            .tr
+                      : 'I want to proceed with merging this backup data.'.tr,
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -181,7 +192,7 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text('Cancel'.tr),
         ),
         FilledButton(
           onPressed: _confirmedWarning
@@ -193,7 +204,9 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
           style: FilledButton.styleFrom(
             backgroundColor: _replaceExisting ? colors.error : null,
           ),
-          child: Text(_replaceExisting ? 'Replace & Restore' : 'Restore Data'),
+          child: Text(
+            _replaceExisting ? 'Replace & Restore'.tr : 'Restore Data'.tr,
+          ),
         ),
       ],
     );
@@ -202,25 +215,25 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
   String _friendlyTableName(String table) {
     switch (table) {
       case 'accounts':
-        return 'Accounts';
+        return 'Accounts'.tr;
       case 'transactions':
-        return 'Transactions';
+        return 'Transactions'.tr;
       case 'categories':
-        return 'Categories';
+        return 'Categories'.tr;
       case 'contacts':
-        return 'Khata Contacts';
+        return 'Khata Contacts'.tr;
       case 'contact_transactions':
-        return 'Khata Transactions';
+        return 'Khata Transactions'.tr;
       case 'budgets':
-        return 'Budgets';
+        return 'Budgets'.tr;
       case 'recurring_transactions':
-        return 'Recurring Plans';
+        return 'Recurring Plans'.tr;
       case 'reminders':
-        return 'Reminders';
+        return 'Reminders'.tr;
       case 'user_settings':
-        return 'Preferences & Settings';
+        return 'Preferences & Settings'.tr;
       case 'profiles':
-        return 'Profile';
+        return 'Profile'.tr;
       default:
         return table;
     }
