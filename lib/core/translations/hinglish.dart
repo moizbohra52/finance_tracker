@@ -448,7 +448,7 @@ const Map<String, String> hinglish = <String, String>{
   'Delete transaction?': 'Len-den delete karein?',
   'Delete transfer?': 'Transfer delete karein?',
   'This @type of @amount will be removed from your balance.':
-      '@type (@amount) ki yeh entry aapke balance se hat jayegi.',
+      'Yeh @type entry (@amount) aapke balance se hat jayegi.',
   'This transfer of @amount from @from to @to will be removed from both accounts.':
       '@from se @to mein @amount ka yeh transfer dono accounts se hat jayega.',
   'Transaction deleted': 'Len-den delete ho gaya',
@@ -534,8 +534,8 @@ const Map<String, String> hinglish = <String, String>{
   'Weekly': 'Har hafte',
   'Monthly': 'Har mahine',
   'Yearly': 'Har saal',
-  'Custom': 'Apne hisaab se',
-  'Custom…': 'Apne hisaab se…',
+  'Custom': 'Custom',
+  'Custom…': 'Custom…',
   'Payment': 'Payment',
   'Receivable': 'Lene hain',
   'Payable': 'Dene hain',
@@ -731,4 +731,11 @@ const Map<String, String> hinglish = <String, String>{
   'Monthly comparison': 'Mahinon ki tulna',
   'Add transactions to compare the last 6 months.':
       'Pichhle 6 mahinon ki tulna ke liye len-den jodein.',
+
+  // Part 3 review
+  'On track': 'Sahi chal raha hai',
+  '75% used': '75% use hua',
+  '90% used': '90% use hua',
+  'Over budget': 'Budget se zyada',
+  'Choose an end date': 'Khatam hone ki tareekh chunein',
 };

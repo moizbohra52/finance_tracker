@@ -95,6 +95,19 @@ final RegExp _plain = RegExp(
   r"""(?:\bText\(\s*|\b(?:title|subtitle|label|tooltip|message|hintText|labelText|helperText|semanticLabel|actionLabel|confirmLabel|cancelLabel|emptyMessage):\s*|AppSnackbar\.show\(\s*|\?\s*|\s:\s*|\breturn\s+|=>\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,):;]""",
 );
 
+/// Text assigned (`error = 'x'`), passed positionally (`Section('x', …)`),
+/// or written as a list or record element. A map key (`'x':`) is not text.
+final RegExp _positional = RegExp(
+  r"""(?:(?<![=!<>])=\s*|(?<!RegExp)(?<!DateFormat)\(\s*|,\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,);]""",
+);
+
+/// Literals that are not translated on purpose.
+const Set<String> _notText = <String>{
+  "'Cr'", // Indian short units, written the same in Hindi and Hinglish
+  "'L'",
+  "'actionLabel and onAction must be provided together'", // an assert
+};
+
 String _unescape(String key) =>
     key.replaceAll(r"\'", "'").replaceAll(r'\"', '"').replaceAll(r'\$', r'$');
 
@@ -140,7 +153,7 @@ void main() {
     );
   });
 
-  test('every key used in part 1 screens is in both maps', () {
+  test('every key used in translated screens is in both maps', () {
     final List<String> missing = <String>[
       for (final MapEntry<String, String> file in _sources().entries)
         for (final Match m in _key.allMatches(file.value))
@@ -160,19 +173,32 @@ void main() {
     expect(found, isEmpty);
   });
 
-  test('part 1 screens have no untranslated text literal', () {
+  test('translated screens have no untranslated text literal', () {
     // Text made only of values ('$message$note') has nothing to translate,
-    // and a snake_case literal ('other_income') is a key, not text.
+    // and a snake_case literal ('other_income') is a key, not text. Where
+    // text is assigned or passed positionally, a lowercase literal with no
+    // space ('receivable', 'contact-transaction:$id') is a stored value too.
     final RegExp values = RegExp(r'\$\{[^}]*\}|\$\w+');
-    final RegExp key = RegExp(r'''^['"][a-z0-9]+(?:_[a-z0-9]+)+['"]''');
+    final RegExp snakeCase = RegExp(r'''^['"][a-z0-9]+(?:_[a-z0-9]+)+['"]''');
+    final RegExp word = RegExp(r'''^['"][a-z][^\s'"]*['"]''');
+    final RegExp comment = RegExp(r'(^|\s)//.*$', multiLine: true);
+    bool isText(String match, RegExp key) {
+      final String literal = match.replaceFirst(RegExp(r'^[^\x27"]*'), '');
+      return !key.hasMatch(literal) &&
+          !_notText.any(literal.startsWith) &&
+          RegExp('[A-Za-z]').hasMatch(literal.replaceAll(values, ''));
+    }
+
     final List<String> found = <String>[
       for (final MapEntry<String, String> file in _sources().entries)
-        for (final Match m in _plain.allMatches(file.value))
-          if (m.group(0)!.replaceFirst(RegExp(r'^[^\x27"]*'), '')
-              case final String literal
-              when !key.hasMatch(literal) &&
-                  RegExp('[A-Za-z]').hasMatch(literal.replaceAll(values, '')))
-            '${file.key}: ${m.group(0)}',
+        for (final (RegExp pattern, RegExp key) in <(RegExp, RegExp)>[
+          (_plain, snakeCase),
+          (_positional, word),
+        ])
+          for (final Match m in pattern.allMatches(
+            file.value.replaceAll(comment, ''),
+          ))
+            if (isText(m.group(0)!, key)) '${file.key}: ${m.group(0)}',
     ];
     expect(found, isEmpty);
   });

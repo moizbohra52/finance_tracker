@@ -442,7 +442,7 @@ const Map<String, String> hindi = <String, String>{
   'Delete transaction?': 'लेन-देन डिलीट करें?',
   'Delete transfer?': 'ट्रांसफ़र डिलीट करें?',
   'This @type of @amount will be removed from your balance.':
-      '@type (@amount) की यह एंट्री आपके बैलेंस से हट जाएगी।',
+      'यह @type एंट्री (@amount) आपके बैलेंस से हट जाएगी।',
   'This transfer of @amount from @from to @to will be removed from both accounts.':
       '@from से @to में @amount का यह ट्रांसफ़र दोनों अकाउंट से हट जाएगा।',
   'Transaction deleted': 'लेन-देन डिलीट हो गया',
@@ -527,12 +527,12 @@ const Map<String, String> hindi = <String, String>{
   'Weekly': 'हर हफ़्ते',
   'Monthly': 'हर महीने',
   'Yearly': 'हर साल',
-  'Custom': 'अपने हिसाब से',
-  'Custom…': 'अपने हिसाब से…',
+  'Custom': 'कस्टम',
+  'Custom…': 'कस्टम…',
   'Payment': 'भुगतान',
   'Receivable': 'लेने हैं',
   'Payable': 'देने हैं',
-  'Does not repeat': 'दोहराना नहीं',
+  'Does not repeat': 'दोहराव नहीं',
   'Upcoming': 'आने वाला',
   'Snoozed': 'टाला गया',
   'Overdue': 'समय निकल गया',
@@ -577,7 +577,7 @@ const Map<String, String> hindi = <String, String>{
   'Edit account & opening balance': 'अकाउंट और शुरुआती बैलेंस बदलें',
   'Account added': 'अकाउंट जुड़ गया',
   'Account updated': 'अकाउंट अपडेट हो गया',
-  'Edit account': 'अकाउंट बदलें',
+  'Edit account': 'अकाउंट एडिट करें',
   'Account name': 'अकाउंट का नाम',
   'Account type': 'अकाउंट का प्रकार',
   'Money in this account when you start tracking.':
@@ -682,7 +682,7 @@ const Map<String, String> hindi = <String, String>{
   'Reminder not found': 'रिमाइंडर नहीं मिला',
   'When': 'कब',
   'Snoozed until': 'कब तक टाला',
-  'Repeat': 'दोहराएँ',
+  'Repeat': 'दोहराव',
   'View transaction': 'लेन-देन देखें',
   'Notification': 'सूचना',
   'On': 'चालू',
@@ -720,4 +720,11 @@ const Map<String, String> hindi = <String, String>{
   'Monthly comparison': 'महीनों की तुलना',
   'Add transactions to compare the last 6 months.':
       'पिछले 6 महीनों की तुलना के लिए लेन-देन जोड़ें।',
+
+  // Part 3 review
+  'On track': 'सही चल रहा है',
+  '75% used': '75% इस्तेमाल',
+  '90% used': '90% इस्तेमाल',
+  'Over budget': 'बजट से ज़्यादा',
+  'Choose an end date': 'खत्म होने की तारीख चुनें',
 };

@@ -2,14 +2,17 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/translations/app_translations.dart';
 import 'package:finance_tracker/core/utils/recurring_labels.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/domain/services/recurring_scheduler.dart';
 import 'package:finance_tracker/features/budgets/controllers/budget_controller.dart';
 import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 
 import '../../helpers/fake_finance.dart';
 import '../../helpers/fake_notifications.dart';
@@ -119,6 +122,24 @@ void main() {
         expect(row['reference_id'], 'b1');
       },
     );
+
+    test('in Hindi the alert stays in one language', () async {
+      // Notification text is not translated yet, so the budget name in it
+      // must not be either.
+      Get.addTranslations(AppTranslations().keys);
+      Get.locale = AppLanguage.hindi.locale;
+      addTearDown(() => Get.locale = AppLanguage.english.locale);
+      final FakeFinance f = FakeFinance()..addAccount('Cash', '0');
+      f.budgets.add(overallBudget());
+      f.addTransaction(id: 't1', type: TransactionType.expense, amount: '800');
+
+      await budgetController(f).load();
+
+      expect(
+        f.notifications.values.single['title'],
+        'All expenses budget at 75%',
+      );
+    });
 
     test('crossing the next threshold raises exactly one more', () async {
       final FakeFinance f = FakeFinance()..addAccount('Cash', '0');

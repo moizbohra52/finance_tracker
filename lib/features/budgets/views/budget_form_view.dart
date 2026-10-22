@@ -73,9 +73,9 @@ class _BudgetFormViewState extends State<BudgetFormView> {
     String? dateError;
     if (_periodType == BudgetPeriodType.custom) {
       if (_end == null) {
-        dateError = 'Choose an end date';
+        dateError = 'Choose an end date'.tr;
       } else if (_end!.isBefore(_start)) {
-        dateError = 'The end date must not be before the start date';
+        dateError = 'The end date must not be before the start date'.tr;
       }
     }
     setState(() => _dateError = dateError);

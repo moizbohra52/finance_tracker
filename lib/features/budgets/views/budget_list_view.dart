@@ -88,22 +88,22 @@ class _BudgetCard extends GetView<BudgetController> {
     final (Color color, String label, IconData icon) = switch (status.level) {
       BudgetLevel.ok => (
         colors.primary,
-        'On track',
+        'On track'.tr,
         Icons.check_circle_outline,
       ),
       BudgetLevel.warning75 => (
         money.payable,
-        '75% used',
+        '75% used'.tr,
         Icons.warning_amber_rounded,
       ),
       BudgetLevel.warning90 => (
         money.payable,
-        '90% used',
+        '90% used'.tr,
         Icons.warning_amber_rounded,
       ),
       BudgetLevel.exceeded => (
         money.expense,
-        'Over budget',
+        'Over budget'.tr,
         Icons.error_outline,
       ),
     };

@@ -75,6 +75,11 @@ class BudgetController extends GetxController {
       ? 'All expenses'.tr
       : categoryOf(b.categoryId)?.name ?? 'Category'.tr;
 
+  /// [nameOf] in English, for the alert text, which is not translated yet.
+  String _alertNameOf(Budget b) => b.categoryId == null
+      ? 'All expenses'
+      : categoryOf(b.categoryId)?.name ?? 'Category';
+
   List<Category> get expenseCategories => categories
       .where(
         (Category c) =>
@@ -131,8 +136,8 @@ class BudgetController extends GetxController {
             id: alert.id,
             type: NotificationType.budgetAlert,
             title: alert.threshold >= 100
-                ? '${nameOf(status.budget)} budget exceeded'
-                : '${nameOf(status.budget)} budget at ${alert.threshold}%',
+                ? '${_alertNameOf(status.budget)} budget exceeded'
+                : '${_alertNameOf(status.budget)} budget at ${alert.threshold}%',
             body:
                 'You have spent ${AppFormatters.money(status.spent)} of '
                 '${AppFormatters.money(status.budget.amount)}.',

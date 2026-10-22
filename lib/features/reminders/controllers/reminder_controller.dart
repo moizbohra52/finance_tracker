@@ -141,9 +141,9 @@ class ReminderController extends GetxController {
     upcoming.sort(byDue);
     completed.sort((Reminder a, Reminder b) => byDue(b, a));
     return <ReminderSection>[
-      if (overdue.isNotEmpty) ReminderSection('Overdue', overdue),
-      if (upcoming.isNotEmpty) ReminderSection('Upcoming', upcoming),
-      if (completed.isNotEmpty) ReminderSection('Completed', completed),
+      if (overdue.isNotEmpty) ReminderSection('Overdue'.tr, overdue),
+      if (upcoming.isNotEmpty) ReminderSection('Upcoming'.tr, upcoming),
+      if (completed.isNotEmpty) ReminderSection('Completed'.tr, completed),
     ];
   }
 
