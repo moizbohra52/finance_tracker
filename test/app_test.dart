@@ -7,6 +7,7 @@ import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
+import 'package:finance_tracker/features/profile/widgets/profile_avatar.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -78,7 +79,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byType(AppBar),
-        matching: find.byType(CircleAvatar),
+        matching: find.byType(ProfileAvatar),
       ),
     );
     await tester.pumpAndSettle();

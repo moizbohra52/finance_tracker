@@ -17,6 +17,8 @@ import '../../helpers/fakes.dart';
 
 Finder _field(String label) => find.widgetWithText(TextFormField, label);
 
+const String _pathProviderChannel = 'plugins.flutter.io/path_provider';
+
 void main() {
   late FakeAuthRepository auth;
   late FakeProfileRepository profiles;
@@ -31,12 +33,26 @@ void main() {
           const MethodChannel('flutter_timezone'),
           (MethodCall call) async => 'Asia/Kolkata',
         );
+    // Deleting the account also deletes the cached photo, whose folder comes
+    // from a platform channel. Real file access never finishes in a widget
+    // test, so the folder is reported missing and the delete is skipped.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel(_pathProviderChannel),
+          (MethodCall call) async =>
+              throw PlatformException(code: 'unavailable'),
+        );
   });
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(
           const MethodChannel('flutter_timezone'),
+          null,
+        );
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel(_pathProviderChannel),
           null,
         );
     AppFormatters.preferences = UserPreferences.defaults;
@@ -46,7 +62,7 @@ void main() {
   Future<void> openProfile(WidgetTester tester) async {
     await pumpApp(tester, auth: auth, profile: profiles);
     // Profile opens from the avatar in the app bar.
-    await tapAndSettle(tester, find.widgetWithText(CircleAvatar, 'A'));
+    await tapAndSettle(tester, find.widgetWithText(ProfileAvatar, 'A'));
     expect(find.byType(ProfileContent), findsOneWidget);
   }
 
@@ -148,6 +164,7 @@ void main() {
     await openProfile(tester);
 
     await tapAndSettle(tester, find.text('Sign out'));
+    await tapAndSettle(tester, find.widgetWithText(FilledButton, 'Sign out'));
 
     expect(auth.calls, <String>['signOut']);
     expect(find.byType(LoginView), findsOneWidget);

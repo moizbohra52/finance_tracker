@@ -1,7 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
-import 'package:finance_tracker/core/widgets/finance_widgets.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -88,7 +88,7 @@ Future<void> _tall(WidgetTester tester) async {
 /// Opens a dashboard "Plan ahead" tile.
 Future<void> _openPlan(WidgetTester tester, String title) async {
   await tester.scrollUntilVisible(
-    find.widgetWithText(PlanTile, title),
+    find.widgetWithText(AppCard, title),
     200,
     scrollable: find
         .descendant(
@@ -100,9 +100,9 @@ Future<void> _openPlan(WidgetTester tester, String title) async {
   // Sections above the tiles (recent transactions) can grow while data
   // loads, so settle and bring the tile back into view before tapping.
   await tester.pumpAndSettle();
-  await tester.ensureVisible(find.widgetWithText(PlanTile, title));
+  await tester.ensureVisible(find.widgetWithText(AppCard, title));
   await tester.pumpAndSettle();
-  await tester.tap(find.widgetWithText(PlanTile, title));
+  await tester.tap(find.widgetWithText(AppCard, title));
   await tester.pumpAndSettle();
 }
 

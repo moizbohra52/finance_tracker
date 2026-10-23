@@ -7,6 +7,7 @@ import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/views/account_list_view.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
+import 'package:finance_tracker/features/profile/widgets/profile_avatar.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,6 +100,10 @@ void main() {
     ) async {
       await _open(tester, _seeded());
       await _scrollTo(tester, find.widgetWithText(TextButton, 'Reports'));
+      // Built just past the list's edge counts as visible to the scroll; the
+      // tap needs it fully on screen.
+      await tester.ensureVisible(find.widgetWithText(TextButton, 'Reports'));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(TextButton, 'Reports'));
       await tester.pumpAndSettle();
       expect(find.byType(ReportsPage), findsOneWidget);
@@ -112,7 +117,7 @@ void main() {
     testWidgets('avatar opens the profile and the accounts section opens '
         'accounts', (WidgetTester tester) async {
       await _open(tester, _seeded());
-      await tester.tap(find.widgetWithText(CircleAvatar, 'A'));
+      await tester.tap(find.widgetWithText(ProfileAvatar, 'A'));
       await tester.pumpAndSettle();
       expect(find.byType(ProfileView), findsOneWidget);
       await tester.pageBack();

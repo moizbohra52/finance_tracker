@@ -22,6 +22,7 @@ import 'package:finance_tracker/features/settings/views/settings_view.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/routes/route_guards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -304,6 +305,10 @@ void main() {
 
         await _openSettings(tester);
         await tapAndSettle(tester, find.text('Sign out of this device'));
+        await tapAndSettle(
+          tester,
+          find.widgetWithText(FilledButton, 'Sign out'),
+        );
 
         expect(find.byType(LoginView), findsOneWidget);
         // Fenix controllers are disposed and rebuilt on next use, so the
@@ -313,19 +318,20 @@ void main() {
           isFalse,
         );
         expect(AppFormatters.preferences, UserPreferences.defaults);
-        // Controllers that hold one user's data are gone, not just emptied.
-        expect(Get.isRegistered<HomeController>(), isFalse);
-        expect(Get.isRegistered<BudgetController>(), isFalse);
-        expect(Get.isRegistered<ReminderController>(), isFalse);
+        // Controllers that hold one user's data are gone, not just emptied:
+        // disposed, with only the builder left that makes a fresh one.
+        expect(Get.isPrepared<HomeController>(), isTrue);
+        expect(Get.isPrepared<BudgetController>(), isTrue);
+        expect(Get.isPrepared<ReminderController>(), isTrue);
         expect(
           Get.find<SettingsController>().preferences.value,
           UserPreferences.defaults,
         );
 
         // A protected screen is out of reach until someone signs in again.
-        unawaited(Get.toNamed<void>(AppRoutes.profile));
-        await tester.pumpAndSettle();
-        expect(find.byType(LoginView), findsOneWidget);
+        // The guard is asked directly: opening the route from the sign-in
+        // screen would stack a second sign-in screen on the first.
+        expect(AuthGuard().redirect(AppRoutes.profile)?.name, AppRoutes.login);
 
         // Another user signs in on the same device.
         account.profiles.profile = const Profile(

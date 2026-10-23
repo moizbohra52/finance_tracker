@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:finance_tracker/core/services/device_auth_service.dart';
 import 'package:finance_tracker/core/services/external_activity.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/features/auth/views/onboarding_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
@@ -20,7 +21,10 @@ import '../../helpers/fakes.dart';
 const String _lockedTitle = 'Track Day is locked';
 const String _reminderId = 'a1b2c3d4-0000-4000-8000-0000000000a1';
 
-Finder _lockSwitch() => find.widgetWithText(SwitchListTile, 'App lock');
+Finder _lockSwitch() => find.descendant(
+  of: find.widgetWithText(AppListTile, 'App lock'),
+  matching: find.byType(Switch),
+);
 
 void main() {
   late FakeAuthRepository auth;
@@ -121,7 +125,7 @@ void main() {
       await tapAndSettle(tester, _lockSwitch());
 
       expect(lock.enabled.value, isFalse);
-      expect(tester.widget<SwitchListTile>(_lockSwitch()).value, isFalse);
+      expect(tester.widget<Switch>(_lockSwitch()).value, isFalse);
     });
 
     testWidgets('a phone without any screen lock cannot turn it on', (
