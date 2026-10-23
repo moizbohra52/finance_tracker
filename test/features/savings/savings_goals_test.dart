@@ -1,0 +1,189 @@
+import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/sync_engine.dart';
+import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/models/sync_queue_item.dart';
+import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
+import 'package:finance_tracker/domain/entities/savings_goal.dart';
+import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../helpers/fake_finance.dart';
+
+SavingsGoal goal({
+  String id = 'g1',
+  String target = '1000',
+  String saved = '250',
+  DateTime? targetDate,
+}) => SavingsGoal(
+  id: id,
+  userId: 'u',
+  name: 'New phone',
+  targetAmount: Decimal.parse(target),
+  savedAmount: Decimal.parse(saved),
+  targetDate: targetDate,
+  createdAt: DateTime(2026),
+  updatedAt: DateTime(2026),
+);
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  group('progress', () {
+    test('remaining and progress use exact decimals', () {
+      final SavingsGoal g = goal(target: '0.30', saved: '0.10');
+      expect(g.remaining, Decimal.parse('0.2'));
+      expect(g.progress, closeTo(0.3333, 0.0001));
+      expect(g.isReached, isFalse);
+    });
+
+    test('saving more than the target is reached, capped at 100%', () {
+      final SavingsGoal g = goal(saved: '1200');
+      expect(g.isReached, isTrue);
+      expect(g.remaining, Decimal.zero);
+      expect(g.progress, 1);
+    });
+
+    test('overdue only after the target day, and never once reached', () {
+      final DateTime day = DateTime(2026, 10, 23);
+      expect(
+        goal(targetDate: day).isOverdue(DateTime(2026, 10, 23, 23)),
+        isFalse,
+      );
+      expect(goal(targetDate: day).isOverdue(DateTime(2026, 10, 24)), isTrue);
+      expect(
+        goal(targetDate: day, saved: '1000').isOverdue(DateTime(2026, 11)),
+        isFalse,
+      );
+      expect(goal().isOverdue(DateTime(2100)), isFalse);
+    });
+  });
+
+  group('controller', () {
+    SavingsGoalController controller(FakeFinance f) => SavingsGoalController(
+      f.repositories.savingsGoals,
+      DataChangeNotifier(),
+    );
+
+    test('adds, edits in place and deletes', () async {
+      final FakeFinance f = FakeFinance();
+      final SavingsGoalController c = controller(f);
+      final String id = SavingsGoalController.newId();
+
+      expect(
+        await c.saveGoal(
+          id: id,
+          name: '  Trip ',
+          targetAmount: Decimal.parse('5000'),
+          savedAmount: Decimal.zero,
+          targetDate: null,
+        ),
+        isTrue,
+      );
+      await c.load();
+      expect(c.goals.single.name, 'Trip');
+
+      expect(
+        await c.saveGoal(
+          id: id,
+          existing: c.goals.single,
+          name: 'Trip',
+          targetAmount: Decimal.parse('5000'),
+          savedAmount: Decimal.parse('1500'),
+          targetDate: DateTime(2027, 3),
+        ),
+        isTrue,
+      );
+      await c.load();
+      expect(f.savingsGoals, hasLength(1));
+      expect(c.goals.single.savedAmount, Decimal.parse('1500'));
+      expect(c.goals.single.createdAt, f.savingsGoals.single.createdAt);
+
+      expect(await c.deleteGoal(id), isTrue);
+      await c.load();
+      expect(c.goals, isEmpty);
+    });
+
+    test('a failed load or save shows the error', () async {
+      final FakeFinance f = FakeFinance()..nextError = const NetworkFailure();
+      final SavingsGoalController c = controller(f);
+      await c.load();
+      expect(c.error.value, isNotNull);
+      expect(c.isLoading.value, isFalse);
+
+      f.nextError = const NetworkFailure();
+      final bool saved = await c.saveGoal(
+        id: 'g1',
+        name: 'Trip',
+        targetAmount: Decimal.parse('100'),
+        savedAmount: Decimal.zero,
+        targetDate: null,
+      );
+      expect(saved, isFalse);
+      expect(c.save.error.value, isNotNull);
+    });
+  });
+
+  group('offline repository', () {
+    late AppDatabase database;
+    late SavingsGoalRepository repo;
+
+    setUp(() async {
+      database = await AppDatabase.inMemory();
+      repo = SavingsGoalRepository(
+        SupabaseClient('https://dummy.supabase.co', 'dummy-anon-key'),
+        database: database,
+        syncEngine: SyncEngine(database: database),
+      );
+    });
+
+    tearDown(() => database.close());
+
+    test('round-trips a goal and queues every change', () async {
+      await repo.createSavingsGoal(
+        goal(saved: '250.50', targetDate: DateTime(2027, 1, 31)),
+      );
+      SavingsGoal stored = (await repo.getSavingsGoals()).single;
+      expect(stored.savedAmount, Decimal.parse('250.50'));
+      expect(stored.targetDate, DateTime(2027, 1, 31));
+
+      await repo.updateSavingsGoal(goal(saved: '900'));
+      stored = (await repo.getSavingsGoals()).single;
+      expect(stored.savedAmount, Decimal.parse('900'));
+      expect(stored.targetDate, isNull);
+
+      await repo.deleteSavingsGoal('g1');
+      expect(await repo.getSavingsGoals(), isEmpty);
+
+      final List<SyncQueueItem> queue = await database.getPendingQueue();
+      expect(queue.map((SyncQueueItem q) => q.entity).toSet(), <String>{
+        'savings_goals',
+      });
+      expect(queue.map((SyncQueueItem q) => q.operation), <SyncOperation>[
+        SyncOperation.create,
+        SyncOperation.update,
+        SyncOperation.delete,
+      ]);
+      expect(queue.first.payload['target_amount'], '1000');
+    });
+
+    test('upgrading a version 2 file adds the savings goals table', () async {
+      final Database old = await databaseFactoryFfi.openDatabase(
+        inMemoryDatabasePath,
+        options: OpenDatabaseOptions(version: 2, singleInstance: false),
+      );
+      await AppDatabase.upgrade(old, 2, AppDatabase.databaseVersion);
+      final List<Map<String, Object?>> columns = await old.rawQuery(
+        'PRAGMA table_info(savings_goals)',
+      );
+      expect(
+        columns.map((Map<String, Object?> c) => c['name']),
+        contains('saved_amount'),
+      );
+      await old.close();
+    });
+  });
+}

@@ -8,6 +8,7 @@ import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
+import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/app_notification.dart';
@@ -16,6 +17,7 @@ import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction_summary.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
@@ -33,6 +35,7 @@ class FakeFinance {
       recurring: FakeRecurringRepository(this),
       notifications: FakeNotificationRepository(this),
       reminders: FakeReminderRepository(this),
+      savingsGoals: FakeSavingsGoalRepository(this),
     );
   }
 
@@ -44,6 +47,7 @@ class FakeFinance {
   final List<Budget> budgets = <Budget>[];
   final List<RecurringTransaction> recurring = <RecurringTransaction>[];
   final List<Reminder> reminders = <Reminder>[];
+  final List<SavingsGoal> savingsGoals = <SavingsGoal>[];
 
   /// FCM token rows by device id, with their `active` flag.
   final Map<String, ({String token, bool active})> deviceTokens =
@@ -297,12 +301,14 @@ class FakeTransactionRepository implements TransactionRepository {
     Decimal inflow = Decimal.zero;
     Decimal outflow = Decimal.zero;
     for (final Transaction t in all) {
-      final bool isInflow = t.type == TransactionType.income ||
+      final bool isInflow =
+          t.type == TransactionType.income ||
           t.type == TransactionType.transfer_in ||
           t.type == TransactionType.adjustment_in ||
           t.type == TransactionType.payment_received ||
           t.type == TransactionType.opening_balance;
-      final bool isOutflow = t.type == TransactionType.expense ||
+      final bool isOutflow =
+          t.type == TransactionType.expense ||
           t.type == TransactionType.transfer_out ||
           t.type == TransactionType.adjustment_out ||
           t.type == TransactionType.payment_made;
@@ -504,6 +510,42 @@ class FakeBudgetRepository implements BudgetRepository {
   Future<void> deleteBudget(String id) async {
     _f.throwPending();
     _f.budgets.removeWhere((Budget b) => b.id == id);
+  }
+}
+
+class FakeSavingsGoalRepository implements SavingsGoalRepository {
+  FakeSavingsGoalRepository(this._f);
+  final FakeFinance _f;
+
+  @override
+  Future<List<SavingsGoal>> getSavingsGoals() async {
+    _f.throwPending();
+    return _f.savingsGoals
+        .where((SavingsGoal g) => g.deletedAt == null)
+        .toList();
+  }
+
+  @override
+  Future<void> createSavingsGoal(SavingsGoal goal) async {
+    _f.throwPending();
+    _f.savingsGoals
+      ..removeWhere((SavingsGoal g) => g.id == goal.id)
+      ..add(goal);
+  }
+
+  @override
+  Future<void> updateSavingsGoal(SavingsGoal goal) async {
+    _f.throwPending();
+    final int i = _f.savingsGoals.indexWhere(
+      (SavingsGoal g) => g.id == goal.id,
+    );
+    _f.savingsGoals[i] = goal;
+  }
+
+  @override
+  Future<void> deleteSavingsGoal(String id) async {
+    _f.throwPending();
+    _f.savingsGoals.removeWhere((SavingsGoal g) => g.id == id);
   }
 }
 

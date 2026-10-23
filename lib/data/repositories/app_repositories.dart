@@ -8,6 +8,7 @@ import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
+import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,6 +24,7 @@ class AppRepositories {
     required this.recurring,
     required this.notifications,
     required this.reminders,
+    required this.savingsGoals,
   });
 
   factory AppRepositories.supabase(
@@ -66,6 +68,11 @@ class AppRepositories {
       database: database,
       syncEngine: syncEngine,
     ),
+    savingsGoals: SavingsGoalRepository(
+      client,
+      database: database,
+      syncEngine: syncEngine,
+    ),
   );
 
   final AccountRepository accounts;
@@ -76,4 +83,5 @@ class AppRepositories {
   final RecurringRepository recurring;
   final NotificationRepository notifications;
   final ReminderRepository reminders;
+  final SavingsGoalRepository savingsGoals;
 }

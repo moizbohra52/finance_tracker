@@ -80,6 +80,8 @@ const List<String> translatedFiles = <String>[
   'lib/features/reminders/views/reminder_list_view.dart',
   'lib/features/reminders/widgets/reminder_visuals.dart',
   'lib/features/reports/views/reports_view.dart',
+  'lib/features/savings/views/savings_goal_form_view.dart',
+  'lib/features/savings/views/savings_goal_list_view.dart',
   // Part 4: profile, signed-in auth screens, backup, export, notifications.
   // export_controller.dart is not listed: its messages are translated, but
   // titles inside exported files stay English (no Devanagari PDF font yet).

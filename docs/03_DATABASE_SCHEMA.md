@@ -123,6 +123,20 @@ created_at
 updated_at
 deleted_at
 
+### savings_goals (2026-10-23)
+id UUID PK
+user_id UUID
+name TEXT -- not blank
+target_amount NUMERIC(18,2) -- > 0
+saved_amount NUMERIC(18,2) -- >= 0, default 0; updated by hand
+target_date DATE nullable
+created_at
+updated_at
+deleted_at
+
+A goal only tracks progress: it never moves money or changes an account
+balance (docs/05_FINANCIAL_LOGIC.md).
+
 ### recurring_transactions
 id UUID PK
 user_id UUID
@@ -195,6 +209,7 @@ At minimum:
 - reminders(user_id, remind_at)
 - notifications(user_id, created_at DESC)
 - budgets(user_id, category_id)
+- savings_goals(user_id)
 
 ## Money rules
 Use NUMERIC(18,2). Do not use double/float for persisted monetary values.
@@ -278,6 +293,12 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    signed-out screens. Codes outside `('en', 'hi', 'hi-Latn')`, or none, keep
    `'en'`. No table change. Apply after migration 11; until then new accounts
    start in English.
+
+13. `20261023100000_savings_goals.sql` - the `savings_goals` table (see
+   above) with the four owner-only policies and no `anon` grant. **Apply
+   before shipping** the app version with savings goals: until then their
+   sync fails on the unknown table (goals stay on the device and upload once
+   it exists). Local SQLite gets the same table in database version 3.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

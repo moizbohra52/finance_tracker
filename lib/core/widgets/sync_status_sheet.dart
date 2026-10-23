@@ -323,6 +323,8 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return Icons.event_repeat_outlined;
       case 'reminders':
         return Icons.notifications_active_outlined;
+      case 'savings_goals':
+        return Icons.flag_outlined;
       case 'categories':
         return Icons.category_outlined;
       default:
@@ -346,6 +348,8 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return 'Recurring Rule'.tr;
       case 'reminders':
         return 'Reminder'.tr;
+      case 'savings_goals':
+        return 'Savings goal'.tr;
       case 'categories':
         return 'Category'.tr;
       case 'user_settings':

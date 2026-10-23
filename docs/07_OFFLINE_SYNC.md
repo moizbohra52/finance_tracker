@@ -15,6 +15,7 @@ Store:
 - budgets
 - recurring transactions
 - reminders
+- savings goals (database version 3; older files get the table on upgrade)
 - sync metadata
 
 ### One database file per signed-in account (2026-10-15)

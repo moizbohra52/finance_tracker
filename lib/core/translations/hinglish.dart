@@ -1075,4 +1075,26 @@ const Map<String, String> hinglish = <String, String>{
   '@amount was added automatically.': '@amount apne aap jud gaya.',
   '@count transactions were added automatically.':
       '@count len-den apne aap jud gaye.',
+  // Savings goals
+  'Savings goals': 'Bachat ke lakshya',
+  'Savings goal': 'Bachat ka lakshya',
+  'Save up for what matters': 'Zaroori cheezon ke liye bachat karein',
+  'No savings goals yet': 'Abhi koi bachat lakshya nahi',
+  'Pick something to save for, set a target amount and track how close you are.':
+      'Kisi cheez ke liye bachat chunein, lakshya rakam tay karein aur dekhein aap kitne kareeb hain.',
+  'Add savings goal': 'Bachat lakshya jodein',
+  'Edit savings goal': 'Bachat lakshya edit karein',
+  'Savings goal added': 'Bachat lakshya jud gaya',
+  'Savings goal updated': 'Bachat lakshya update ho gaya',
+  'Delete this savings goal?': 'Yeh bachat lakshya delete karein?',
+  'Savings goal deleted': 'Bachat lakshya delete ho gaya',
+  'Delete savings goal': 'Bachat lakshya delete karein',
+  'Goal name': 'Lakshya ka naam',
+  'e.g. New phone, Emergency fund': 'jaise Naya phone, Emergency fund',
+  'a goal name': 'Lakshya ka naam',
+  'Target amount': 'Lakshya rakam',
+  'Saved so far': 'Ab tak bachaye',
+  'Target date (optional)': 'Lakshya tareekh (zaroori nahi)',
+  'Goal reached': 'Lakshya poora',
+  'By @date': '@date tak',
 };

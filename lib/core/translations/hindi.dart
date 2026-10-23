@@ -1060,4 +1060,26 @@ const Map<String, String> hindi = <String, String>{
   '@amount was added automatically.': '@amount अपने आप जुड़ गया।',
   '@count transactions were added automatically.':
       '@count लेन-देन अपने आप जुड़ गए।',
+  // Savings goals
+  'Savings goals': 'बचत के लक्ष्य',
+  'Savings goal': 'बचत का लक्ष्य',
+  'Save up for what matters': 'ज़रूरी चीज़ों के लिए बचत करें',
+  'No savings goals yet': 'अभी कोई बचत लक्ष्य नहीं',
+  'Pick something to save for, set a target amount and track how close you are.':
+      'किसी चीज़ के लिए बचत चुनें, लक्ष्य राशि तय करें और देखें आप कितने क़रीब हैं।',
+  'Add savings goal': 'बचत लक्ष्य जोड़ें',
+  'Edit savings goal': 'बचत लक्ष्य बदलें',
+  'Savings goal added': 'बचत लक्ष्य जुड़ गया',
+  'Savings goal updated': 'बचत लक्ष्य अपडेट हो गया',
+  'Delete this savings goal?': 'यह बचत लक्ष्य डिलीट करें?',
+  'Savings goal deleted': 'बचत लक्ष्य डिलीट हो गया',
+  'Delete savings goal': 'बचत लक्ष्य डिलीट करें',
+  'Goal name': 'लक्ष्य का नाम',
+  'e.g. New phone, Emergency fund': 'जैसे नया फ़ोन, इमरजेंसी फ़ंड',
+  'a goal name': 'लक्ष्य का नाम',
+  'Target amount': 'लक्ष्य राशि',
+  'Saved so far': 'अब तक बचाए',
+  'Target date (optional)': 'लक्ष्य तारीख (वैकल्पिक)',
+  'Goal reached': 'लक्ष्य पूरा',
+  'By @date': '@date तक',
 };

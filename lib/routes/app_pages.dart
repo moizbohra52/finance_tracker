@@ -37,6 +37,8 @@ import 'package:finance_tracker/features/reminders/views/reminder_detail_view.da
 import 'package:finance_tracker/features/reminders/views/reminder_form_view.dart';
 import 'package:finance_tracker/features/reminders/views/reminder_list_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_form_view.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_list_view.dart';
 import 'package:finance_tracker/features/settings/views/information_views.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
 import 'package:finance_tracker/features/transactions/views/calendar_view.dart';
@@ -71,10 +73,7 @@ abstract final class AppPages {
       page: () => const LoginView(),
       middlewares: <GetMiddleware>[GuestGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(
-          () => LoginController(Get.find()),
-          fenix: true,
-        ),
+        () => Get.lazyPut(() => LoginController(Get.find()), fenix: true),
       ),
     ),
     GetPage<dynamic>(
@@ -82,10 +81,7 @@ abstract final class AppPages {
       page: () => const RegisterView(),
       middlewares: <GetMiddleware>[GuestGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(
-          () => RegisterController(Get.find()),
-          fenix: true,
-        ),
+        () => Get.lazyPut(() => RegisterController(Get.find()), fenix: true),
       ),
     ),
     GetPage<dynamic>(
@@ -106,10 +102,8 @@ abstract final class AppPages {
       page: () => const ResetPasswordView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(
-          () => ResetPasswordController(Get.find()),
-          fenix: true,
-        ),
+        () =>
+            Get.lazyPut(() => ResetPasswordController(Get.find()), fenix: true),
       ),
     ),
     GetPage<dynamic>(
@@ -174,10 +168,7 @@ abstract final class AppPages {
       page: () => const AddAccountView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BindingsBuilder<void>(
-        () => Get.lazyPut(
-          () => AddAccountController(Get.find()),
-          fenix: true,
-        ),
+        () => Get.lazyPut(() => AddAccountController(Get.find()), fenix: true),
       ),
     ),
     GetPage<dynamic>(
@@ -241,6 +232,18 @@ abstract final class AppPages {
       page: () => const RecurringFormView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: RecurringBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.savingsGoals,
+      page: () => const SavingsGoalListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: SavingsGoalBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.savingsGoalForm,
+      page: () => const SavingsGoalFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: SavingsGoalBinding(),
     ),
 
     // Reminders and notifications

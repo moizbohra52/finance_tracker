@@ -37,6 +37,9 @@ For system categories:
   transaction (this needed a `(user_id, id)` unique key on `transactions`).
 - Verified by `supabase/checks/cross_user_isolation.sql` (Phases 01-08; the
   Phase 09 additions are not covered by it yet).
+- 2026-10-23: `savings_goals` has the four owner-only policies and no `anon`
+  grant; it references no other table, so no category or composite key check
+  is needed. Covered by the isolation check (read, cascade on user delete).
 
 ## Ownership
 Never trust user_id supplied by the Flutter client. Where possible derive ownership from auth.uid() in database policies/functions.

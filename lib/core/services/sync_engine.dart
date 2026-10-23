@@ -427,6 +427,7 @@ class SyncEngine extends GetxService {
       'budgets',
       'recurring_transactions',
       'reminders',
+      'savings_goals',
     ];
 
     for (final String table in syncableTables) {

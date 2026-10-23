@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -136,6 +136,27 @@ class AppDatabase {
     if (oldVersion < 2) {
       await db.execute('ALTER TABLE user_settings ADD COLUMN upi_id TEXT');
     }
+    if (oldVersion < 3) await _createSavingsGoals(db);
+  }
+
+  static Future<void> _createSavingsGoals(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS savings_goals (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        name TEXT NOT NULL,
+        target_amount TEXT NOT NULL,
+        saved_amount TEXT NOT NULL DEFAULT '0',
+        target_date TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_savings_goals_user ON savings_goals(user_id);',
+    );
   }
 
   /// Makes [userId]'s file the open database (null: the signed-out one),
@@ -370,6 +391,9 @@ class AppDatabase {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_reminders_user_remind ON reminders(user_id, remind_at);',
     );
+
+    // 8b. Savings Goals
+    await _createSavingsGoals(db);
 
     // 9. User Settings
     await db.execute('''
@@ -723,6 +747,7 @@ class AppDatabase {
       'budgets',
       'recurring_transactions',
       'reminders',
+      'savings_goals',
       'user_settings',
       'profiles',
       'sync_queue',

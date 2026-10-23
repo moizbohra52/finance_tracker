@@ -62,6 +62,8 @@ insert into public.reminders (contact_id, account_id, title, amount, remind_at)
 values ('a3000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 'Collect from A Friend', 5000, '2026-12-31T04:30:00Z');
 insert into public.notifications (title, body, type)
 values ('Welcome', 'Your account is ready.', 'security');
+insert into public.savings_goals (name, target_amount, saved_amount)
+values ('A Trip', 50000, 1000);
 update public.profiles set mobile = '+910000000000';
 
 do $$
@@ -117,7 +119,8 @@ begin
      + (select count(*) from public.budgets)
      + (select count(*) from public.recurring_transactions)
      + (select count(*) from public.reminders)
-     + (select count(*) from public.notifications) <> 0 then
+     + (select count(*) from public.notifications)
+     + (select count(*) from public.savings_goals) <> 0 then
     raise exception 'FAIL: B can read A financial rows';
   end if;
 
@@ -319,7 +322,8 @@ begin
      or exists (select 1 from public.budgets where user_id = a)
      or exists (select 1 from public.recurring_transactions where user_id = a)
      or exists (select 1 from public.reminders where user_id = a)
-     or exists (select 1 from public.notifications where user_id = a) then
+     or exists (select 1 from public.notifications where user_id = a)
+     or exists (select 1 from public.savings_goals where user_id = a) then
     raise exception 'FAIL: deleting the auth user left data behind';
   end if;
   if not exists (select 1 from public.accounts where user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') then

@@ -93,6 +93,20 @@ Alerts:
 
 Prevent duplicate alerts for the same budget threshold and period.
 
+## Savings goal
+A goal tracks progress only: the user updates saved_amount by hand, and a goal
+never moves money, creates a transaction or changes an account balance.
+
+remaining = max(target - saved, 0)
+
+progress = saved / target, capped at 100%
+
+reached = saved >= target
+
+overdue = not reached and today is after target_date (the date is inclusive)
+
+Calculated in `domain/entities/savings_goal.dart` with exact decimals.
+
 ## Validation
 - amount > 0
 - maximum supported precision 2 decimals for INR

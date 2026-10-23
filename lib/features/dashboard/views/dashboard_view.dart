@@ -904,7 +904,8 @@ class _EmptySpendingCard extends StatelessWidget {
   }
 }
 
-/// Entry points to budgets and recurring schedules.
+/// Entry points to budgets, recurring schedules, reminders, notifications and
+/// savings goals.
 class _PlanSection extends StatelessWidget {
   const _PlanSection();
 
@@ -964,6 +965,14 @@ class _PlanSection extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _EnhancedPlanTile(
+          icon: Icons.flag_outlined,
+          iconColor: money.income,
+          title: 'Savings goals'.tr,
+          subtitle: 'Save up for what matters'.tr,
+          onTap: () => Get.toNamed<void>(AppRoutes.savingsGoals),
         ),
       ],
     );

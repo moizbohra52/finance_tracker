@@ -14,6 +14,7 @@ import 'package:finance_tracker/features/profile/controllers/profile_controller.
 import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
+import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:get/get.dart';
@@ -66,6 +67,7 @@ final List<void Function()> _userScopedRemovers = <void Function()>[
   _remove<BudgetController>,
   _remove<RecurringController>,
   _remove<ReminderController>,
+  _remove<SavingsGoalController>,
   _remove<NotificationCenterController>,
   // Form screens. Detail controllers are tagged per record (see
   // routeIdArgument) and go with their routes when sign-out clears the stack.
