@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/features/settings/widgets/language_button.dart';
 import 'package:flutter/material.dart';
 
 /// Shared frame for the auth screens: headline, supporting text and content,
@@ -10,18 +11,28 @@ class AuthFormLayout extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.children,
+    this.showLanguage = false,
   });
 
   final String title;
   final String subtitle;
   final List<Widget> children;
 
+  /// For the signed-out screens, where no account language applies yet.
+  final bool showLanguage;
+
   @override
   Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: const AppAppBar(title: '', transparent: true),
+      appBar: AppAppBar(
+        title: '',
+        transparent: true,
+        actions: showLanguage
+            ? const <Widget>[LanguageButton()]
+            : const <Widget>[],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

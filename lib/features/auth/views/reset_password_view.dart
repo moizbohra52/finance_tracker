@@ -15,8 +15,8 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
   Widget build(BuildContext context) {
     final ResetPasswordController controller = this.controller;
     return AuthFormLayout(
-      title: 'Choose a new password',
-      subtitle: 'You will use it the next time you sign in.',
+      title: 'Choose a new password'.tr,
+      subtitle: 'You will use it the next time you sign in.'.tr,
       children: <Widget>[
         Form(
           key: controller.formKey,
@@ -24,8 +24,9 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
             child: Column(
               children: <Widget>[
                 AppTextField(
-                  label: 'New password',
-                  helperText: 'At least 8 characters, with letters and numbers',
+                  label: 'New password'.tr,
+                  helperText:
+                      'At least 8 characters, with letters and numbers'.tr,
                   controller: controller.passwordController,
                   obscureText: true,
                   textInputAction: TextInputAction.next,
@@ -34,7 +35,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Confirm new password',
+                  label: 'Confirm new password'.tr,
                   controller: controller.confirmPasswordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
@@ -51,7 +52,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
         SubmitErrorMessage(controller.submission),
         Obx(
           () => AppButton(
-            label: 'Save password',
+            label: 'Save password'.tr,
             isLoading: controller.submission.isBusy.value,
             onPressed: controller.savePassword,
           ),
@@ -62,7 +63,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
             onPressed: controller.submission.isBusy.value
                 ? null
                 : controller.cancel,
-            child: const Text('Cancel'),
+            child: Text('Cancel'.tr),
           ),
         ),
       ],

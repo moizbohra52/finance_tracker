@@ -78,7 +78,9 @@ class _LockScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    '${AppConstants.appName} is locked',
+                    '@app is locked'.trParams(<String, String>{
+                      'app': AppConstants.appName,
+                    }),
                     textAlign: TextAlign.center,
                     style: text.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
@@ -86,7 +88,7 @@ class _LockScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'Unlock with your fingerprint, face or screen lock.',
+                    'Unlock with your fingerprint, face or screen lock.'.tr,
                     textAlign: TextAlign.center,
                     style: text.bodyMedium?.copyWith(
                       color: colors.onSurfaceVariant,
@@ -107,7 +109,7 @@ class _LockScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xl),
                   Obx(
                     () => AppButton(
-                      label: 'Unlock',
+                      label: 'Unlock'.tr,
                       icon: Icons.fingerprint_rounded,
                       isLoading: controller.busy.value,
                       onPressed: () => unawaited(controller.unlock()),

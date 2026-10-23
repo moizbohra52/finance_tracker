@@ -245,9 +245,10 @@ class FinanceTrackerApp extends StatelessWidget {
         themeMode: themeController.themeMode.value,
         scaffoldMessengerKey: AppSnackbar.messengerKey,
         initialBinding: initialBinding,
-        // English until the account's preferences load (SettingsController).
+        // The language this device used last, until the account's preferences
+        // load (SettingsController).
         translations: AppTranslations(),
-        locale: AppLanguage.english.locale,
+        locale: AppLanguage.fromStored(storageService.readLanguage()).locale,
         fallbackLocale: AppLanguage.english.locale,
         initialRoute: AppPages.initial,
         getPages: AppPages.routes,

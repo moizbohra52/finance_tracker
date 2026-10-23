@@ -45,6 +45,9 @@ class FakeAuthRepository implements AuthRepository {
   AppException? nextError;
   bool signUpStartsSession = true;
 
+  /// The language code the last sign-up sent for the new account.
+  String? signUpLanguage;
+
   String userId = 'user-1';
   String email = 'asha@example.com';
 
@@ -149,7 +152,9 @@ class FakeAuthRepository implements AuthRepository {
     required String fullName,
     required String email,
     required String password,
+    required String languageCode,
   }) async {
+    signUpLanguage = languageCode;
     await _call('signUp', signUpStartsSession ? AuthStatus.signedIn : null);
     return signUpStartsSession;
   }

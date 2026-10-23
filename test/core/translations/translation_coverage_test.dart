@@ -7,6 +7,7 @@ import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/domain/services/avatar_rules.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
+import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
 import 'package:finance_tracker/domain/services/report_period.dart';
 import 'package:finance_tracker/features/export/controllers/export_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -98,6 +99,23 @@ const List<String> translatedFiles = <String>[
   'lib/features/profile/views/profile_view.dart',
   'lib/features/profile/widgets/delete_account_dialog.dart',
   'lib/features/profile/widgets/profile_avatar.dart',
+  // Notification text. local_notification_service.dart is not listed: it also
+  // holds channel ids and log messages.
+  'lib/core/services/notification_coordinator.dart',
+  'lib/features/budgets/controllers/budget_controller.dart',
+  'lib/features/recurring/controllers/recurring_controller.dart',
+  // Signed-out screens (in the language this device used last) and app lock.
+  'lib/features/app_lock/controllers/app_lock_controller.dart',
+  'lib/features/app_lock/widgets/app_lock_gate.dart',
+  'lib/features/auth/controllers/reset_password_controller.dart',
+  'lib/features/auth/views/forgot_password_view.dart',
+  'lib/features/auth/views/login_view.dart',
+  'lib/features/auth/views/onboarding_view.dart',
+  'lib/features/auth/views/register_view.dart',
+  'lib/features/auth/views/reset_password_view.dart',
+  'lib/features/auth/views/splash_view.dart',
+  'lib/features/auth/widgets/auth_form_layout.dart',
+  'lib/features/settings/widgets/language_button.dart',
 ];
 
 /// Files whose `.tr` keys are checked but whose other literals are not
@@ -184,6 +202,10 @@ void main() {
       for (final ReminderStatus s in ReminderStatus.values) s.label,
       for (final SnoozeOption o in SnoozeOption.values) o.label,
       for (final AvatarProblem p in AvatarProblem.values) p.message,
+      for (final ReminderAction a in ReminderAction.values) a.label,
+      // Notification bodies, made in the domain and translated when scheduled.
+      for (final ReminderType t in ReminderType.values)
+        ReminderNotificationPlanner.bodyFor(t),
       for (final DatePreset p in DatePreset.values) p.label,
       for (final DateRangePreset p in DateRangePreset.values) p.label,
       for (final WeekStart w in WeekStart.values) w.label,

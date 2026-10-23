@@ -6,6 +6,7 @@ import 'package:finance_tracker/domain/services/reminder_notification_planner.da
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:get/get.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -182,7 +183,7 @@ class LocalNotificationService {
         scheduledDate: tz.TZDateTime.from(n.fireAt, tz.local),
         notificationDetails: _details(
           'reminders',
-          'Reminders',
+          'Reminders'.tr,
           sound,
           vibration,
           tag: owner,
@@ -190,7 +191,7 @@ class LocalNotificationService {
             // Handled without opening the app; tapping one also clears the
             // notification.
             for (final ReminderAction action in ReminderAction.values)
-              AndroidNotificationAction(action.name, action.label),
+              AndroidNotificationAction(action.name, action.label.tr),
           ],
         ),
         androidScheduleMode: mode,
@@ -220,7 +221,7 @@ class LocalNotificationService {
       body: body,
       notificationDetails: _details(
         'alerts',
-        'Alerts',
+        'Alerts'.tr,
         sound,
         vibration,
         tag: owner,
@@ -298,7 +299,7 @@ class LocalNotificationService {
     android: AndroidNotificationDetails(
       '${channel}_${sound ? 's' : 'q'}${vibration ? 'v' : 'n'}',
       channelName,
-      channelDescription: 'Reminders and alerts from the app',
+      channelDescription: 'Reminders and alerts from the app'.tr,
       importance: Importance.high,
       priority: Priority.high,
       playSound: sound,

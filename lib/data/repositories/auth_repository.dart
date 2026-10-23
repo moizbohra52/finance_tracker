@@ -84,19 +84,24 @@ class AuthRepository {
       );
 
   /// Returns true when the user is signed in straight away, false when they
-  /// must first open the confirmation link sent to [email]. [fullName] is read
-  /// by the database signup trigger to fill profiles.full_name.
+  /// must first open the confirmation link sent to [email]. [fullName] and
+  /// [languageCode] are read by the database signup trigger to fill
+  /// profiles.full_name and user_settings.language_code.
   Future<bool> signUp({
     required String fullName,
     required String email,
     required String password,
+    required String languageCode,
   }) async {
     final AuthResponse response = await guardSupabase(
       () => _auth.signUp(
         email: email,
         password: password,
         emailRedirectTo: AppConstants.authRedirectUrl,
-        data: <String, dynamic>{'full_name': fullName},
+        data: <String, dynamic>{
+          'full_name': fullName,
+          'language_code': languageCode,
+        },
       ),
     );
     return response.session != null;

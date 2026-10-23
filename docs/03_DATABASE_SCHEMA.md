@@ -272,6 +272,13 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    Hindi and Hinglish, and once sync gives up the next settings pull reverts
    the language and any other setting saved with it.
 
+12. `20261023090000_signup_language.sql` - the signup trigger
+   (`private.handle_new_user`) also reads `language_code` from the signup
+   metadata, so a new account starts in the language chosen on the
+   signed-out screens. Codes outside `('en', 'hi', 'hi-Latn')`, or none, keep
+   `'en'`. No table change. Apply after migration 11; until then new accounts
+   start in English.
+
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.
 

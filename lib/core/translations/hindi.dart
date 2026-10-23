@@ -978,4 +978,86 @@ const Map<String, String> hindi = <String, String>{
   'Failed to restore backup: @error': 'बैकअप रीस्टोर नहीं हो सका: @error',
   'Network connection unavailable. Changes will sync when reconnected.':
       'इंटरनेट नहीं है। जुड़ते ही बदलाव सिंक हो जाएँगे।',
+
+  // Signed-out screens and app lock
+  'Welcome back': 'फिर से स्वागत है',
+  'Sign in to see your balances.': 'अपना बैलेंस देखने के लिए साइन इन करें।',
+  'Forgot password?': 'पासवर्ड भूल गए?',
+  'Sign in': 'साइन इन करें',
+  "Don't have an account?": 'अकाउंट नहीं है?',
+  'Create one': 'नया बनाएँ',
+  'Check your email': 'अपना ईमेल देखें',
+  'We sent a confirmation link to @email. Open it on this device to finish creating your account.':
+      'हमने @email पर कन्फ़र्मेशन लिंक भेजा है। अकाउंट बनाना पूरा करने के लिए इसे इसी डिवाइस पर खोलें।',
+  'Back to sign in': 'साइन इन पर वापस जाएँ',
+  'Create your account': 'अपना अकाउंट बनाएँ',
+  'Track balances, spending and khata in one place.':
+      'बैलेंस, खर्च और खाता एक ही जगह रखें।',
+  'Confirm password': 'पासवर्ड कन्फ़र्म करें',
+  'Create account': 'अकाउंट बनाएँ',
+  'Already have an account?': 'पहले से अकाउंट है?',
+  'Reset your password': 'अपना पासवर्ड रीसेट करें',
+  "Enter your account email and we'll send you a reset link.":
+      'अपने अकाउंट का ईमेल डालें, हम आपको रीसेट लिंक भेजेंगे।',
+  'If an account exists for @email, a reset link is on its way. Open it on this device.':
+      'अगर @email का अकाउंट है, तो रीसेट लिंक भेजा जा रहा है। इसे इसी डिवाइस पर खोलें।',
+  'Send reset link': 'रीसेट लिंक भेजें',
+  'Send again': 'फिर से भेजें',
+  'Choose a new password': 'नया पासवर्ड चुनें',
+  'You will use it the next time you sign in.':
+      'अगली बार साइन इन करते समय यही पासवर्ड डालना होगा।',
+  'Save password': 'पासवर्ड सेव करें',
+  'Your password has been updated.': 'आपका पासवर्ड बदल दिया गया है।',
+  'Know Where Your Money Goes': 'जानें आपका पैसा कहाँ जाता है',
+  'See income and expenses across cash, bank and UPI in one place.':
+      'कैश, बैंक और UPI की आमदनी और खर्च एक ही जगह देखें।',
+  'Track Every Rupee': 'हर रुपये का हिसाब रखें',
+  'Add a transaction in seconds and always know your current balance.':
+      'कुछ ही सेकंड में एंट्री जोड़ें और हमेशा अपना मौजूदा बैलेंस जानें।',
+  'Stay Ahead of Your Payments': 'भुगतान समय पर करें',
+  'Keep a khata of who owes you and whom you owe, with reminders before they are due.':
+      'किससे लेना है और किसे देना है, इसका खाता रखें। तारीख से पहले रिमाइंडर मिलेगा।',
+  'Get started': 'शुरू करें',
+  'I already have an account': 'मेरा अकाउंट पहले से है',
+  'Page @current of @count': 'पेज @current / @count',
+  'Track. Save. Grow.': 'हिसाब रखें। बचत करें। आगे बढ़ें।',
+  '@app is locked': '@app लॉक है',
+  'Unlock with your fingerprint, face or screen lock.':
+      'फ़िंगरप्रिंट, चेहरे या स्क्रीन लॉक से अनलॉक करें।',
+  'Unlock': 'अनलॉक करें',
+  'Unlock @app': '@app अनलॉक करें',
+  'App lock was turned off because this device no longer has a screen lock.':
+      'ऐप लॉक बंद कर दिया गया, क्योंकि इस डिवाइस पर अब स्क्रीन लॉक नहीं है।',
+  'Tap Unlock to try again.': 'फिर से कोशिश करने के लिए अनलॉक दबाएँ।',
+  'Confirm to turn on app lock': 'ऐप लॉक चालू करने के लिए पुष्टि करें',
+  'Confirm to turn off app lock': 'ऐप लॉक बंद करने के लिए पुष्टि करें',
+  'Set up a fingerprint, face, PIN or pattern lock on this device first.':
+      'पहले इस डिवाइस पर फ़िंगरप्रिंट, फ़ेस, PIN या पैटर्न लॉक सेट करें।',
+  'Too many attempts. Unlock your phone once, then try again.':
+      'बहुत बार कोशिश हो गई। एक बार फ़ोन अनलॉक करें, फिर कोशिश करें।',
+  'Your fingerprint or face could not be checked. Please try again.':
+      'फ़िंगरप्रिंट या चेहरा जाँचा नहीं जा सका। कृपया फिर से कोशिश करें।',
+
+  // Notification text
+  'Payment reminder': 'भुगतान रिमाइंडर',
+  'Money to collect': 'वसूली बाकी है',
+  'Money to pay': 'चुकाना बाकी है',
+  'Khata reminder': 'खाता रिमाइंडर',
+  'Recurring transaction reminder': 'नियमित लेन-देन रिमाइंडर',
+  'Mark done': 'पूरा हुआ',
+  'Snooze 1 hour': '1 घंटे के लिए टालें',
+  'Alerts': 'अलर्ट',
+  'Reminders and alerts from the app': 'ऐप के रिमाइंडर और अलर्ट',
+  'Open the app to see your budget.': 'अपना बजट देखने के लिए ऐप खोलें।',
+  'Added automatically to your transactions.':
+      'आपके लेन-देन में अपने आप जुड़ गया।',
+  'Open the app for details.': 'जानकारी के लिए ऐप खोलें।',
+  '@name budget exceeded': '@name का बजट पार हो गया',
+  '@name budget at @percent%': '@name का बजट @percent% तक पहुँचा',
+  'You have spent @spent of @total.': '@total में से @spent खर्च हो चुके हैं।',
+  'Recurring transaction': 'नियमित लेन-देन',
+  '@label recorded': '@label दर्ज हुआ',
+  '@amount was added automatically.': '@amount अपने आप जुड़ गया।',
+  '@count transactions were added automatically.':
+      '@count लेन-देन अपने आप जुड़ गए।',
 };

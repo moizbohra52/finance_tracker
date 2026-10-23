@@ -24,11 +24,11 @@ class RegisterView extends GetView<RegisterController> {
           body: SafeArea(
             child: EmptyState(
               icon: Icons.mark_email_unread_outlined,
-              title: 'Check your email',
+              title: 'Check your email'.tr,
               message:
-                  'We sent a confirmation link to $sentTo. Open it on this '
-                  'device to finish creating your account.',
-              actionLabel: 'Back to sign in',
+                  'We sent a confirmation link to @email. Open it on this device to finish creating your account.'
+                      .trParams(<String, String>{'email': sentTo}),
+              actionLabel: 'Back to sign in'.tr,
               onAction: () => Get.offNamed<void>(AppRoutes.login),
             ),
           ),
@@ -46,8 +46,9 @@ class _RegisterForm extends GetView<RegisterController> {
   Widget build(BuildContext context) {
     final RegisterController controller = this.controller;
     return AuthFormLayout(
-      title: 'Create your account',
-      subtitle: 'Track balances, spending and khata in one place.',
+      showLanguage: true,
+      title: 'Create your account'.tr,
+      subtitle: 'Track balances, spending and khata in one place.'.tr,
       children: <Widget>[
         Form(
           key: controller.formKey,
@@ -55,7 +56,7 @@ class _RegisterForm extends GetView<RegisterController> {
             child: Column(
               children: <Widget>[
                 AppTextField(
-                  label: 'Full name',
+                  label: 'Full name'.tr,
                   controller: controller.fullNameController,
                   keyboardType: TextInputType.name,
                   textInputAction: TextInputAction.next,
@@ -65,7 +66,7 @@ class _RegisterForm extends GetView<RegisterController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Email',
+                  label: 'Email'.tr,
                   controller: controller.emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -74,8 +75,9 @@ class _RegisterForm extends GetView<RegisterController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Password',
-                  helperText: 'At least 8 characters, with letters and numbers',
+                  label: 'Password'.tr,
+                  helperText:
+                      'At least 8 characters, with letters and numbers'.tr,
                   controller: controller.passwordController,
                   obscureText: true,
                   textInputAction: TextInputAction.next,
@@ -84,7 +86,7 @@ class _RegisterForm extends GetView<RegisterController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Confirm password',
+                  label: 'Confirm password'.tr,
                   controller: controller.confirmPasswordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
@@ -101,7 +103,7 @@ class _RegisterForm extends GetView<RegisterController> {
         SubmitErrorMessage(controller.submission),
         Obx(
           () => AppButton(
-            label: 'Create account',
+            label: 'Create account'.tr,
             isLoading: controller.submission.isBusy.value,
             onPressed: controller.register,
           ),
@@ -111,10 +113,10 @@ class _RegisterForm extends GetView<RegisterController> {
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
-            const Text('Already have an account?'),
+            Text('Already have an account?'.tr),
             TextButton(
               onPressed: () => Get.offNamed<void>(AppRoutes.login),
-              child: const Text('Sign in'),
+              child: Text('Sign in'.tr),
             ),
           ],
         ),

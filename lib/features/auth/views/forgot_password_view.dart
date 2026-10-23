@@ -15,13 +15,14 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
   Widget build(BuildContext context) {
     final ForgotPasswordController controller = this.controller;
     return AuthFormLayout(
-      title: 'Reset your password',
-      subtitle: "Enter your account email and we'll send you a reset link.",
+      showLanguage: true,
+      title: 'Reset your password'.tr,
+      subtitle: "Enter your account email and we'll send you a reset link.".tr,
       children: <Widget>[
         Form(
           key: controller.formKey,
           child: AppTextField(
-            label: 'Email',
+            label: 'Email'.tr,
             controller: controller.emailController,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
@@ -40,8 +41,8 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
                   child: InlineMessage(
                     tone: InlineMessageTone.success,
                     message:
-                        'If an account exists for $sentTo, a reset link is on '
-                        'its way. Open it on this device.',
+                        'If an account exists for @email, a reset link is on its way. Open it on this device.'
+                            .trParams(<String, String>{'email': sentTo}),
                   ),
                 );
         }),
@@ -49,8 +50,8 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
         Obx(
           () => AppButton(
             label: controller.linkSentTo.value == null
-                ? 'Send reset link'
-                : 'Send again',
+                ? 'Send reset link'.tr
+                : 'Send again'.tr,
             isLoading: controller.submission.isBusy.value,
             onPressed: controller.sendResetLink,
           ),

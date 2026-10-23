@@ -83,6 +83,7 @@ class NotificationCoordinator extends GetxService {
   static bool _noOtherAccounts(String _) => false;
 
   List<Reminder> _reminders = <Reminder>[];
+  bool _remindersKnown = false;
   final Set<String> _raisedDue = <String>{};
   final List<StreamSubscription<Object?>> _subscriptions =
       <StreamSubscription<Object?>>[];
@@ -238,8 +239,15 @@ class NotificationCoordinator extends GetxService {
   /// cancelled. Concurrent calls are folded into one more pass.
   Future<void> syncReminders(List<Reminder> reminders) {
     _reminders = List<Reminder>.of(reminders);
+    _remindersKnown = true;
     return _apply();
   }
+
+  /// The app language changed: scheduled notifications hold their text, so
+  /// they are made again in the new language. Nothing happens before the
+  /// reminders are known, as an empty list would cancel every one.
+  Future<void> languageChanged() =>
+      _remindersKnown ? _apply() : Future<void>.value();
 
   Future<void> _apply() async {
     if (_switchingAccounts) return;
@@ -291,7 +299,7 @@ class NotificationCoordinator extends GetxService {
       PlannedNotification(
         id: n.id,
         title: n.title,
-        body: n.body,
+        body: n.body.tr,
         payload: NotificationTarget.withOwner(n.payload, owner),
         fireAt: n.fireAt,
         repeat: n.repeat,
@@ -338,9 +346,10 @@ class NotificationCoordinator extends GetxService {
   }
 
   static String _deviceBody(String type) => switch (type) {
-    NotificationType.budgetAlert => 'Open the app to see your budget.',
-    NotificationType.recurring => 'Added automatically to your transactions.',
-    _ => 'Open the app for details.',
+    NotificationType.budgetAlert => 'Open the app to see your budget.'.tr,
+    NotificationType.recurring =>
+      'Added automatically to your transactions.'.tr,
+    _ => 'Open the app for details.'.tr,
   };
 
   /// Records, once, that each overdue reminder came due, so it shows up in the
@@ -360,7 +369,7 @@ class NotificationCoordinator extends GetxService {
           id: eventId,
           type: NotificationType.reminder,
           title: r.title,
-          body: ReminderNotificationPlanner.bodyFor(r.type),
+          body: ReminderNotificationPlanner.bodyFor(r.type).tr,
           referenceId: r.id,
           showOnDevice: false,
         );
@@ -509,6 +518,7 @@ class NotificationCoordinator extends GetxService {
         final String? leaving = _ownerId;
         _ownerId = null;
         _reminders = <Reminder>[];
+        _remindersKnown = false;
         _raisedDue.clear();
         _pendingTarget = null;
         _shell = null;
@@ -533,6 +543,7 @@ class NotificationCoordinator extends GetxService {
     // Taps wait for the next account's shell.
     _shell = null;
     _reminders = <Reminder>[];
+    _remindersKnown = false;
     _raisedDue.clear();
   }
 
@@ -550,6 +561,7 @@ class NotificationCoordinator extends GetxService {
     _ownerId = null;
     _switchingAccounts = false;
     _reminders = <Reminder>[];
+    _remindersKnown = false;
     _raisedDue.clear();
     _pendingTarget = null;
     await _local.cancelAll();

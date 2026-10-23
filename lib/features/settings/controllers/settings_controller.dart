@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
@@ -20,21 +21,30 @@ import 'package:get/get.dart';
 ///
 /// One instance for the whole app, so every screen formats with the same
 /// values. The values belong to the signed-in user: they load after sign-in and
-/// are reset at sign-out, never deleted, so no other user sees them.
+/// are reset at sign-out, never deleted, so no other user sees them. The
+/// language is the exception: this device remembers the last one, so the
+/// signed-out screens and the next start use it.
 class SettingsController extends GetxController {
   SettingsController(
     this._profiles,
     this._userSettings,
     this._accounts,
     this._auth,
-    this._notifier,
-  );
+    this._notifier, {
+    this._storage,
+    this.onLanguageChanged,
+  });
 
   final ProfileRepository _profiles;
   final UserSettingsRepository _userSettings;
   final AccountRepository _accounts;
   final AuthRepository _auth;
   final DataChangeNotifier _notifier;
+  final StorageService? _storage;
+
+  /// Told after the app language changes, for text the OS holds (scheduled
+  /// notifications).
+  final void Function()? onLanguageChanged;
 
   final Rx<UserPreferences> preferences = UserPreferences.defaults.obs;
 
@@ -47,6 +57,11 @@ class SettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _apply(
+      UserPreferences.defaults.copyWith(
+        language: AppLanguage.fromStored(_storage?.readLanguage()),
+      ),
+    );
     // Cold start with a saved session: the session is already restored, so
     // load now. A later sign-in loads through AuthController.
     if (_auth.isSignedIn) unawaited(load());
@@ -91,16 +106,17 @@ class SettingsController extends GetxController {
     _notifier.markChanged();
   });
 
-  /// Back to defaults. Called at sign-out, so the next user starts clean. An
-  /// account switch keeps the language: the next account's own arrives with
-  /// its settings, and the screens until then should not flash English.
-  void reset({bool keepLanguage = false}) {
+  /// For the signed-out screens: shown at once and remembered on this
+  /// device. A new account starts with it (RegisterController).
+  void chooseLanguage(AppLanguage language) =>
+      _apply(preferences.value.copyWith(language: language));
+
+  /// Back to defaults, except the language. Called at sign-out and on an
+  /// account switch, so the next user starts clean but the screens until
+  /// their settings load keep the language this device last used.
+  void reset() {
     _apply(
-      keepLanguage
-          ? UserPreferences.defaults.copyWith(
-              language: preferences.value.language,
-            )
-          : UserPreferences.defaults,
+      UserPreferences.defaults.copyWith(language: preferences.value.language),
     );
     accounts.clear();
     loadError.value = null;
@@ -115,7 +131,7 @@ class SettingsController extends GetxController {
     );
     final List<Account> all = await _accounts.getAccounts();
     accounts.assignAll(all.where((Account a) => a.isActive));
-    _apply(_toPreferences(profile, settings));
+    _apply(_toPreferences(profile, settings, preferences.value.language));
   }
 
   /// A reload after a failed save. Its own failure is ignored: the save error
@@ -131,6 +147,7 @@ class SettingsController extends GetxController {
   void _apply(UserPreferences next) {
     preferences.value = next;
     AppFormatters.preferences = next;
+    unawaited(_remember(next.language));
     // Before any change the locale is unset, which shows English.
     final Locale current = Get.locale ?? AppLanguage.english.locale;
     if (current != next.language.locale) {
@@ -138,20 +155,37 @@ class SettingsController extends GetxController {
       // Rebuilds every open screen in the new language. Run between frames:
       // a reassemble requested during one fails.
       unawaited(Future<void>.delayed(Duration.zero, Get.forceAppUpdate));
+      onLanguageChanged?.call();
+    }
+  }
+
+  /// Remembering is a convenience: a failed write only means the next
+  /// signed-out start shows the older language.
+  Future<void> _remember(AppLanguage language) async {
+    final StorageService? storage = _storage;
+    if (storage == null || storage.readLanguage() == language.stored) return;
+    try {
+      await storage.saveLanguage(language.stored);
+    } on StorageFailure {
+      // Nothing to do; see above.
     }
   }
 
   /// Stored strings that the app does not recognise fall back to the
-  /// defaults, so a bad value never breaks a screen.
+  /// defaults, so a bad value never breaks a screen. A missing language (a
+  /// first start offline) keeps [shown] instead.
   static UserPreferences _toPreferences(
     Profile profile,
     UserSettings settings,
+    AppLanguage shown,
   ) => UserPreferences(
     currencyCode: profile.currencyCode ?? UserPreferences.defaults.currencyCode,
     dateStyle: DateStyle.fromStored(settings.dateFormat),
     numberStyle: NumberStyle.fromStored(settings.numberFormat),
     weekStart: WeekStart.fromStored(settings.firstDayOfWeek),
-    language: AppLanguage.fromStored(settings.languageCode),
+    language: settings.languageCode == null
+        ? shown
+        : AppLanguage.fromStored(settings.languageCode),
     defaultAccountId: settings.defaultAccountId,
     upiId: settings.upiId,
   );

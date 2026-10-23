@@ -24,7 +24,7 @@ class ResetPasswordController extends GetxController {
       () => _authRepository.updatePassword(passwordController.text),
     );
     if (succeeded) {
-      AppSnackbar.show('Your password has been updated.');
+      AppSnackbar.show('Your password has been updated.'.tr);
       await Get.offAllNamed<void>(AppRoutes.dashboard);
     }
   }

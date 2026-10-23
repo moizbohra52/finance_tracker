@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/translations/app_translations.dart';
+import 'package:finance_tracker/core/translations/hindi.dart';
 import 'package:finance_tracker/core/utils/recurring_labels.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
@@ -123,9 +124,7 @@ void main() {
       },
     );
 
-    test('in Hindi the alert stays in one language', () async {
-      // Notification text is not translated yet, so the budget name in it
-      // must not be either.
+    test('in Hindi the alert is in Hindi', () async {
       Get.addTranslations(AppTranslations().keys);
       Get.locale = AppLanguage.hindi.locale;
       addTearDown(() => Get.locale = AppLanguage.english.locale);
@@ -135,9 +134,18 @@ void main() {
 
       await budgetController(f).load();
 
+      final Map<String, String> alert = f.notifications.values.single;
       expect(
-        f.notifications.values.single['title'],
-        'All expenses budget at 75%',
+        alert['title'],
+        hindi['@name budget at @percent%']!
+            .replaceAll('@name', hindi['All expenses']!)
+            .replaceAll('@percent', '75'),
+      );
+      expect(
+        alert['body'],
+        startsWith(
+          hindi['You have spent @spent of @total.']!.split('@total').first,
+        ),
       );
     });
 
@@ -224,6 +232,21 @@ void main() {
       );
       expect(f.recurring.single.nextRunAt.isAfter(DateTime.now()), isTrue);
       expect(f.recurring.single.active, isTrue);
+    });
+
+    test('in Hindi the recorded notice is in Hindi', () async {
+      Get.addTranslations(AppTranslations().keys);
+      Get.locale = AppLanguage.hindi.locale;
+      addTearDown(() => Get.locale = AppLanguage.english.locale);
+      final FakeFinance f = FakeFinance()..addAccount('Cash', '0');
+      f.recurring.add(dailyRule());
+
+      await recurringController(f).runDue();
+
+      expect(
+        f.notifications.values.single['title'],
+        hindi['@label recorded']!.replaceAll('@label', 'Tiffin'),
+      );
     });
 
     test('running again creates nothing more', () async {

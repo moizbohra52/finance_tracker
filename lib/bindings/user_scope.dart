@@ -41,11 +41,10 @@ void loadUserScope() {
 /// Settings are reset, not removed, because they are global. Everything else
 /// is removed, so the next account gets fresh controllers that load their own
 /// data. Call it after the signed-in screens are gone, so no screen is still
-/// reading a controller being removed. [keepLanguage] is for a switch: see
-/// [SettingsController.reset].
-void resetUserScope({bool keepLanguage = false}) {
+/// reading a controller being removed.
+void resetUserScope() {
   if (Get.isRegistered<SettingsController>()) {
-    Get.find<SettingsController>().reset(keepLanguage: keepLanguage);
+    Get.find<SettingsController>().reset();
   }
   for (final void Function() remove in _userScopedRemovers) {
     remove();

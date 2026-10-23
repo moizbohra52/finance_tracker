@@ -189,15 +189,20 @@ class RecurringController extends GetxController {
   Future<void> _announce(RecurringTransaction rule, List<DateTime> due) async {
     final String label = (rule.note ?? '').isNotEmpty
         ? rule.note!
-        : 'Recurring transaction';
+        : 'Recurring transaction'.tr;
     try {
       await _notifications.raise(
         id: RecurringScheduler.notificationId(rule.id, due.last),
         type: NotificationType.recurring,
-        title: '$label recorded',
+        // Stored as written now: the entry keeps this language.
+        title: '@label recorded'.trParams(<String, String>{'label': label}),
         body: due.length == 1
-            ? '${AppFormatters.money(rule.amount)} was added automatically.'
-            : '${due.length} transactions were added automatically.',
+            ? '@amount was added automatically.'.trParams(<String, String>{
+                'amount': AppFormatters.money(rule.amount),
+              })
+            : '@count transactions were added automatically.'.trParams(
+                <String, String>{'count': '${due.length}'},
+              ),
         referenceId: rule.id,
       );
     } on AppException catch (failure) {

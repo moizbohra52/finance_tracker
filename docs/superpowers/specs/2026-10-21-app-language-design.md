@@ -89,3 +89,31 @@ otherwise (the local value still applies on this device).
 - `docs/03_DATABASE_SCHEMA.md`: migration 11 (language codes).
 - `docs/09_CODING_STANDARDS.md`: user-visible text is written in English and
   wrapped in `.tr` (params with `.trParams`), with entries in both maps.
+
+## Final scope (after parts 1-4, B and C)
+- Every screen, error message and notification text follows the language.
+- This device remembers the last language (`StorageService.readLanguage`,
+  key `app.language`). The app starts in it, the signed-out screens (splash,
+  onboarding, sign in, sign up, password reset) and the app lock screen use it,
+  and a language button on onboarding and the auth forms changes it. Sign-out
+  and an account switch keep it; the next account's own language replaces it
+  once its settings load. An account whose language is unknown keeps the
+  device's.
+- A new account starts in the language shown at sign-up: the app sends
+  `language_code` in the signup metadata and the signup trigger stores it
+  (`20261023090000_signup_language.sql`).
+- Scheduled reminder notifications hold their text in the OS, so a language
+  change schedules them again (`NotificationCoordinator.languageChanged`).
+  The buttons' background isolate loads the saved language
+  (`AppTranslations.use`). Notification-center entries are stored in the
+  language of the moment they were made. Android channel names are fixed when
+  the channel is first created. Only the signed-in account's scheduled
+  reminders are rewritten on a language change; another signed-in account's
+  follow when it becomes active. Server push text is not ours.
+- **PDF stays English.** Spike: the `pdf` package (3.12) has no OpenType
+  shaping, so Noto Sans Devanagari renders matras on the wrong side
+  (`किताब` as `कतिाब`) and conjuncts with a visible halant (`क्ष` as `क्‌ष`).
+  Broken Hindi in a statement given to a customer is worse than English.
+  Revisit with a package that shapes Devanagari, or a PDF built by the
+  platform's text engine. The same limit means Hindi text typed by the user
+  (names, notes) does not print correctly in a PDF either.

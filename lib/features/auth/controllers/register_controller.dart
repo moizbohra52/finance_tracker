@@ -1,3 +1,4 @@
+import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:flutter/widgets.dart';
@@ -21,6 +22,8 @@ class RegisterController extends GetxController {
   final RxnString confirmationSentTo = RxnString();
 
   /// When no confirmation is needed, AuthController navigates on sign-in.
+  /// The new account starts in the language shown now, the one chosen on the
+  /// signed-out screens.
   Future<void> register() async {
     if (!formKey.currentState!.validate()) return;
     final String email = emailController.text.trim();
@@ -30,6 +33,7 @@ class RegisterController extends GetxController {
         fullName: fullNameController.text.trim(),
         email: email,
         password: passwordController.text,
+        languageCode: AppFormatters.preferences.language.stored,
       );
     });
     if (succeeded && !signedIn) confirmationSentTo.value = email;

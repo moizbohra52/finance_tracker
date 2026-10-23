@@ -392,7 +392,7 @@ class AccountSwitchController extends GetxController {
     // Once this resumes the previous account's screens are gone, so no
     // screen still reads a controller being removed.
     await _afterTransition();
-    resetUserScope(keepLanguage: true);
+    resetUserScope();
   }
 
   void _openForOtherAccount(NotificationTarget target) {

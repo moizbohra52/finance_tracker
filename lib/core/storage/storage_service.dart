@@ -9,6 +9,9 @@ class StorageService {
   static const String _themeModeKey = 'appearance.theme_mode';
   static const String _accentColorKey = 'appearance.accent_color';
 
+  /// The app language last used here, so signed-out screens can show it.
+  static const String _languageKey = 'app.language';
+
   final SharedPreferences _preferences;
 
   String? readThemeMode() => _read(_themeModeKey);
@@ -18,6 +21,10 @@ class StorageService {
   Future<void> saveThemeMode(String value) => _write(_themeModeKey, value);
 
   Future<void> saveAccentColor(String value) => _write(_accentColorKey, value);
+
+  String? readLanguage() => _read(_languageKey);
+
+  Future<void> saveLanguage(String value) => _write(_languageKey, value);
 
   /// Generic keyed access for preferences owned by other features (for
   /// example notification settings). Same failure rules as the typed methods.

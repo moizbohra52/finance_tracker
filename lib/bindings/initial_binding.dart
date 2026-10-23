@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
@@ -114,6 +116,9 @@ class InitialBinding extends Bindings {
         repositories.accounts,
         authRepository,
         notifier,
+        storage: storageService,
+        onLanguageChanged: () =>
+            unawaited(notificationCoordinator.languageChanged()),
       ),
       permanent: true,
     );

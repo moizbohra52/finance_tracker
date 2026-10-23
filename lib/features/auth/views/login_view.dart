@@ -16,8 +16,9 @@ class LoginView extends GetView<LoginController> {
   Widget build(BuildContext context) {
     final LoginController controller = this.controller;
     return AuthFormLayout(
-      title: 'Welcome back',
-      subtitle: 'Sign in to see your balances.',
+      showLanguage: true,
+      title: 'Welcome back'.tr,
+      subtitle: 'Sign in to see your balances.'.tr,
       children: <Widget>[
         Form(
           key: controller.formKey,
@@ -25,7 +26,7 @@ class LoginView extends GetView<LoginController> {
             child: Column(
               children: <Widget>[
                 AppTextField(
-                  label: 'Email',
+                  label: 'Email'.tr,
                   controller: controller.emailController,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
@@ -34,7 +35,7 @@ class LoginView extends GetView<LoginController> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Password',
+                  label: 'Password'.tr,
                   controller: controller.passwordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
@@ -51,13 +52,13 @@ class LoginView extends GetView<LoginController> {
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: () => Get.toNamed<void>(AppRoutes.forgotPassword),
-            child: const Text('Forgot password?'),
+            child: Text('Forgot password?'.tr),
           ),
         ),
         SubmitErrorMessage(controller.submission),
         Obx(
           () => AppButton(
-            label: 'Sign in',
+            label: 'Sign in'.tr,
             isLoading: controller.submission.isBusy.value,
             onPressed: controller.signIn,
           ),
@@ -67,10 +68,10 @@ class LoginView extends GetView<LoginController> {
           alignment: WrapAlignment.center,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: <Widget>[
-            const Text("Don't have an account?"),
+            Text("Don't have an account?".tr),
             TextButton(
               onPressed: () => Get.offNamed<void>(AppRoutes.register),
-              child: const Text('Create one'),
+              child: Text('Create one'.tr),
             ),
           ],
         ),

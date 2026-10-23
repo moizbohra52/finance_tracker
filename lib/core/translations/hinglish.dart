@@ -991,4 +991,88 @@ const Map<String, String> hinglish = <String, String>{
   'Failed to restore backup: @error': 'Backup restore nahi ho saka: @error',
   'Network connection unavailable. Changes will sync when reconnected.':
       'Internet nahi hai. Judte hi badlav sync ho jayenge.',
+
+  // Signed-out screens and app lock
+  'Welcome back': 'Welcome back',
+  'Sign in to see your balances.':
+      'Apna balance dekhne ke liye sign in karein.',
+  'Forgot password?': 'Password bhool gaye?',
+  'Sign in': 'Sign in karein',
+  "Don't have an account?": 'Account nahi hai?',
+  'Create one': 'Naya banayein',
+  'Check your email': 'Apna email dekhein',
+  'We sent a confirmation link to @email. Open it on this device to finish creating your account.':
+      'Humne @email par confirmation link bheja hai. Account banana poora karne ke liye ise isi device par kholein.',
+  'Back to sign in': 'Sign in par wapas jaayein',
+  'Create your account': 'Apna account banayein',
+  'Track balances, spending and khata in one place.':
+      'Balance, kharch aur khata ek hi jagah rakhein.',
+  'Confirm password': 'Password confirm karein',
+  'Create account': 'Account banayein',
+  'Already have an account?': 'Pehle se account hai?',
+  'Reset your password': 'Apna password reset karein',
+  "Enter your account email and we'll send you a reset link.":
+      'Apne account ka email daalein, hum aapko reset link bhejenge.',
+  'If an account exists for @email, a reset link is on its way. Open it on this device.':
+      'Agar @email ka account hai, to reset link bheja ja raha hai. Ise isi device par kholein.',
+  'Send reset link': 'Reset link bhejein',
+  'Send again': 'Phir se bhejein',
+  'Choose a new password': 'Naya password chunein',
+  'You will use it the next time you sign in.':
+      'Agli baar sign in karte samay yahi password daalna hoga.',
+  'Save password': 'Password save karein',
+  'Your password has been updated.': 'Aapka password badal diya gaya hai.',
+  'Know Where Your Money Goes': 'Jaaniye aapka paisa kahan jaata hai',
+  'See income and expenses across cash, bank and UPI in one place.':
+      'Cash, bank aur UPI ki aamdani aur kharch ek hi jagah dekhein.',
+  'Track Every Rupee': 'Har rupaye ka hisaab rakhein',
+  'Add a transaction in seconds and always know your current balance.':
+      'Kuch hi second mein entry jodein aur hamesha apna maujooda balance jaanein.',
+  'Stay Ahead of Your Payments': 'Payment samay par karein',
+  'Keep a khata of who owes you and whom you owe, with reminders before they are due.':
+      'Kisse lena hai aur kise dena hai, iska khata rakhein. Tareekh se pehle reminder milega.',
+  'Get started': 'Shuru karein',
+  'I already have an account': 'Mera account pehle se hai',
+  'Page @current of @count': 'Page @current / @count',
+  'Track. Save. Grow.': 'Hisaab rakhein. Bachat karein. Aage badhein.',
+  '@app is locked': '@app lock hai',
+  'Unlock with your fingerprint, face or screen lock.':
+      'Fingerprint, face ya screen lock se unlock karein.',
+  'Unlock': 'Unlock karein',
+  'Unlock @app': '@app unlock karein',
+  'App lock was turned off because this device no longer has a screen lock.':
+      'App lock band kar diya gaya, kyunki is device par ab screen lock nahi hai.',
+  'Tap Unlock to try again.': 'Phir se koshish karne ke liye Unlock dabayein.',
+  'Confirm to turn on app lock': 'App lock chalu karne ke liye confirm karein',
+  'Confirm to turn off app lock': 'App lock band karne ke liye confirm karein',
+  'Set up a fingerprint, face, PIN or pattern lock on this device first.':
+      'Pehle is device par fingerprint, face, PIN ya pattern lock set karein.',
+  'Too many attempts. Unlock your phone once, then try again.':
+      'Bahut baar koshish ho gayi. Ek baar phone unlock karein, phir koshish karein.',
+  'Your fingerprint or face could not be checked. Please try again.':
+      'Fingerprint ya face check nahi ho saka. Kripya phir se koshish karein.',
+
+  // Notification text
+  'Payment reminder': 'Payment reminder',
+  'Money to collect': 'Vasooli baaki hai',
+  'Money to pay': 'Chukana baaki hai',
+  'Khata reminder': 'Khata reminder',
+  'Recurring transaction reminder': 'Niyamit len-den reminder',
+  'Mark done': 'Poora hua',
+  'Snooze 1 hour': '1 ghante ke liye taalein',
+  'Alerts': 'Alerts',
+  'Reminders and alerts from the app': 'App ke reminders aur alerts',
+  'Open the app to see your budget.': 'Apna budget dekhne ke liye app kholein.',
+  'Added automatically to your transactions.':
+      'Aapke len-den mein apne aap jud gaya.',
+  'Open the app for details.': 'Jaankari ke liye app kholein.',
+  '@name budget exceeded': '@name ka budget paar ho gaya',
+  '@name budget at @percent%': '@name ka budget @percent% tak pahunch gaya',
+  'You have spent @spent of @total.':
+      '@total mein se @spent kharch ho chuke hain.',
+  'Recurring transaction': 'Niyamit len-den',
+  '@label recorded': '@label darj hua',
+  '@amount was added automatically.': '@amount apne aap jud gaya.',
+  '@count transactions were added automatically.':
+      '@count len-den apne aap jud gaye.',
 };

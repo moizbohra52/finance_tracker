@@ -6,10 +6,12 @@ import 'package:finance_tracker/core/constants/app_env.dart';
 import 'package:finance_tracker/core/services/local_notification_service.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/translations/app_translations.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
 import 'package:finance_tracker/features/notifications/notification_target.dart';
@@ -112,9 +114,13 @@ Future<void> _reschedule(Reminder reminder, String owner) async {
   final SharedPreferences stored = await SharedPreferences.getInstance();
   // This isolate outlives one tap; the settings may have changed since.
   await stored.reload();
+  final StorageService storage = StorageService(stored);
   final NotificationPreferences prefs = NotificationCoordinator.readPreferences(
-    StorageService(stored),
+    storage,
   );
+  // No app here to hold the language, so the text is made in the one this
+  // device last used.
+  AppTranslations.use(AppLanguage.fromStored(storage.readLanguage()));
   final String payload = NotificationTarget.withOwner(
     ReminderNotificationPlanner.payloadFor(reminder.id),
     owner,

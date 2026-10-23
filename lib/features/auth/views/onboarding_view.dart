@@ -1,6 +1,7 @@
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_dialog.dart';
+import 'package:finance_tracker/features/settings/widgets/language_button.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,25 +17,27 @@ class OnboardingView extends StatefulWidget {
 }
 
 class _OnboardingViewState extends State<OnboardingView> {
-  static const List<_OnboardingPage> _pages = <_OnboardingPage>[
+  // Built on each build, so a language change shows at once.
+  List<_OnboardingPage> get _pages => <_OnboardingPage>[
     _OnboardingPage(
       icon: Icons.account_balance_wallet_outlined,
-      title: 'Know Where Your Money Goes',
+      title: 'Know Where Your Money Goes'.tr,
       description:
-          'See income and expenses across cash, bank and UPI in one place.',
+          'See income and expenses across cash, bank and UPI in one place.'.tr,
     ),
     _OnboardingPage(
       icon: Icons.currency_rupee,
-      title: 'Track Every Rupee',
+      title: 'Track Every Rupee'.tr,
       description:
-          'Add a transaction in seconds and always know your current balance.',
+          'Add a transaction in seconds and always know your current balance.'
+              .tr,
     ),
     _OnboardingPage(
       icon: Icons.notifications_active_outlined,
-      title: 'Stay Ahead of Your Payments',
+      title: 'Stay Ahead of Your Payments'.tr,
       description:
-          'Keep a khata of who owes you and whom you owe, with reminders '
-          'before they are due.',
+          'Keep a khata of who owes you and whom you owe, with reminders before they are due.'
+              .tr,
     ),
   ];
 
@@ -62,6 +65,10 @@ class _OnboardingViewState extends State<OnboardingView> {
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   children: <Widget>[
+                    const Align(
+                      alignment: Alignment.centerRight,
+                      child: LanguageButton(),
+                    ),
                     Expanded(
                       child: PageView(
                         onPageChanged: (int page) =>
@@ -72,13 +79,13 @@ class _OnboardingViewState extends State<OnboardingView> {
                     _PageDots(count: _pages.length, current: _currentPage),
                     const SizedBox(height: AppSpacing.xl),
                     AppButton(
-                      label: 'Get started',
+                      label: 'Get started'.tr,
                       onPressed: () => Get.toNamed<void>(AppRoutes.register),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     TextButton(
                       onPressed: () => Get.toNamed<void>(AppRoutes.login),
-                      child: const Text('I already have an account'),
+                      child: Text('I already have an account'.tr),
                     ),
                   ],
                 ),
@@ -153,7 +160,10 @@ class _PageDots extends StatelessWidget {
     final ColorScheme colors = Theme.of(context).colorScheme;
 
     return Semantics(
-      label: 'Page ${current + 1} of $count',
+      label: 'Page @current of @count'.trParams(<String, String>{
+        'current': '${current + 1}',
+        'count': '$count',
+      }),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[

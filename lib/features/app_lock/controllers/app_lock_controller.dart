@@ -100,7 +100,7 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
     lockMessage.value = null;
     try {
       final DeviceAuthResult result = await _deviceAuth.authenticate(
-        'Unlock ${AppConstants.appName}',
+        'Unlock @app'.trParams(<String, String>{'app': AppConstants.appName}),
       );
       switch (result) {
         case DeviceAuthResult.success:
@@ -115,14 +115,14 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
           locked.value = false;
           _hasPrompted = false;
           AppSnackbar.show(
-            'App lock was turned off because this device no longer has a '
-            'screen lock.',
+            'App lock was turned off because this device no longer has a screen lock.'
+                .tr,
           );
         case DeviceAuthResult.lockedOut:
         case DeviceAuthResult.error:
           lockMessage.value = _messageFor(result);
         case DeviceAuthResult.cancelled:
-          lockMessage.value = 'Tap Unlock to try again.';
+          lockMessage.value = 'Tap Unlock to try again.'.tr;
       }
     } finally {
       busy.value = false;
@@ -139,7 +139,9 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
     busy.value = true;
     try {
       final DeviceAuthResult result = await _deviceAuth.authenticate(
-        value ? 'Confirm to turn on app lock' : 'Confirm to turn off app lock',
+        value
+            ? 'Confirm to turn on app lock'.tr
+            : 'Confirm to turn off app lock'.tr,
       );
       // Turning it off on a device without a screen lock needs no proof:
       // the lock cannot work there anyway.
@@ -160,11 +162,12 @@ class AppLockController extends GetxService with WidgetsBindingObserver {
   static String? _messageFor(DeviceAuthResult result) => switch (result) {
     DeviceAuthResult.success || DeviceAuthResult.cancelled => null,
     DeviceAuthResult.unavailable =>
-      'Set up a fingerprint, face, PIN or pattern lock on this device first.',
+      'Set up a fingerprint, face, PIN or pattern lock on this device first.'
+          .tr,
     DeviceAuthResult.lockedOut =>
-      'Too many attempts. Unlock your phone once, then try again.',
+      'Too many attempts. Unlock your phone once, then try again.'.tr,
     DeviceAuthResult.error =>
-      'Your fingerprint or face could not be checked. Please try again.',
+      'Your fingerprint or face could not be checked. Please try again.'.tr,
   };
 
   Future<void> _save(bool value) async {

@@ -60,7 +60,7 @@ class SplashView extends GetView<SplashController> {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Track. Save. Grow.',
+                'Track. Save. Grow.'.tr,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: colors.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
@@ -73,7 +73,7 @@ class SplashView extends GetView<SplashController> {
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
                   color: colors.primary,
-                  semanticsLabel: 'Loading',
+                  semanticsLabel: 'Loading'.tr,
                 ),
               ),
             ],

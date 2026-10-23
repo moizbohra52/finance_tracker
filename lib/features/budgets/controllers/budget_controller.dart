@@ -75,11 +75,6 @@ class BudgetController extends GetxController {
       ? 'All expenses'.tr
       : categoryOf(b.categoryId)?.name ?? 'Category'.tr;
 
-  /// [nameOf] in English, for the alert text, which is not translated yet.
-  String _alertNameOf(Budget b) => b.categoryId == null
-      ? 'All expenses'
-      : categoryOf(b.categoryId)?.name ?? 'Category';
-
   List<Category> get expenseCategories => categories
       .where(
         (Category c) =>
@@ -135,12 +130,19 @@ class BudgetController extends GetxController {
           await _notifications.raise(
             id: alert.id,
             type: NotificationType.budgetAlert,
+            // Stored as written now: the entry keeps this language.
             title: alert.threshold >= 100
-                ? '${_alertNameOf(status.budget)} budget exceeded'
-                : '${_alertNameOf(status.budget)} budget at ${alert.threshold}%',
-            body:
-                'You have spent ${AppFormatters.money(status.spent)} of '
-                '${AppFormatters.money(status.budget.amount)}.',
+                ? '@name budget exceeded'.trParams(<String, String>{
+                    'name': nameOf(status.budget),
+                  })
+                : '@name budget at @percent%'.trParams(<String, String>{
+                    'name': nameOf(status.budget),
+                    'percent': '${alert.threshold}',
+                  }),
+            body: 'You have spent @spent of @total.'.trParams(<String, String>{
+              'spent': AppFormatters.money(status.spent),
+              'total': AppFormatters.money(status.budget.amount),
+            }),
             referenceId: alert.budgetId,
           );
         } on AppException {
