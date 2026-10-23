@@ -363,7 +363,7 @@ class _SearchAndFilter extends GetView<ContactController> {
             () => TextField(
               onChanged: (String v) => controller.searchText.value = v,
               decoration: InputDecoration(
-                hintText: 'Search name or mobile...'.tr,
+                hintText: 'Search name, mobile or notes...'.tr,
                 hintStyle: TextStyle(
                   color: colors.onSurfaceVariant.withValues(alpha: 0.7),
                   fontSize: 14,

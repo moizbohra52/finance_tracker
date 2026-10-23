@@ -384,7 +384,7 @@ const Map<String, String> hinglish = <String, String>{
       'Kul sthiti: aapko +@amount milne hain',
   'Net Position: You have -@amount to pay':
       'Kul sthiti: aapko -@amount dene hain',
-  'Search name or mobile...': 'Naam ya mobile khojein...',
+  'Search name, mobile or notes...': 'Naam, mobile ya notes khojein...',
   'All': 'Sab',
   'Settled': 'Barabar',
   'Add a contact first, then record a credit or debit.':
@@ -488,8 +488,11 @@ const Map<String, String> hinglish = <String, String>{
   'Clear filters': 'Filters hatayein',
   'Record your income and expenses to see them here.':
       'Apni aamdani aur kharcha darj karein, woh yahan dikhenge.',
-  'Search notes, accounts, categories...':
-      'Notes, accounts, categories khojein...',
+  'Search notes or #tags...': 'Notes ya #tags khojein...',
+  'Add #tags like #office to find entries later':
+      'Baad mein aasani se dhoondhne ke liye #office jaise #tags likhein',
+  'Add @tag to the note': 'Note mein @tag jodein',
+  'Show all @tag': 'Saare @tag dikhayein',
   'Calendar view': 'Calendar view',
   'Clear all': 'Sab hatayein',
   'Transfer updated': 'Transfer update ho gaya',

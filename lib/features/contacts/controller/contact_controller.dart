@@ -36,7 +36,8 @@ class ContactController extends GetxController {
   final Rx<KhataSummary> summary = KhataSummary.zero.obs;
 
   int get allCount => _all.length;
-  int get receivableCount => _all.where((ContactBalance r) => r.isReceivable).length;
+  int get receivableCount =>
+      _all.where((ContactBalance r) => r.isReceivable).length;
   int get payableCount => _all.where((ContactBalance r) => r.isPayable).length;
   int get settledCount =>
       _all.where((ContactBalance r) => !r.isReceivable && !r.isPayable).length;
@@ -55,7 +56,8 @@ class ContactController extends GetxController {
       if (query.isEmpty) return true;
       final Contact c = row.contact;
       return c.name.toLowerCase().contains(query) ||
-          (c.mobile ?? '').toLowerCase().contains(query);
+          (c.mobile ?? '').toLowerCase().contains(query) ||
+          (c.notes ?? '').toLowerCase().contains(query);
     }).toList();
   }
 

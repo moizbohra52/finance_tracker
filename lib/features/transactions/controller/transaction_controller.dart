@@ -14,6 +14,7 @@ import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction_summary.dart';
 import 'package:finance_tracker/domain/services/avatar_rules.dart';
+import 'package:finance_tracker/domain/services/note_tags.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:get/get.dart';
@@ -71,6 +72,9 @@ class TransactionController extends GetxController {
   final RxList<Category> categories = <Category>[].obs;
   final RxnString lookupError = RxnString();
   final RxBool lookupsLoaded = false.obs;
+
+  /// Tags from the newest notes, suggested in the form.
+  final RxList<String> recentTags = <String>[].obs;
 
   final SubmitState save = SubmitState();
   final SubmitState deletion = SubmitState();
@@ -130,6 +134,12 @@ class TransactionController extends GetxController {
       lookupError.value = failure.message;
     } finally {
       lookupsLoaded.value = true;
+    }
+    try {
+      final List<String> notes = await _transactionRepository.getTaggedNotes();
+      recentTags.assignAll(NoteTags.of(notes.join(' ')).take(8));
+    } on AppException {
+      // Only suggestions: typing a #tag in the note still works without them.
     }
   }
 
@@ -282,9 +292,7 @@ class TransactionController extends GetxController {
       // the form opened.
       final String? attachmentUrl = existing == null || removeReceipt
           ? null
-          : (await _transactionRepository.getTransactionById(
-              id,
-            )).attachmentUrl;
+          : (await _transactionRepository.getTransactionById(id)).attachmentUrl;
       final Transaction transaction = Transaction(
         id: id,
         userId: existing?.userId ?? '',

@@ -378,7 +378,7 @@ const Map<String, String> hindi = <String, String>{
       'कुल स्थिति: आपको +@amount मिलने हैं',
   'Net Position: You have -@amount to pay':
       'कुल स्थिति: आपको -@amount देने हैं',
-  'Search name or mobile...': 'नाम या मोबाइल खोजें...',
+  'Search name, mobile or notes...': 'नाम, मोबाइल या नोट खोजें...',
   'All': 'सभी',
   'Settled': 'बराबर',
   'Add a contact first, then record a credit or debit.':
@@ -482,7 +482,11 @@ const Map<String, String> hindi = <String, String>{
   'Clear filters': 'फ़िल्टर हटाएँ',
   'Record your income and expenses to see them here.':
       'अपनी आमदनी और खर्च दर्ज करें, वे यहाँ दिखेंगे।',
-  'Search notes, accounts, categories...': 'नोट, अकाउंट, श्रेणियाँ खोजें...',
+  'Search notes or #tags...': 'नोट या #टैग खोजें...',
+  'Add #tags like #office to find entries later':
+      'बाद में आसानी से ढूँढने के लिए #office जैसे #टैग लिखें',
+  'Add @tag to the note': 'नोट में @tag जोड़ें',
+  'Show all @tag': 'सभी @tag दिखाएँ',
   'Calendar view': 'कैलेंडर व्यू',
   'Clear all': 'सब हटाएँ',
   'Transfer updated': 'ट्रांसफ़र अपडेट हो गया',

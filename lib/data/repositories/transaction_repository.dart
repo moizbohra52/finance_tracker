@@ -39,7 +39,8 @@ class TransactionRepository {
 
   static final RegExp _filterSyntax = RegExp(r'[,()*%_\\"]');
 
-  /// Newest first. [search] matches the note or description.
+  /// Newest first. [search] matches the note or description, which also finds
+  /// a #tag (domain/services/note_tags.dart).
   Future<List<Transaction>> getTransactions({
     String? accountId,
     String? categoryId,
@@ -146,6 +147,35 @@ class TransactionRepository {
     });
   }
 
+  /// Newest notes that hold a #tag, to suggest the tags used recently.
+  Future<List<String>> getTaggedNotes({int limit = 100}) async {
+    if (_db != null) {
+      final List<Map<String, dynamic>> rows = await _db.db.query(
+        'transactions',
+        columns: <String>['note'],
+        where: "deleted_at IS NULL AND note LIKE '%#%'",
+        orderBy: 'transaction_date DESC',
+        limit: limit,
+      );
+      return <String>[
+        for (final Map<String, dynamic> r in rows) r['note'] as String,
+      ];
+    }
+
+    return guardSupabase(() async {
+      final List<Map<String, dynamic>> rows = await _supabaseClient
+          .from('transactions')
+          .select('note')
+          .isFilter('deleted_at', null)
+          .like('note', '%#%')
+          .order('transaction_date', ascending: false)
+          .limit(limit);
+      return <String>[
+        for (final Map<String, dynamic> r in rows) r['note'] as String,
+      ];
+    });
+  }
+
   /// Computes the aggregate totals (total inflow, total outflow, and total count)
   /// for all transactions matching the given filters, without pagination.
   Future<TransactionSummary> getTransactionSummary({
@@ -210,13 +240,15 @@ class TransactionRepository {
         final String rawAmount = row['amount'] as String;
         final Decimal amount = Decimal.tryParse(rawAmount) ?? Decimal.zero;
 
-        final bool isInflow = rawType == 'income' ||
+        final bool isInflow =
+            rawType == 'income' ||
             rawType == 'transfer_in' ||
             rawType == 'adjustment_in' ||
             rawType == 'payment_received' ||
             rawType == 'opening_balance';
 
-        final bool isOutflow = rawType == 'expense' ||
+        final bool isOutflow =
+            rawType == 'expense' ||
             rawType == 'transfer_out' ||
             rawType == 'adjustment_out' ||
             rawType == 'payment_made';
@@ -273,13 +305,15 @@ class TransactionRepository {
         final Decimal amount =
             Decimal.tryParse(rawAmount?.toString() ?? '0') ?? Decimal.zero;
 
-        final bool isInflow = rawType == 'income' ||
+        final bool isInflow =
+            rawType == 'income' ||
             rawType == 'transfer_in' ||
             rawType == 'adjustment_in' ||
             rawType == 'payment_received' ||
             rawType == 'opening_balance';
 
-        final bool isOutflow = rawType == 'expense' ||
+        final bool isOutflow =
+            rawType == 'expense' ||
             rawType == 'transfer_out' ||
             rawType == 'adjustment_out' ||
             rawType == 'payment_made';

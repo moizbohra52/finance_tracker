@@ -14,6 +14,7 @@ import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/note_tags.dart';
 import 'package:finance_tracker/features/categories/controller/category_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
@@ -300,11 +301,34 @@ class _TransactionFormViewState extends State<TransactionFormView> {
             const SizedBox(height: AppSpacing.md),
             AppTextField(
               label: 'Note (optional)'.tr,
+              helperText: 'Add #tags like #office to find entries later'.tr,
               controller: _note,
               minLines: 3,
               maxLines: 5,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
+            ),
+            Obx(
+              () => _controller.recentTags.isEmpty
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
+                      child: Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: <Widget>[
+                          for (final String tag in _controller.recentTags)
+                            ActionChip(
+                              label: Text(tag),
+                              tooltip: 'Add @tag to the note'.trParams(
+                                <String, String>{'tag': tag},
+                              ),
+                              onPressed: () =>
+                                  _note.text = NoteTags.add(_note.text, tag),
+                            ),
+                        ],
+                      ),
+                    ),
             ),
             const SizedBox(height: AppSpacing.md),
             ReceiptField(

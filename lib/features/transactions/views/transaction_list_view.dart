@@ -117,16 +117,24 @@ class _TransactionListContentState extends State<TransactionListContent> {
     text: _controller.searchText.value,
   );
 
+  // The search is also set from outside this field (a tag on the detail
+  // screen), and the tab and the route share it.
+  late final Worker _searchSync;
+
   @override
   void initState() {
     super.initState();
     _scroll.addListener(() {
       if (_scroll.position.extentAfter < 300) _controller.loadMore();
     });
+    _searchSync = ever<String>(_controller.searchText, (String v) {
+      if (_search.text != v) _search.text = v;
+    });
   }
 
   @override
   void dispose() {
+    _searchSync.dispose();
     _scroll.dispose();
     _search.dispose();
     super.dispose();
@@ -216,7 +224,7 @@ class _SearchBar extends GetView<TransactionController> {
               textInputAction: TextInputAction.search,
               onChanged: (String v) => controller.searchText.value = v,
               decoration: InputDecoration(
-                hintText: 'Search notes, accounts, categories...'.tr,
+                hintText: 'Search notes or #tags...'.tr,
                 hintStyle: TextStyle(
                   color: colors.onSurfaceVariant.withValues(alpha: 0.7),
                   fontSize: 14,

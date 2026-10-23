@@ -230,6 +230,23 @@ class FakeTransactionRepository implements TransactionRepository {
   final FakeFinance _f;
 
   @override
+  Future<List<String>> getTaggedNotes({int limit = 100}) async {
+    _f.throwPending();
+    final List<Transaction> rows =
+        _f.transactions
+            .where(
+              (Transaction t) =>
+                  t.deletedAt == null && (t.note ?? '').contains('#'),
+            )
+            .toList()
+          ..sort(
+            (Transaction a, Transaction b) =>
+                b.transactionDate.compareTo(a.transactionDate),
+          );
+    return <String>[for (final Transaction t in rows.take(limit)) t.note!];
+  }
+
+  @override
   Future<List<Transaction>> getTransactions({
     String? accountId,
     String? categoryId,

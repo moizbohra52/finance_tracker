@@ -30,6 +30,12 @@
 - Unified transaction history
 - Search/filter
 - Monthly summaries
+- Tags (2026-10-23): #words in a transaction note, e.g. "Dinner #office".
+  No column of their own: the note search finds "#office", the detail screen
+  shows them as chips that open that search, and the form suggests recent
+  ones. Known limit: "#goa" also finds "#goatrip" (substring search).
+- Notes search: transactions match note and description; Khata contacts
+  match name, mobile and notes
 
 ## Khata
 - Contacts/persons

@@ -14,6 +14,7 @@ import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/note_tags.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
@@ -187,6 +188,29 @@ class _Details extends StatelessWidget {
                   AppFormatters.dateTime(transaction.transactionDate),
                 ),
                 if (note != null && note.isNotEmpty) _Row('Note'.tr, note),
+                if (NoteTags.of(note) case final List<String> tags
+                    when tags.isNotEmpty)
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: <Widget>[
+                        for (final String tag in tags)
+                          ActionChip(
+                            avatar: const Icon(Icons.tag_rounded, size: 18),
+                            label: Text(tag.substring(1)),
+                            tooltip: 'Show all @tag'.trParams(<String, String>{
+                              'tag': tag,
+                            }),
+                            onPressed: () {
+                              list.searchText.value = tag;
+                              Get.toNamed<void>(AppRoutes.transactions);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
                 // Shows nothing when there is no receipt.
                 if (transfer == null && Get.isRegistered<ReceiptStore>())
                   ReceiptPreview(transaction: transaction),
