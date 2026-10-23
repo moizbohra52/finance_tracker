@@ -97,7 +97,8 @@ class _TransactionFormViewState extends State<TransactionFormView> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final String? accountId = _effectiveAccount(_controller.accounts);
-    if (accountId == null) return;
+    final String? categoryId = _categoryId;
+    if (accountId == null || categoryId == null) return;
     final String note = _note.text.trim();
     final DateTime combinedDate = DateTime(
       _date.year,
@@ -254,14 +255,54 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Category'.tr, style: text.labelLarge),
+            Row(
+              children: <Widget>[
+                Text('Category'.tr, style: text.labelLarge),
+                const SizedBox(width: 4),
+                Text(
+                  '*',
+                  style: text.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.sm),
-            CategoryPicker(
-              categories: categories,
-              type: _type,
-              selectedId: _categoryId,
-              onChanged: (String? id) => setState(() => _categoryId = id),
-              onAddNew: _createCategory,
+            FormField<String>(
+              key: ValueKey<String?>('$_type-$_categoryId'),
+              initialValue: _categoryId,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (String? v) =>
+                  v == null ? 'Choose a category'.tr : null,
+              builder: (FormFieldState<String> state) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    CategoryPicker(
+                      categories: categories,
+                      type: _type,
+                      selectedId: _categoryId,
+                      onChanged: (String? id) {
+                        state.didChange(id);
+                        setState(() => _categoryId = id);
+                      },
+                      onAddNew: _createCategory,
+                    ),
+                    if (state.hasError) ...<Widget>[
+                      const SizedBox(height: AppSpacing.xs),
+                      Padding(
+                        padding: const EdgeInsets.only(left: AppSpacing.xs),
+                        child: Text(
+                          state.errorText!,
+                          style: text.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
             const SizedBox(height: AppSpacing.lg),
             BottomSheetDropdown<String>(

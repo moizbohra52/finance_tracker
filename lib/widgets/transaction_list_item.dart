@@ -62,6 +62,12 @@ class TransactionListItem extends StatelessWidget {
     if (t.description != null && t.description!.trim().isNotEmpty) {
       return t.description!;
     }
+    if (t.type == TransactionType.expense || t.type == TransactionType.income) {
+      if (t.note != null && t.note!.trim().isNotEmpty) {
+        return t.note!.trim();
+      }
+      return 'Uncategorised'.tr;
+    }
     return t.type.label;
   }
 

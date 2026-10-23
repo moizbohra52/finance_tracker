@@ -471,6 +471,7 @@ const Map<String, String> hindi = <String, String>{
   'Transactions are recorded against an account such as Cash or a bank account.':
       'लेन-देन किसी अकाउंट में दर्ज होते हैं, जैसे कैश या बैंक अकाउंट।',
   'Choose an account': 'अकाउंट चुनें',
+  'Choose a category': 'श्रेणी चुनें',
   'Money received into an account': 'किसी अकाउंट में आया पैसा',
   'Money spent from an account': 'किसी अकाउंट से खर्च हुआ पैसा',
   'Transfer between accounts': 'अकाउंट के बीच ट्रांसफ़र',
