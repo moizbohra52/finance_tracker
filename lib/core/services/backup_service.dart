@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
+import 'package:get/get.dart';
 import 'package:sqflite/sqflite.dart';
 
 /// Validation result returned when parsing and validating a backup file.
@@ -266,7 +267,7 @@ class BackupService {
   BackupValidationResult validateBackup(String jsonString) {
     if (jsonString.trim().isEmpty) {
       return BackupValidationResult.invalid(
-        'The selected backup file is empty.',
+        'The selected backup file is empty.'.tr,
       );
     }
 
@@ -275,13 +276,13 @@ class BackupService {
       parsed = jsonDecode(jsonString);
     } catch (e) {
       return BackupValidationResult.invalid(
-        'Invalid file format. The file is not a valid JSON document.',
+        'Invalid file format. The file is not a valid JSON document.'.tr,
       );
     }
 
     if (parsed is! Map<String, dynamic>) {
       return BackupValidationResult.invalid(
-        'Invalid backup structure. Root element must be a JSON object.',
+        'Invalid backup structure. Root element must be a JSON object.'.tr,
       );
     }
 
@@ -289,12 +290,16 @@ class BackupService {
     final dynamic version = parsed['version'];
     if (version == null || version is! int) {
       return BackupValidationResult.invalid(
-        'Invalid backup file: missing or invalid "version" field.',
+        'Invalid backup file: missing or invalid "version" field.'.tr,
       );
     }
     if (version > currentBackupVersion) {
       return BackupValidationResult.invalid(
-        'Backup version $version is newer than supported version $currentBackupVersion. Please update the app.',
+        'Backup version @version is newer than supported version @supported. Please update the app.'
+            .trParams(<String, String>{
+              'version': '$version',
+              'supported': '$currentBackupVersion',
+            }),
       );
     }
 
@@ -302,7 +307,7 @@ class BackupService {
     final dynamic rawData = parsed['data'];
     if (rawData == null || rawData is! Map<String, dynamic>) {
       return BackupValidationResult.invalid(
-        'Invalid backup file: "data" section is missing or invalid.',
+        'Invalid backup file: "data" section is missing or invalid.'.tr,
       );
     }
 
@@ -331,7 +336,7 @@ class BackupService {
 
     if (totalCount == 0) {
       return BackupValidationResult.invalid(
-        'This backup does not contain any records to restore.',
+        'This backup does not contain any records to restore.'.tr,
       );
     }
 
@@ -452,7 +457,11 @@ class BackupService {
         totalRestored: totalRestored,
       );
     } catch (e) {
-      return RestoreResult.failed('Failed to restore backup: $e');
+      return RestoreResult.failed(
+        'Failed to restore backup: @error'.trParams(<String, String>{
+          'error': '$e',
+        }),
+      );
     }
   }
 }

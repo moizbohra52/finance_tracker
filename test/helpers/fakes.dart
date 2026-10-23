@@ -313,11 +313,15 @@ class FakeUserSettingsRepository implements UserSettingsRepository {
   );
   AppException? nextError;
 
+  /// How long a fetch takes; a real load reads the database or the network.
+  Duration fetchDelay = Duration.zero;
+
   /// Every row written, in order, so tests can see partial failures.
   final List<UserSettings> writes = <UserSettings>[];
 
   @override
   Future<UserSettings> fetch() async {
+    if (fetchDelay > Duration.zero) await Future<void>.delayed(fetchDelay);
     final AppException? error = nextError;
     nextError = null;
     if (error != null) throw error;

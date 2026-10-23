@@ -148,7 +148,7 @@ const Map<String, String> hinglish = <String, String>{
       'Len-den, accounts aur reports CSV, Excel ya PDF mein export karein',
   'Backup & restore': 'Backup aur restore',
   'Create a full offline backup or restore previous data':
-      'Poora offline backup banayein ya purana data wapas laayein',
+      'Poora offline backup banayein ya purana data restore karein',
   'Change password': 'Password badlein',
   'Sign out of this device': 'Is device se sign out karein',
   'Delete account': 'Account delete karein',
@@ -752,7 +752,7 @@ const Map<String, String> hinglish = <String, String>{
   'No pending operations in the sync queue.':
       'Sync queue mein kuch baaki nahi.',
   'Queued @date': '@date ko queue mein',
-  '@count retries': '@count baar dobara',
+  '@count retries': '@count baar dobara koshish',
   'Khata Entry': 'Khata entry',
   'Budget': 'Budget',
   'Recurring Rule': 'Niyamit len-den',
@@ -793,13 +793,13 @@ const Map<String, String> hinglish = <String, String>{
   'Failed to create backup: @error': 'Backup nahi ban saka: @error',
   'Error reading file: @error': 'File padhne mein gadbad: @error',
   'Invalid backup data.': 'Backup ka data sahi nahi hai.',
-  'Restoring data...': 'Data wapas laaya ja raha hai...',
-  'Restored @count records successfully!': '@count records wapas aa gaye!',
+  'Restoring data...': 'Data restore ho raha hai...',
+  'Restored @count records successfully!': '@count records restore ho gaye!',
   'Restore failed.': 'Restore nahi ho saka.',
-  'Failed to restore data: @error': 'Data wapas nahi aa saka: @error',
+  'Failed to restore data: @error': 'Data restore nahi ho saka: @error',
   'Backup & Restore': 'Backup aur restore',
   'Create Backup': 'Backup banayein',
-  'Restore Data': 'Data wapas laayein',
+  'Restore Data': 'Data restore karein',
   'Data Security & Privacy': 'Data ki suraksha aur privacy',
   'Your backups are generated locally on this device. Passwords, login tokens, and authentication secrets are strictly excluded. You can store your backup file securely on Google Drive, iCloud, or external storage.':
       'Aapke backup isi device par bante hain. Password, login token aur doosri gupt jaankari inmein kabhi nahi hoti. Backup file ko aap Google Drive, iCloud ya external storage mein surakshit rakh sakte hain.',
@@ -808,10 +808,10 @@ const Map<String, String> hinglish = <String, String>{
       'Aapke saare accounts, len-den, khata contacts, budget aur settings ek JSON file mein rakhta hai.',
   'Creating Backup...': 'Backup ban raha hai...',
   'Create & Share Backup': 'Backup banayein aur share karein',
-  'Restore from JSON Backup': 'JSON backup se wapas laayein',
+  'Restore from JSON Backup': 'JSON backup se restore karein',
   'Select a previously generated backup file. You can preview all records and choose to merge or replace existing data.':
       'Pehle banayi gayi backup file chunein. Aap saare records dekhkar maujooda data mein jodna ya use badalna chun sakte hain.',
-  'Restoring Data...': 'Data wapas laaya ja raha hai...',
+  'Restoring Data...': 'Data restore ho raha hai...',
   'Select Backup File (.json)': 'Backup file chunein (.json)',
   'Invalid Backup File': 'Backup file sahi nahi',
   'The file could not be validated.': 'File ki jaanch nahi ho saki.',
@@ -827,7 +827,7 @@ const Map<String, String> hinglish = <String, String>{
       'Aapka maujooda data rehta hai; milte-julte items update hote hain aur naye judte hain. Badlav aapke cloud account mein bhi sync hote hain.',
   'Clean restore (Replace all data)': 'Poora restore (saara data badlein)',
   'Deletes all your current entries on this device and in your cloud account, including other devices, then restores the backup.':
-      'Is device aur aapke cloud account (doosre devices samet) ki saari maujooda entries hatakar backup wapas laata hai.',
+      'Is device aur aapke cloud account (doosre devices samet) ki saari maujooda entries hatakar backup restore karta hai.',
   'I understand that my current data will be deleted from this device and the cloud, and replaced.':
       'Mujhe pata hai ki mera maujooda data is device aur cloud se hatkar badal jayega.',
   'I want to proceed with merging this backup data.':
@@ -868,7 +868,7 @@ const Map<String, String> hinglish = <String, String>{
   'This Month': 'Is mahine',
   'Last Month': 'Pichhla mahina',
   'Last 3 Months': 'Pichhle 3 mahine',
-  'Custom Range': 'Apni avadhi',
+  'Custom Range': 'Custom avadhi',
   'Preparing data for export...': 'Export ke liye data taiyaar ho raha hai...',
   'Export failed: @error': 'Export nahi ho saka: @error',
   'No transactions match the selected filters.':
@@ -939,4 +939,56 @@ const Map<String, String> hinglish = <String, String>{
   'Turn on': 'Chalu karein',
   'Open settings': 'Settings kholein',
   'Uploading photo': 'Photo upload ho rahi hai',
+
+  // Errors
+  'Your session has expired. Please sign in again.':
+      'Aapka session khatam ho gaya hai. Kripya phir se sign in karein.',
+  "Can't reach the server. Check your connection and try again.":
+      'Server tak nahi pahunch pa rahe. Apna internet dekhein aur phir koshish karein.',
+  "Couldn't load or save your data. Please try again.":
+      'Aapka data load ya save nahi ho saka. Kripya phir se koshish karein.',
+  'Your preferences could not be saved. Please try again.':
+      'Aapki settings save nahi ho saki. Kripya phir se koshish karein.',
+  'Something went wrong. Please try again.':
+      'Kuch gadbad ho gayi. Kripya phir se koshish karein.',
+  "Couldn't update your photo. Check your connection and try again.":
+      'Aapki photo update nahi ho saki. Internet dekhein aur phir koshish karein.',
+  'Choose a stronger password: at least 8 characters with letters and numbers.':
+      'Mazboot password chunein: kam se kam 8 characters, jinmein letters aur numbers dono hon.',
+  'Please sign in again to continue.':
+      'Aage badhne ke liye kripya phir se sign in karein.',
+  'Incorrect email or password.': 'Email ya password galat hai.',
+  'Confirm your email first. Check your inbox for the link.':
+      'Pehle apna email confirm karein. Link ke liye apna inbox dekhein.',
+  'An account with this email already exists. Try signing in.':
+      'Is email se pehle se ek account hai. Sign in karke dekhein.',
+  'Your new password must be different from the old one.':
+      'Naya password purane se alag hona chahiye.',
+  'Too many attempts. Wait a minute and try again.':
+      'Bahut baar koshish hui. Ek minute rukkar phir koshish karein.',
+  'This link is invalid or has expired. Request a new one.':
+      'Yeh link galat hai ya expire ho gaya. Naya link mangayein.',
+  'New sign-ups are currently disabled.': 'Abhi naye sign-up band hain.',
+  'Your password is incorrect.': 'Aapka password galat hai.',
+  'That photo is empty. Choose another one.':
+      'Woh photo khaali hai. Koi doosri chunein.',
+  'Choose a JPG, PNG or WebP image.': 'JPG, PNG ya WebP photo chunein.',
+  'That photo is larger than 2 MB. Choose a smaller one.':
+      'Woh photo 2 MB se badi hai. Koi chhoti photo chunein.',
+  'The selected backup file is empty.': 'Chuni gayi backup file khaali hai.',
+  'Invalid file format. The file is not a valid JSON document.':
+      'File ka format sahi nahi. Yeh sahi JSON file nahi hai.',
+  'Invalid backup structure. Root element must be a JSON object.':
+      'Backup ka structure sahi nahi hai.',
+  'Invalid backup file: missing or invalid "version" field.':
+      'Backup file sahi nahi: "version" nahi hai ya galat hai.',
+  'Backup version @version is newer than supported version @supported. Please update the app.':
+      'Backup ka version @version hai, jo is app ke version @supported se naya hai. Kripya app update karein.',
+  'Invalid backup file: "data" section is missing or invalid.':
+      'Backup file sahi nahi: "data" hissa nahi hai ya galat hai.',
+  'This backup does not contain any records to restore.':
+      'Is backup mein restore karne ke liye koi record nahi hai.',
+  'Failed to restore backup: @error': 'Backup restore nahi ho saka: @error',
+  'Network connection unavailable. Changes will sync when reconnected.':
+      'Internet nahi hai. Judte hi badlav sync ho jayenge.',
 };

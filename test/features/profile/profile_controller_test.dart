@@ -2,9 +2,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/translations/app_translations.dart';
+import 'package:finance_tracker/core/translations/hindi.dart';
 import 'package:finance_tracker/data/models/profile.dart';
+import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
 
 import '../../helpers/fake_finance.dart';
 import '../../helpers/fake_receipts.dart';
@@ -127,6 +131,19 @@ void main() {
 
       expect(profiles.uploads, isEmpty);
       expect(controller.avatarError.value, contains('JPG, PNG or WebP'));
+    });
+
+    test('in Hindi a refused photo says why in Hindi', () async {
+      Get.addTranslations(AppTranslations().keys);
+      Get.locale = AppLanguage.hindi.locale;
+      addTearDown(() => Get.locale = AppLanguage.english.locale);
+
+      expect(await controller.uploadAvatar('scan.gif', photo), isFalse);
+
+      expect(
+        controller.avatarError.value,
+        hindi['Choose a JPG, PNG or WebP image.'],
+      );
     });
 
     test('a photo over 2 MB is refused without uploading', () async {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 
+import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/connectivity_service.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
@@ -640,8 +641,10 @@ class SyncEngine extends GetxService {
   String _safeErrorMessage(Object error) {
     final String s = error.toString();
     if (_isNetworkError(error)) {
-      return 'Network connection unavailable. Changes will sync when reconnected.';
+      return 'Network connection unavailable. Changes will sync when reconnected.'
+          .tr;
     }
+    if (error is AppException) return error.message;
     // Strip sensitive information or long stack traces
     if (s.length > 120) {
       return s.substring(0, 120);

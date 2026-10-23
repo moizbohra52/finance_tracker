@@ -11,6 +11,11 @@ import 'package:image_picker/image_picker.dart';
 
 /// The receipt photo row of the transaction form: add, change or remove.
 /// A picked photo is checked at once; nothing is kept until the form saves.
+/// Why a picked photo cannot be a receipt, in the app language, or null.
+/// Receipts follow the profile photo rules.
+String? receiptPhotoProblem(String fileName, int byteLength) =>
+    AvatarRules.check(fileName: fileName, byteLength: byteLength)?.message.tr;
+
 class ReceiptField extends StatefulWidget {
   const ReceiptField({
     super.key,
@@ -81,13 +86,10 @@ class _ReceiptFieldState extends State<ReceiptField> {
     }
     if (file == null) return;
     final Uint8List bytes = await file.readAsBytes();
-    final AvatarProblem? problem = AvatarRules.check(
-      fileName: file.name,
-      byteLength: bytes.length,
-    );
+    final String? problem = receiptPhotoProblem(file.name, bytes.length);
     if (!mounted) return;
     setState(() {
-      _error = problem?.message;
+      _error = problem;
       if (problem == null) {
         _picked = bytes;
         _removed = false;

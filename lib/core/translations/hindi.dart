@@ -143,9 +143,9 @@ const Map<String, String> hindi = <String, String>{
   'Export data': 'डेटा एक्सपोर्ट करें',
   'Export transactions, accounts & reports to CSV, Excel, or PDF':
       'लेन-देन, अकाउंट और रिपोर्ट CSV, Excel या PDF में एक्सपोर्ट करें',
-  'Backup & restore': 'बैकअप और रिस्टोर',
+  'Backup & restore': 'बैकअप और रीस्टोर',
   'Create a full offline backup or restore previous data':
-      'पूरा ऑफ़लाइन बैकअप बनाएँ या पुराना डेटा वापस लाएँ',
+      'पूरा ऑफ़लाइन बैकअप बनाएँ या पुराना डेटा रीस्टोर करें',
   'Change password': 'पासवर्ड बदलें',
   'Sign out of this device': 'इस डिवाइस से साइन आउट करें',
   'Delete account': 'अकाउंट डिलीट करें',
@@ -740,14 +740,14 @@ const Map<String, String> hindi = <String, String>{
   'All changes are synced': 'सारे बदलाव सिंक हो गए',
   'No pending operations in the sync queue.': 'सिंक कतार में कुछ बाकी नहीं।',
   'Queued @date': '@date को कतार में',
-  '@count retries': '@count बार दोबारा',
+  '@count retries': '@count बार दोबारा कोशिश',
   'Khata Entry': 'खाता एंट्री',
   'Budget': 'बजट',
   'Recurring Rule': 'नियमित लेन-देन',
   'Create @entity': '@entity बनाना',
   'Update @entity': '@entity बदलना',
   'Delete @entity': '@entity हटाना',
-  'Replace @entity': '@entity बदलकर रखना',
+  'Replace @entity': '@entity रीप्लेस करना',
   'You can keep up to @count accounts on this device. Sign out of one to add another.':
       'इस डिवाइस पर ज़्यादा से ज़्यादा @count अकाउंट रख सकते हैं। नया जोड़ने के लिए किसी एक से साइन आउट करें।',
   'That account is no longer signed in on this device.':
@@ -770,7 +770,7 @@ const Map<String, String> hindi = <String, String>{
   'Current password': 'मौजूदा पासवर्ड',
   'New password': 'नया पासवर्ड',
   'At least 8 characters, with letters and numbers':
-      'कम से कम 8 अक्षर, अक्षर और अंक दोनों',
+      'कम से कम 8 कैरेक्टर, जिनमें अक्षर और अंक दोनों हों',
   'Confirm new password': 'नया पासवर्ड दोबारा',
   'Switching account': 'अकाउंट बदल रहे हैं',
   'Switching to @name': '@name पर जा रहे हैं',
@@ -781,13 +781,13 @@ const Map<String, String> hindi = <String, String>{
   'Failed to create backup: @error': 'बैकअप नहीं बन सका: @error',
   'Error reading file: @error': 'फ़ाइल पढ़ने में गड़बड़ी: @error',
   'Invalid backup data.': 'बैकअप का डेटा सही नहीं है।',
-  'Restoring data...': 'डेटा वापस लाया जा रहा है...',
-  'Restored @count records successfully!': '@count रिकॉर्ड वापस आ गए!',
+  'Restoring data...': 'डेटा रीस्टोर हो रहा है...',
+  'Restored @count records successfully!': '@count रिकॉर्ड रीस्टोर हो गए!',
   'Restore failed.': 'रीस्टोर नहीं हो सका।',
-  'Failed to restore data: @error': 'डेटा वापस नहीं आ सका: @error',
+  'Failed to restore data: @error': 'डेटा रीस्टोर नहीं हो सका: @error',
   'Backup & Restore': 'बैकअप और रीस्टोर',
   'Create Backup': 'बैकअप बनाएँ',
-  'Restore Data': 'डेटा वापस लाएँ',
+  'Restore Data': 'डेटा रीस्टोर करें',
   'Data Security & Privacy': 'डेटा की सुरक्षा और प्राइवेसी',
   'Your backups are generated locally on this device. Passwords, login tokens, and authentication secrets are strictly excluded. You can store your backup file securely on Google Drive, iCloud, or external storage.':
       'आपके बैकअप इसी डिवाइस पर बनते हैं। पासवर्ड, लॉगिन टोकन और दूसरी गुप्त जानकारी इनमें कभी नहीं होती। बैकअप फ़ाइल को आप Google Drive, iCloud या बाहरी स्टोरेज में सुरक्षित रख सकते हैं।',
@@ -796,15 +796,15 @@ const Map<String, String> hindi = <String, String>{
       'आपके सारे अकाउंट, लेन-देन, खाता संपर्क, बजट और सेटिंग्स एक JSON फ़ाइल में रखता है।',
   'Creating Backup...': 'बैकअप बन रहा है...',
   'Create & Share Backup': 'बैकअप बनाएँ और शेयर करें',
-  'Restore from JSON Backup': 'JSON बैकअप से वापस लाएँ',
+  'Restore from JSON Backup': 'JSON बैकअप से रीस्टोर करें',
   'Select a previously generated backup file. You can preview all records and choose to merge or replace existing data.':
       'पहले बनाई गई बैकअप फ़ाइल चुनें। आप सारे रिकॉर्ड देखकर मौजूदा डेटा में जोड़ना या उसे बदलना चुन सकते हैं।',
-  'Restoring Data...': 'डेटा वापस लाया जा रहा है...',
+  'Restoring Data...': 'डेटा रीस्टोर हो रहा है...',
   'Select Backup File (.json)': 'बैकअप फ़ाइल चुनें (.json)',
   'Invalid Backup File': 'बैकअप फ़ाइल सही नहीं',
   'The file could not be validated.': 'फ़ाइल की जाँच नहीं हो सकी।',
   'OK': 'ठीक है',
-  'Unknown': 'पता नहीं',
+  'Unknown': 'अज्ञात',
   'Backup Preview': 'बैकअप की झलक',
   'Created: @date': 'बना: @date',
   'Total Records: @count': 'कुल रिकॉर्ड: @count',
@@ -815,12 +815,12 @@ const Map<String, String> hindi = <String, String>{
       'आपका मौजूदा डेटा रहता है; मिलते-जुलते आइटम अपडेट होते हैं और नए जुड़ते हैं। बदलाव आपके क्लाउड अकाउंट में भी सिंक होते हैं।',
   'Clean restore (Replace all data)': 'पूरा रीस्टोर (सारा डेटा बदलें)',
   'Deletes all your current entries on this device and in your cloud account, including other devices, then restores the backup.':
-      'इस डिवाइस और आपके क्लाउड अकाउंट (दूसरे डिवाइस समेत) की सारी मौजूदा एंट्री हटाकर बैकअप वापस लाता है।',
+      'इस डिवाइस और आपके क्लाउड अकाउंट (दूसरे डिवाइस समेत) की सारी मौजूदा एंट्री हटाकर बैकअप रीस्टोर करता है।',
   'I understand that my current data will be deleted from this device and the cloud, and replaced.':
       'मुझे पता है कि मेरा मौजूदा डेटा इस डिवाइस और क्लाउड से हटकर बदल जाएगा।',
   'I want to proceed with merging this backup data.':
       'हाँ, यह बैकअप डेटा मौजूदा डेटा में जोड़ें।',
-  'Replace & Restore': 'बदलें और वापस लाएँ',
+  'Replace & Restore': 'रीप्लेस करके रीस्टोर करें',
   'Khata Contacts': 'खाता संपर्क',
   'Khata Transactions': 'खाता लेन-देन',
   'Recurring Plans': 'नियमित लेन-देन',
@@ -856,7 +856,7 @@ const Map<String, String> hindi = <String, String>{
   'This Month': 'इस महीने',
   'Last Month': 'पिछला महीना',
   'Last 3 Months': 'पिछले 3 महीने',
-  'Custom Range': 'अपनी अवधि',
+  'Custom Range': 'कस्टम अवधि',
   'Preparing data for export...': 'एक्सपोर्ट के लिए डेटा तैयार हो रहा है...',
   'Export failed: @error': 'एक्सपोर्ट नहीं हो सका: @error',
   'No transactions match the selected filters.':
@@ -897,7 +897,7 @@ const Map<String, String> hindi = <String, String>{
   'Profile photo updated.': 'प्रोफ़ाइल फ़ोटो अपडेट हो गई।',
   'Your account has been deleted.': 'आपका अकाउंट डिलीट हो गया।',
   'Loading your profile': 'आपकी प्रोफ़ाइल लोड हो रही है',
-  'Crop profile photo': 'प्रोफ़ाइल फ़ोटो काटें',
+  'Crop profile photo': 'प्रोफ़ाइल फ़ोटो क्रॉप करें',
   'Add a profile photo': 'प्रोफ़ाइल फ़ोटो जोड़ें',
   'Change profile photo': 'प्रोफ़ाइल फ़ोटो बदलें',
   'Add a photo': 'फ़ोटो जोड़ें',
@@ -926,4 +926,56 @@ const Map<String, String> hindi = <String, String>{
   'Turn on': 'चालू करें',
   'Open settings': 'सेटिंग्स खोलें',
   'Uploading photo': 'फ़ोटो अपलोड हो रही है',
+
+  // Errors
+  'Your session has expired. Please sign in again.':
+      'आपका सेशन खत्म हो गया है। कृपया फिर से साइन इन करें।',
+  "Can't reach the server. Check your connection and try again.":
+      'सर्वर तक नहीं पहुँच पा रहे। अपना इंटरनेट देखें और फिर कोशिश करें।',
+  "Couldn't load or save your data. Please try again.":
+      'आपका डेटा लोड या सेव नहीं हो सका। कृपया फिर से कोशिश करें।',
+  'Your preferences could not be saved. Please try again.':
+      'आपकी सेटिंग्स सेव नहीं हो सकीं। कृपया फिर से कोशिश करें।',
+  'Something went wrong. Please try again.':
+      'कुछ गड़बड़ हो गई। कृपया फिर से कोशिश करें।',
+  "Couldn't update your photo. Check your connection and try again.":
+      'आपकी फ़ोटो अपडेट नहीं हो सकी। इंटरनेट देखें और फिर कोशिश करें।',
+  'Choose a stronger password: at least 8 characters with letters and numbers.':
+      'मज़बूत पासवर्ड चुनें: कम से कम 8 कैरेक्टर, जिनमें अक्षर और अंक दोनों हों।',
+  'Please sign in again to continue.':
+      'आगे बढ़ने के लिए कृपया फिर से साइन इन करें।',
+  'Incorrect email or password.': 'ईमेल या पासवर्ड गलत है।',
+  'Confirm your email first. Check your inbox for the link.':
+      'पहले अपना ईमेल कन्फ़र्म करें। लिंक के लिए अपना इनबॉक्स देखें।',
+  'An account with this email already exists. Try signing in.':
+      'इस ईमेल से पहले से एक अकाउंट है। साइन इन करके देखें।',
+  'Your new password must be different from the old one.':
+      'नया पासवर्ड पुराने से अलग होना चाहिए।',
+  'Too many attempts. Wait a minute and try again.':
+      'बहुत बार कोशिश हुई। एक मिनट रुककर फिर कोशिश करें।',
+  'This link is invalid or has expired. Request a new one.':
+      'यह लिंक गलत है या इसकी मियाद खत्म हो गई। नया लिंक मँगाएँ।',
+  'New sign-ups are currently disabled.': 'अभी नए साइन-अप बंद हैं।',
+  'Your password is incorrect.': 'आपका पासवर्ड गलत है।',
+  'That photo is empty. Choose another one.':
+      'वह फ़ोटो खाली है। कोई दूसरी चुनें।',
+  'Choose a JPG, PNG or WebP image.': 'JPG, PNG या WebP फ़ोटो चुनें।',
+  'That photo is larger than 2 MB. Choose a smaller one.':
+      'वह फ़ोटो 2 MB से बड़ी है। कोई छोटी फ़ोटो चुनें।',
+  'The selected backup file is empty.': 'चुनी गई बैकअप फ़ाइल खाली है।',
+  'Invalid file format. The file is not a valid JSON document.':
+      'फ़ाइल का फ़ॉर्मैट सही नहीं। यह सही JSON फ़ाइल नहीं है।',
+  'Invalid backup structure. Root element must be a JSON object.':
+      'बैकअप का ढाँचा सही नहीं है।',
+  'Invalid backup file: missing or invalid "version" field.':
+      'बैकअप फ़ाइल सही नहीं: "version" नहीं है या गलत है।',
+  'Backup version @version is newer than supported version @supported. Please update the app.':
+      'बैकअप का वर्ज़न @version है, जो इस ऐप के वर्ज़न @supported से नया है। कृपया ऐप अपडेट करें।',
+  'Invalid backup file: "data" section is missing or invalid.':
+      'बैकअप फ़ाइल सही नहीं: "data" हिस्सा नहीं है या गलत है।',
+  'This backup does not contain any records to restore.':
+      'इस बैकअप में रीस्टोर करने के लिए कोई रिकॉर्ड नहीं है।',
+  'Failed to restore backup: @error': 'बैकअप रीस्टोर नहीं हो सका: @error',
+  'Network connection unavailable. Changes will sync when reconnected.':
+      'इंटरनेट नहीं है। जुड़ते ही बदलाव सिंक हो जाएँगे।',
 };

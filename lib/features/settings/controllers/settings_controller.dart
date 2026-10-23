@@ -91,9 +91,17 @@ class SettingsController extends GetxController {
     _notifier.markChanged();
   });
 
-  /// Back to defaults. Called at sign-out, so the next user starts clean.
-  void reset() {
-    _apply(UserPreferences.defaults);
+  /// Back to defaults. Called at sign-out, so the next user starts clean. An
+  /// account switch keeps the language: the next account's own arrives with
+  /// its settings, and the screens until then should not flash English.
+  void reset({bool keepLanguage = false}) {
+    _apply(
+      keepLanguage
+          ? UserPreferences.defaults.copyWith(
+              language: preferences.value.language,
+            )
+          : UserPreferences.defaults,
+    );
     accounts.clear();
     loadError.value = null;
     save.error.value = null;

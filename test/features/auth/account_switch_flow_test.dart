@@ -1,5 +1,7 @@
 import 'package:finance_tracker/core/storage/storage_service.dart';
+import 'package:finance_tracker/core/translations/hindi.dart';
 import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
+import 'package:finance_tracker/data/models/user_settings.dart';
 import 'package:finance_tracker/domain/entities/saved_login.dart';
 import 'package:finance_tracker/features/auth/controllers/account_switch_controller.dart';
 import 'package:finance_tracker/features/auth/views/add_account_view.dart';
@@ -27,6 +29,7 @@ Future<NotificationsHandle> _start(
   FakeAuthRepository auth, {
   bool withRavi = true,
   String? launch,
+  FakeUserSettingsRepository? userSettings,
 }) async {
   SharedPreferences.setMockInitialValues(<String, Object>{});
   final SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -55,6 +58,7 @@ Future<NotificationsHandle> _start(
     finance: finance,
     notifications: handle,
     storage: storage,
+    userSettings: userSettings,
   );
   return handle;
 }
@@ -112,6 +116,52 @@ void main() {
     await tester.pumpAndSettle();
     expect(auth.currentUserId, 'user-1');
     expect(_savedIds(), <String>['user-1', 'user-2']);
+  });
+
+  testWidgets('a Hindi account keeps Hindi on the switching screen', (
+    WidgetTester tester,
+  ) async {
+    final FakeUserSettingsRepository settings = FakeUserSettingsRepository()
+      ..settings = const UserSettings(
+        dateFormat: 'd MMM y',
+        numberFormat: 'indian',
+        firstDayOfWeek: 'monday',
+        languageCode: 'hi',
+        defaultAccountId: null,
+      );
+    await _start(tester, auth, userSettings: settings);
+    await tester.longPress(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byType(ProfileAvatar),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // The next account's settings take a moment to load, as on a phone.
+    settings.fetchDelay = const Duration(milliseconds: 500);
+    await tester.tap(find.text('Ravi Kumar'));
+    final String inHindi = hindi['Switching to @name']!.replaceAll(
+      '@name',
+      'Ravi Kumar',
+    );
+    bool sawHindi = false;
+    bool sawEnglish = false;
+    for (int i = 0; i < 60; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      sawHindi |= find.text(inHindi).evaluate().isNotEmpty;
+      // English text on the switching screen, or the next account's screens
+      // shown in English until its settings arrive.
+      sawEnglish |=
+          Get.locale?.languageCode == 'en' ||
+          find.text('Switching to Ravi Kumar').evaluate().isNotEmpty ||
+          find.text('Home').evaluate().isNotEmpty;
+    }
+    await tester.pumpAndSettle();
+
+    expect(auth.currentUserId, 'user-2');
+    expect(sawHindi, isTrue);
+    expect(sawEnglish, isFalse, reason: 'the language must not drop mid-switch');
   });
 
   testWidgets('adding an account signs in to it and switches', (

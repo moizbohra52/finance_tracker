@@ -1,13 +1,20 @@
+import 'package:get/get.dart';
+
 /// Failures surfaced to the presentation layer. [message] is always safe and
 /// friendly enough to show to the user as-is; low-level errors are mapped to
 /// these at the repository boundary (see supabase_error_mapper.dart).
 sealed class AppException implements Exception {
-  const AppException(this.message);
+  const AppException(this._text);
 
-  final String message;
+  /// The English text, which is also its translation key.
+  final String _text;
 
+  /// The text in the app's language, read when it is shown.
+  String get message => _text.tr;
+
+  /// English, for logs.
   @override
-  String toString() => '$runtimeType: $message';
+  String toString() => '$runtimeType: $_text';
 }
 
 final class AuthFailure extends AppException {

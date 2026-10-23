@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/translations/hinglish.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
+import 'package:finance_tracker/domain/services/avatar_rules.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:finance_tracker/domain/services/report_period.dart';
 import 'package:finance_tracker/features/export/controllers/export_controller.dart';
@@ -99,6 +100,16 @@ const List<String> translatedFiles = <String>[
   'lib/features/profile/widgets/profile_avatar.dart',
 ];
 
+/// Files whose `.tr` keys are checked but whose other literals are not
+/// scanned: they also hold table names, SQL, file names or text written into
+/// exported files.
+const List<String> _keyOnlyFiles = <String>[
+  'lib/core/services/backup_service.dart',
+  'lib/core/services/sync_engine.dart',
+  'lib/domain/services/avatar_rules.dart',
+  'lib/features/export/controllers/export_controller.dart',
+];
+
 /// A string literal (either quote) followed by `.tr` or `.trParams`.
 final RegExp _key = RegExp(
   r"""(?:'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)")\s*\.\s*tr(?:Params)?\b""",
@@ -117,9 +128,11 @@ final RegExp _plain = RegExp(
 
 /// Text assigned (`error = 'x'`), passed positionally (`Section('x', …)`),
 /// or written as a list or record element. A map key (`'x':`) and a log
-/// message (`developer.log('x')`, `debugPrint('x')`) are not text.
+/// message (`developer.log('x')`, `debugPrint('x')`) are not text, and a
+/// failure's text (`AuthFailure('x')`) is translated when it is read and
+/// checked by "every failure message is in both maps".
 final RegExp _positional = RegExp(
-  r"""(?:(?<![=!<>])=\s*|(?<!RegExp)(?<!DateFormat)(?<!log)(?<!debugPrint)\(\s*|,\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,);]""",
+  r"""(?:(?<![=!<>])=\s*|(?<!RegExp)(?<!DateFormat)(?<!\.log)(?<!debugPrint)(?<!Failure)\(\s*|,\s*)(?:'[^'\n]*[A-Za-z][^'\n]*'|"[^"\n]*[A-Za-z][^"\n]*")\s*[,);]""",
 );
 
 /// Literals that are not translated on purpose.
@@ -136,6 +149,14 @@ Map<String, String> _sources() => <String, String>{
   for (final String path in translatedFiles)
     path: File(path).readAsStringSync(),
 };
+
+/// One or more adjacent string literals, joined as Dart joins them.
+String _joined(String literals) => <String>[
+  for (final Match m in RegExp(
+    r"""(?:'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)")""",
+  ).allMatches(literals))
+    _unescape(m.group(1) ?? m.group(2)!),
+].join();
 
 void main() {
   test('validators get a translated field name', () {
@@ -162,6 +183,7 @@ void main() {
       for (final ReminderRepeat r in ReminderRepeat.values) r.label,
       for (final ReminderStatus s in ReminderStatus.values) s.label,
       for (final SnoozeOption o in SnoozeOption.values) o.label,
+      for (final AvatarProblem p in AvatarProblem.values) p.message,
       for (final DatePreset p in DatePreset.values) p.label,
       for (final DateRangePreset p in DateRangePreset.values) p.label,
       for (final WeekStart w in WeekStart.values) w.label,
@@ -175,9 +197,40 @@ void main() {
     );
   });
 
+  test('every failure message is in both maps', () {
+    // AppException.message translates its English text when it is read, so
+    // the text a failure is made with must be a key.
+    const String literals =
+        r"""((?:(?:'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")\s*)+)""";
+    final RegExp made = RegExp(
+      r'(?:Failure\(|super\.message\s*=)\s*' + literals,
+    );
+    final RegExp mapped = RegExp(r'=>\s*' + literals);
+    const String mapper = 'lib/core/errors/supabase_error_mapper.dart';
+    final List<String> missing = <String>[
+      for (final FileSystemEntity f in Directory(
+        'lib',
+      ).listSync(recursive: true))
+        if (f is File && f.path.endsWith('.dart'))
+          for (final Match m in <Match>[
+            ...made.allMatches(f.readAsStringSync()),
+            if (f.path.replaceAll(r'\', '/').endsWith(mapper))
+              ...mapped.allMatches(f.readAsStringSync()),
+          ])
+            if (_joined(m.group(1)!) case final String text
+                when !hindi.containsKey(text) || !hinglish.containsKey(text))
+              '${f.path}: $text',
+    ];
+    expect(missing, isEmpty);
+  });
+
   test('every key used in translated screens is in both maps', () {
     final List<String> missing = <String>[
-      for (final MapEntry<String, String> file in _sources().entries)
+      for (final MapEntry<String, String> file in <String, String>{
+        ..._sources(),
+        for (final String path in _keyOnlyFiles)
+          path: File(path).readAsStringSync(),
+      }.entries)
         for (final Match m in _key.allMatches(file.value))
           if (!hindi.containsKey(_unescape(m.group(1) ?? m.group(2)!)) ||
               !hinglish.containsKey(_unescape(m.group(1) ?? m.group(2)!)))

@@ -130,7 +130,7 @@ class ProfileController extends GetxController {
       byteLength: bytes.length,
     );
     if (problem != null) {
-      avatarError.value = problem.message;
+      avatarError.value = problem.message.tr;
       return false;
     }
     avatarBusy.value = true;

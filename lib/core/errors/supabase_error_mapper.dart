@@ -53,6 +53,7 @@ AppException mapSupabaseError(Object error) {
   return const UnexpectedFailure();
 }
 
+/// The English text; AuthFailure.message translates it when shown.
 String _authMessage(String? code) => switch (code) {
   'invalid_credentials' => 'Incorrect email or password.',
   'email_not_confirmed' =>
@@ -65,14 +66,13 @@ String _authMessage(String? code) => switch (code) {
         'numbers.',
   'over_email_send_rate_limit' || 'over_request_rate_limit' =>
     'Too many attempts. Wait a minute and try again.',
-  'session_not_found' ||
-  'session_expired' ||
-  'refresh_token_not_found' => AuthFailure.sessionExpired.message,
+  'session_not_found' || 'session_expired' || 'refresh_token_not_found' =>
+    'Your session has expired. Please sign in again.',
   'otp_expired' ||
   'flow_state_expired' ||
   'flow_state_not_found' ||
   'bad_code_verifier' =>
     'This link is invalid or has expired. Request a new one.',
   'signup_disabled' => 'New sign-ups are currently disabled.',
-  _ => const UnexpectedFailure().message,
+  _ => 'Something went wrong. Please try again.',
 };

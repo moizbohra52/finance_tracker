@@ -163,7 +163,7 @@ class AccountSwitchController extends GetxController {
       password: password,
     );
     if (added.userId == activeUserId) {
-      throw AuthFailure('You are already using this account.'.tr);
+      throw const AuthFailure('You are already using this account.');
     }
     final SavedLogin? known = _store.login(added.userId);
     await _store.save(
@@ -392,7 +392,7 @@ class AccountSwitchController extends GetxController {
     // Once this resumes the previous account's screens are gone, so no
     // screen still reads a controller being removed.
     await _afterTransition();
-    resetUserScope();
+    resetUserScope(keepLanguage: true);
   }
 
   void _openForOtherAccount(NotificationTarget target) {

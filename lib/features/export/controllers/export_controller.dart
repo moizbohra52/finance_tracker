@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/export_service.dart';
 import 'package:finance_tracker/core/services/file_sharing_service.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
@@ -231,7 +232,9 @@ class ExportController extends GetxController {
       debugPrint('Export error: $e\n$stack');
       AppSnackbar.show(
         'Export failed: @error'.trParams(<String, String>{
-          'error': e.toString().replaceAll('Exception: ', ''),
+          'error': e is AppException
+              ? e.message
+              : e.toString().replaceAll('Exception: ', ''),
         }),
       );
     } finally {
