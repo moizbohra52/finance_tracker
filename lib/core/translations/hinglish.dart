@@ -477,6 +477,7 @@ const Map<String, String> hinglish = <String, String>{
   'Transactions are recorded against an account such as Cash or a bank account.':
       'Len-den kisi account mein darj hote hain, jaise Cash ya bank account.',
   'Choose an account': 'Account chunein',
+  'Choose a category': 'Category chunein',
   'Money received into an account': 'Kisi account mein aaya paisa',
   'Money spent from an account': 'Kisi account se kharch hua paisa',
   'Transfer between accounts': 'Accounts ke beech transfer',
