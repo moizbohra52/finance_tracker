@@ -84,9 +84,11 @@ on `transaction_id` and on `goal_id`.
 - `domain/services/savings_split.dart` (pure Dart, no Flutter, no I/O):
   - `String? validate({required TransactionType type, required Decimal amount,
     required List<({String goalId, Decimal amount})> parts})`: null when fine,
-    else the first message ("Choose a goal", "Amount must be more than zero",
-    "This goal is already used", "Savings can't be more than the income").
-    Non-income with parts is an error; non-income without parts is fine.
+    else the first message ("Amount must be more than zero", "This goal is
+    already used", "Savings can't be more than the income", "Only an income
+    can go to savings"). The last one is for non-income with parts;
+    non-income without parts is fine. An unpicked goal
+    never reaches it: the row's dropdown validator says "Choose a goal".
   - `SplitChanges diff(List<SavingsContribution> current,
     List<({String goalId, Decimal amount})> wanted)`: matched by `goalId`;
     same goal keeps its row id (amount updated only when it changed), new goal
@@ -109,10 +111,12 @@ on `transaction_id` and on `goal_id`.
   - `getContributions(String transactionId)`: live rows, for the form and the
     detail screen.
 - `SavingsGoalRepository`
-  - `getSavingsGoals()` fills `contributedAmount`. SQLite: one query with a
-    left join on a grouped sum of live contributions whose transaction has
-    `deleted_at IS NULL`. Supabase: select live contributions with an inner
-    join on non-deleted transactions, then `SavingsSplit.sumByGoal`.
+  - `getSavingsGoals()` fills `contributedAmount`. SQLite: select live
+    contributions joined to transactions with `deleted_at IS NULL`. Supabase:
+    select live contributions, then keep those whose transaction id is among
+    the live transactions (second query, `inFilter('id', ...)`). Both then
+    add up with `SavingsSplit.sumByGoal` in Dart: amounts are TEXT and a
+    SQLite `SUM` would add them as floating point.
   - `deleteSavingsGoal` also soft-deletes the goal's contributions in the same
     database transaction.
 - Sync: `savings_contributions` appended to `SyncEngine.downloadDelta`'s list
