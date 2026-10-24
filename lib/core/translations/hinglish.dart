@@ -246,6 +246,11 @@ const Map<String, String> hinglish = <String, String>{
   'Enter an amount': 'Rakam darj karein',
   'Enter a valid amount, e.g. 250.50': 'Sahi rakam darj karein, jaise 250.50',
   'Amount must be more than zero': 'Rakam zero se zyada honi chahiye',
+  'This goal is already used': 'Yeh lakshya pehle se juda hai',
+  "Savings can't be more than the income":
+      'Bachat aamdani se zyada nahi ho sakti',
+  'Only an income can go to savings':
+      'Sirf aamdani hi bachat mein ja sakti hai',
   'Enter an amount (0 if none)': 'Rakam darj karein (na ho to 0)',
   'Enter @field': '@field darj karein',
   'Enter your name': 'Apna naam darj karein',
