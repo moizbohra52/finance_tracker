@@ -1,13 +1,19 @@
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
+import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_list_view.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -105,6 +111,48 @@ void main() {
       expect(await c.deleteGoal(id), isTrue);
       await c.load();
       expect(c.goals, isEmpty);
+    });
+
+    test('adding money raises the saved amount and keeps the rest', () async {
+      final FakeFinance f = FakeFinance()
+        ..savingsGoals.add(goal(targetDate: DateTime(2027)));
+      final SavingsGoalController c = controller(f);
+      await c.load();
+
+      expect(await c.addMoney(c.goals.single, Decimal.parse('100.50')), isTrue);
+      await c.load();
+      final SavingsGoal g = c.goals.single;
+      expect(g.savedAmount, Decimal.parse('350.50'));
+      expect(g.name, 'New phone');
+      expect(g.targetAmount, Decimal.parse('1000'));
+      expect(g.targetDate, DateTime(2027));
+      expect(f.savingsGoals, hasLength(1));
+    });
+
+    testWidgets('Add money on a goal card saves the new total', (
+      WidgetTester tester,
+    ) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = FakeFinance()..savingsGoals.add(goal());
+      Get.put(controller(f));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const SavingsGoalListView(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add money'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), '100');
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      expect(f.savingsGoals.single.savedAmount, Decimal.parse('350'));
+      expect(find.byType(AlertDialog), findsNothing);
     });
 
     test('a failed load or save shows the error', () async {

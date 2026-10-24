@@ -61,7 +61,8 @@
 - 75/90/100% alerts
 
 ## Savings goals (2026-10-23)
-- Name, target amount, amount saved so far (updated by hand), optional target date
+- Name, target amount, amount saved so far (updated by hand: "Add money" on
+  the goal card, or edit the goal), optional target date
 - Progress, amount left, reached and overdue state
 - Tracking only: goals do not move money or change balances
 - Not yet: contributions history, linking a goal to an account, goal alerts

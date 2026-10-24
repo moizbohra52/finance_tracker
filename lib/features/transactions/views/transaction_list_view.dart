@@ -709,6 +709,10 @@ class _GroupedList extends GetView<TransactionController> {
   Widget build(BuildContext context) => Obx(() {
     final List<_Row> rows = _rows();
     final bool loadingMore = controller.isLoadingMore.value;
+    // Rows are built lazily, outside this Obx, so subscribe here to the
+    // lookups they read; else rows built before the lookups load stay bare.
+    controller.categories.length;
+    controller.accounts.length;
     return ListView.builder(
       controller: scroll,
       physics: const AlwaysScrollableScrollPhysics(),

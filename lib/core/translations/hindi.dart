@@ -1087,4 +1087,5 @@ const Map<String, String> hindi = <String, String>{
   'Target date (optional)': 'लक्ष्य तारीख (वैकल्पिक)',
   'Goal reached': 'लक्ष्य पूरा',
   'By @date': '@date तक',
+  'Add money': 'पैसे जोड़ें',
 };

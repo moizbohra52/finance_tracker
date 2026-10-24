@@ -1101,4 +1101,5 @@ const Map<String, String> hinglish = <String, String>{
   'Target date (optional)': 'Lakshya tareekh (zaroori nahi)',
   'Goal reached': 'Lakshya poora',
   'By @date': '@date tak',
+  'Add money': 'Paise jodein',
 };

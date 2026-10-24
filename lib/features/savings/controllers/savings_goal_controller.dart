@@ -79,6 +79,17 @@ class SavingsGoalController extends GetxController {
     _notifier.markChanged();
   });
 
+  /// Adds [amount] to what is saved. The update stores the new total, so a
+  /// retried save writes the same value instead of adding twice.
+  Future<bool> addMoney(SavingsGoal goal, Decimal amount) => saveGoal(
+    id: goal.id,
+    existing: goal,
+    name: goal.name,
+    targetAmount: goal.targetAmount,
+    savedAmount: goal.savedAmount + amount,
+    targetDate: goal.targetDate,
+  );
+
   Future<bool> deleteGoal(String goalId) => deletion.run(() async {
     await _repository.deleteSavingsGoal(goalId);
     _notifier.markChanged();

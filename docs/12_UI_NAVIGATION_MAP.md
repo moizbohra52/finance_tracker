@@ -33,7 +33,7 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/budget-form` | Add / edit / delete budget (arg: `Budget` for edit) | `BudgetBinding` | Budgets FAB, budget card |
 | `/recurring` | Recurring schedules, pause/resume | `RecurringBinding` → `RecurringController` | Home "Plan ahead" |
 | `/recurring-form` | Add / edit / delete schedule incl. custom interval (arg: rule for edit) | `RecurringBinding` | Recurring FAB, schedule row |
-| `/savings-goals` | Savings goals with progress, left, reached/overdue | `SavingsGoalBinding` → `SavingsGoalController` | Home "Plan ahead" |
+| `/savings-goals` | Savings goals with progress, left, reached/overdue; "Add money" dialog per goal | `SavingsGoalBinding` → `SavingsGoalController` | Home "Plan ahead" |
 | `/savings-goal-form` | Add / edit / delete goal (arg: `SavingsGoal` for edit) | `SavingsGoalBinding` | Savings goals FAB, goal card |
 | `/settings` | Settings | — | app-bar gear |
 | `/categories` | Own and built-in categories, by kind | `CategoryBinding` → `CategoryController` | Settings > Categories |
