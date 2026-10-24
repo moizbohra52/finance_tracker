@@ -2,11 +2,14 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/supabase_error_mapper.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/models/savings_contribution.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/models/transaction.dart';
 import 'package:finance_tracker/data/repositories/payloads.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction_summary.dart';
+import 'package:finance_tracker/domain/services/savings_split.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:sqflite/sqflite.dart' hide Transaction;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -392,9 +395,14 @@ class TransactionRepository {
   /// With [onlyIfAbsent] an existing row with the same id is left untouched
   /// (used for generated transactions, so a re-run never overwrites a row the
   /// user has since edited).
+  ///
+  /// [contributions] are the savings rows of an income. Locally they are
+  /// written and queued in the same database transaction as the income, so
+  /// neither is stored without the other.
   Future<void> createTransaction(
     Transaction transaction, {
     bool onlyIfAbsent = false,
+    List<SavingsContribution> contributions = const <SavingsContribution>[],
   }) async {
     if (_db != null) {
       if (onlyIfAbsent) {
@@ -407,24 +415,27 @@ class TransactionRepository {
         if (existing.isNotEmpty) return;
       }
 
+      final DateTime now = DateTime.now();
       final TransactionModel model = TransactionModel.fromEntity(transaction);
       final Map<String, dynamic> json = model.toJson();
-      await _db.db.insert('transactions', <String, dynamic>{
-        ...json,
-        'sync_status': 'pending',
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
-      await _db.enqueue(
-        SyncQueueItem(
-          operation: SyncOperation.create,
-          entity: 'transactions',
-          entityId: transaction.id,
-          payload: <String, dynamic>{
+      await _db.db.transaction((txn) async {
+        await txn.insert('transactions', <String, dynamic>{
+          ...json,
+          'sync_status': 'pending',
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
+        await _enqueue(
+          txn,
+          SyncOperation.create,
+          'transactions',
+          transaction.id,
+          <String, dynamic>{
             ...json,
             if (onlyIfAbsent) '__only_if_absent': true,
           },
-          createdAt: DateTime.now(),
-        ),
-      );
+          now,
+        );
+        await _writeSplit(txn, SplitChanges(inserts: contributions), now);
+      });
       _syncEngine?.notifyNewQueueItem();
       return;
     }
@@ -439,28 +450,37 @@ class TransactionRepository {
             ),
             ignoreDuplicates: onlyIfAbsent,
           );
+      await _upsertContributions(contributions);
     });
   }
 
-  Future<void> updateTransaction(Transaction transaction) async {
+  /// With [savings] the income's contribution rows change in the same step
+  /// (see [createTransaction]).
+  Future<void> updateTransaction(
+    Transaction transaction, {
+    SplitChanges? savings,
+  }) async {
     if (_db != null) {
+      final DateTime now = DateTime.now();
       final TransactionModel model = TransactionModel.fromEntity(transaction);
       final Map<String, dynamic> json = model.toJson();
-      await _db.db.update(
-        'transactions',
-        <String, dynamic>{...json, 'sync_status': 'pending'},
-        where: 'id = ?',
-        whereArgs: <Object>[transaction.id],
-      );
-      await _db.enqueue(
-        SyncQueueItem(
-          operation: SyncOperation.update,
-          entity: 'transactions',
-          entityId: transaction.id,
-          payload: json,
-          createdAt: DateTime.now(),
-        ),
-      );
+      await _db.db.transaction((txn) async {
+        await txn.update(
+          'transactions',
+          <String, dynamic>{...json, 'sync_status': 'pending'},
+          where: 'id = ?',
+          whereArgs: <Object>[transaction.id],
+        );
+        await _enqueue(
+          txn,
+          SyncOperation.update,
+          'transactions',
+          transaction.id,
+          json,
+          now,
+        );
+        if (savings != null) await _writeSplit(txn, savings, now);
+      });
       _syncEngine?.notifyNewQueueItem();
       return;
     }
@@ -472,27 +492,61 @@ class TransactionRepository {
             updatePayload(TransactionModel.fromEntity(transaction).toJson()),
           )
           .eq('id', transaction.id);
+      if (savings == null) return;
+      await _upsertContributions(savings.inserts);
+      for (final SavingsContribution c in savings.updates) {
+        await _supabaseClient
+            .from('savings_contributions')
+            .update(updatePayload(SavingsContributionModel.toJson(c)))
+            .eq('id', c.id);
+      }
+      if (savings.deletes.isNotEmpty) {
+        await _supabaseClient
+            .from('savings_contributions')
+            .update(tombstone())
+            .inFilter('id', savings.deletes);
+      }
     });
   }
 
+  /// Also soft-deletes the transaction's contributions.
   Future<void> deleteTransaction(String transactionId) async {
     if (_db != null) {
-      final String now = DateTime.now().toUtc().toIso8601String();
-      await _db.db.update(
-        'transactions',
-        <String, dynamic>{'deleted_at': now, 'sync_status': 'pending'},
-        where: 'id = ?',
-        whereArgs: <Object>[transactionId],
-      );
-      await _db.enqueue(
-        SyncQueueItem(
-          operation: SyncOperation.delete,
-          entity: 'transactions',
-          entityId: transactionId,
-          payload: tombstone(),
-          createdAt: DateTime.now(),
-        ),
-      );
+      final DateTime now = DateTime.now();
+      await _db.db.transaction((txn) async {
+        await txn.update(
+          'transactions',
+          <String, dynamic>{
+            'deleted_at': now.toUtc().toIso8601String(),
+            'sync_status': 'pending',
+          },
+          where: 'id = ?',
+          whereArgs: <Object>[transactionId],
+        );
+        await _enqueue(
+          txn,
+          SyncOperation.delete,
+          'transactions',
+          transactionId,
+          tombstone(),
+          now,
+        );
+        final List<Map<String, dynamic>> live = await txn.query(
+          'savings_contributions',
+          columns: <String>['id'],
+          where: 'transaction_id = ? AND deleted_at IS NULL',
+          whereArgs: <Object>[transactionId],
+        );
+        await _writeSplit(
+          txn,
+          SplitChanges(
+            deletes: <String>[
+              for (final Map<String, dynamic> r in live) r['id'] as String,
+            ],
+          ),
+          now,
+        );
+      });
       _syncEngine?.notifyNewQueueItem();
       return;
     }
@@ -502,8 +556,134 @@ class TransactionRepository {
           .from('transactions')
           .update(tombstone())
           .eq('id', transactionId);
+      await _supabaseClient
+          .from('savings_contributions')
+          .update(tombstone())
+          .eq('transaction_id', transactionId)
+          .isFilter('deleted_at', null);
     });
   }
+
+  /// Live contribution rows of [transactionId], oldest first.
+  Future<List<SavingsContribution>> getContributions(
+    String transactionId,
+  ) async {
+    if (_db != null) {
+      final List<Map<String, dynamic>> data = await _db.db.query(
+        'savings_contributions',
+        where: 'transaction_id = ? AND deleted_at IS NULL',
+        whereArgs: <Object>[transactionId],
+        orderBy: 'created_at ASC, rowid ASC',
+      );
+      return data.map(SavingsContributionModel.fromJson).toList();
+    }
+
+    return guardSupabase(() async {
+      final List<Map<String, dynamic>> data = await _supabaseClient
+          .from('savings_contributions')
+          .select()
+          .eq('transaction_id', transactionId)
+          .isFilter('deleted_at', null)
+          .order('created_at');
+      return data.map(SavingsContributionModel.fromJson).toList();
+    });
+  }
+
+  Future<void> _upsertContributions(List<SavingsContribution> rows) async {
+    if (rows.isEmpty) return;
+    await _supabaseClient
+        .from('savings_contributions')
+        .upsert(<Map<String, dynamic>>[
+          for (final SavingsContribution c in rows)
+            insertPayload(_supabaseClient, SavingsContributionModel.toJson(c)),
+        ]);
+  }
+
+  static Future<void> _enqueue(
+    DatabaseExecutor txn,
+    SyncOperation operation,
+    String entity,
+    String entityId,
+    Map<String, dynamic> payload,
+    DateTime now,
+  ) => txn.insert(
+    'sync_queue',
+    SyncQueueItem(
+      operation: operation,
+      entity: entity,
+      entityId: entityId,
+      payload: payload,
+      createdAt: now,
+    ).toRow(),
+  );
+
+  /// Writes [changes] to `savings_contributions` and queues each row:
+  /// inserts, then updates, then deletes.
+  static Future<void> _writeSplit(
+    DatabaseExecutor txn,
+    SplitChanges changes,
+    DateTime now,
+  ) async {
+    for (final SavingsContribution c in changes.inserts) {
+      final Map<String, dynamic> json = SavingsContributionModel.toJson(c);
+      await txn.insert('savings_contributions', <String, dynamic>{
+        ...json,
+        'created_at': c.createdAt.toIso8601String(),
+        'updated_at': c.updatedAt.toIso8601String(),
+        'deleted_at': null,
+        'sync_status': 'pending',
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      await _enqueue(
+        txn,
+        SyncOperation.create,
+        'savings_contributions',
+        c.id,
+        json,
+        now,
+      );
+    }
+    for (final SavingsContribution c in changes.updates) {
+      final Map<String, dynamic> json = SavingsContributionModel.toJson(c);
+      await txn.update(
+        'savings_contributions',
+        <String, dynamic>{
+          ...json,
+          'updated_at': c.updatedAt.toIso8601String(),
+          'sync_status': 'pending',
+        },
+        where: 'id = ?',
+        whereArgs: <Object>[c.id],
+      );
+      await _enqueue(
+        txn,
+        SyncOperation.update,
+        'savings_contributions',
+        c.id,
+        json,
+        now,
+      );
+    }
+    for (final String id in changes.deletes) {
+      await txn.update(
+        'savings_contributions',
+        <String, dynamic>{
+          'deleted_at': now.toUtc().toIso8601String(),
+          'sync_status': 'pending',
+        },
+        where: 'id = ?',
+        whereArgs: <Object>[id],
+      );
+      await _enqueue(
+        txn,
+        SyncOperation.delete,
+        'savings_contributions',
+        id,
+        tombstone(),
+        now,
+      );
+    }
+  }
+
   // --- Transfers (docs/05_FINANCIAL_LOGIC.md) ---
 
   /// Both live legs of a transfer, or null when it was deleted or is

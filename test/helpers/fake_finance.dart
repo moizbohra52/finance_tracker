@@ -17,9 +17,11 @@ import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction_summary.dart';
+import 'package:finance_tracker/domain/services/savings_split.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 
 /// In-memory finance data shared by the fake repositories. [nextError] makes
@@ -48,6 +50,7 @@ class FakeFinance {
   final List<RecurringTransaction> recurring = <RecurringTransaction>[];
   final List<Reminder> reminders = <Reminder>[];
   final List<SavingsGoal> savingsGoals = <SavingsGoal>[];
+  final List<SavingsContribution> contributions = <SavingsContribution>[];
 
   /// FCM token rows by device id, with their `active` flag.
   final Map<String, ({String token, bool active})> deviceTokens =
@@ -352,6 +355,7 @@ class FakeTransactionRepository implements TransactionRepository {
   Future<void> createTransaction(
     Transaction transaction, {
     bool onlyIfAbsent = false,
+    List<SavingsContribution> contributions = const <SavingsContribution>[],
   }) async {
     _f.throwPending();
     if (onlyIfAbsent &&
@@ -361,15 +365,34 @@ class FakeTransactionRepository implements TransactionRepository {
     _f.transactions
       ..removeWhere((Transaction t) => t.id == transaction.id)
       ..add(transaction);
+    for (final SavingsContribution c in contributions) {
+      _f.contributions
+        ..removeWhere((SavingsContribution x) => x.id == c.id)
+        ..add(c);
+    }
   }
 
   @override
-  Future<void> updateTransaction(Transaction transaction) async {
+  Future<void> updateTransaction(
+    Transaction transaction, {
+    SplitChanges? savings,
+  }) async {
     _f.throwPending();
     final int i = _f.transactions.indexWhere(
       (Transaction t) => t.id == transaction.id,
     );
     _f.transactions[i] = transaction;
+    if (savings == null) return;
+    _f.contributions.addAll(savings.inserts);
+    for (final SavingsContribution c in savings.updates) {
+      final int j = _f.contributions.indexWhere(
+        (SavingsContribution x) => x.id == c.id,
+      );
+      _f.contributions[j] = c;
+    }
+    _softDeleteContributions(
+      (SavingsContribution c) => savings.deletes.contains(c.id),
+    );
   }
 
   @override
@@ -377,6 +400,29 @@ class FakeTransactionRepository implements TransactionRepository {
     _f.throwPending();
     final int i = _f.transactions.indexWhere((Transaction t) => t.id == id);
     _f.transactions[i] = _f.transactions[i].copyWith(deletedAt: DateTime.now());
+    _softDeleteContributions((SavingsContribution c) => c.transactionId == id);
+  }
+
+  @override
+  Future<List<SavingsContribution>> getContributions(
+    String transactionId,
+  ) async {
+    _f.throwPending();
+    return _f.contributions
+        .where(
+          (SavingsContribution c) =>
+              c.transactionId == transactionId && c.deletedAt == null,
+        )
+        .toList();
+  }
+
+  void _softDeleteContributions(bool Function(SavingsContribution) test) {
+    for (int i = 0; i < _f.contributions.length; i++) {
+      final SavingsContribution c = _f.contributions[i];
+      if (c.deletedAt == null && test(c)) {
+        _f.contributions[i] = c.copyWith(deletedAt: DateTime.now());
+      }
+    }
   }
 
   @override
