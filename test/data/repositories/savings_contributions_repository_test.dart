@@ -209,6 +209,14 @@ void main() {
       ],
     );
     await repo.deleteTransaction('t2');
+    // Sync race: the income tombstone arrives before its contribution's, so
+    // only the transaction predicate can exclude c2.
+    await database.db.update(
+      'savings_contributions',
+      <String, dynamic>{'deleted_at': null},
+      where: 'id = ?',
+      whereArgs: <Object>['c2'],
+    );
     // No API writes a contribution without its transaction, so this orphan
     // (t9 is not stored locally) goes in raw: the JOIN must drop it.
     await database.db.insert('savings_contributions', <String, dynamic>{
