@@ -1093,4 +1093,9 @@ const Map<String, String> hindi = <String, String>{
   'Goal reached': 'लक्ष्य पूरा',
   'By @date': '@date तक',
   'Add money': 'पैसे जोड़ें',
+  'Put some in savings': 'कुछ बचत में डालें',
+  'Another goal': 'एक और लक्ष्य',
+  'Create a savings goal first': 'पहले बचत लक्ष्य बनाएँ',
+  'Choose a goal': 'लक्ष्य चुनें',
+  '@saved to savings · @left left': '@saved बचत में · @left बचे',
 };

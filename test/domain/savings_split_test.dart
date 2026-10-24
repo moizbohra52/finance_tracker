@@ -164,6 +164,16 @@ void main() {
     });
   });
 
+  group('SavingsSplit.total', () {
+    test('adds amounts as decimals, zero for none', () {
+      expect(
+        SavingsSplit.total([part('g1', '0.10'), part('g2', '0.20')]),
+        d('0.3'),
+      );
+      expect(SavingsSplit.total(const []), Decimal.zero);
+    });
+  });
+
   group('SavingsSplit.sumByGoal', () {
     test('adds amounts per goal as decimals', () {
       expect(

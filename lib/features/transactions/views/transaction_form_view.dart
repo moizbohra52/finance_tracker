@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
@@ -13,12 +16,16 @@ import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
+import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/note_tags.dart';
+import 'package:finance_tracker/domain/services/savings_split.dart';
 import 'package:finance_tracker/features/categories/controller/category_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/widgets/receipt_field.dart';
+import 'package:finance_tracker/features/transactions/widgets/savings_split_field.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/category_picker.dart';
 import 'package:flutter/material.dart';
@@ -52,6 +59,14 @@ class _TransactionFormViewState extends State<TransactionFormView> {
   ({Uint8List bytes, String fileName})? _newReceipt;
   bool _removeReceipt = false;
 
+  // Parts of an income put into goals, sent back on Save.
+  List<SavingsPart> _savings = const <SavingsPart>[];
+
+  // False while an edited income's saved parts load, or if they could not be
+  // loaded: saving without them would drop them.
+  bool _savingsReady = true;
+  String? _savingsError;
+
   @override
   void initState() {
     super.initState();
@@ -71,8 +86,30 @@ class _TransactionFormViewState extends State<TransactionFormView> {
       _categoryId = existing.categoryId;
       _date = existing.transactionDate;
       _time = TimeOfDay.fromDateTime(existing.transactionDate);
+      if (existing.type == TransactionType.income) {
+        _savingsReady = false;
+        unawaited(_loadSavings(existing.id));
+      }
     }
     _controller.save.error.value = null;
+  }
+
+  Future<void> _loadSavings(String transactionId) async {
+    try {
+      final List<SavingsContribution> rows = await _controller.contributionsOf(
+        transactionId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _savings = <SavingsPart>[
+          for (final SavingsContribution c in rows)
+            (goalId: c.goalId, amount: c.amount),
+        ];
+        _savingsReady = true;
+      });
+    } on AppException catch (failure) {
+      if (mounted) setState(() => _savingsError = failure.message);
+    }
   }
 
   @override
@@ -95,6 +132,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
   }
 
   Future<void> _submit() async {
+    if (!_savingsReady) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final String? accountId = _effectiveAccount(_controller.accounts);
     final String? categoryId = _categoryId;
@@ -119,6 +157,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
       note: note.isEmpty ? null : note,
       newReceipt: _newReceipt,
       removeReceipt: _removeReceipt && _newReceipt == null,
+      savings: _savings,
     );
     if (!saved) return;
     AppSnackbar.show(
@@ -184,6 +223,31 @@ class _TransactionFormViewState extends State<TransactionFormView> {
     );
   }
 
+  /// Where an income puts parts of itself into goals. Built once an edited
+  /// income's saved parts are known, because the field reads them only once.
+  Widget _buildSavings() {
+    if (_type != TransactionType.income) return const SizedBox.shrink();
+    final String? error = _savingsError;
+    if (error != null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.md),
+        child: InlineMessage(message: error),
+      );
+    }
+    if (!_savingsReady) return const SizedBox.shrink();
+    final List<SavingsGoal> goals = _controller.goals.toList();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: SavingsSplitField(
+        amount: _amount,
+        goals: goals,
+        initial: _savings,
+        onChanged: (List<SavingsPart> parts) => _savings = parts,
+        onCreateGoal: () => Get.toNamed<void>(AppRoutes.savingsGoalForm),
+      ),
+    );
+  }
+
   Widget _buildForm(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     final List<Account> accounts = _controller.accounts.toList();
@@ -220,6 +284,7 @@ class _TransactionFormViewState extends State<TransactionFormView> {
                 onSelectionChanged: (Set<TransactionType> s) => setState(() {
                   _type = s.first;
                   _categoryId = null;
+                  _savings = const <SavingsPart>[];
                 }),
               ),
             const SizedBox(height: AppSpacing.lg),
@@ -315,6 +380,9 @@ class _TransactionFormViewState extends State<TransactionFormView> {
               validator: (String? v) =>
                   v == null ? 'Choose an account'.tr : null,
             ),
+            // One slot whether or not it shows, so the fields below keep
+            // their place (and the receipt its state) when the type changes.
+            _buildSavings(),
             const SizedBox(height: AppSpacing.md),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -41,13 +41,13 @@ abstract final class SavingsSplit {
     if (parts.map((SavingsPart p) => p.goalId).toSet().length != parts.length) {
       return 'This goal is already used';
     }
-    final Decimal total = parts.fold(
-      Decimal.zero,
-      (Decimal sum, SavingsPart p) => sum + p.amount,
-    );
-    if (total > amount) return "Savings can't be more than the income";
+    if (total(parts) > amount) return "Savings can't be more than the income";
     return null;
   }
+
+  /// Sum of the amounts of [parts].
+  static Decimal total(Iterable<SavingsPart> parts) =>
+      parts.fold(Decimal.zero, (Decimal sum, SavingsPart p) => sum + p.amount);
 
   /// Compares the [current] live rows of [transactionId] with the [wanted]
   /// parts, matching by goal. New rows get an empty user id, which the
