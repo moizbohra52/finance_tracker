@@ -16,6 +16,7 @@ Store:
 - recurring transactions
 - reminders
 - savings goals (database version 3; older files get the table on upgrade)
+- savings contributions (database version 4; same upgrade rule)
 - sync metadata
 
 ### One database file per signed-in account (2026-10-15)
@@ -68,6 +69,11 @@ When online:
 The queue is uploaded in FIFO order, 100 items per read, until it is empty.
 An item that keeps failing does not hold back the items after it, except a
 `replace` item (see Backup restore), which stops the sync until it succeeds.
+
+`savings_contributions` follows `savings_goals` in the pull, backup and
+restore order. A transaction and its contributions are written in one local
+transaction (the transaction first), so the queue never holds a contribution
+ahead of the transaction it references.
 
 Receipt photos are files, not queue rows. A photo attached offline is kept in
 `<app documents>/receipts/<user id>/pending/`, which is their queue

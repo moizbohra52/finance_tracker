@@ -40,6 +40,11 @@ For system categories:
 - 2026-10-23: `savings_goals` has the four owner-only policies and no `anon`
   grant; it references no other table, so no category or composite key check
   is needed. Covered by the isolation check (read, cascade on user delete).
+- 2026-10-24: `savings_contributions` has the four owner-only policies and no
+  `anon` grant. Its transaction and goal references are composite foreign keys
+  on `(user_id, id)`, so a contribution cannot point at another user's
+  transaction or goal (this needed a `(user_id, id)` unique key on
+  `savings_goals`). Not covered by the isolation check yet.
 
 ## Ownership
 Never trust user_id supplied by the Flutter client. Where possible derive ownership from auth.uid() in database policies/functions.

@@ -1079,6 +1079,8 @@ const Map<String, String> hindi = <String, String>{
   'Delete this savings goal?': 'यह बचत लक्ष्य डिलीट करें?',
   'Savings goal deleted': 'बचत लक्ष्य डिलीट हो गया',
   'Delete savings goal': 'बचत लक्ष्य डिलीट करें',
+  'Savings contributions': 'बचत योगदान',
+  'Savings contribution': 'बचत योगदान',
   'Goal name': 'लक्ष्य का नाम',
   'e.g. New phone, Emergency fund': 'जैसे नया फ़ोन, इमरजेंसी फ़ंड',
   'a goal name': 'लक्ष्य का नाम',

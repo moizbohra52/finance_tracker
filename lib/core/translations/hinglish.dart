@@ -1093,6 +1093,8 @@ const Map<String, String> hinglish = <String, String>{
   'Delete this savings goal?': 'Yeh bachat lakshya delete karein?',
   'Savings goal deleted': 'Bachat lakshya delete ho gaya',
   'Delete savings goal': 'Bachat lakshya delete karein',
+  'Savings contributions': 'Bachat ke yogdaan',
+  'Savings contribution': 'Bachat ka yogdaan',
   'Goal name': 'Lakshya ka naam',
   'e.g. New phone, Emergency fund': 'jaise Naya phone, Emergency fund',
   'a goal name': 'Lakshya ka naam',

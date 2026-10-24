@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -137,6 +137,7 @@ class AppDatabase {
       await db.execute('ALTER TABLE user_settings ADD COLUMN upi_id TEXT');
     }
     if (oldVersion < 3) await _createSavingsGoals(db);
+    if (oldVersion < 4) await _createSavingsContributions(db);
   }
 
   static Future<void> _createSavingsGoals(DatabaseExecutor db) async {
@@ -156,6 +157,28 @@ class AppDatabase {
     ''');
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_savings_goals_user ON savings_goals(user_id);',
+    );
+  }
+
+  static Future<void> _createSavingsContributions(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS savings_contributions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        transaction_id TEXT NOT NULL,
+        goal_id TEXT NOT NULL,
+        amount TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_savings_contributions_tx ON savings_contributions(transaction_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_savings_contributions_goal ON savings_contributions(goal_id);',
     );
   }
 
@@ -394,6 +417,7 @@ class AppDatabase {
 
     // 8b. Savings Goals
     await _createSavingsGoals(db);
+    await _createSavingsContributions(db);
 
     // 9. User Settings
     await db.execute('''
@@ -748,6 +772,7 @@ class AppDatabase {
       'recurring_transactions',
       'reminders',
       'savings_goals',
+      'savings_contributions',
       'user_settings',
       'profiles',
       'sync_queue',

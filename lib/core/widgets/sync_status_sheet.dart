@@ -325,6 +325,8 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return Icons.notifications_active_outlined;
       case 'savings_goals':
         return Icons.flag_outlined;
+      case 'savings_contributions':
+        return Icons.savings_outlined;
       case 'categories':
         return Icons.category_outlined;
       default:
@@ -350,6 +352,8 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return 'Reminder'.tr;
       case 'savings_goals':
         return 'Savings goal'.tr;
+      case 'savings_contributions':
+        return 'Savings contribution'.tr;
       case 'categories':
         return 'Category'.tr;
       case 'user_settings':
