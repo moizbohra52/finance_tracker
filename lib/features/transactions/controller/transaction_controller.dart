@@ -340,27 +340,26 @@ class TransactionController extends GetxController {
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );
-      if (existing == null) {
+      final List<SavingsContribution> current = await _transactionRepository
+          .getContributions(id);
+      final SplitChanges changes = SavingsSplit.diff(
+        transactionId: id,
+        current: current,
+        wanted: wanted,
+        newId: newId,
+        now: now,
+      );
+      // A create that finds rows is a retry of a save that already committed
+      // (e.g. after a receipt failure): update, or the goals get a second row.
+      if (existing == null && current.isEmpty) {
         await _transactionRepository.createTransaction(
           transaction,
-          contributions: SavingsSplit.diff(
-            transactionId: id,
-            current: const <SavingsContribution>[],
-            wanted: wanted,
-            newId: newId,
-            now: now,
-          ).inserts,
+          contributions: changes.inserts,
         );
       } else {
         await _transactionRepository.updateTransaction(
           transaction,
-          savings: SavingsSplit.diff(
-            transactionId: id,
-            current: await _transactionRepository.getContributions(id),
-            wanted: wanted,
-            newId: newId,
-            now: now,
-          ),
+          savings: changes,
         );
       }
       _notifier.markChanged();

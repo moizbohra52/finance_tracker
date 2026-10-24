@@ -88,6 +88,23 @@ void main() {
     expect(sums['g2'], Decimal.parse('3000'));
   });
 
+  test('saving the same new income twice keeps one row per goal', () async {
+    final List<SavingsPart> parts = <SavingsPart>[
+      _part('g1', '5000'),
+      _part('g2', '3000'),
+    ];
+
+    // A retry after a failed receipt keeps the form's id and `existing: null`.
+    expect(await saveIncome(savings: parts), isTrue);
+    expect(await saveIncome(savings: parts), isTrue);
+
+    expect(f.transactions, hasLength(1));
+    expect(live(), hasLength(2));
+    final Map<String, Decimal> sums = await totals();
+    expect(sums['g1'], Decimal.parse('5000'));
+    expect(sums['g2'], Decimal.parse('3000'));
+  });
+
   test('refuses savings above the income', () async {
     final bool ok = await saveIncome(
       savings: <SavingsPart>[_part('g1', '60000')],
