@@ -583,9 +583,32 @@ class FakeSavingsGoalRepository implements SavingsGoalRepository {
   @override
   Future<List<SavingsGoal>> getSavingsGoals() async {
     _f.throwPending();
-    return _f.savingsGoals
-        .where((SavingsGoal g) => g.deletedAt == null)
-        .toList();
+    // Same rule as the real repository: live rows whose income still exists.
+    final Set<String> liveTransactions = <String>{
+      for (final Transaction t in _f.transactions)
+        if (t.deletedAt == null) t.id,
+    };
+    final Map<String, Decimal> sums = SavingsSplit.sumByGoal(
+      _f.contributions.where(
+        (SavingsContribution c) =>
+            c.deletedAt == null && liveTransactions.contains(c.transactionId),
+      ),
+    );
+    return <SavingsGoal>[
+      for (final SavingsGoal g in _f.savingsGoals)
+        if (g.deletedAt == null)
+          SavingsGoal(
+            id: g.id,
+            userId: g.userId,
+            name: g.name,
+            targetAmount: g.targetAmount,
+            savedAmount: g.savedAmount,
+            contributedAmount: sums[g.id],
+            targetDate: g.targetDate,
+            createdAt: g.createdAt,
+            updatedAt: g.updatedAt,
+          ),
+    ];
   }
 
   @override
@@ -609,6 +632,13 @@ class FakeSavingsGoalRepository implements SavingsGoalRepository {
   Future<void> deleteSavingsGoal(String id) async {
     _f.throwPending();
     _f.savingsGoals.removeWhere((SavingsGoal g) => g.id == id);
+    final DateTime now = DateTime.now();
+    for (int i = 0; i < _f.contributions.length; i++) {
+      final SavingsContribution c = _f.contributions[i];
+      if (c.goalId == id && c.deletedAt == null) {
+        _f.contributions[i] = c.copyWith(deletedAt: now);
+      }
+    }
   }
 }
 

@@ -2,15 +2,17 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
+import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/savings_contribution.dart';
+import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/savings_split.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-Transaction _income() => Transaction(
-  id: 't1',
+Transaction _income({String id = 't1'}) => Transaction(
+  id: id,
   userId: 'u',
   accountId: 'acc-1',
   type: TransactionType.income,
@@ -20,29 +22,44 @@ Transaction _income() => Transaction(
   updatedAt: DateTime(2026, 10, 24),
 );
 
-SavingsContribution _contribution(String id, String goalId, String amount) =>
-    SavingsContribution(
-      id: id,
-      userId: 'u',
-      transactionId: 't1',
-      goalId: goalId,
-      amount: Decimal.parse(amount),
-      createdAt: DateTime(2026, 10, 24),
-      updatedAt: DateTime(2026, 10, 24),
-    );
+SavingsContribution _contribution(
+  String id,
+  String goalId,
+  String amount, {
+  String transactionId = 't1',
+}) => SavingsContribution(
+  id: id,
+  userId: 'u',
+  transactionId: transactionId,
+  goalId: goalId,
+  amount: Decimal.parse(amount),
+  createdAt: DateTime(2026, 10, 24),
+  updatedAt: DateTime(2026, 10, 24),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late AppDatabase database;
   late TransactionRepository repo;
+  late SavingsGoalRepository goals;
 
   setUp(() async {
     database = await AppDatabase.inMemory();
+    final SupabaseClient client = SupabaseClient(
+      'https://dummy.supabase.co',
+      'dummy-anon-key',
+    );
+    final SyncEngine engine = SyncEngine(database: database);
     repo = TransactionRepository(
-      SupabaseClient('https://dummy.supabase.co', 'dummy-anon-key'),
+      client,
       database: database,
-      syncEngine: SyncEngine(database: database),
+      syncEngine: engine,
+    );
+    goals = SavingsGoalRepository(
+      client,
+      database: database,
+      syncEngine: engine,
     );
   });
 
@@ -165,4 +182,66 @@ void main() {
       ]);
     },
   );
+
+  Future<void> createGoal() => goals.createSavingsGoal(
+    SavingsGoal(
+      id: 'g1',
+      userId: 'u',
+      name: 'Bike',
+      targetAmount: Decimal.parse('20000'),
+      savedAmount: Decimal.parse('100'),
+      targetDate: null,
+      createdAt: DateTime(2026, 10, 24),
+      updatedAt: DateTime(2026, 10, 24),
+    ),
+  );
+
+  test('goal totals add live contributions only', () async {
+    await createGoal();
+    await repo.createTransaction(
+      _income(),
+      contributions: <SavingsContribution>[_contribution('c1', 'g1', '5000')],
+    );
+    await repo.createTransaction(
+      _income(id: 't2'),
+      contributions: <SavingsContribution>[
+        _contribution('c2', 'g1', '0.10', transactionId: 't2'),
+      ],
+    );
+    await repo.deleteTransaction('t2');
+    // No API writes a contribution without its transaction, so this orphan
+    // (t9 is not stored locally) goes in raw: the JOIN must drop it.
+    await database.db.insert('savings_contributions', <String, dynamic>{
+      'id': 'c3',
+      'user_id': 'u',
+      'transaction_id': 't9',
+      'goal_id': 'g1',
+      'amount': '7',
+      'created_at': DateTime(2026, 10, 24).toIso8601String(),
+      'updated_at': DateTime(2026, 10, 24).toIso8601String(),
+      'sync_status': 'synced',
+    });
+
+    final SavingsGoal goal = (await goals.getSavingsGoals()).single;
+
+    expect(goal.contributedAmount, Decimal.parse('5000'));
+    expect(goal.totalSaved, Decimal.parse('5100'));
+  });
+
+  test('deleting a goal soft-deletes its contributions', () async {
+    await createGoal();
+    await repo.createTransaction(
+      _income(),
+      contributions: <SavingsContribution>[_contribution('c1', 'g1', '5000')],
+    );
+
+    await goals.deleteSavingsGoal('g1');
+
+    expect(await repo.getContributions('t1'), isEmpty);
+    expect(await goals.getSavingsGoals(), isEmpty);
+    expect(
+      await queue(),
+      contains((SyncOperation.delete, 'savings_contributions')),
+    );
+  });
 }
