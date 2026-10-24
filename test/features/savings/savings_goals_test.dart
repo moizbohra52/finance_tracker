@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/models/savings_goal.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
@@ -23,6 +24,7 @@ SavingsGoal goal({
   String id = 'g1',
   String target = '1000',
   String saved = '250',
+  String contributed = '0',
   DateTime? targetDate,
 }) => SavingsGoal(
   id: id,
@@ -30,6 +32,7 @@ SavingsGoal goal({
   name: 'New phone',
   targetAmount: Decimal.parse(target),
   savedAmount: Decimal.parse(saved),
+  contributedAmount: Decimal.parse(contributed),
   targetDate: targetDate,
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026),
@@ -65,6 +68,51 @@ void main() {
         isFalse,
       );
       expect(goal().isOverdue(DateTime(2100)), isFalse);
+    });
+
+    test('contributions count toward progress, remaining and reached', () {
+      final SavingsGoal g = goal(
+        saved: '250',
+        contributed: '750',
+        targetDate: DateTime(2026, 10, 23),
+      );
+      expect(g.totalSaved, Decimal.parse('1000'));
+      expect(g.isReached, isTrue);
+      expect(g.remaining, Decimal.zero);
+      expect(g.progress, 1);
+      expect(g.isOverdue(DateTime(2100)), isFalse);
+    });
+
+    test('fromJson reads contributed_amount, null or absent means zero', () {
+      Map<String, dynamic> row(Object? contributed, {bool withKey = true}) =>
+          <String, dynamic>{
+            'id': 'g1',
+            'user_id': 'u',
+            'name': 'New phone',
+            'target_amount': '1000',
+            'saved_amount': '250',
+            if (withKey) 'contributed_amount': contributed,
+            'target_date': null,
+            'created_at': '2026-01-01T00:00:00Z',
+            'updated_at': '2026-01-01T00:00:00Z',
+            'deleted_at': null,
+          };
+      expect(
+        SavingsGoalModel.fromJson(row('750.50')).contributedAmount,
+        Decimal.parse('750.5'),
+      );
+      expect(
+        SavingsGoalModel.fromJson(row(750)).contributedAmount,
+        Decimal.parse('750'),
+      );
+      expect(
+        SavingsGoalModel.fromJson(row(null)).contributedAmount,
+        Decimal.zero,
+      );
+      expect(
+        SavingsGoalModel.fromJson(row(null, withKey: false)).contributedAmount,
+        Decimal.zero,
+      );
     });
   });
 
