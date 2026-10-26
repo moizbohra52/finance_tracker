@@ -143,7 +143,7 @@ class _GoalCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '@spent of @amount'.trParams(<String, String>{
-                    'spent': AppFormatters.money(goal.savedAmount),
+                    'spent': AppFormatters.money(goal.totalSaved),
                     'amount': AppFormatters.money(goal.targetAmount),
                   }),
                   style: text.bodyMedium?.copyWith(
@@ -160,6 +160,15 @@ class _GoalCard extends StatelessWidget {
               ),
             ],
           ),
+          if (goal.contributedAmount > Decimal.zero) ...<Widget>[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '@amount from income'.trParams(<String, String>{
+                'amount': AppFormatters.money(goal.contributedAmount),
+              }),
+              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
+            ),
+          ],
           const SizedBox(height: AppSpacing.xs),
           Row(
             children: <Widget>[

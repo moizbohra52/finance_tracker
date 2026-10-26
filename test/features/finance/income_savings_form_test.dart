@@ -156,6 +156,41 @@ void main() {
     expect(f.transactions.single.id, live.first.transactionId);
   });
 
+  testWidgets('detail shows where the income went', (
+    WidgetTester tester,
+  ) async {
+    final FakeFinance f = _seededWithIncome(<SavingsContribution>[
+      _contribution('g1', '5000'),
+      _contribution('g2', '3000'),
+    ]);
+    await _start(tester, f);
+    await _openIncomeDetail(tester);
+
+    expect(find.text('Savings'), findsOneWidget);
+    expect(find.text('New phone ₹5,000.00 · Trip ₹3,000.00'), findsOneWidget);
+  });
+
+  testWidgets('detail has no Savings row for an income without savings', (
+    WidgetTester tester,
+  ) async {
+    await _start(tester, _seededWithIncome(const <SavingsContribution>[]));
+    await _openIncomeDetail(tester);
+
+    expect(find.text('Savings'), findsNothing);
+  });
+
+  testWidgets('detail names a goal that is not loaded as Savings goal', (
+    WidgetTester tester,
+  ) async {
+    await _start(
+      tester,
+      _seededWithIncome(<SavingsContribution>[_contribution('gone', '700')]),
+    );
+    await _openIncomeDetail(tester);
+
+    expect(find.text('Savings goal ₹700.00'), findsOneWidget);
+  });
+
   testWidgets('savings above the income show the error and do not save', (
     WidgetTester tester,
   ) async {

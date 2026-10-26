@@ -1114,4 +1114,7 @@ const Map<String, String> hinglish = <String, String>{
   'Create a savings goal first': 'Pehle bachat lakshya banayein',
   'Choose a goal': 'Lakshya chunein',
   '@saved to savings · @left left': '@saved bachat mein · @left bacha',
+  'Savings': 'Bachat',
+  '@amount from income': '@amount aamdani se',
+  '+ @amount added from income': '+ @amount aamdani se jude',
 };

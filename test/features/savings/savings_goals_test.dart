@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
@@ -8,8 +10,11 @@ import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/savings_goal.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
+import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_form_view.dart';
 import 'package:finance_tracker/features/savings/views/savings_goal_list_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -202,6 +207,84 @@ void main() {
       expect(f.savingsGoals.single.savedAmount, Decimal.parse('350'));
       expect(find.byType(AlertDialog), findsNothing);
     });
+
+    testWidgets('goal card shows the total and the part from income', (
+      WidgetTester tester,
+    ) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = FakeFinance()
+        ..addAccount('Cash', '0')
+        ..savingsGoals.add(goal());
+      f.addTransaction(id: 't1', type: TransactionType.income, amount: '5000');
+      f.contributions.add(
+        SavingsContribution(
+          id: 'c1',
+          userId: 'u',
+          transactionId: 't1',
+          goalId: 'g1',
+          amount: Decimal.parse('500'),
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+      Get.put(controller(f));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const SavingsGoalListView(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('₹750.00 of ₹1,000.00'), findsOneWidget);
+      expect(find.text('₹500.00 from income'), findsOneWidget);
+    });
+
+    testWidgets('goal card has no income line without contributions', (
+      WidgetTester tester,
+    ) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = FakeFinance()..savingsGoals.add(goal());
+      Get.put(controller(f));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const SavingsGoalListView(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('₹250.00 of ₹1,000.00'), findsOneWidget);
+      expect(find.textContaining('from income'), findsNothing);
+    });
+
+    testWidgets(
+      'goal form says how much of the saved amount came from income',
+      (WidgetTester tester) async {
+        await initializeDateFormatting(AppConstants.defaultLocale);
+        Get.testMode = true;
+        addTearDown(Get.reset);
+        Get.put(controller(FakeFinance()));
+        await tester.pumpWidget(
+          GetMaterialApp(theme: AppTheme.light, home: const SizedBox()),
+        );
+        unawaited(
+          Get.to<void>(
+            () => const SavingsGoalFormView(),
+            arguments: goal(contributed: '500'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('+ ₹500.00 added from income'), findsOneWidget);
+        // The field still edits only the part saved by hand.
+        expect(find.widgetWithText(TextFormField, '250'), findsOneWidget);
+      },
+    );
 
     test('a failed load or save shows the error', () async {
       final FakeFinance f = FakeFinance()..nextError = const NetworkFailure();
