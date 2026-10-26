@@ -63,6 +63,7 @@ class BackupService {
     'recurring_transactions',
     'reminders',
     'savings_goals',
+    'savings_contributions',
     'user_settings',
     'profiles',
   ];
@@ -79,6 +80,7 @@ class BackupService {
     'recurring_transactions',
     'reminders',
     'savings_goals',
+    'savings_contributions',
   };
 
   /// Columns of the signed-in user's settings and profile rows that a restore
@@ -416,7 +418,7 @@ class BackupService {
         }
 
         // Step 2: Insert rows table by table in dependency order
-        // Order: categories -> accounts -> contacts -> transactions -> contact_transactions -> budgets -> recurring -> reminders -> savings goals -> settings -> profiles
+        // Order: categories -> accounts -> contacts -> transactions -> contact_transactions -> budgets -> recurring -> reminders -> savings goals -> savings contributions -> settings -> profiles
         const List<String> insertOrder = <String>[
           'categories',
           'accounts',
@@ -427,6 +429,7 @@ class BackupService {
           'recurring_transactions',
           'reminders',
           'savings_goals',
+          'savings_contributions',
           'user_settings',
           'profiles',
         ];

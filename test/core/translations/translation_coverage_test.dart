@@ -57,6 +57,7 @@ const List<String> translatedFiles = <String>[
   'lib/features/transactions/views/transfer_form_view.dart',
   'lib/features/transactions/widgets/receipt_field.dart',
   'lib/features/transactions/widgets/receipt_preview.dart',
+  'lib/features/transactions/widgets/savings_split_field.dart',
   // Part 3: accounts, categories, reports, budgets, recurring, reminders
   'lib/core/utils/recurring_labels.dart',
   'lib/core/widgets/category_breakdown.dart',

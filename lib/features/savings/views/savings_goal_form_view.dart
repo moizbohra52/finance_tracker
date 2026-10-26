@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
@@ -90,6 +91,7 @@ class _SavingsGoalFormViewState extends State<SavingsGoalFormView> {
   @override
   Widget build(BuildContext context) {
     final bool editing = _existing != null;
+    final Decimal contributed = _existing?.contributedAmount ?? Decimal.zero;
     final DateTime now = DateTime.now();
 
     return Scaffold(
@@ -135,6 +137,11 @@ class _SavingsGoalFormViewState extends State<SavingsGoalFormView> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
+                  helperText: contributed > Decimal.zero
+                      ? '+ @amount added from income'.trParams(<String, String>{
+                          'amount': AppFormatters.money(contributed),
+                        })
+                      : null,
                   validator: Validators.nonNegativeAmount,
                 ),
                 const SizedBox(height: AppSpacing.md),

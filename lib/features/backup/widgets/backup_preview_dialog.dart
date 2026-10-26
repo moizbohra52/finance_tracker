@@ -232,6 +232,8 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
         return 'Reminders'.tr;
       case 'savings_goals':
         return 'Savings goals'.tr;
+      case 'savings_contributions':
+        return 'Savings contributions'.tr;
       case 'user_settings':
         return 'Preferences & Settings'.tr;
       case 'profiles':

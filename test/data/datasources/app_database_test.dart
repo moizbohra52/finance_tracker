@@ -62,6 +62,27 @@ void main() {
     await old.close();
   });
 
+  test(
+    'upgrading a version 3 file adds the savings contributions table',
+    () async {
+      final Database old = await databaseFactoryFfi.openDatabase(
+        inMemoryDatabasePath,
+        options: OpenDatabaseOptions(version: 3, singleInstance: false),
+      );
+
+      await AppDatabase.upgrade(old, 3, AppDatabase.databaseVersion);
+
+      final List<Map<String, Object?>> columns = await old.rawQuery(
+        'PRAGMA table_info(savings_contributions)',
+      );
+      expect(
+        columns.map((Map<String, Object?> c) => c['name']),
+        containsAll(<String>['goal_id', 'transaction_id']),
+      );
+      await old.close();
+    },
+  );
+
   test('Sync queue enqueue, fetch pending, update status and clear', () async {
     final SyncQueueItem item1 = SyncQueueItem(
       operation: SyncOperation.create,

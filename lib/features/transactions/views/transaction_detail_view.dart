@@ -13,6 +13,8 @@ import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
+import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/note_tags.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
@@ -54,7 +56,11 @@ class TransactionDetailView extends GetView<TransactionDetailController> {
               message: 'It may have been deleted.'.tr,
             );
           }
-          return _Details(transaction: t, transfer: controller.transfer.value);
+          return _Details(
+            transaction: t,
+            transfer: controller.transfer.value,
+            savings: controller.savings,
+          );
         }),
       ),
     );
@@ -62,9 +68,16 @@ class TransactionDetailView extends GetView<TransactionDetailController> {
 }
 
 class _Details extends StatelessWidget {
-  const _Details({required this.transaction, this.transfer});
+  const _Details({
+    required this.transaction,
+    required this.savings,
+    this.transfer,
+  });
 
   final Transaction transaction;
+
+  /// The goals an income was put into; empty for anything else.
+  final List<SavingsContribution> savings;
 
   /// Both legs when [transaction] is part of a transfer.
   final TransferLegs? transfer;
@@ -107,6 +120,20 @@ class _Details extends StatelessWidget {
       );
       Get.back<void>();
     }
+  }
+
+  /// 'goal amount' for each part, joined with a dot; null when nothing went
+  /// into savings. Read inside an [Obx], so it follows both [savings] and
+  /// the goal names.
+  String? _savingsText(TransactionController list) {
+    if (savings.isEmpty) return null;
+    return savings
+        .map(
+          (SavingsContribution c) =>
+              '${list.goals.firstWhereOrNull((SavingsGoal g) => g.id == c.goalId)?.name ?? 'Savings goal'.tr} '
+              '${AppFormatters.money(c.amount)}',
+        )
+        .join(' · ');
   }
 
   void _edit() {
@@ -188,6 +215,13 @@ class _Details extends StatelessWidget {
                   AppFormatters.dateTime(transaction.transactionDate),
                 ),
                 if (note != null && note.isNotEmpty) _Row('Note'.tr, note),
+                if (transaction.type == TransactionType.income)
+                  Obx(() {
+                    final String? text = _savingsText(list);
+                    return text == null
+                        ? const SizedBox.shrink()
+                        : _Row('Savings'.tr, text);
+                  }),
                 if (NoteTags.of(note) case final List<String> tags
                     when tags.isNotEmpty)
                   Align(

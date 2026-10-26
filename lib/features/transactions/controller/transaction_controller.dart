@@ -8,13 +8,17 @@ import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
+import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
+import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction_summary.dart';
 import 'package:finance_tracker/domain/services/avatar_rules.dart';
 import 'package:finance_tracker/domain/services/note_tags.dart';
+import 'package:finance_tracker/domain/services/savings_split.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:get/get.dart';
@@ -41,6 +45,7 @@ class TransactionController extends GetxController {
     this._categoryRepository,
     this._notifier, {
     this._receipts,
+    this._savingsGoals,
   });
 
   final TransactionRepository _transactionRepository;
@@ -50,6 +55,9 @@ class TransactionController extends GetxController {
 
   /// Null where receipts are not available (tests without storage).
   final ReceiptStore? _receipts;
+
+  /// Null where savings goals are not available (tests without them).
+  final SavingsGoalRepository? _savingsGoals;
 
   static const int pageSize = 30;
   static const Uuid _uuid = Uuid();
@@ -75,6 +83,9 @@ class TransactionController extends GetxController {
 
   /// Tags from the newest notes, suggested in the form.
   final RxList<String> recentTags = <String>[].obs;
+
+  /// Goals an income can put money into; empty when they cannot be loaded.
+  final RxList<SavingsGoal> goals = <SavingsGoal>[].obs;
 
   final SubmitState save = SubmitState();
   final SubmitState deletion = SubmitState();
@@ -140,6 +151,13 @@ class TransactionController extends GetxController {
       recentTags.assignAll(NoteTags.of(notes.join(' ')).take(8));
     } on AppException {
       // Only suggestions: typing a #tag in the note still works without them.
+    }
+    final SavingsGoalRepository? savingsGoals = _savingsGoals;
+    if (savingsGoals == null) return;
+    try {
+      goals.assignAll(await savingsGoals.getSavingsGoals());
+    } on AppException {
+      // The split section just stays empty; the income can still be saved.
     }
   }
 
@@ -267,6 +285,8 @@ class TransactionController extends GetxController {
   /// Creates or updates a transaction. The id is generated once per form
   /// ([id]) so a retried save upserts the same row instead of duplicating it.
   /// [newReceipt] replaces the receipt photo; [removeReceipt] drops it.
+  /// [savings] puts parts of an income into goals; it is ignored for an
+  /// expense, which drops any savings it had.
   Future<bool> saveTransaction({
     required String id,
     Transaction? existing,
@@ -278,8 +298,18 @@ class TransactionController extends GetxController {
     required String? note,
     ({Uint8List bytes, String fileName})? newReceipt,
     bool removeReceipt = false,
+    List<SavingsPart> savings = const <SavingsPart>[],
   }) {
     return save.run(() async {
+      final List<SavingsPart> wanted = type == TransactionType.income
+          ? savings
+          : const <SavingsPart>[];
+      final String? invalid = SavingsSplit.validate(
+        type: type,
+        amount: amount,
+        parts: wanted,
+      );
+      if (invalid != null) throw UnexpectedFailure(invalid.tr);
       if (newReceipt != null) {
         final AvatarProblem? problem = AvatarRules.check(
           fileName: newReceipt.fileName,
@@ -310,10 +340,27 @@ class TransactionController extends GetxController {
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );
-      if (existing == null) {
-        await _transactionRepository.createTransaction(transaction);
+      final List<SavingsContribution> current = await _transactionRepository
+          .getContributions(id);
+      final SplitChanges changes = SavingsSplit.diff(
+        transactionId: id,
+        current: current,
+        wanted: wanted,
+        newId: newId,
+        now: now,
+      );
+      // A create that finds rows is a retry of a save that already committed
+      // (e.g. after a receipt failure): update, or the goals get a second row.
+      if (existing == null && current.isEmpty) {
+        await _transactionRepository.createTransaction(
+          transaction,
+          contributions: changes.inserts,
+        );
       } else {
-        await _transactionRepository.updateTransaction(transaction);
+        await _transactionRepository.updateTransaction(
+          transaction,
+          savings: changes,
+        );
       }
       _notifier.markChanged();
       await _keepReceipt(id, newReceipt, removeReceipt);
@@ -368,6 +415,10 @@ class TransactionController extends GetxController {
       }
     });
   }
+
+  /// The live savings rows of an income, for the form.
+  Future<List<SavingsContribution>> contributionsOf(String transactionId) =>
+      _transactionRepository.getContributions(transactionId);
 
   Future<Transaction> fetchById(String id) =>
       _transactionRepository.getTransactionById(id);

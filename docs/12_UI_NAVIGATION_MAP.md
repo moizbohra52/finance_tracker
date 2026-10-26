@@ -21,9 +21,9 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | app lock cover (not a route) | "Track Day is locked", *Unlock* | `AppLockController` | app start and every return from the background when Settings > Security > *App lock* is on |
 | `/switch-account` | "Switching to ..." while the account changes (no guard) | `AccountSwitchController` | account switch, sign-out hand-over, notification of another account |
 | `/transactions` | Transaction list (route form of tab 1) | `TransactionBinding` | Home "See all" |
-| `/transaction-form` | Add income / add expense / edit (`TransactionFormArgs`) | `TransactionBinding` | Home quick actions, list FAB, detail Edit |
+| `/transaction-form` | Add income / add expense / edit (`TransactionFormArgs`); the income form has a savings section (*Put some in savings*: goal + amount rows, shows the amount left) | `TransactionBinding` | Home quick actions, list FAB, detail Edit |
 | `/transfer-form` | Transfer between two accounts, or edit one (`TransferFormArgs`) | `TransactionBinding` | Home quick action *Transfer*, list FAB sheet, account detail, transfer detail Edit |
-| `/transaction-detail` | Transaction details, edit, delete (arg: id) | `TransactionDetailBinding` | any transaction row |
+| `/transaction-detail` | Transaction details, edit, delete (arg: id); an income put into goals shows a *Savings* line ("goal amount · goal amount") | `TransactionDetailBinding` | any transaction row |
 | `/contacts` | Khata list (route form of tab 2) | `ContactBinding` | Home "Open" |
 | `/contact-form` | Add / edit contact (arg: `Contact` for edit) | `ContactBinding` | Khata FAB, contact detail |
 | `/contact-detail` | Contact ledger, balance, delete (arg: id) | `ContactDetailBinding` | contact row |
@@ -33,7 +33,7 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/budget-form` | Add / edit / delete budget (arg: `Budget` for edit) | `BudgetBinding` | Budgets FAB, budget card |
 | `/recurring` | Recurring schedules, pause/resume | `RecurringBinding` → `RecurringController` | Home "Plan ahead" |
 | `/recurring-form` | Add / edit / delete schedule incl. custom interval (arg: rule for edit) | `RecurringBinding` | Recurring FAB, schedule row |
-| `/savings-goals` | Savings goals with progress, left, reached/overdue | `SavingsGoalBinding` → `SavingsGoalController` | Home "Plan ahead" |
+| `/savings-goals` | Savings goals with progress, left, reached/overdue, the part from income; "Add money" dialog per goal | `SavingsGoalBinding` → `SavingsGoalController` | Home "Plan ahead" |
 | `/savings-goal-form` | Add / edit / delete goal (arg: `SavingsGoal` for edit) | `SavingsGoalBinding` | Savings goals FAB, goal card |
 | `/settings` | Settings | — | app-bar gear |
 | `/categories` | Own and built-in categories, by kind | `CategoryBinding` → `CategoryController` | Settings > Categories |

@@ -1,13 +1,25 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/constants/app_constants.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
+import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/models/savings_goal.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
+import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_form_view.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_list_view.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -17,6 +29,7 @@ SavingsGoal goal({
   String id = 'g1',
   String target = '1000',
   String saved = '250',
+  String contributed = '0',
   DateTime? targetDate,
 }) => SavingsGoal(
   id: id,
@@ -24,6 +37,7 @@ SavingsGoal goal({
   name: 'New phone',
   targetAmount: Decimal.parse(target),
   savedAmount: Decimal.parse(saved),
+  contributedAmount: Decimal.parse(contributed),
   targetDate: targetDate,
   createdAt: DateTime(2026),
   updatedAt: DateTime(2026),
@@ -59,6 +73,51 @@ void main() {
         isFalse,
       );
       expect(goal().isOverdue(DateTime(2100)), isFalse);
+    });
+
+    test('contributions count toward progress, remaining and reached', () {
+      final SavingsGoal g = goal(
+        saved: '250',
+        contributed: '750',
+        targetDate: DateTime(2026, 10, 23),
+      );
+      expect(g.totalSaved, Decimal.parse('1000'));
+      expect(g.isReached, isTrue);
+      expect(g.remaining, Decimal.zero);
+      expect(g.progress, 1);
+      expect(g.isOverdue(DateTime(2100)), isFalse);
+    });
+
+    test('fromJson reads contributed_amount, null or absent means zero', () {
+      Map<String, dynamic> row(Object? contributed, {bool withKey = true}) =>
+          <String, dynamic>{
+            'id': 'g1',
+            'user_id': 'u',
+            'name': 'New phone',
+            'target_amount': '1000',
+            'saved_amount': '250',
+            if (withKey) 'contributed_amount': contributed,
+            'target_date': null,
+            'created_at': '2026-01-01T00:00:00Z',
+            'updated_at': '2026-01-01T00:00:00Z',
+            'deleted_at': null,
+          };
+      expect(
+        SavingsGoalModel.fromJson(row('750.50')).contributedAmount,
+        Decimal.parse('750.5'),
+      );
+      expect(
+        SavingsGoalModel.fromJson(row(750)).contributedAmount,
+        Decimal.parse('750'),
+      );
+      expect(
+        SavingsGoalModel.fromJson(row(null)).contributedAmount,
+        Decimal.zero,
+      );
+      expect(
+        SavingsGoalModel.fromJson(row(null, withKey: false)).contributedAmount,
+        Decimal.zero,
+      );
     });
   });
 
@@ -106,6 +165,126 @@ void main() {
       await c.load();
       expect(c.goals, isEmpty);
     });
+
+    test('adding money raises the saved amount and keeps the rest', () async {
+      final FakeFinance f = FakeFinance()
+        ..savingsGoals.add(goal(targetDate: DateTime(2027)));
+      final SavingsGoalController c = controller(f);
+      await c.load();
+
+      expect(await c.addMoney(c.goals.single, Decimal.parse('100.50')), isTrue);
+      await c.load();
+      final SavingsGoal g = c.goals.single;
+      expect(g.savedAmount, Decimal.parse('350.50'));
+      expect(g.name, 'New phone');
+      expect(g.targetAmount, Decimal.parse('1000'));
+      expect(g.targetDate, DateTime(2027));
+      expect(f.savingsGoals, hasLength(1));
+    });
+
+    testWidgets('Add money on a goal card saves the new total', (
+      WidgetTester tester,
+    ) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = FakeFinance()..savingsGoals.add(goal());
+      Get.put(controller(f));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const SavingsGoalListView(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Add money'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), '100');
+      await tester.tap(find.text('Add'));
+      await tester.pumpAndSettle();
+
+      expect(f.savingsGoals.single.savedAmount, Decimal.parse('350'));
+      expect(find.byType(AlertDialog), findsNothing);
+    });
+
+    testWidgets('goal card shows the total and the part from income', (
+      WidgetTester tester,
+    ) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = FakeFinance()
+        ..addAccount('Cash', '0')
+        ..savingsGoals.add(goal());
+      f.addTransaction(id: 't1', type: TransactionType.income, amount: '5000');
+      f.contributions.add(
+        SavingsContribution(
+          id: 'c1',
+          userId: 'u',
+          transactionId: 't1',
+          goalId: 'g1',
+          amount: Decimal.parse('500'),
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+      Get.put(controller(f));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const SavingsGoalListView(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('₹750.00 of ₹1,000.00'), findsOneWidget);
+      expect(find.text('₹500.00 from income'), findsOneWidget);
+    });
+
+    testWidgets('goal card has no income line without contributions', (
+      WidgetTester tester,
+    ) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = FakeFinance()..savingsGoals.add(goal());
+      Get.put(controller(f));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const SavingsGoalListView(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('₹250.00 of ₹1,000.00'), findsOneWidget);
+      expect(find.textContaining('from income'), findsNothing);
+    });
+
+    testWidgets(
+      'goal form says how much of the saved amount came from income',
+      (WidgetTester tester) async {
+        await initializeDateFormatting(AppConstants.defaultLocale);
+        Get.testMode = true;
+        addTearDown(Get.reset);
+        Get.put(controller(FakeFinance()));
+        await tester.pumpWidget(
+          GetMaterialApp(theme: AppTheme.light, home: const SizedBox()),
+        );
+        unawaited(
+          Get.to<void>(
+            () => const SavingsGoalFormView(),
+            arguments: goal(contributed: '500'),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('+ ₹500.00 added from income'), findsOneWidget);
+        // The field still edits only the part saved by hand.
+        expect(find.widgetWithText(TextFormField, '250'), findsOneWidget);
+      },
+    );
 
     test('a failed load or save shows the error', () async {
       final FakeFinance f = FakeFinance()..nextError = const NetworkFailure();

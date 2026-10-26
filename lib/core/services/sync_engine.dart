@@ -428,6 +428,7 @@ class SyncEngine extends GetxService {
       'recurring_transactions',
       'reminders',
       'savings_goals',
+      'savings_contributions',
     ];
 
     for (final String table in syncableTables) {

@@ -1,11 +1,17 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
+import 'package:finance_tracker/core/widgets/app_dialog.dart';
+import 'package:finance_tracker/core/widgets/app_snackbar.dart';
+import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
+import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
@@ -137,7 +143,7 @@ class _GoalCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '@spent of @amount'.trParams(<String, String>{
-                    'spent': AppFormatters.money(goal.savedAmount),
+                    'spent': AppFormatters.money(goal.totalSaved),
                     'amount': AppFormatters.money(goal.targetAmount),
                   }),
                   style: text.bodyMedium?.copyWith(
@@ -154,20 +160,125 @@ class _GoalCard extends StatelessWidget {
               ),
             ],
           ),
-          if (!goal.isReached) ...<Widget>[
+          if (goal.contributedAmount > Decimal.zero) ...<Widget>[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '@amount left'.trParams(<String, String>{
-                'amount': AppFormatters.money(goal.remaining),
+              '@amount from income'.trParams(<String, String>{
+                'amount': AppFormatters.money(goal.contributedAmount),
               }),
-              style: text.titleSmall?.copyWith(
-                color: colors.primary,
-                fontWeight: FontWeight.w700,
-              ),
+              style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),
             ),
           ],
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: <Widget>[
+              if (!goal.isReached)
+                Expanded(
+                  child: Text(
+                    '@amount left'.trParams(<String, String>{
+                      'amount': AppFormatters.money(goal.remaining),
+                    }),
+                    style: text.titleSmall?.copyWith(
+                      color: colors.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                )
+              else
+                const Spacer(),
+              FilledButton.tonalIcon(
+                onPressed: () => _showAddMoney(context, goal),
+                icon: const Icon(Icons.add),
+                label: Text('Add money'.tr),
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+Future<void> _showAddMoney(BuildContext context, SavingsGoal goal) {
+  Get.find<SavingsGoalController>().save.error.value = null;
+  return showDialog<void>(
+    context: context,
+    builder: (_) => _AddMoneyDialog(goal: goal),
+  );
+}
+
+class _AddMoneyDialog extends StatefulWidget {
+  const _AddMoneyDialog({required this.goal});
+
+  final SavingsGoal goal;
+
+  @override
+  State<_AddMoneyDialog> createState() => _AddMoneyDialogState();
+}
+
+class _AddMoneyDialogState extends State<_AddMoneyDialog> {
+  final SavingsGoalController _controller = Get.find<SavingsGoalController>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _amount = TextEditingController();
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    // A sync may have refreshed the goal while the dialog was open.
+    final SavingsGoal goal =
+        _controller.goals.firstWhereOrNull(
+          (SavingsGoal g) => g.id == widget.goal.id,
+        ) ??
+        widget.goal;
+    final bool saved = await _controller.addMoney(
+      goal,
+      Decimal.parse(_amount.text.trim()),
+    );
+    if (!saved || !mounted) return;
+    Navigator.of(context).pop();
+    AppSnackbar.show('Savings goal updated'.tr);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppDialog(
+      title: 'Add money'.tr,
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            AppTextField(
+              label: 'Amount'.tr,
+              controller: _amount,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: Validators.positiveAmount,
+              onFieldSubmitted: (_) => _submit(),
+            ),
+            SubmitErrorMessage(_controller.save),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text('Cancel'.tr),
+        ),
+        Obx(
+          () => FilledButton(
+            onPressed: _controller.save.isBusy.value ? null : _submit,
+            child: Text('Add'.tr),
+          ),
+        ),
+      ],
     );
   }
 }

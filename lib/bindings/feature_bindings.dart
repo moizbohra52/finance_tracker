@@ -67,6 +67,9 @@ class TransactionBinding extends Bindings {
       receipts: Get.isRegistered<ReceiptStore>()
           ? Get.find<ReceiptStore>()
           : null,
+      savingsGoals: Get.isRegistered<SavingsGoalRepository>()
+          ? Get.find<SavingsGoalRepository>()
+          : null,
     ),
   );
 }

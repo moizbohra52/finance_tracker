@@ -20,6 +20,10 @@ abstract final class SavingsGoalModel {
     name: json['name'] as String,
     targetAmount: Decimal.parse(json['target_amount'].toString()),
     savedAmount: Decimal.parse(json['saved_amount'].toString()),
+    // Joined in by the repository; missing or null means no contributions.
+    contributedAmount: Decimal.parse(
+      (json['contributed_amount'] ?? '0').toString(),
+    ),
     targetDate: json['target_date'] == null
         ? null
         : _parseDate(json['target_date'] as String),

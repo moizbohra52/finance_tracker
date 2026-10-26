@@ -137,6 +137,23 @@ deleted_at
 A goal only tracks progress: it never moves money or changes an account
 balance (docs/05_FINANCIAL_LOGIC.md).
 
+### savings_contributions (2026-10-24)
+id UUID PK
+user_id UUID
+transaction_id UUID -- the income being split; composite FK (user_id, transaction_id)
+goal_id UUID -- composite FK (user_id, goal_id); needs unique (user_id, id) on savings_goals
+amount NUMERIC(18,2) -- > 0
+created_at
+updated_at
+deleted_at
+
+The part of one income that the user put towards a goal; it records the split
+only and moves no money. Counted towards the goal only while neither the row,
+its transaction nor its goal is deleted. At most one live row per
+(transaction_id, goal_id). The app, not the database, keeps the contributions
+of a transaction within its amount and limits them to incomes (offline edits
+upload row by row, so a database check could reject a valid sync).
+
 ### recurring_transactions
 id UUID PK
 user_id UUID
@@ -210,6 +227,9 @@ At minimum:
 - notifications(user_id, created_at DESC)
 - budgets(user_id, category_id)
 - savings_goals(user_id)
+- savings_contributions(user_id, transaction_id)
+- savings_contributions(user_id, goal_id)
+- savings_contributions(transaction_id, goal_id) UNIQUE WHERE deleted_at IS NULL
 
 ## Money rules
 Use NUMERIC(18,2). Do not use double/float for persisted monetary values.
@@ -299,6 +319,17 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    before shipping** the app version with savings goals: until then their
    sync fails on the unknown table (goals stay on the device and upload once
    it exists). Local SQLite gets the same table in database version 3.
+
+14. `20261024090000_savings_contributions.sql` - the `savings_contributions`
+   table (see above) with the four owner-only policies and no `anon` grant,
+   and a `(user_id, id)` unique key on `savings_goals` for its composite
+   foreign key. **Apply before shipping** the app version that syncs it. Without
+   it, contribution uploads fail and retry on every sync (other tables still
+   upload and nothing is lost). The contributions pull is the last table in the
+   delta pull, so its error ends every sync in the error state and changes
+   pulled from other devices do not refresh the screen until the migration is
+   applied; it recovers by itself afterwards. Local SQLite gets the same table
+   in database version 4.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

@@ -1,6 +1,7 @@
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:get/get.dart';
@@ -22,6 +23,9 @@ class TransactionDetailController extends GetxController {
 
   /// Both legs when [transaction] is part of a transfer.
   final Rxn<TransferLegs> transfer = Rxn<TransferLegs>();
+
+  /// The goals an income was put into; empty for anything else.
+  final RxList<SavingsContribution> savings = <SavingsContribution>[].obs;
   final RxBool isLoading = true.obs;
   final RxnString error = RxnString();
 
@@ -55,6 +59,11 @@ class TransactionDetailController extends GetxController {
       transfer.value = live != null && TransferLegs.isLeg(live)
           ? await _repository.getTransfer(live.transferId!)
           : null;
+      if (live != null && live.type == TransactionType.income) {
+        savings.assignAll(await _repository.getContributions(live.id));
+      } else {
+        savings.clear();
+      }
       transaction.value = live;
     } on AppException catch (failure) {
       if (!silent) error.value = failure.message;

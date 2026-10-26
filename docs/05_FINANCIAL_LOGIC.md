@@ -94,16 +94,27 @@ Alerts:
 Prevent duplicate alerts for the same budget threshold and period.
 
 ## Savings goal
-A goal tracks progress only: the user updates saved_amount by hand, and a goal
-never moves money, creates a transaction or changes an account balance.
+A goal tracks progress only: the user updates saved_amount by hand and can put
+parts of an income into it, and a goal never moves money, creates a transaction
+or changes an account balance (an income keeps its full amount).
 
-remaining = max(target - saved, 0)
+totalSaved = saved_amount + sum(live contributions)
 
-progress = saved / target, capped at 100%
+A contribution is live when neither it nor its income transaction is deleted.
 
-reached = saved >= target
+remaining = max(target - totalSaved, 0)
+
+progress = totalSaved / target, capped at 100%
+
+reached = totalSaved >= target
 
 overdue = not reached and today is after target_date (the date is inclusive)
+
+Income savings (contributions) rules:
+- each part > 0
+- a goal at most once per income
+- parts total <= the income amount
+- income transactions only
 
 Calculated in `domain/entities/savings_goal.dart` with exact decimals.
 
