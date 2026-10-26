@@ -270,6 +270,34 @@ void main() {
   });
 
   testWidgets(
+    'a non-app error while loading savings still shows a message and blocks Save',
+    (WidgetTester tester) async {
+      final FakeFinance f = _seededWithIncome(<SavingsContribution>[
+        _contribution('g1', '5000'),
+      ]);
+      await _start(tester, f);
+      await _openIncomeDetail(tester);
+      // A local database or decoding error is not an AppException.
+      f.contributionsError = StateError('disk');
+      await tapAndSettle(tester, find.text('Edit'));
+
+      expect(find.text(const UnexpectedFailure().message), findsOneWidget);
+      expect(_field, findsNothing);
+      final DateTime updatedBefore = f.transactions.single.updatedAt;
+      await tapAndSettle(
+        tester,
+        find.widgetWithText(FilledButton, 'Save changes'),
+      );
+      await tester.pumpAndSettle();
+      expect(f.transactions.single.updatedAt, updatedBefore);
+      expect(
+        f.contributions.where((SavingsContribution c) => c.deletedAt == null),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
     'a preloaded row whose goal is not loaded shows a fallback label',
     (WidgetTester tester) async {
       final FakeFinance f = _seededWithIncome(<SavingsContribution>[

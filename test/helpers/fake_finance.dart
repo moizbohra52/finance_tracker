@@ -86,6 +86,10 @@ class FakeFinance {
 
   AppException? nextError;
 
+  /// While set, reading a transaction's savings throws this. Not an
+  /// [AppException], like a local database or decoding error.
+  Error? contributionsError;
+
   /// While set, every repository call fails (use when several controllers
   /// load at startup and a single [nextError] would hit only one of them).
   AppException? failAll;
@@ -408,6 +412,8 @@ class FakeTransactionRepository implements TransactionRepository {
     String transactionId,
   ) async {
     _f.throwPending();
+    final Error? failure = _f.contributionsError;
+    if (failure != null) throw failure;
     return _f.contributions
         .where(
           (SavingsContribution c) =>

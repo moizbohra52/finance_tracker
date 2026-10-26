@@ -107,8 +107,10 @@ class _TransactionFormViewState extends State<TransactionFormView> {
         ];
         _savingsReady = true;
       });
-    } on AppException catch (failure) {
-      if (mounted) setState(() => _savingsError = failure.message);
+    } on Object catch (error) {
+      // Any error: a local database or decoding error is not an AppException,
+      // and unhandled it would leave the form silently unable to save.
+      if (mounted) setState(() => _savingsError = userMessage(error));
     }
   }
 
