@@ -1,6 +1,9 @@
 # Split expenses with friends — design
 
 Date: 2026-10-23. Status: approved in chat, awaiting spec review.
+Revised 2026-10-26 against the code after the income-savings work (migration
+file name, local database version, existing `unique (user_id, id)` keys,
+category reference); nothing else changed.
 
 ## Goal
 Let the user share an expense with friends (a trip, flatmates, an office lunch),
@@ -34,14 +37,20 @@ it works offline and syncs.
   simplification, splits outside a group.
 
 ## Schema
-New migration `supabase/migrations/20261023110000_split_expenses.sql`, same
-conventions as `20261023100000_savings_goals.sql`: client UUID `id`, `user_id`
-defaulting to `auth.uid()` with `on delete cascade`, `created_at`,
-`updated_at` (shared trigger), `deleted_at`, RLS enabled, privileges revoked
-from anon, four owner-only policies. References are composite
-`(user_id, x) → parent (user_id, id)` like `finance_core`; each parent gets a
-`unique (user_id, id)`. Apply before shipping the app version, or sync fails on
-the unknown tables.
+New migration `supabase/migrations/20261024100000_split_expenses.sql`. Its name
+must sort after the newest applied migration
+(`20261024090000_savings_contributions.sql`); applied migrations are never
+edited. Same conventions as `20261023100000_savings_goals.sql`: client UUID
+`id`, `user_id` defaulting to `auth.uid()` with `on delete cascade`,
+`created_at`, `updated_at` (shared trigger), `deleted_at`, RLS enabled,
+privileges revoked from anon, four owner-only policies. References to the
+user's own rows are composite `(user_id, x) → parent (user_id, id)` like
+`finance_core`. Each new table gets a `unique (user_id, id)`; `accounts`,
+`contacts` and `transactions` already have one. `category_id` follows the
+`transactions` pattern instead (plain foreign key to `categories (id)`, and
+`private.can_use_category(category_id)` in the insert and update policies),
+because system categories have no owner. Apply before shipping the app version,
+or sync fails on the unknown tables.
 
 ### split_groups
 `name TEXT` not blank.
@@ -80,8 +89,9 @@ and `split_settlement_id UUID nullable`, composite references to the new
 tables. A row with either set is derived from a split.
 
 ### Local database
-Same tables in SQLite, `databaseVersion` 3 → 4: `_onUpgrade` creates the five
-tables and adds the four columns. Registered wherever `savings_goals` is:
+Same tables in SQLite, `databaseVersion` 4 → 5: `AppDatabase.upgrade` gets an
+`if (oldVersion < 5)` step that creates the five tables and adds the four
+columns (`_createTables` creates them for a fresh install). Registered wherever `savings_goals` is:
 `app_database.dart` (table lists), `sync_engine.dart` (`syncableTables`),
 `sync_status_sheet.dart`, `backup_service.dart`, `backup_preview_dialog.dart`,
 `supabase/checks/cross_user_isolation.sql`.
