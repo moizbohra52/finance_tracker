@@ -162,6 +162,41 @@ void main() {
       expect(changes.inserts, isEmpty);
       expect(changes.updates, isEmpty);
     });
+
+    test('keeps the first of two rows for one goal and deletes the other', () {
+      final SplitChanges changes = diff(
+        [contribution('c1', 'g1', '5000'), contribution('c2', 'g1', '5000')],
+        [part('g1', '5000')],
+      );
+
+      expect(changes.updates, isEmpty);
+      expect(changes.inserts, isEmpty);
+      expect(changes.deletes, ['c2']);
+    });
+
+    test('deletes every duplicate row when nothing is wanted', () {
+      final SplitChanges changes = diff([
+        contribution('c1', 'g1', '5000'),
+        contribution('c2', 'g1', '7'),
+      ], const []);
+
+      expect(changes.deletes, ['c1', 'c2']);
+      expect(changes.inserts, isEmpty);
+      expect(changes.updates, isEmpty);
+    });
+
+    test('updates the first duplicate and deletes the rest', () {
+      final SplitChanges changes = diff(
+        [contribution('c1', 'g1', '5000'), contribution('c2', 'g1', '5000')],
+        [part('g1', '6000')],
+      );
+
+      expect(changes.updates, hasLength(1));
+      expect(changes.updates.single.id, 'c1');
+      expect(changes.updates.single.amount, d('6000'));
+      expect(changes.inserts, isEmpty);
+      expect(changes.deletes, ['c2']);
+    });
   });
 
   group('SavingsSplit.total', () {

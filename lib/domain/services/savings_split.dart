@@ -51,7 +51,9 @@ abstract final class SavingsSplit {
 
   /// Compares the [current] live rows of [transactionId] with the [wanted]
   /// parts, matching by goal. New rows get an empty user id, which the
-  /// repository fills in on save.
+  /// repository fills in on save. When [current] holds several rows for one
+  /// goal (a restore or a second device can add one), the first is kept and
+  /// the rest are deleted.
   static SplitChanges diff({
     required String transactionId,
     required List<SavingsContribution> current,
@@ -59,9 +61,11 @@ abstract final class SavingsSplit {
     required String Function() newId,
     required DateTime now,
   }) {
-    final Map<String, SavingsContribution> byGoal = {
-      for (final SavingsContribution c in current) c.goalId: c,
-    };
+    final Map<String, SavingsContribution> byGoal = {};
+    for (final SavingsContribution c in current) {
+      byGoal.putIfAbsent(c.goalId, () => c);
+    }
+    final Set<String> kept = {};
     final List<SavingsContribution> inserts = [];
     final List<SavingsContribution> updates = [];
     for (final SavingsPart part in wanted) {
@@ -78,14 +82,20 @@ abstract final class SavingsSplit {
             updatedAt: now,
           ),
         );
-      } else if (existing.amount != part.amount) {
-        updates.add(existing.copyWith(amount: part.amount, updatedAt: now));
+      } else {
+        kept.add(existing.id);
+        if (existing.amount != part.amount) {
+          updates.add(existing.copyWith(amount: part.amount, updatedAt: now));
+        }
       }
     }
     return SplitChanges(
       inserts: inserts,
       updates: updates,
-      deletes: [for (final SavingsContribution c in byGoal.values) c.id],
+      deletes: [
+        for (final SavingsContribution c in current)
+          if (!kept.contains(c.id)) c.id,
+      ],
     );
   }
 

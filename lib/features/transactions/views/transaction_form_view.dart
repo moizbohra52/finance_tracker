@@ -100,10 +100,13 @@ class _TransactionFormViewState extends State<TransactionFormView> {
         transactionId,
       );
       if (!mounted) return;
+      // One part per goal, the first (as SavingsSplit.diff keeps), so a Save
+      // heals a goal that has two live rows.
+      final Set<String> seen = <String>{};
       setState(() {
         _savings = <SavingsPart>[
           for (final SavingsContribution c in rows)
-            (goalId: c.goalId, amount: c.amount),
+            if (seen.add(c.goalId)) (goalId: c.goalId, amount: c.amount),
         ];
         _savingsReady = true;
       });

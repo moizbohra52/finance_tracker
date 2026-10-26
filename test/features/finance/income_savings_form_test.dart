@@ -23,9 +23,9 @@ SavingsGoal _goal(String id, String name) => SavingsGoal(
   updatedAt: DateTime(2026),
 );
 
-SavingsContribution _contribution(String goalId, String amount) =>
+SavingsContribution _contribution(String goalId, String amount, {String? id}) =>
     SavingsContribution(
-      id: 'c-$goalId',
+      id: id ?? 'c-$goalId',
       userId: 'user-1',
       transactionId: 't2',
       goalId: goalId,
@@ -274,6 +274,43 @@ void main() {
         .toList();
     expect(live.single.id, 'c-g1');
     expect(live.single.amount, Decimal.parse('5000'));
+  });
+
+  testWidgets('two live rows for one goal show as one and Save removes the '
+      'extra', (WidgetTester tester) async {
+    final FakeFinance f = _seededWithIncome(<SavingsContribution>[
+      _contribution('g1', '5000'),
+      _contribution('g1', '5000', id: 'c-g1-dup'),
+    ]);
+    await _start(tester, f);
+    await _openEditForm(tester);
+
+    expect(_inField(find.byType(BottomSheetDropdown<String>)), findsOneWidget);
+    expect(_inField(find.text('New phone')), findsOneWidget);
+    expect(_inField(find.text('5000')), findsOneWidget);
+
+    await tapAndSettle(
+      tester,
+      find.widgetWithText(FilledButton, 'Save changes'),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('This goal is already used'), findsNothing);
+    final List<SavingsContribution> live = f.contributions
+        .where((SavingsContribution c) => c.deletedAt == null)
+        .toList();
+    expect(live.single.id, 'c-g1');
+    expect(live.single.amount, Decimal.parse('5000'));
+    expect(
+      f.contributions.singleWhere(
+        (SavingsContribution c) => c.id == 'c-g1-dup',
+      ),
+      isA<SavingsContribution>().having(
+        (SavingsContribution c) => c.deletedAt,
+        'deletedAt',
+        isNotNull,
+      ),
+    );
   });
 
   testWidgets('an income whose savings could not be loaded is not saved', (
