@@ -323,10 +323,13 @@ Migrations live in `supabase/migrations/` and apply in filename order:
 14. `20261024090000_savings_contributions.sql` - the `savings_contributions`
    table (see above) with the four owner-only policies and no `anon` grant,
    and a `(user_id, id)` unique key on `savings_goals` for its composite
-   foreign key. **Apply before shipping** the app version that syncs it: until
-   then that sync fails on the unknown table (contributions stay on the device
-   and upload once it exists). Local SQLite gets the same table in database
-   version 4.
+   foreign key. **Apply before shipping** the app version that syncs it. Without
+   it, contribution uploads fail and retry on every sync (other tables still
+   upload and nothing is lost). The contributions pull is the last table in the
+   delta pull, so its error ends every sync in the error state and changes
+   pulled from other devices do not refresh the screen until the migration is
+   applied; it recovers by itself afterwards. Local SQLite gets the same table
+   in database version 4.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.
