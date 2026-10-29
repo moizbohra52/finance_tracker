@@ -4,6 +4,7 @@ import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/split.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
@@ -86,6 +87,10 @@ class SplitGroupController extends GetxController {
     await _repository.deleteGroup(groupId);
     _notifier.markChanged();
   });
+
+  /// The members of a saved group, for the edit form's prefill.
+  Future<List<SplitMember>> membersOf(String groupId) =>
+      _repository.getMembers(groupId);
 
   Future<({int expenses, int khataEntries})> deleteImpact(String groupId) =>
       _repository.getGroupDeleteImpact(groupId);

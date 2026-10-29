@@ -119,6 +119,14 @@ const List<String> translatedFiles = <String>[
   'lib/features/auth/views/splash_view.dart',
   'lib/features/auth/widgets/auth_form_layout.dart',
   'lib/features/settings/widgets/language_button.dart',
+  // Part 5: split expenses
+  'lib/features/split/controllers/split_group_controller.dart',
+  'lib/features/split/controllers/split_group_detail_controller.dart',
+  'lib/features/split/controllers/split_expense_controller.dart',
+  'lib/features/split/controllers/split_settlement_controller.dart',
+  'lib/features/split/views/split_group_list_view.dart',
+  'lib/features/split/views/split_group_form_view.dart',
+  'lib/features/split/widgets/split_member_picker_sheet.dart',
 ];
 
 /// Files whose `.tr` keys are checked but whose other literals are not

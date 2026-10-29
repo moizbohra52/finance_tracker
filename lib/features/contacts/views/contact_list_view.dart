@@ -38,6 +38,11 @@ class ContactListView extends StatelessWidget {
         title: 'Khata'.tr,
         actions: <Widget>[
           IconButton(
+            tooltip: 'Split groups'.tr,
+            icon: const Icon(Icons.groups_outlined),
+            onPressed: () => Get.toNamed<void>(AppRoutes.splitGroups),
+          ),
+          IconButton(
             tooltip: 'Import from phone contacts'.tr,
             icon: const Icon(Icons.contacts_outlined),
             onPressed: () => openImportDeviceContact(context),

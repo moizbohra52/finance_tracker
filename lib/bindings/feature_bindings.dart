@@ -13,6 +13,7 @@ import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
+import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
@@ -31,6 +32,7 @@ import 'package:finance_tracker/features/reminders/controllers/reminder_controll
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/calendar_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
@@ -244,6 +246,17 @@ class NotificationCenterBinding extends Bindings {
     () => NotificationCenterController(
       Get.find<NotificationRepository>(),
       Get.find<NotificationCoordinator>(),
+    ),
+  );
+}
+
+class SplitGroupBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => SplitGroupController(
+      Get.find<SplitRepository>(),
+      Get.find<ContactRepository>(),
+      Get.find<DataChangeNotifier>(),
     ),
   );
 }

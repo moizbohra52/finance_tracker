@@ -16,6 +16,7 @@ import 'package:finance_tracker/features/reminders/controllers/reminder_controll
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:get/get.dart';
 
@@ -73,6 +74,7 @@ final List<void Function()> _userScopedRemovers = <void Function()>[
   // routeIdArgument) and go with their routes when sign-out clears the stack.
   _remove<AccountController>,
   _remove<ContactFormController>,
+  _remove<SplitGroupController>,
   // Auth screens for signed-in sessions.
   _remove<ResetPasswordController>,
   _remove<ChangePasswordController>,
