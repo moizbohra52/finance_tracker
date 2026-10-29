@@ -11,6 +11,7 @@ import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/split.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
+import 'package:finance_tracker/domain/services/split_balances.dart';
 import 'package:finance_tracker/domain/services/split_ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -758,6 +759,371 @@ void main() {
           .map((ContactTransactionModel m) => m.toEntity())
           .toList();
       expect(amit.getCurrentBalance(amitKhata), Decimal.zero);
+    });
+  });
+
+  group('settlements, group delete and group reads', () {
+    const String groupId = 'g-settle';
+    const String accountId = 'acc-1';
+    final DateTime date = DateTime(2026, 10, 26, 19, 30);
+    late String meId;
+    late String amitId;
+    late String nehaId;
+    late String rahulId;
+
+    Future<void> seedDinner() async {
+      await repo.saveGroup(
+        groupId: groupId,
+        name: 'Goa',
+        friendContactIds: <String>['c-amit', 'c-neha', 'c-rahul'],
+      );
+      meId = SplitIds.member(groupId, null);
+      amitId = SplitIds.member(groupId, 'c-amit');
+      nehaId = SplitIds.member(groupId, 'c-neha');
+      rahulId = SplitIds.member(groupId, 'c-rahul');
+      await repo.saveExpense(
+        expense: SplitExpense(
+          id: 'e1',
+          userId: '',
+          groupId: groupId,
+          title: 'Dinner',
+          totalAmount: Decimal.parse('1200'),
+          expenseDate: date,
+          splitMode: SplitMode.equal,
+          categoryId: 'cat-1',
+          accountId: accountId,
+          createdAt: now,
+          updatedAt: now,
+        ),
+        parts: <SplitPart>[
+          SplitPart(
+            id: '',
+            userId: '',
+            splitExpenseId: 'e1',
+            memberId: meId,
+            paidAmount: Decimal.parse('800'),
+            shareAmount: Decimal.parse('300'),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          SplitPart(
+            id: '',
+            userId: '',
+            splitExpenseId: 'e1',
+            memberId: amitId,
+            paidAmount: Decimal.zero,
+            shareAmount: Decimal.parse('300'),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          SplitPart(
+            id: '',
+            userId: '',
+            splitExpenseId: 'e1',
+            memberId: nehaId,
+            paidAmount: Decimal.zero,
+            shareAmount: Decimal.parse('300'),
+            createdAt: now,
+            updatedAt: now,
+          ),
+          SplitPart(
+            id: '',
+            userId: '',
+            splitExpenseId: 'e1',
+            memberId: rahulId,
+            paidAmount: Decimal.parse('400'),
+            shareAmount: Decimal.parse('300'),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        ],
+      );
+    }
+
+    SplitSettlement settlement(
+      String id,
+      String from,
+      String to,
+      String amount, {
+      String? accountId,
+    }) => SplitSettlement(
+      id: id,
+      userId: '',
+      groupId: groupId,
+      fromMemberId: from,
+      toMemberId: to,
+      amount: Decimal.parse(amount),
+      settledAt: date,
+      accountId: accountId,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    Future<List<Transaction>> liveSettlementTxns(String settlementId) async {
+      final List<Map<String, dynamic>> rows = await database.db.query(
+        'transactions',
+        where: 'split_settlement_id = ? AND deleted_at IS NULL',
+        whereArgs: <Object>[settlementId],
+      );
+      return rows
+          .map(TransactionModel.fromJson)
+          .map((TransactionModel m) => m.toEntity())
+          .toList();
+    }
+
+    Future<List<ContactTransaction>> liveSettlementKhata(
+      String settlementId,
+    ) async {
+      final List<Map<String, dynamic>> rows = await database.db.query(
+        'contact_transactions',
+        where: 'split_settlement_id = ? AND deleted_at IS NULL',
+        whereArgs: <Object>[settlementId],
+      );
+      return rows
+          .map(ContactTransactionModel.fromJson)
+          .map((ContactTransactionModel m) => m.toEntity())
+          .toList();
+    }
+
+    test('a friend paying the user writes the received pair', () async {
+      await seedDinner();
+      await repo.saveSettlement(
+        settlement('s1', amitId, meId, '200', accountId: accountId),
+      );
+
+      final List<ContactTransaction> khata = await liveSettlementKhata('s1');
+      expect(khata.length, 1);
+      expect(khata.single.id, SplitIds.settlementKhata('s1'));
+      expect(khata.single.contactId, 'c-amit');
+      expect(khata.single.type, ContactTransactionType.paymentReceived);
+      expect(khata.single.amount, Decimal.parse('200'));
+
+      final List<Transaction> txns = await liveSettlementTxns('s1');
+      expect(txns.length, 1);
+      expect(txns.single.id, SplitIds.settlementAccount('s1'));
+      expect(txns.single.type, TransactionType.payment_received);
+      expect(txns.single.contactId, 'c-amit');
+      expect(txns.single.accountId, accountId);
+    });
+
+    test('paying a friend writes the made pair', () async {
+      await seedDinner();
+      await repo.saveSettlement(
+        settlement('s1', meId, amitId, '100', accountId: accountId),
+      );
+      final List<Transaction> txns = await liveSettlementTxns('s1');
+      expect(txns.single.type, TransactionType.payment_made);
+      final List<ContactTransaction> khata = await liveSettlementKhata('s1');
+      expect(khata.single.type, ContactTransactionType.paymentMade);
+    });
+
+    test(
+      'a friend-to-friend settlement writes nothing and refuses an account',
+      () async {
+        await seedDinner();
+        await expectLater(
+          repo.saveSettlement(
+            settlement('s1', amitId, rahulId, '100', accountId: accountId),
+          ),
+          throwsA(
+            isA<UnexpectedFailure>().having(
+              (UnexpectedFailure e) => e.message,
+              'message',
+              'Only a settlement with you can use an account',
+            ),
+          ),
+        );
+        await repo.saveSettlement(settlement('s2', amitId, rahulId, '100'));
+        expect(await liveSettlementKhata('s2'), isEmpty);
+        expect(await liveSettlementTxns('s2'), isEmpty);
+      },
+    );
+
+    test('clearing the account tombstones the account row', () async {
+      await seedDinner();
+      await repo.saveSettlement(
+        settlement('s1', amitId, meId, '200', accountId: accountId),
+      );
+      expect(await liveSettlementTxns('s1'), isNotEmpty);
+
+      await repo.saveSettlement(settlement('s1', amitId, meId, '200'));
+
+      expect(await liveSettlementTxns('s1'), isEmpty);
+      expect(await liveSettlementKhata('s1'), isNotEmpty);
+    });
+
+    test('settling removes the pair and zeroes the khata balance', () async {
+      await seedDinner();
+      await repo.saveSettlement(settlement('s1', amitId, meId, '200'));
+
+      final SplitGroupDetail detail = await repo.getGroupDetail(groupId);
+      expect(
+        detail.balances.pairs.any(
+          (PairBalance p) =>
+              p.debtorMemberId == amitId && p.creditorMemberId == meId,
+        ),
+        isFalse,
+        reason: 'the settled pair is gone',
+      );
+      final List<Map<String, dynamic>> khataRows = await database.db.query(
+        'contact_transactions',
+        where: 'contact_id = ? AND deleted_at IS NULL',
+        whereArgs: <Object>['c-amit'],
+      );
+      final List<ContactTransaction> amitKhata = khataRows
+          .map(ContactTransactionModel.fromJson)
+          .map((ContactTransactionModel m) => m.toEntity())
+          .toList();
+      expect(
+        Contact(
+          id: 'c-amit',
+          userId: '',
+          name: 'Amit',
+          openingBalance: Decimal.zero,
+          openingBalanceType: 'receivable',
+          createdAt: now,
+          updatedAt: now,
+        ).getCurrentBalance(amitKhata),
+        Decimal.zero,
+      );
+    });
+
+    test('overpaying flips the pair', () async {
+      await seedDinner();
+      await repo.saveSettlement(settlement('s1', amitId, meId, '250'));
+      final SplitGroupDetail detail = await repo.getGroupDetail(groupId);
+      expect(
+        detail.balances.pairs
+            .map(
+              (PairBalance p) =>
+                  '${p.debtorMemberId}→${p.creditorMemberId} ${p.amount}',
+            )
+            .toList(),
+        contains('$meId→$amitId 50'),
+      );
+    });
+
+    test('getGroupDetail returns the header totals', () async {
+      await seedDinner();
+      final SplitGroupDetail detail = await repo.getGroupDetail(groupId);
+      expect(detail.totalSpent, Decimal.parse('1200'));
+      expect(detail.userShareTotal, Decimal.parse('300'));
+      expect(detail.balances.netOf(meId), Decimal.parse('500'));
+      expect(detail.members.length, 4);
+    });
+
+    test('getActivity merges and pages newest first', () async {
+      await seedDinner();
+      for (int i = 0; i < 119; i++) {
+        await database.db.insert('split_expenses', <String, Object?>{
+          'id': 'ex-$i',
+          'group_id': groupId,
+          'title': 'Auto $i',
+          'total_amount': '10',
+          'expense_date': DateTime(2026, 1, 1).toIso8601String(),
+          'split_mode': 'equal',
+          'created_at': DateTime(2026, 1, 1).toIso8601String(),
+          'updated_at': DateTime(2026, 1, 1).toIso8601String(),
+        });
+      }
+      await repo.saveSettlement(settlement('s1', amitId, meId, '50'));
+
+      final List<SplitActivityItem> page1 = await repo.getActivity(groupId);
+      expect(page1.length, 50);
+      final List<SplitActivityItem> page2 = await repo.getActivity(
+        groupId,
+        offset: 50,
+      );
+      expect(page2.length, 50);
+      final List<SplitActivityItem> page3 = await repo.getActivity(
+        groupId,
+        offset: 100,
+      );
+      expect(page3.length, 21);
+      // Newest first: today's dinner and settlement lead (ties by id), the
+      // January autos trail.
+      expect(page1.first, isA<SplitActivityExpense>());
+      expect(page1.take(2).whereType<SplitActivitySettlement>().length, 1);
+      expect(page3.last, isA<SplitActivityExpense>());
+      expect(page1.first.date.isAfter(page3.last.date), isTrue);
+    });
+
+    test('getGroupDeleteImpact counts rows to remove', () async {
+      await seedDinner();
+      await repo.saveSettlement(
+        settlement('s1', amitId, meId, '200', accountId: accountId),
+      );
+      final ({int expenses, int khataEntries}) impact = await repo
+          .getGroupDeleteImpact(groupId);
+      expect(impact.expenses, 1);
+      // 2 derived transactions + 3 khata entries of the expense + 1 khata
+      // payment + 1 account row.
+      expect(impact.khataEntries, 7);
+    });
+
+    test('deleteGroup tombstones everything and restores balances', () async {
+      await seedDinner();
+      await repo.saveSettlement(
+        settlement('s1', amitId, meId, '200', accountId: accountId),
+      );
+      final Account account = Account(
+        id: accountId,
+        userId: '',
+        name: 'Bank',
+        type: AccountType.bank,
+        openingBalance: Decimal.parse('10000'),
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      );
+      Future<Decimal> accountBalance() async {
+        final List<Map<String, dynamic>> rows = await database.db.query(
+          'transactions',
+        );
+        final List<Transaction> transactions = rows
+            .map(TransactionModel.fromJson)
+            .map((TransactionModel m) => m.toEntity())
+            .toList();
+        return FinanceSummaryCalculator.accountBalances(<Account>[
+          account,
+        ], transactions)[accountId]!;
+      }
+
+      await repo.deleteGroup(groupId);
+
+      for (final String table in <String>[
+        'split_groups',
+        'split_group_members',
+        'split_expenses',
+        'split_expense_parts',
+        'split_settlements',
+        'transactions',
+        'contact_transactions',
+      ]) {
+        final List<Map<String, Object?>> live = await database.db.query(
+          table,
+          where: 'deleted_at IS NULL',
+        );
+        expect(live, isEmpty, reason: '$table has no live rows left');
+      }
+      expect(await accountBalance(), Decimal.parse('10000'));
+    });
+
+    test('deleteSettlement tombstones its rows', () async {
+      await seedDinner();
+      await repo.saveSettlement(
+        settlement('s1', amitId, meId, '200', accountId: accountId),
+      );
+
+      await repo.deleteSettlement('s1');
+
+      expect(await liveSettlementKhata('s1'), isEmpty);
+      expect(await liveSettlementTxns('s1'), isEmpty);
+      final List<Map<String, Object?>> rows = await database.db.query(
+        'split_settlements',
+        where: 'deleted_at IS NULL',
+      );
+      expect(rows, isEmpty);
     });
   });
 }

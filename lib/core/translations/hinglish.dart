@@ -1102,6 +1102,12 @@ const Map<String, String> hinglish = <String, String>{
   'Savings contribution': 'Bachat ka yogdaan',
   'Split groups': 'Split groups',
   'Split group': 'Split group',
+  'Give the group a name': 'Group ka naam likhein',
+  'Add at least one friend': 'Kam se kam ek dost jodein',
+  "This friend is in an expense or settlement and can't be removed":
+      'Yeh dost kisi kharche ya hisab kitab mein hai, use hataya nahi ja sakta',
+  'Choose two different people': 'Do alag log chunein',
+  'Only a settlement with you can use an account': 'Sirf aapki hisab kitab account use kar sakti hai',
   'Group members': 'Group members',
   'Group member': 'Group member',
   'Split expenses': 'Split kharche',

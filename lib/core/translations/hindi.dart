@@ -1086,6 +1086,12 @@ const Map<String, String> hindi = <String, String>{
   'Savings contribution': 'बचत योगदान',
   'Split groups': 'स्प्लिट समूह',
   'Split group': 'स्प्लिट समूह',
+  'Give the group a name': 'समूह का नाम लिखें',
+  'Add at least one friend': 'कम से कम एक दोस्त जोड़ें',
+  "This friend is in an expense or settlement and can't be removed":
+      'यह दोस्त किसी खर्च या हिसाब किताब में है, उसे हटाया नहीं जा सकता',
+  'Choose two different people': 'दो अलग लोग चुनें',
+  'Only a settlement with you can use an account': 'केवल आपके साथ की हिसाब किताब खाता इस्तेमाल कर सकती है',
   'Group members': 'समूह के सदस्य',
   'Group member': 'समूह सदस्य',
   'Split expenses': 'स्प्लिट खर्च',

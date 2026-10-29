@@ -11,7 +11,7 @@ abstract final class SplitGroupModel {
 
   static SplitGroup fromJson(Map<String, dynamic> json) => SplitGroup(
     id: json['id'] as String,
-    userId: json['user_id'] as String,
+    userId: (json['user_id'] ?? '') as String,
     name: json['name'] as String,
     createdAt: _when(json['created_at']),
     updatedAt: _when(json['updated_at']),
@@ -37,7 +37,7 @@ abstract final class SplitMemberModel {
 
   static SplitMember fromJson(Map<String, dynamic> json) => SplitMember(
     id: json['id'] as String,
-    userId: json['user_id'] as String,
+    userId: (json['user_id'] ?? '') as String,
     groupId: json['group_id'] as String,
     // Null is the user's own member.
     contactId: json['contact_id'] as String?,
@@ -66,7 +66,7 @@ abstract final class SplitExpenseModel {
 
   static SplitExpense fromJson(Map<String, dynamic> json) => SplitExpense(
     id: json['id'] as String,
-    userId: json['user_id'] as String,
+    userId: (json['user_id'] ?? '') as String,
     groupId: json['group_id'] as String,
     title: json['title'] as String,
     totalAmount: Decimal.parse(json['total_amount'].toString()),
@@ -106,7 +106,7 @@ abstract final class SplitPartModel {
 
   static SplitPart fromJson(Map<String, dynamic> json) => SplitPart(
     id: json['id'] as String,
-    userId: json['user_id'] as String,
+    userId: (json['user_id'] ?? '') as String,
     splitExpenseId: json['split_expense_id'] as String,
     memberId: json['member_id'] as String,
     paidAmount: Decimal.parse(json['paid_amount'].toString()),
@@ -142,7 +142,7 @@ abstract final class SplitSettlementModel {
 
   static SplitSettlement fromJson(Map<String, dynamic> json) => SplitSettlement(
     id: json['id'] as String,
-    userId: json['user_id'] as String,
+    userId: (json['user_id'] ?? '') as String,
     groupId: json['group_id'] as String,
     fromMemberId: json['from_member_id'] as String,
     toMemberId: json['to_member_id'] as String,

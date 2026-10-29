@@ -1097,4 +1097,199 @@ class FakeSplitRepository implements SplitRepository {
       }
     }
   }
+
+  @override
+  Future<SplitSettlement> getSettlement(String settlementId) async {
+    _f.throwPending();
+    for (final SplitSettlement s in _f.splitSettlements) {
+      if (s.id == settlementId) return s;
+    }
+    throw const DatabaseFailure();
+  }
+
+  @override
+  Future<void> saveSettlement(SplitSettlement settlement) async {
+    _f.throwPending();
+    if (settlement.fromMemberId == settlement.toMemberId) {
+      throw const UnexpectedFailure('Choose two different people');
+    }
+    if (settlement.amount <= Decimal.zero) {
+      throw const UnexpectedFailure('Amount must be more than zero');
+    }
+    final bool userIsParty = _f.splitMembers.any(
+      (SplitMember m) =>
+          m.groupId == settlement.groupId &&
+          m.isMe &&
+          (m.id == settlement.fromMemberId || m.id == settlement.toMemberId),
+    );
+    if (!userIsParty && settlement.accountId != null) {
+      throw const UnexpectedFailure(
+        'Only a settlement with you can use an account',
+      );
+    }
+    _f.splitSettlements
+      ..removeWhere((SplitSettlement s) => s.id == settlement.id)
+      ..add(settlement);
+  }
+
+  @override
+  Future<void> deleteSettlement(String settlementId) async {
+    _f.throwPending();
+    for (int i = 0; i < _f.splitSettlements.length; i++) {
+      if (_f.splitSettlements[i].id == settlementId) {
+        _f.splitSettlements[i] = _f.splitSettlements[i].copyWith(
+          deletedAt: DateTime.now(),
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> deleteGroup(String groupId) async {
+    _f.throwPending();
+    final DateTime now = DateTime.now();
+    for (int i = 0; i < _f.splitGroups.length; i++) {
+      if (_f.splitGroups[i].id == groupId) {
+        _f.splitGroups[i] = _f.splitGroups[i].copyWith(deletedAt: now);
+      }
+    }
+    for (int i = 0; i < _f.splitMembers.length; i++) {
+      if (_f.splitMembers[i].groupId == groupId) {
+        _f.splitMembers[i] = _f.splitMembers[i].copyWith(deletedAt: now);
+      }
+    }
+    for (int i = 0; i < _f.splitExpenses.length; i++) {
+      if (_f.splitExpenses[i].groupId == groupId) {
+        _f.splitExpenses[i] = _f.splitExpenses[i].copyWith(deletedAt: now);
+      }
+    }
+    for (int i = 0; i < _f.splitParts.length; i++) {
+      if (_f.splitParts[i].isLive &&
+          _f.splitExpenses.any(
+            (SplitExpense e) =>
+                e.id == _f.splitParts[i].splitExpenseId && e.groupId == groupId,
+          )) {
+        _f.splitParts[i] = _f.splitParts[i].copyWith(deletedAt: now);
+      }
+    }
+    for (int i = 0; i < _f.splitSettlements.length; i++) {
+      if (_f.splitSettlements[i].groupId == groupId) {
+        _f.splitSettlements[i] = _f.splitSettlements[i].copyWith(
+          deletedAt: now,
+        );
+      }
+    }
+  }
+
+  @override
+  Future<SplitGroupDetail> getGroupDetail(String groupId) async {
+    _f.throwPending();
+    final SplitGroup group = await getGroup(groupId);
+    final List<SplitMember> members = await getMembers(groupId);
+    final List<SplitExpense> expenses = _f.splitExpenses
+        .where((SplitExpense e) => e.groupId == groupId && e.isLive)
+        .toList();
+    return SplitGroupDetail(
+      group: group,
+      members: members,
+      balances: _balances(groupId),
+      totalSpent: expenses.fold(
+        Decimal.zero,
+        (Decimal sum, SplitExpense e) => sum + e.totalAmount,
+      ),
+      userShareTotal: _f.splitParts
+          .where(
+            (SplitPart p) =>
+                p.isLive &&
+                p.memberId == SplitIds.member(groupId, null) &&
+                expenses.any((SplitExpense e) => e.id == p.splitExpenseId),
+          )
+          .fold(
+            Decimal.zero,
+            (Decimal sum, SplitPart p) => sum + p.shareAmount,
+          ),
+    );
+  }
+
+  @override
+  Future<List<SplitActivityItem>> getActivity(
+    String groupId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    _f.throwPending();
+    final String meId = SplitIds.member(groupId, null);
+    final List<SplitActivityItem> items = <SplitActivityItem>[
+      for (final SplitExpense e in _f.splitExpenses)
+        if (e.groupId == groupId && e.isLive)
+          SplitActivityExpense(expense: e, userPart: _userPart(e.id, meId)),
+      for (final SplitSettlement s in _f.splitSettlements)
+        if (s.groupId == groupId && s.isLive)
+          SplitActivitySettlement(settlement: s),
+    ];
+    items.sort((SplitActivityItem a, SplitActivityItem b) {
+      final int byDate = b.date.compareTo(a.date);
+      return byDate != 0 ? byDate : _itemIdOf(a).compareTo(_itemIdOf(b));
+    });
+    if (offset >= items.length) return const <SplitActivityItem>[];
+    final int end = (offset + limit).clamp(0, items.length);
+    return items.sublist(offset, end);
+  }
+
+  SplitPart? _userPart(String expenseId, String meId) {
+    for (final SplitPart p in _f.splitParts) {
+      if (p.splitExpenseId == expenseId && p.memberId == meId && p.isLive) {
+        return p;
+      }
+    }
+    return null;
+  }
+
+  String _itemIdOf(SplitActivityItem item) => switch (item) {
+    SplitActivityExpense(:final SplitExpense expense) => expense.id,
+    SplitActivitySettlement(:final SplitSettlement settlement) => settlement.id,
+  };
+
+  @override
+  Future<({int expenses, int khataEntries})> getGroupDeleteImpact(
+    String groupId,
+  ) async {
+    _f.throwPending();
+    final List<String> expenseIds = <String>[
+      for (final SplitExpense e in _f.splitExpenses)
+        if (e.groupId == groupId && e.isLive) e.id,
+    ];
+    return (
+      expenses: expenseIds.length,
+      khataEntries:
+          _f.transactions
+              .where(
+                (Transaction t) =>
+                    t.deletedAt == null &&
+                    ((t.splitExpenseId != null &&
+                            expenseIds.contains(t.splitExpenseId)) ||
+                        _f.splitSettlements.any(
+                          (SplitSettlement s) =>
+                              s.id == t.splitSettlementId &&
+                              s.groupId == groupId &&
+                              s.isLive,
+                        )),
+              )
+              .length +
+          _f.contactTransactions
+              .where(
+                (ContactTransaction c) =>
+                    c.deletedAt == null &&
+                    ((c.splitExpenseId != null &&
+                            expenseIds.contains(c.splitExpenseId)) ||
+                        _f.splitSettlements.any(
+                          (SplitSettlement s) =>
+                              s.id == c.splitSettlementId &&
+                              s.groupId == groupId &&
+                              s.isLive,
+                        )),
+              )
+              .length,
+    );
+  }
 }
