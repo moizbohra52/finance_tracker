@@ -92,6 +92,18 @@ class SplitSettlementController extends GetxController {
     return from?.isMe == true || to?.isMe == true;
   }
 
+  /// The display name of a member: the user, the contact's name, or
+  /// "Deleted contact".
+  String memberNameById(String memberId) {
+    final SplitMember? member = _member(memberId);
+    if (member == null) return 'Deleted contact'.tr;
+    if (member.isMe) return 'You'.tr;
+    for (final Contact contact in contacts) {
+      if (contact.id == member.contactId) return contact.name;
+    }
+    return 'Deleted contact'.tr;
+  }
+
   String? _meId() {
     for (final SplitMember m in members) {
       if (m.isMe) return m.id;

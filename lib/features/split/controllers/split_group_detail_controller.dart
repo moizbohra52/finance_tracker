@@ -98,6 +98,10 @@ class SplitGroupDetailController extends GetxController {
     return 'Deleted contact'.tr;
   }
 
+  /// The full expense (with its parts) for the form's prefill.
+  Future<SplitExpenseDetail> expenseDetail(String expenseId) =>
+      _repository.getExpense(expenseId);
+
   /// How much [fromMemberId] owes [toMemberId]; 0 when they do not.
   Decimal outstanding(String fromMemberId, String toMemberId) {
     for (final PairBalance pair

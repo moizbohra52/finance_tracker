@@ -33,6 +33,8 @@ import 'package:finance_tracker/features/reports/controllers/reports_controller.
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_group_detail_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_settlement_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/calendar_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
@@ -259,6 +261,36 @@ class SplitGroupBinding extends Bindings {
       Get.find<DataChangeNotifier>(),
     ),
   );
+}
+
+/// One detail controller per group id (tagged, like ContactDetailBinding).
+class SplitGroupDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<SplitGroupDetailController>(
+      SplitGroupDetailController(
+        Get.find<SplitRepository>(),
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+        routeIdArgument(),
+      ),
+      tag: routeIdArgument(),
+    );
+  }
+}
+
+class SplitSettlementBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<SplitSettlementController>(
+      SplitSettlementController(
+        Get.find<SplitRepository>(),
+        Get.find<AccountRepository>(),
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+  }
 }
 
 /// Everything the signed-in shell's tabs need.

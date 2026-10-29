@@ -30,6 +30,8 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/contact-entry` | Add credit / debit / payment (`ContactEntryArgs`) | `ContactBinding` | contact detail, Home Credit/Debit |
 | `/split-groups` | Split groups list (name, member count, the user's net) | `SplitGroupBinding` | Khata app bar *Groups* |
 | `/split-group-form` | Add / edit / delete a group: name, member chips, member picker sheet (arg: `SplitGroupSummary` for edit) | `SplitGroupBinding` | Groups FAB and empty state |
+| `/split-group-detail` | Header totals, balances (`@from → @to @amount` with *Settle*), paged activity; edit via app bar (arg: group id) | `SplitGroupDetailBinding` | group row, after saving in the group form |
+| `/split-settlement-form` | Settle up: from → to, amount (outstanding prefilled), date, account when the user is a party, note (`SplitSettlementArgs`) | `SplitSettlementBinding` | detail *Settle* buttons and settlement rows |
 | `/accounts`, `/account-form`, `/account-detail` | Accounts, opening balance, detail (arg: id / `Account`) | `AccountBinding`, `AccountDetailBinding` | Home Accounts section *Manage*, app-bar menu |
 | `/budgets` | Budget list with progress, spent/left, 75/90/100 state | `BudgetBinding` → `BudgetController` | Home "Plan ahead" |
 | `/budget-form` | Add / edit / delete budget (arg: `Budget` for edit) | `BudgetBinding` | Budgets FAB, budget card |
