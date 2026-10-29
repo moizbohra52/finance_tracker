@@ -1136,6 +1136,11 @@ const Map<String, String> hinglish = <String, String>{
   'This deletes @expenses expenses and @entries khata entries.':
       'Isse @expenses kharche aur @entries khata entries delete hongi.',
   'Group created': 'Group ban gaya',
+  'Open in group': 'Group mein kholein',
+  'Open it in the group to change or delete it':
+      'Use badalne ya hatane ke liye group mein kholein',
+  '@name is in the group @group. Remove them from the group first.':
+      '@name, @group group mein hai. Pehle use group se hatayein.',
   'Group updated': 'Group update ho gaya',
   'Group deleted': 'Group delete ho gaya',
   'Total spent': 'Kul kharch',

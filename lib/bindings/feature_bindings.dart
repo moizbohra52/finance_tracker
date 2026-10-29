@@ -75,6 +75,7 @@ class TransactionBinding extends Bindings {
       savingsGoals: Get.isRegistered<SavingsGoalRepository>()
           ? Get.find<SavingsGoalRepository>()
           : null,
+      splitRepository: Get.find<SplitRepository>(),
     ),
   );
 }
@@ -100,6 +101,7 @@ class TransactionDetailBinding extends Bindings {
         Get.find<TransactionRepository>(),
         Get.find<DataChangeNotifier>(),
         routeIdArgument(),
+        splitRepository: Get.find<SplitRepository>(),
       ),
       tag: routeIdArgument(),
     );
@@ -147,6 +149,7 @@ class ContactDetailBinding extends Bindings {
         Get.find<DataChangeNotifier>(),
         routeIdArgument(),
         profileRepository: Get.find<ProfileRepository>(),
+        splitRepository: Get.find<SplitRepository>(),
       ),
       tag: routeIdArgument(),
     );

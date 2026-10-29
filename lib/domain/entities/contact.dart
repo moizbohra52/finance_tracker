@@ -88,6 +88,12 @@ class ContactTransaction {
 
   /// Set when the row is derived from a split settlement.
   final String? splitSettlementId;
+
+  /// A derived entry is owned by its split group: it can only be changed
+  /// there, not directly (docs/05, "Guards").
+  bool get isSplitDerived =>
+      splitExpenseId != null || splitSettlementId != null;
+
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;

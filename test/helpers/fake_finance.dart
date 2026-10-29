@@ -521,7 +521,24 @@ class FakeContactRepository implements ContactRepository {
   @override
   Future<void> deleteContact(String id) async {
     _f.throwPending();
-    _f.contacts.removeWhere((Contact c) => c.id == id);
+    final DateTime now = DateTime.now();
+    final List<Contact> contacts = _f.contacts;
+    for (int i = 0; i < contacts.length; i++) {
+      if (contacts[i].id == id) {
+        contacts[i] = Contact(
+          id: contacts[i].id,
+          userId: contacts[i].userId,
+          name: contacts[i].name,
+          mobile: contacts[i].mobile,
+          notes: contacts[i].notes,
+          openingBalance: contacts[i].openingBalance,
+          openingBalanceType: contacts[i].openingBalanceType,
+          createdAt: contacts[i].createdAt,
+          updatedAt: now,
+          deletedAt: now,
+        );
+      }
+    }
   }
 
   @override

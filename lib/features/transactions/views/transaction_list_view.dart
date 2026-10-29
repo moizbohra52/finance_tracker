@@ -890,6 +890,7 @@ class _GroupedList extends GetView<TransactionController> {
             ),
             iconKey: controller.categoryOf(transaction.categoryId)?.icon,
             subtitle: controller.accountName(transaction.accountId),
+            groupLabel: controller.groupLabelOf(transaction),
             onTap: () => Get.toNamed<void>(
               AppRoutes.transactionDetail,
               arguments: transaction.id,

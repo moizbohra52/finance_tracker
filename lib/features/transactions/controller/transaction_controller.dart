@@ -9,6 +9,7 @@ import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
+import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
@@ -46,6 +47,7 @@ class TransactionController extends GetxController {
     this._notifier, {
     this._receipts,
     this._savingsGoals,
+    this._splitRepository,
   });
 
   final TransactionRepository _transactionRepository;
@@ -58,6 +60,9 @@ class TransactionController extends GetxController {
 
   /// Null where savings goals are not available (tests without them).
   final SavingsGoalRepository? _savingsGoals;
+
+  /// Null where split groups are not available (tests without them).
+  final SplitRepository? _splitRepository;
 
   static const int pageSize = 30;
   static const Uuid _uuid = Uuid();
@@ -78,6 +83,9 @@ class TransactionController extends GetxController {
   // Lookups for tiles and the form.
   final RxList<Account> accounts = <Account>[].obs;
   final RxList<Category> categories = <Category>[].obs;
+
+  /// The split group behind derived rows, keyed by expense/settlement id.
+  final RxMap<String, SplitLink> splitLinks = <String, SplitLink>{}.obs;
   final RxnString lookupError = RxnString();
   final RxBool lookupsLoaded = false.obs;
 
@@ -240,6 +248,7 @@ class TransactionController extends GetxController {
       );
       if (generation != _generation) return;
       items.assignAll(page);
+      _loadSplitLinks(page);
       _totalInflow.value = summary.totalInflow;
       _totalOutflow.value = summary.totalOutflow;
       totalCount.value = summary.totalCount;
@@ -259,6 +268,7 @@ class TransactionController extends GetxController {
       final List<Transaction> page = await _fetch(items.length);
       if (generation != _generation) return;
       items.addAll(page);
+      _loadSplitLinks(page);
       hasMore.value = page.length == pageSize;
     } on AppException catch (failure) {
       error.value = failure.message;
@@ -392,14 +402,47 @@ class TransactionController extends GetxController {
     }
   }
 
+  /// The group name of every derived row on screen, for the small chip.
+  void _loadSplitLinks(List<Transaction> page) {
+    final SplitRepository? repository = _splitRepository;
+    if (repository == null) return;
+    final List<String> expenseIds = <String>[
+      for (final Transaction t in page)
+        if (t.splitExpenseId != null) t.splitExpenseId!,
+    ];
+    final List<String> settlementIds = <String>[
+      for (final Transaction t in page)
+        if (t.splitSettlementId != null) t.splitSettlementId!,
+    ];
+    if (expenseIds.isEmpty && settlementIds.isEmpty) return;
+    repository
+        .getLinks(expenseIds: expenseIds, settlementIds: settlementIds)
+        .then((Map<String, SplitLink> links) {
+          splitLinks.addAll(links);
+        })
+        .catchError((Object _) {});
+  }
+
+  /// The group name behind [t], or null for a plain row.
+  String? groupLabelOf(Transaction t) {
+    final String? id = t.splitExpenseId ?? t.splitSettlementId;
+    if (id == null) return null;
+    return splitLinks[id]?.groupName;
+  }
+
   Future<bool> deleteTransaction(String transactionId) {
     return deletion.run(() async {
       final ReceiptStore? receipts = _receipts;
+      final Transaction tx = await _transactionRepository.getTransactionById(
+        transactionId,
+      );
+      if (tx.splitExpenseId != null || tx.splitSettlementId != null) {
+        throw const UnexpectedFailure(
+          'Open it in the group to change or delete it',
+        );
+      }
       bool hadReceipt = false;
       if (receipts != null) {
-        final Transaction tx = await _transactionRepository.getTransactionById(
-          transactionId,
-        );
         hadReceipt =
             tx.attachmentUrl != null ||
             await receipts.localFile(transactionId) != null;

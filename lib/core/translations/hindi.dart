@@ -1120,6 +1120,11 @@ const Map<String, String> hindi = <String, String>{
   'This deletes @expenses expenses and @entries khata entries.':
       'इससे @expenses खर्च और @entries खाता एंट्री डिलीट होंगी।',
   'Group created': 'समूह बन गया',
+  'Open in group': 'समूह में खोलें',
+  'Open it in the group to change or delete it':
+      'इसे बदलने या हटाने के लिए समूह में खोलें',
+  '@name is in the group @group. Remove them from the group first.':
+      '@name, @group समूह में है। पहले उसे समूह से हटाएं।',
   'Group updated': 'समूह अपडेट हो गया',
   'Group deleted': 'समूह डिलीट हो गया',
   'Total spent': 'कुल खर्च',

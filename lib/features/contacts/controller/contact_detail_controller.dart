@@ -8,10 +8,14 @@ import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/services/reminder_sender_service.dart';
+import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
+import 'package:finance_tracker/features/split/views/split_settlement_form_view.dart';
+import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
@@ -23,6 +27,7 @@ class ContactDetailController extends GetxController {
     this._notifier,
     this.contactId, {
     ProfileRepository? profileRepository,
+    this._splitRepository,
     this.exportService = const ExportService(),
     this.sharingService = const FileSharingService(),
   }) : _profiles = profileRepository;
@@ -32,6 +37,9 @@ class ContactDetailController extends GetxController {
   final DataChangeNotifier _notifier;
   final String contactId;
   final ProfileRepository? _profiles;
+
+  /// Null where split groups are not available (tests without them).
+  final SplitRepository? _splitRepository;
   final ExportService exportService;
   final FileSharingService sharingService;
 
@@ -42,6 +50,48 @@ class ContactDetailController extends GetxController {
   final RxnString error = RxnString();
   final SubmitState deletion = SubmitState();
   final SubmitState statement = SubmitState();
+
+  /// The split group behind derived entries, keyed by expense/settlement id.
+  final RxMap<String, SplitLink> splitLinks = <String, SplitLink>{}.obs;
+
+  /// The group behind [entry], or null for a plain ledger entry. Always
+  /// touches [splitLinks], so Obx tiles stay subscribed even for plain rows.
+  SplitLink? linkOf(ContactTransaction entry) {
+    splitLinks.length;
+    final String? id = entry.splitExpenseId ?? entry.splitSettlementId;
+    return id == null ? null : splitLinks[id];
+  }
+
+  /// Opens the split expense or settlement form behind a derived entry.
+  Future<void> openInGroup(ContactTransaction entry) async {
+    final SplitRepository? repository = _splitRepository;
+    final String? id = entry.splitExpenseId ?? entry.splitSettlementId;
+    if (repository == null || id == null) return;
+    final bool isSettlement = entry.splitSettlementId != null;
+    final Map<String, SplitLink> links = await repository.getLinks(
+      expenseIds: <String>[if (!isSettlement) id],
+      settlementIds: <String>[if (isSettlement) id],
+    );
+    final SplitLink? link = links[id];
+    if (link == null) return;
+    if (isSettlement) {
+      await Get.toNamed<void>(
+        AppRoutes.splitSettlementForm,
+        arguments: SplitSettlementArgs(
+          groupId: link.groupId,
+          existing: await repository.getSettlement(id),
+        ),
+      );
+    } else {
+      await Get.toNamed<void>(
+        AppRoutes.splitExpenseForm,
+        arguments: SplitExpenseArgs(
+          groupId: link.groupId,
+          existing: await repository.getExpense(id),
+        ),
+      );
+    }
+  }
 
   // GetX does not dispose workers, and the notifier outlives this
   // controller, so without this a closed controller keeps reloading.
@@ -71,11 +121,32 @@ class ContactDetailController extends GetxController {
       contact.value = loaded.deletedAt == null ? loaded : null;
       entries.assignAll(list);
       balance.value = loaded.getCurrentBalance(list);
+      _loadSplitLinks(list);
     } on AppException catch (failure) {
       if (!silent) error.value = failure.message;
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void _loadSplitLinks(List<ContactTransaction> list) {
+    final SplitRepository? repository = _splitRepository;
+    if (repository == null) return;
+    final List<String> expenseIds = <String>[
+      for (final ContactTransaction e in list)
+        if (e.splitExpenseId != null) e.splitExpenseId!,
+    ];
+    final List<String> settlementIds = <String>[
+      for (final ContactTransaction e in list)
+        if (e.splitSettlementId != null) e.splitSettlementId!,
+    ];
+    if (expenseIds.isEmpty && settlementIds.isEmpty) return;
+    repository
+        .getLinks(expenseIds: expenseIds, settlementIds: settlementIds)
+        .then((Map<String, SplitLink> links) {
+          splitLinks.addAll(links);
+        })
+        .catchError((Object _) {});
   }
 
   /// Builds this contact's statement PDF and opens the share sheet. When
@@ -122,6 +193,23 @@ class ContactDetailController extends GetxController {
   });
 
   Future<bool> deleteContact() => deletion.run(() async {
+    // A live group member keeps the group's balances exact; the contact can
+    // only go once they are out of every group.
+    final SplitRepository? repository = _splitRepository;
+    if (repository != null) {
+      final String? groupName = await repository.groupNameBlockingContactDelete(
+        contactId,
+      );
+      if (groupName != null) {
+        throw UnexpectedFailure(
+          '@name is in the group @group. Remove them from the group first.'
+              .trParams(<String, String>{
+                'name': contact.value?.name ?? '',
+                'group': groupName,
+              }),
+        );
+      }
+    }
     for (final ContactTransaction e in entries) {
       try {
         final String txId = ContactFormController.linkedTransactionId(e.id);
@@ -133,6 +221,14 @@ class ContactDetailController extends GetxController {
   });
 
   Future<bool> deleteEntry(String entryId) => deletion.run(() async {
+    final ContactTransaction? entry = entries.firstWhereOrNull(
+      (ContactTransaction e) => e.id == entryId,
+    );
+    if (entry != null && entry.isSplitDerived) {
+      throw const UnexpectedFailure(
+        'Open it in the group to change or delete it',
+      );
+    }
     await _repository.deleteContactTransaction(entryId);
     try {
       final String txId = ContactFormController.linkedTransactionId(entryId);

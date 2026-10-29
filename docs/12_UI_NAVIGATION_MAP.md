@@ -55,6 +55,7 @@ Search and filters are part of the transaction list (search field + filter botto
 - **Soft deletes**: accounts, transactions, contacts and contact entries are tombstoned with `deleted_at` (per `07_OFFLINE_SYNC.md`); all reads filter `deleted_at is null`.
 - **Totals** live in `domain/services/finance_summary_calculator.dart` (account balances, period income/expense, khata receivable/payable). Controllers only hold results.
 - **Fixes found while wiring**: numeric JSON parsed `as String`; local timestamps sent without a zone; `DateFormat` locale `en_IN` never initialised; `NumberFormat.currency` showing `INR` instead of `₹`; record `.wait` hiding `AppException` (see `core/utils/parallel.dart`); account edits overwriting `user_id` with `''`; `opening_balance_date` (NOT NULL) possibly null.
+- **Derived split rows are owned by their group**: a transaction or khata entry with a split link shows *Open in group* instead of Edit/Delete (transaction detail, contact entry) and the transaction list and khata ledger chip it with the group name; `deleteTransaction` / `deleteEntry` refuse it, and deleting a contact that is a live group member is refused until they leave the group.
 
 ## Known limits (documented, not hidden)
 
