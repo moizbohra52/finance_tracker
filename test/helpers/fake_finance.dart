@@ -1024,4 +1024,77 @@ class FakeSplitRepository implements SplitRepository {
 
   /// Timestamps the fakes never care about.
   static DateTime get epoch => _epoch;
+
+  @override
+  Future<SplitExpenseDetail> getExpense(String expenseId) async {
+    _f.throwPending();
+    for (final SplitExpense e in _f.splitExpenses) {
+      if (e.id == expenseId) {
+        return SplitExpenseDetail(
+          expense: e,
+          parts: _f.splitParts
+              .where((SplitPart p) => p.splitExpenseId == expenseId && p.isLive)
+              .toList(),
+        );
+      }
+    }
+    throw const DatabaseFailure();
+  }
+
+  @override
+  Future<void> saveExpense({
+    required SplitExpense expense,
+    required List<SplitPart> parts,
+  }) async {
+    _f.throwPending();
+    // Store/replace by id; derived rows are NOT produced by the fake (the
+    // real repository's tests cover them).
+    _f.splitExpenses
+      ..removeWhere((SplitExpense e) => e.id == expense.id)
+      ..add(expense);
+    final Set<String> wanted = <String>{
+      for (final SplitPart p in parts) SplitIds.part(expense.id, p.memberId),
+    };
+    final DateTime now = DateTime.now();
+    for (int i = 0; i < _f.splitParts.length; i++) {
+      final SplitPart p = _f.splitParts[i];
+      if (p.splitExpenseId != expense.id || !p.isLive) continue;
+      if (!wanted.contains(p.id)) {
+        _f.splitParts[i] = p.copyWith(deletedAt: now);
+      }
+    }
+    for (final SplitPart p in parts) {
+      final SplitPart row = SplitPart(
+        id: SplitIds.part(expense.id, p.memberId),
+        userId: '',
+        splitExpenseId: expense.id,
+        memberId: p.memberId,
+        paidAmount: p.paidAmount,
+        shareAmount: p.shareAmount,
+        shareInput: p.shareInput,
+        createdAt: p.createdAt,
+        updatedAt: now,
+      );
+      _f.splitParts
+        ..removeWhere((SplitPart x) => x.id == row.id)
+        ..add(row);
+    }
+  }
+
+  @override
+  Future<void> deleteExpense(String expenseId) async {
+    _f.throwPending();
+    final DateTime now = DateTime.now();
+    for (int i = 0; i < _f.splitExpenses.length; i++) {
+      if (_f.splitExpenses[i].id == expenseId) {
+        _f.splitExpenses[i] = _f.splitExpenses[i].copyWith(deletedAt: now);
+      }
+    }
+    for (int i = 0; i < _f.splitParts.length; i++) {
+      final SplitPart p = _f.splitParts[i];
+      if (p.splitExpenseId == expenseId && p.isLive) {
+        _f.splitParts[i] = p.copyWith(deletedAt: now);
+      }
+    }
+  }
 }

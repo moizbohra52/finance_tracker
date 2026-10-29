@@ -2,13 +2,27 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/models/contact_transaction.dart';
 import 'package:finance_tracker/data/models/split.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
+import 'package:finance_tracker/data/models/transaction.dart';
 import 'package:finance_tracker/data/repositories/payloads.dart';
+import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/split.dart';
+import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/split_balances.dart';
+import 'package:finance_tracker/domain/services/split_calculator.dart';
 import 'package:finance_tracker/domain/services/split_ids.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:get/get.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart' hide Transaction;
+
+/// One expense with its live parts, for the form's edit mode.
+class SplitExpenseDetail {
+  const SplitExpenseDetail({required this.expense, required this.parts});
+
+  final SplitExpense expense;
+  final List<SplitPart> parts;
+}
 
 /// One group for the list screen: the group, how many live members it has
 /// (including the user) and the user's net in it (positive: they are owed).
@@ -328,6 +342,383 @@ class SplitRepository {
     await resolve(expenseIds, 'split_expenses', false);
     await resolve(settlementIds, 'split_settlements', true);
     return links;
+  }
+
+  /// One expense with its live parts, oldest first.
+  Future<SplitExpenseDetail> getExpense(String expenseId) async {
+    final AppDatabase database = _database;
+    final SplitExpense expense = await _expenseRow(expenseId);
+    final List<Map<String, dynamic>> partRows = await database.db.query(
+      'split_expense_parts',
+      where: 'split_expense_id = ? AND deleted_at IS NULL',
+      whereArgs: <Object>[expenseId],
+      orderBy: 'created_at ASC, id ASC',
+    );
+    return SplitExpenseDetail(
+      expense: expense,
+      parts: partRows.map(SplitPartModel.fromJson).toList(),
+    );
+  }
+
+  /// Validates the expense against its parts and writes everything in one
+  /// local transaction: the expense, its parts (tombstoning removed ones) and
+  /// the user's derived `transactions` and `contact_transactions` rows
+  /// (docs/05_FINANCIAL_LOGIC.md). A retry with the same ids upserts.
+  Future<void> saveExpense({
+    required SplitExpense expense,
+    required List<SplitPart> parts,
+  }) async {
+    final AppDatabase database = _database;
+    final List<SplitMember> members = await getMembers(expense.groupId);
+    SplitMember? me;
+    final Map<String, SplitMember> byId = <String, SplitMember>{
+      for (final SplitMember m in members) m.id: m,
+    };
+    for (final SplitMember m in members) {
+      if (m.isMe) me = m;
+    }
+    if (me == null) {
+      throw const UnexpectedFailure('Add at least one friend');
+    }
+    final Map<String, Decimal> paid = <String, Decimal>{
+      for (final SplitPart p in parts) p.memberId: p.paidAmount,
+    };
+    final Map<String, Decimal> shares = <String, Decimal>{
+      for (final SplitPart p in parts) p.memberId: p.shareAmount,
+    };
+    final String? message = SplitCalculator.validate(
+      total: expense.totalAmount,
+      paid: paid,
+      shares: shares,
+      meId: me.id,
+      categoryId: expense.categoryId,
+      accountId: expense.accountId,
+    );
+    if (message != null) throw UnexpectedFailure(message);
+    final SplitUserRows rows = SplitCalculator.userRows(
+      total: expense.totalAmount,
+      meId: me.id,
+      paid: paid,
+      shares: shares,
+    );
+    final SplitGroup group =
+        await _existingGroup(expense.groupId) ??
+        SplitGroup(
+          id: expense.groupId,
+          userId: '',
+          name: '',
+          createdAt: expense.createdAt,
+          updatedAt: expense.updatedAt,
+        );
+    final DateTime now = DateTime.now();
+    final SplitExpense? existingExpense = await _expenseOrNull(expense.id);
+
+    // The parts that stay live, with their deterministic ids.
+    final List<SplitPart> wantedParts = <SplitPart>[
+      for (final SplitPart p in parts)
+        SplitPart(
+          id: SplitIds.part(expense.id, p.memberId),
+          userId: byId[p.memberId]?.userId ?? p.userId,
+          splitExpenseId: expense.id,
+          memberId: p.memberId,
+          paidAmount: p.paidAmount,
+          shareAmount: p.shareAmount,
+          shareInput: p.shareInput,
+          createdAt: p.createdAt,
+          updatedAt: now,
+        ),
+    ];
+    final Set<String> wantedPartIds = wantedParts
+        .map((SplitPart p) => p.id)
+        .toSet();
+
+    // The derived rows the user's books need now.
+    final List<Transaction> derivedTransactions = <Transaction>[];
+    final List<ContactTransaction> derivedKhata = <ContactTransaction>[];
+    if (rows.expenseShare > Decimal.zero) {
+      derivedTransactions.add(
+        Transaction(
+          id: SplitIds.expenseShare(expense.id),
+          userId: '',
+          accountId: expense.accountId!,
+          categoryId: expense.categoryId,
+          contactId: null,
+          type: TransactionType.expense,
+          amount: rows.expenseShare,
+          transactionDate: expense.expenseDate,
+          note: expense.note,
+          description: expense.title,
+          splitExpenseId: expense.id,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+    if (rows.balanceAmount > Decimal.zero) {
+      derivedTransactions.add(
+        Transaction(
+          id: SplitIds.expenseBalance(expense.id),
+          userId: '',
+          accountId: expense.accountId!,
+          categoryId: null,
+          contactId: null,
+          type: rows.balanceIsPaidForOthers
+              ? TransactionType.payment_made
+              : TransactionType.payment_received,
+          amount: rows.balanceAmount,
+          transactionDate: expense.expenseDate,
+          description: rows.balanceIsPaidForOthers
+              ? 'Split: paid for others · @group'.trParams(<String, String>{
+                  'group': group.name,
+                })
+              : 'Split: others paid your share · @group'.trParams(
+                  <String, String>{'group': group.name},
+                ),
+          splitExpenseId: expense.id,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+    for (final MapEntry<String, Decimal> net in rows.contactNets.entries) {
+      if (net.value == Decimal.zero) continue;
+      final SplitMember? member = byId[net.key];
+      if (member == null || member.isMe || member.contactId == null) continue;
+      derivedKhata.add(
+        ContactTransaction(
+          id: SplitIds.expenseContact(expense.id, member.contactId!),
+          userId: '',
+          contactId: member.contactId!,
+          type: net.value > Decimal.zero
+              ? ContactTransactionType.credit
+              : ContactTransactionType.debit,
+          amount: net.value.abs(),
+          transactionDate: expense.expenseDate,
+          note: '@group · @title'.trParams(<String, String>{
+            'group': group.name,
+            'title': expense.title,
+          }),
+          splitExpenseId: expense.id,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+    }
+
+    await database.db.transaction((DatabaseExecutor txn) async {
+      // 1. The expense.
+      final Map<String, dynamic> expenseJson = SplitExpenseModel.toJson(
+        expense.copyWith(updatedAt: now),
+      );
+      await txn.insert(
+        'split_expenses',
+        _row(expenseJson, existingExpense?.createdAt ?? expense.createdAt, now),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await _enqueue(
+        txn,
+        existingExpense == null ? SyncOperation.create : SyncOperation.update,
+        'split_expenses',
+        expense.id,
+        expenseJson,
+        now,
+      );
+      // 2. The parts; removed ones are tombstoned.
+      final List<Map<String, dynamic>> existingParts = await txn.query(
+        'split_expense_parts',
+        columns: <String>['id'],
+        where: 'split_expense_id = ? AND deleted_at IS NULL',
+        whereArgs: <Object>[expense.id],
+      );
+      final Set<String> existingPartIds = <String>{
+        for (final Map<String, dynamic> r in existingParts) r['id'] as String,
+      };
+      for (final SplitPart part in wantedParts) {
+        final Map<String, dynamic> json = SplitPartModel.toJson(part);
+        await txn.insert(
+          'split_expense_parts',
+          _row(json, part.createdAt, now),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        await _enqueue(
+          txn,
+          existingPartIds.contains(part.id)
+              ? SyncOperation.update
+              : SyncOperation.create,
+          'split_expense_parts',
+          part.id,
+          json,
+          now,
+        );
+      }
+      for (final Map<String, dynamic> stale in existingParts) {
+        final String id = stale['id'] as String;
+        if (wantedPartIds.contains(id)) continue;
+        await _tombstoneLive(txn, 'split_expense_parts', 'id = ?', id, now);
+      }
+      // 3. The user's derived transactions.
+      final List<Map<String, dynamic>> existingTxns = await txn.query(
+        'transactions',
+        columns: <String>['id', 'deleted_at'],
+        where: 'split_expense_id = ?',
+        whereArgs: <Object>[expense.id],
+      );
+      final Set<String> liveTxnIds = <String>{
+        for (final Map<String, dynamic> r in existingTxns)
+          if (r['deleted_at'] == null) r['id'] as String,
+      };
+      for (final Transaction t in derivedTransactions) {
+        final Map<String, dynamic> json = TransactionModel.fromEntity(
+          t,
+        ).toJson();
+        await txn.insert(
+          'transactions',
+          _row(json, now, now),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        await _enqueue(
+          txn,
+          liveTxnIds.contains(t.id)
+              ? SyncOperation.update
+              : SyncOperation.create,
+          'transactions',
+          t.id,
+          json,
+          now,
+        );
+      }
+      for (final String id in liveTxnIds) {
+        if (derivedTransactions.any((Transaction t) => t.id == id)) continue;
+        await _tombstoneLive(txn, 'transactions', 'id = ?', id, now);
+      }
+      // 4. The user's derived khata entries.
+      final List<Map<String, dynamic>> existingKhata = await txn.query(
+        'contact_transactions',
+        columns: <String>['id', 'deleted_at'],
+        where: 'split_expense_id = ?',
+        whereArgs: <Object>[expense.id],
+      );
+      final Set<String> liveKhataIds = <String>{
+        for (final Map<String, dynamic> r in existingKhata)
+          if (r['deleted_at'] == null) r['id'] as String,
+      };
+      for (final ContactTransaction c in derivedKhata) {
+        final Map<String, dynamic> json = ContactTransactionModel.fromEntity(
+          c,
+        ).toJson();
+        await txn.insert(
+          'contact_transactions',
+          _row(json, now, now),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+        await _enqueue(
+          txn,
+          liveKhataIds.contains(c.id)
+              ? SyncOperation.update
+              : SyncOperation.create,
+          'contact_transactions',
+          c.id,
+          json,
+          now,
+        );
+      }
+      for (final String id in liveKhataIds) {
+        if (derivedKhata.any((ContactTransaction c) => c.id == id)) continue;
+        await _tombstoneLive(txn, 'contact_transactions', 'id = ?', id, now);
+      }
+    });
+    _syncEngine?.notifyNewQueueItem();
+  }
+
+  /// Soft-deletes the expense, its parts and every derived row linked to it,
+  /// one queue delete per row.
+  Future<void> deleteExpense(String expenseId) async {
+    final AppDatabase database = _database;
+    final DateTime now = DateTime.now();
+    await database.db.transaction((DatabaseExecutor txn) async {
+      await _tombstoneLive(txn, 'split_expenses', 'id = ?', expenseId, now);
+      final List<String> partIds = await _liveIds(
+        txn,
+        'split_expense_parts',
+        'split_expense_id = ?',
+        expenseId,
+      );
+      for (final String id in partIds) {
+        await _tombstoneLive(txn, 'split_expense_parts', 'id = ?', id, now);
+      }
+      for (final String table in <String>[
+        'transactions',
+        'contact_transactions',
+      ]) {
+        final List<String> ids = await _liveIds(
+          txn,
+          table,
+          'split_expense_id = ?',
+          expenseId,
+        );
+        for (final String id in ids) {
+          await _tombstoneLive(txn, table, 'id = ?', id, now);
+        }
+      }
+    });
+    _syncEngine?.notifyNewQueueItem();
+  }
+
+  /// Soft-deletes every live row of [table] matching [where].
+  Future<void> _tombstoneLive(
+    DatabaseExecutor txn,
+    String table,
+    String where,
+    String id,
+    DateTime now,
+  ) async {
+    final int updated = await txn.update(
+      table,
+      <String, dynamic>{
+        'deleted_at': now.toUtc().toIso8601String(),
+        'updated_at': now.toUtc().toIso8601String(),
+        'sync_status': 'pending',
+      },
+      where: '$where AND deleted_at IS NULL',
+      whereArgs: <Object>[id],
+    );
+    if (updated == 0) return;
+    await _enqueue(txn, SyncOperation.delete, table, id, tombstone(), now);
+  }
+
+  Future<List<String>> _liveIds(
+    DatabaseExecutor txn,
+    String table,
+    String where,
+    Object arg,
+  ) async {
+    final List<Map<String, dynamic>> rows = await txn.query(
+      table,
+      columns: <String>['id'],
+      where: '$where AND deleted_at IS NULL',
+      whereArgs: <Object>[arg],
+    );
+    return <String>[
+      for (final Map<String, dynamic> r in rows) r['id'] as String,
+    ];
+  }
+
+  Future<SplitExpense> _expenseRow(String expenseId) async {
+    final SplitExpense? expense = await _expenseOrNull(expenseId);
+    if (expense == null) throw const DatabaseFailure();
+    return expense;
+  }
+
+  Future<SplitExpense?> _expenseOrNull(String expenseId) async {
+    final AppDatabase database = _database;
+    final List<Map<String, dynamic>> rows = await database.db.query(
+      'split_expenses',
+      where: 'id = ?',
+      whereArgs: <Object>[expenseId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return SplitExpenseModel.fromJson(rows.first);
   }
 
   Future<GroupBalances> _balancesOf(String groupId) async {
