@@ -327,6 +327,14 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return Icons.flag_outlined;
       case 'savings_contributions':
         return Icons.savings_outlined;
+      case 'split_groups':
+      case 'split_group_members':
+        return Icons.groups_outlined;
+      case 'split_expenses':
+      case 'split_expense_parts':
+        return Icons.receipt_long_outlined;
+      case 'split_settlements':
+        return Icons.handshake_outlined;
       case 'categories':
         return Icons.category_outlined;
       default:
@@ -354,6 +362,16 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return 'Savings goal'.tr;
       case 'savings_contributions':
         return 'Savings contribution'.tr;
+      case 'split_groups':
+        return 'Split group'.tr;
+      case 'split_group_members':
+        return 'Group member'.tr;
+      case 'split_expenses':
+        return 'Split expense'.tr;
+      case 'split_expense_parts':
+        return 'Expense part'.tr;
+      case 'split_settlements':
+        return 'Settlement'.tr;
       case 'categories':
         return 'Category'.tr;
       case 'user_settings':

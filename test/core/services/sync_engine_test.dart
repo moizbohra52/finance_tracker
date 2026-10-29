@@ -168,6 +168,71 @@ void main() {
       expect(await database.getMetadata(AppDatabase.localOwnerKey), 'user-a');
     });
 
+    test('the split tables are cleared for another user', () async {
+      await seedFor('user-a');
+      const String now = '2026-10-26T00:00:00Z';
+      await database.db.insert('split_groups', <String, Object?>{
+        'id': 'sg1',
+        'user_id': 'user-a',
+        'name': 'Goa',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await database.db.insert('split_group_members', <String, Object?>{
+        'id': 'sm1',
+        'user_id': 'user-a',
+        'group_id': 'sg1',
+        'contact_id': null,
+        'created_at': now,
+        'updated_at': now,
+      });
+      await database.db.insert('split_expenses', <String, Object?>{
+        'id': 'se1',
+        'user_id': 'user-a',
+        'group_id': 'sg1',
+        'title': 'Dinner',
+        'total_amount': '1200',
+        'expense_date': now,
+        'split_mode': 'equal',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await database.db.insert('split_expense_parts', <String, Object?>{
+        'id': 'sp1',
+        'user_id': 'user-a',
+        'split_expense_id': 'se1',
+        'member_id': 'sm1',
+        'paid_amount': '800',
+        'share_amount': '300',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await database.db.insert('split_settlements', <String, Object?>{
+        'id': 'ss1',
+        'user_id': 'user-a',
+        'group_id': 'sg1',
+        'from_member_id': 'sm1',
+        'to_member_id': 'sm1',
+        'amount': '200',
+        'settled_at': now,
+        'created_at': now,
+        'updated_at': now,
+      });
+
+      await syncEngine.claimLocalData('user-a');
+      await syncEngine.claimLocalData('user-b');
+
+      for (final String table in <String>[
+        'split_groups',
+        'split_group_members',
+        'split_expenses',
+        'split_expense_parts',
+        'split_settlements',
+      ]) {
+        expect(await count(table), 0, reason: '$table is wiped for user-b');
+      }
+    });
+
     test(
       "another user never gets the previous user's rows or uploads",
       () async {

@@ -131,4 +131,122 @@ void main() {
       equals('2026-10-08T13:00:00Z'),
     );
   });
+
+  test(
+    'upgrading a version 4 file adds the split tables and link columns',
+    () async {
+      final Database old = await databaseFactoryFfi.openDatabase(
+        inMemoryDatabasePath,
+        options: OpenDatabaseOptions(
+          version: 4,
+          // Not the database setUp opened, which is already at the new version.
+          singleInstance: false,
+          onCreate: (Database db, int _) async {
+            await db.execute('''
+              CREATE TABLE transactions (
+                id TEXT PRIMARY KEY,
+                user_id TEXT,
+                account_id TEXT NOT NULL,
+                type TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                transaction_date TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+              )
+            ''');
+            await db.execute('''
+              CREATE TABLE contact_transactions (
+                id TEXT PRIMARY KEY,
+                user_id TEXT,
+                contact_id TEXT NOT NULL,
+                type TEXT NOT NULL,
+                amount TEXT NOT NULL,
+                transaction_date TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+              )
+            ''');
+          },
+        ),
+      );
+      await old.insert('transactions', <String, Object?>{
+        'id': 't1',
+        'account_id': 'a1',
+        'type': 'expense',
+        'amount': '100',
+        'transaction_date': '2026-10-01',
+        'created_at': '2026-10-01T00:00:00Z',
+        'updated_at': '2026-10-01T00:00:00Z',
+      });
+      await old.insert('contact_transactions', <String, Object?>{
+        'id': 'ct1',
+        'contact_id': 'c1',
+        'type': 'credit',
+        'amount': '100',
+        'transaction_date': '2026-10-01',
+        'created_at': '2026-10-01T00:00:00Z',
+        'updated_at': '2026-10-01T00:00:00Z',
+      });
+
+      await AppDatabase.upgrade(old, 4, AppDatabase.databaseVersion);
+
+      for (final String table in <String>[
+        'split_groups',
+        'split_group_members',
+        'split_expenses',
+        'split_expense_parts',
+        'split_settlements',
+      ]) {
+        final List<Map<String, Object?>> columns = await old.rawQuery(
+          'PRAGMA table_info($table)',
+        );
+        expect(columns, isNotEmpty, reason: '$table is created by the upgrade');
+      }
+      for (final String table in <String>[
+        'transactions',
+        'contact_transactions',
+      ]) {
+        final List<Map<String, Object?>> columns = await old.rawQuery(
+          'PRAGMA table_info($table)',
+        );
+        expect(
+          columns.map((Map<String, Object?> c) => c['name']),
+          containsAll(<String>['split_expense_id', 'split_settlement_id']),
+          reason: '$table gains the link columns',
+        );
+      }
+      final List<Map<String, Object?>> transactions = await old.query(
+        'transactions',
+      );
+      expect(transactions.single['id'], 't1', reason: 'existing rows are kept');
+      await old.close();
+    },
+  );
+
+  test('a fresh database has the split tables and link columns', () async {
+    for (final String table in <String>[
+      'split_groups',
+      'split_group_members',
+      'split_expenses',
+      'split_expense_parts',
+      'split_settlements',
+    ]) {
+      final List<Map<String, Object?>> columns = await database.db.rawQuery(
+        'PRAGMA table_info($table)',
+      );
+      expect(columns, isNotEmpty, reason: '$table exists on a fresh database');
+    }
+    for (final String table in <String>[
+      'transactions',
+      'contact_transactions',
+    ]) {
+      final List<Map<String, Object?>> columns = await database.db.rawQuery(
+        'PRAGMA table_info($table)',
+      );
+      expect(
+        columns.map((Map<String, Object?> c) => c['name']),
+        containsAll(<String>['split_expense_id', 'split_settlement_id']),
+      );
+    }
+  });
 }

@@ -30,6 +30,12 @@ class Transaction {
   /// Storage object name of the receipt photo (`<user id>/<id>` in the
   /// private receipts bucket), not a URL. Null when there is none.
   final String? attachmentUrl;
+
+  /// Set when the row is derived from a split expense (docs/05).
+  final String? splitExpenseId;
+
+  /// Set when the row is derived from a split settlement.
+  final String? splitSettlementId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -48,6 +54,8 @@ class Transaction {
     this.paymentMethod,
     this.transferId,
     this.attachmentUrl,
+    this.splitExpenseId,
+    this.splitSettlementId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -68,6 +76,8 @@ class Transaction {
       paymentMethod: json['payment_method'] as String?,
       transferId: json['transfer_id'] as String?,
       attachmentUrl: json['attachment_url'] as String?,
+      splitExpenseId: json['split_expense_id'] as String?,
+      splitSettlementId: json['split_settlement_id'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       deletedAt: json['deleted_at'] != null
@@ -116,6 +126,8 @@ class Transaction {
       'payment_method': paymentMethod,
       'transfer_id': transferId,
       'attachment_url': attachmentUrl,
+      'split_expense_id': splitExpenseId,
+      'split_settlement_id': splitSettlementId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
@@ -159,6 +171,8 @@ class Transaction {
     String? paymentMethod,
     String? transferId,
     String? attachmentUrl,
+    String? splitExpenseId,
+    String? splitSettlementId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -177,6 +191,8 @@ class Transaction {
       paymentMethod: paymentMethod ?? this.paymentMethod,
       transferId: transferId ?? this.transferId,
       attachmentUrl: attachmentUrl ?? this.attachmentUrl,
+      splitExpenseId: splitExpenseId ?? this.splitExpenseId,
+      splitSettlementId: splitSettlementId ?? this.splitSettlementId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,

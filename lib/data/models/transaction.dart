@@ -15,6 +15,8 @@ class TransactionModel {
   final String? paymentMethod;
   final String? transferId;
   final String? attachmentUrl;
+  final String? splitExpenseId;
+  final String? splitSettlementId;
   final String createdAt;
   final String updatedAt;
   final String? deletedAt;
@@ -33,6 +35,8 @@ class TransactionModel {
     this.paymentMethod,
     this.transferId,
     this.attachmentUrl,
+    this.splitExpenseId,
+    this.splitSettlementId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -53,6 +57,8 @@ class TransactionModel {
         paymentMethod: json['payment_method'] as String?,
         transferId: json['transfer_id'] as String?,
         attachmentUrl: json['attachment_url'] as String?,
+        splitExpenseId: json['split_expense_id'] as String?,
+        splitSettlementId: json['split_settlement_id'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
         deletedAt: json['deleted_at'] as String?,
@@ -72,6 +78,8 @@ class TransactionModel {
     'payment_method': paymentMethod,
     'transfer_id': transferId,
     'attachment_url': attachmentUrl,
+    'split_expense_id': splitExpenseId,
+    'split_settlement_id': splitSettlementId,
     'created_at': createdAt,
     'updated_at': updatedAt,
     'deleted_at': deletedAt,
@@ -91,6 +99,8 @@ class TransactionModel {
     paymentMethod: paymentMethod,
     transferId: transferId,
     attachmentUrl: attachmentUrl,
+    splitExpenseId: splitExpenseId,
+    splitSettlementId: splitSettlementId,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
     deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
@@ -111,6 +121,8 @@ class TransactionModel {
         paymentMethod: transaction.paymentMethod,
         transferId: transaction.transferId,
         attachmentUrl: transaction.attachmentUrl,
+        splitExpenseId: transaction.splitExpenseId,
+        splitSettlementId: transaction.splitSettlementId,
         createdAt: transaction.createdAt.toIso8601String(),
         updatedAt: transaction.updatedAt.toIso8601String(),
         deletedAt: transaction.deletedAt?.toIso8601String(),

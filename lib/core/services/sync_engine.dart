@@ -429,6 +429,11 @@ class SyncEngine extends GetxService {
       'reminders',
       'savings_goals',
       'savings_contributions',
+      'split_groups',
+      'split_group_members',
+      'split_expenses',
+      'split_expense_parts',
+      'split_settlements',
     ];
 
     for (final String table in syncableTables) {

@@ -234,6 +234,16 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
         return 'Savings goals'.tr;
       case 'savings_contributions':
         return 'Savings contributions'.tr;
+      case 'split_groups':
+        return 'Split groups'.tr;
+      case 'split_group_members':
+        return 'Group members'.tr;
+      case 'split_expenses':
+        return 'Split expenses'.tr;
+      case 'split_expense_parts':
+        return 'Expense parts'.tr;
+      case 'split_settlements':
+        return 'Settlements'.tr;
       case 'user_settings':
         return 'Preferences & Settings'.tr;
       case 'profiles':
