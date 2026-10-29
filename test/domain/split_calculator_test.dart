@@ -352,4 +352,179 @@ void main() {
       );
     });
   });
+
+  group('friendNets', () {
+    test('the dinner of the spec gives Amit 200, Neha 200, Rahul 100', () {
+      expect(
+        SplitCalculator.friendNets(
+          total: d('1200'),
+          meId: 'me',
+          paid: {
+            'me': d('800'),
+            'rahul': d('400'),
+            'amit': d('0'),
+            'neha': d('0'),
+          },
+          shares: {
+            'me': d('300'),
+            'rahul': d('300'),
+            'amit': d('300'),
+            'neha': d('300'),
+          },
+        ),
+        {'amit': d('200'), 'neha': d('200'), 'rahul': d('100')},
+      );
+    });
+
+    test('a friend who paid everything owes the user their share', () {
+      expect(
+        SplitCalculator.friendNets(
+          total: d('1200'),
+          meId: 'me',
+          paid: {'rahul': d('1200'), 'amit': d('0'), 'neha': d('0')},
+          shares: {
+            'me': d('300'),
+            'rahul': d('300'),
+            'amit': d('300'),
+            'neha': d('300'),
+          },
+        ),
+        {'amit': d('0'), 'neha': d('0'), 'rahul': d('-300')},
+      );
+    });
+
+    test('rounding keeps the sum at paid_me − share_me exactly', () {
+      final Map<String, Decimal> nets = SplitCalculator.friendNets(
+        total: d('100'),
+        meId: 'me',
+        paid: {'me': d('100'), 'amit': d('0'), 'neha': d('0')},
+        shares: {'me': d('33.34'), 'amit': d('33.33'), 'neha': d('33.33')},
+      );
+      final Decimal sum = nets.values.fold(
+        Decimal.zero,
+        (Decimal a, Decimal b) => a + b,
+      );
+      expect(sum, d('100') - d('33.34'));
+    });
+  });
+
+  group('userRows', () {
+    test('the dinner of the spec: share 300, paid for others 500', () {
+      final SplitUserRows rows = SplitCalculator.userRows(
+        total: d('1200'),
+        meId: 'me',
+        paid: {
+          'me': d('800'),
+          'rahul': d('400'),
+          'amit': d('0'),
+          'neha': d('0'),
+        },
+        shares: {
+          'me': d('300'),
+          'rahul': d('300'),
+          'amit': d('300'),
+          'neha': d('300'),
+        },
+      );
+      expect(rows.expenseShare, d('300'));
+      expect(rows.balanceAmount, d('500'));
+      expect(rows.balanceIsPaidForOthers, isTrue);
+      expect(rows.contactNets, {
+        'amit': d('200'),
+        'neha': d('200'),
+        'rahul': d('100'),
+      });
+    });
+
+    test('a friend who paid everything: the user owes their share', () {
+      final SplitUserRows rows = SplitCalculator.userRows(
+        total: d('1200'),
+        meId: 'me',
+        paid: {'rahul': d('1200'), 'amit': d('0'), 'neha': d('0')},
+        shares: {
+          'me': d('300'),
+          'rahul': d('300'),
+          'amit': d('300'),
+          'neha': d('300'),
+        },
+      );
+      expect(rows.expenseShare, d('300'));
+      expect(rows.balanceAmount, d('300'));
+      expect(rows.balanceIsPaidForOthers, isFalse);
+      expect(rows.contactNets, {
+        'amit': d('0'),
+        'neha': d('0'),
+        'rahul': d('-300'),
+      });
+    });
+
+    test('a user who paid for others with no own share', () {
+      final SplitUserRows rows = SplitCalculator.userRows(
+        total: d('600'),
+        meId: 'me',
+        paid: {'me': d('600')},
+        shares: {'me': d('0'), 'amit': d('600')},
+      );
+      expect(rows.expenseShare, d('0'));
+      expect(rows.balanceAmount, d('600'));
+      expect(rows.balanceIsPaidForOthers, isTrue);
+      expect(rows.contactNets, {'amit': d('600')});
+    });
+
+    test('a user not involved in the expense has no rows', () {
+      final SplitUserRows rows = SplitCalculator.userRows(
+        total: d('100'),
+        meId: 'me',
+        paid: {'amit': d('100')},
+        shares: {'neha': d('100')},
+      );
+      expect(rows.expenseShare, d('0'));
+      expect(rows.balanceAmount, d('0'));
+      expect(rows.balanceIsPaidForOthers, isFalse);
+      expect(rows.contactNets, {'amit': d('0'), 'neha': d('0')});
+    });
+
+    test('the account movement is always −paid_me and khata nets add up', () {
+      final Random random = Random(11);
+      const List<String> ids = ['me', 'amit', 'neha', 'rahul', 'sanjay'];
+      for (int i = 0; i < 300; i++) {
+        final int memberCount = 2 + random.nextInt(4);
+        final List<String> members = ids.take(memberCount).toList();
+        final Decimal total = SplitCalculator.fromPaise(
+          BigInt.from(1 + random.nextInt(999999)),
+        );
+        final Map<String, Decimal> paid = SplitCalculator.allocate(total, {
+          for (final String m in members)
+            m: m == members.first
+                ? Decimal.parse('${1 + random.nextInt(1000)}')
+                : Decimal.parse('${random.nextInt(1001)}'),
+        });
+        final Map<String, Decimal> shares = SplitCalculator.allocate(total, {
+          for (final String m in members)
+            m: m == members.first
+                ? Decimal.parse('${random.nextInt(1001)}')
+                : Decimal.parse('${random.nextInt(1001)}'),
+        });
+        final SplitUserRows rows = SplitCalculator.userRows(
+          total: total,
+          meId: 'me',
+          paid: paid,
+          shares: shares,
+        );
+        final Decimal netSum = rows.contactNets.values.fold(
+          Decimal.zero,
+          (Decimal a, Decimal b) => a + b,
+        );
+        final Decimal paidMe = paid['me'] ?? Decimal.zero;
+        final Decimal shareMe = shares['me'] ?? Decimal.zero;
+        expect(netSum, paidMe - shareMe, reason: 'case $i nets');
+        final Decimal accountMove =
+            -rows.expenseShare -
+            (rows.balanceIsPaidForOthers
+                ? rows.balanceAmount
+                : -rows.balanceAmount);
+        expect(accountMove, -paidMe, reason: 'case $i account');
+      }
+    });
+  });
 }
