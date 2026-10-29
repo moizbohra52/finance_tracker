@@ -178,6 +178,22 @@ class SplitExpenseController extends GetxController {
     return '';
   }
 
+  String memberName(SplitMember m) => memberNameById(m.id);
+
+  /// The display name of a member: the user, the contact's name, or
+  /// "Deleted contact".
+  String memberNameById(String memberId) {
+    for (final SplitMember m in members) {
+      if (m.id != memberId) continue;
+      if (m.isMe) return 'You'.tr;
+      for (final Contact contact in contacts) {
+        if (contact.id == m.contactId) return contact.name;
+      }
+      return 'Deleted contact'.tr;
+    }
+    return 'Deleted contact'.tr;
+  }
+
   /// In exact/percent/shares modes: how much of the total is still unassigned.
   Decimal get paidLeft {
     final Decimal? t = total;
@@ -287,4 +303,14 @@ class SplitExpenseController extends GetxController {
   });
 
   static String newId() => _uuid.v4();
+}
+
+/// Arguments of `/split-expense-form`.
+class SplitExpenseArgs {
+  const SplitExpenseArgs({required this.groupId, this.existing});
+
+  final String groupId;
+
+  /// Set when editing an existing expense.
+  final SplitExpenseDetail? existing;
 }

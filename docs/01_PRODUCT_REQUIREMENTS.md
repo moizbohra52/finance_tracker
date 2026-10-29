@@ -46,6 +46,24 @@
 - Transaction timeline
 - Due dates/reminders
 
+## Split expenses (2026-10-23, revised 2026-10-26)
+- Groups of the user and friends (from Khata contacts), e.g. a trip,
+  flatmates or office lunch
+- A group expense: total, date, title, category, account and note; who paid
+  (the user or several members) and how it is split — equal ticks, exact
+  amounts, percentages or share counts, with the unassigned amount shown
+- The user's own books stay exact to the paisa: each save writes the user's
+  expense (their share), their balance movement (paid for others / paid by
+  others) and one khata entry per friend's net
+- Group balances: what each member owes whom (pairwise, friend-to-friend
+  included), the user's net, and settle-up payments between any two members
+- Guards: a derived transaction or khata entry can only be changed through
+  its group ("Open in group"); a contact in a live group member cannot be
+  deleted until removed from the group
+- Out of scope: groups with more than one device-editing user (the data is
+  the signed-in user's own), receipts attached to split expenses, currencies
+  per group, inviting by link, exporting a group's statement
+
 ## Reports
 - Income
 - Expense

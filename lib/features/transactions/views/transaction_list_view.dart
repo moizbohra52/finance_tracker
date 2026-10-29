@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/bindings/feature_bindings.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
@@ -8,7 +9,10 @@ import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_filter_sheet.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
@@ -17,7 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 /// Opens the income/expense chooser, then the transaction form.
-enum _AddChoice { income, expense, transfer }
+enum _AddChoice { income, expense, transfer, split }
 
 Future<void> showAddTransactionSheet(BuildContext context) async {
   Widget option(
@@ -37,8 +41,9 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
     context: context,
     showDragHandle: true,
     builder: (BuildContext sheet) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      // Scrollable: with four options the sheet can outgrow a short screen.
+      child: ListView(
+        shrinkWrap: true,
         children: <Widget>[
           option(
             sheet,
@@ -61,6 +66,13 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
             'Transfer between accounts'.tr,
             'Move money, e.g. from bank to cash'.tr,
           ),
+          option(
+            sheet,
+            _AddChoice.split,
+            Icons.groups_outlined,
+            'Split expense'.tr,
+            'Share a bill with friends'.tr,
+          ),
           const SizedBox(height: AppSpacing.sm),
         ],
       ),
@@ -71,6 +83,8 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
       return;
     case _AddChoice.transfer:
       await Get.toNamed<void>(AppRoutes.transferForm);
+    case _AddChoice.split:
+      await _openSplitExpenseFlow();
     case _AddChoice.income || _AddChoice.expense:
       await Get.toNamed<void>(
         AppRoutes.transactionForm,
@@ -81,6 +95,55 @@ Future<void> showAddTransactionSheet(BuildContext context) async {
         ),
       );
   }
+}
+
+/// The split flow: a group chooser (or the group form when there is none
+/// yet), then the expense form.
+Future<void> _openSplitExpenseFlow() async {
+  SplitGroupBinding().dependencies();
+  final SplitGroupController controller = Get.find<SplitGroupController>();
+  await controller.load(silent: true);
+  if (controller.groups.isEmpty) {
+    await Get.toNamed<void>(AppRoutes.splitGroupForm);
+    return;
+  }
+  final SplitGroupSummary? group =
+      await showModalBottomSheet<SplitGroupSummary>(
+        context: Get.context!,
+        showDragHandle: true,
+        builder: (BuildContext sheet) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Text(
+                  'Choose a group'.tr,
+                  style: Theme.of(sheet).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              for (final SplitGroupSummary summary in controller.groups)
+                ListTile(
+                  minTileHeight: AppSizes.minTouchTarget,
+                  title: Text(summary.group.name),
+                  subtitle: Text(
+                    '@count members'.trParams(<String, String>{
+                      'count': '${summary.memberCount}',
+                    }),
+                  ),
+                  onTap: () => Navigator.of(sheet).pop(summary),
+                ),
+            ],
+          ),
+        ),
+      );
+  if (group == null) return;
+  await Get.toNamed<void>(
+    AppRoutes.splitExpenseForm,
+    arguments: SplitExpenseArgs(groupId: group.group.id),
+  );
 }
 
 /// Standalone transaction list route (back-navigable from the dashboard).
@@ -168,7 +231,8 @@ class _TransactionListContentState extends State<TransactionListContent> {
                     ? EmptyState(
                         icon: Icons.search_off_rounded,
                         title: 'No matching transactions'.tr,
-                        message: 'Try a different search or clear the filters.'.tr,
+                        message:
+                            'Try a different search or clear the filters.'.tr,
                         actionLabel: 'Clear filters'.tr,
                         onAction: () {
                           _search.clear();
@@ -180,7 +244,8 @@ class _TransactionListContentState extends State<TransactionListContent> {
                         icon: Icons.receipt_long_outlined,
                         title: 'No transactions yet'.tr,
                         message:
-                            'Record your income and expenses to see them here.'.tr,
+                            'Record your income and expenses to see them here.'
+                                .tr,
                         actionLabel: 'Add transaction'.tr,
                         onAction: () => showAddTransactionSheet(context),
                       );
@@ -215,7 +280,9 @@ class _SearchBar extends GetView<TransactionController> {
               color: isDark ? colors.surfaceContainerLow : colors.surface,
               borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
-                color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
+                color: colors.outlineVariant.withValues(
+                  alpha: isDark ? 0.3 : 0.6,
+                ),
                 width: 1,
               ),
             ),
@@ -323,7 +390,9 @@ class _QuickTypeSelector extends GetView<TransactionController> {
               side: BorderSide(
                 color: selected
                     ? Colors.transparent
-                    : colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
+                    : colors.outlineVariant.withValues(
+                        alpha: isDark ? 0.3 : 0.6,
+                      ),
                 width: 1,
               ),
             ),
@@ -331,7 +400,10 @@ class _QuickTypeSelector extends GetView<TransactionController> {
               onTap: onTap,
               borderRadius: BorderRadius.circular(AppRadius.full),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 7,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -339,7 +411,9 @@ class _QuickTypeSelector extends GetView<TransactionController> {
                       icon,
                       size: 14,
                       color: selected
-                          ? (isDark ? colors.onPrimaryContainer : colors.onPrimary)
+                          ? (isDark
+                                ? colors.onPrimaryContainer
+                                : colors.onPrimary)
                           : color,
                     ),
                     const SizedBox(width: 5),
@@ -347,9 +421,13 @@ class _QuickTypeSelector extends GetView<TransactionController> {
                       label,
                       style: TextStyle(
                         fontSize: 12.5,
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w600,
                         color: selected
-                            ? (isDark ? colors.onPrimaryContainer : colors.onPrimary)
+                            ? (isDark
+                                  ? colors.onPrimaryContainer
+                                  : colors.onPrimary)
                             : colors.onSurface,
                       ),
                     ),
@@ -447,7 +525,10 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
       final bool isNetPositive = net >= Decimal.zero;
 
       return Container(
-        margin: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xs),
+        margin: const EdgeInsets.only(
+          top: AppSpacing.sm,
+          bottom: AppSpacing.xs,
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isDark ? colors.surfaceContainerLow : colors.surface,
@@ -474,7 +555,9 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: money.income.withValues(alpha: isDark ? 0.2 : 0.12),
+                      color: money.income.withValues(
+                        alpha: isDark ? 0.2 : 0.12,
+                      ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -527,7 +610,9 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                      color: money.expense.withValues(alpha: isDark ? 0.2 : 0.12),
+                      color: money.expense.withValues(
+                        alpha: isDark ? 0.2 : 0.12,
+                      ),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -691,7 +776,8 @@ class _GroupedList extends GetView<TransactionController> {
 
   List<_Row> _rows() {
     final List<_Row> rows = <_Row>[];
-    final Map<String, List<Transaction>> grouped = <String, List<Transaction>>{};
+    final Map<String, List<Transaction>> grouped =
+        <String, List<Transaction>>{};
     for (final Transaction t in controller.items) {
       final String label = AppFormatters.dayLabel(t.transactionDate);
       grouped.putIfAbsent(label, () => <Transaction>[]).add(t);
@@ -741,9 +827,7 @@ class _GroupedList extends GetView<TransactionController> {
                     vertical: 3.5,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
                         .withValues(alpha: 0.6),
                     borderRadius: BorderRadius.circular(6),
                   ),
@@ -754,8 +838,7 @@ class _GroupedList extends GetView<TransactionController> {
                         label,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.w800,
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           letterSpacing: 0.5,
                           fontSize: 10.5,
                         ),
@@ -775,9 +858,9 @@ class _GroupedList extends GetView<TransactionController> {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurfaceVariant,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -787,10 +870,9 @@ class _GroupedList extends GetView<TransactionController> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Divider(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .outlineVariant
-                        .withValues(alpha: 0.4),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.outlineVariant.withValues(alpha: 0.4),
                     thickness: 1,
                   ),
                 ),
@@ -802,8 +884,7 @@ class _GroupedList extends GetView<TransactionController> {
             transaction: transaction,
             title: TransactionListItem.titleFor(
               transaction,
-              categoryName:
-                  controller.categoryOf(transaction.categoryId)?.name,
+              categoryName: controller.categoryOf(transaction.categoryId)?.name,
               nearby: controller.items,
               accountName: controller.accountName,
             ),

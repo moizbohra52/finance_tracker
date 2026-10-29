@@ -128,6 +128,7 @@ const List<String> translatedFiles = <String>[
   'lib/features/split/views/split_group_form_view.dart',
   'lib/features/split/views/split_group_detail_view.dart',
   'lib/features/split/views/split_settlement_form_view.dart',
+  'lib/features/split/views/split_expense_form_view.dart',
   'lib/features/split/widgets/split_member_picker_sheet.dart',
 ];
 

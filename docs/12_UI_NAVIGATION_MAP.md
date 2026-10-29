@@ -12,6 +12,7 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/dashboard` | App shell, 4 tabs | `ShellBinding` → `HomeController`, `TransactionController`, `ContactController`, `ContactFormController`, `AccountController`, `ProfileController` | splash / sign-in |
 | tab 0 | Home (balance, quick actions, today, khata, accounts, recent) | `HomeController` | bottom nav |
 | tab 1 | Transactions list (search, filter sheet, day groups, paging) | `TransactionController` | bottom nav |
+| add-transaction sheet (bottom sheet) | *Add income*, *Add expense*, *Transfer between accounts*, *Split expense* (group chooser → `/split-expense-form`; no groups → `/split-group-form`) | — | Transactions FAB |
 | tab 2 | Khata (summary, search, receivable/payable filter) | `ContactController` | bottom nav |
 | tab 3 | Reports (date filter, totals, charts, categories, accounts, monthly comparison) | `ReportsController` | bottom nav |
 | `/reports` | Reports (route form of tab 3) | `ReportsBinding` | Home "Reports" / "Details" |
@@ -32,6 +33,7 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/split-group-form` | Add / edit / delete a group: name, member chips, member picker sheet (arg: `SplitGroupSummary` for edit) | `SplitGroupBinding` | Groups FAB and empty state |
 | `/split-group-detail` | Header totals, balances (`@from → @to @amount` with *Settle*), paged activity; edit via app bar (arg: group id) | `SplitGroupDetailBinding` | group row, after saving in the group form |
 | `/split-settlement-form` | Settle up: from → to, amount (outstanding prefilled), date, account when the user is a party, note (`SplitSettlementArgs`) | `SplitSettlementBinding` | detail *Settle* buttons and settlement rows |
+| `/split-expense-form` | Split an expense: amount, date, paid by (single payer or per-member amounts), split Equal/Exact/%/Shares, category, account, note, live preview (`SplitExpenseArgs`) | `SplitExpenseBinding` | detail FAB and expense rows, add-transaction sheet *Split expense* |
 | `/accounts`, `/account-form`, `/account-detail` | Accounts, opening balance, detail (arg: id / `Account`) | `AccountBinding`, `AccountDetailBinding` | Home Accounts section *Manage*, app-bar menu |
 | `/budgets` | Budget list with progress, spent/left, 75/90/100 state | `BudgetBinding` → `BudgetController` | Home "Plan ahead" |
 | `/budget-form` | Add / edit / delete budget (arg: `Budget` for edit) | `BudgetBinding` | Budgets FAB, budget card |

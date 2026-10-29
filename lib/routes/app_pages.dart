@@ -41,6 +41,7 @@ import 'package:finance_tracker/features/savings/views/savings_goal_form_view.da
 import 'package:finance_tracker/features/savings/views/savings_goal_list_view.dart';
 import 'package:finance_tracker/features/settings/views/information_views.dart';
 import 'package:finance_tracker/features/settings/views/settings_view.dart';
+import 'package:finance_tracker/features/split/views/split_expense_form_view.dart';
 import 'package:finance_tracker/features/split/views/split_group_detail_view.dart';
 import 'package:finance_tracker/features/split/views/split_group_form_view.dart';
 import 'package:finance_tracker/features/split/views/split_group_list_view.dart';
@@ -380,6 +381,12 @@ abstract final class AppPages {
       page: () => const SplitSettlementFormView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: SplitSettlementBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.splitExpenseForm,
+      page: () => const SplitExpenseFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: SplitExpenseBinding(),
     ),
   ];
 }
