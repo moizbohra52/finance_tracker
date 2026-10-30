@@ -35,6 +35,7 @@ class _AccountFormViewState extends State<AccountFormView> {
   late final Account? _existing;
   AccountType _type = AccountType.cash;
   DateTime _openingDate = DateTime.now();
+  bool _archived = false;
 
   @override
   void initState() {
@@ -47,6 +48,7 @@ class _AccountFormViewState extends State<AccountFormView> {
       _type = a.type;
       _opening.text = a.openingBalance.toString();
       _openingDate = a.openingBalanceDate ?? a.createdAt;
+      _archived = !a.isActive;
     }
     _controller.save.error.value = null;
   }
@@ -67,6 +69,7 @@ class _AccountFormViewState extends State<AccountFormView> {
       type: _type,
       openingBalance: Decimal.parse(_opening.text.trim()),
       openingBalanceDate: _openingDate,
+      isActive: !_archived,
     );
     if (!saved) return;
     AppSnackbar.show(
@@ -128,6 +131,17 @@ class _AccountFormViewState extends State<AccountFormView> {
                   lastDate: DateTime.now(),
                   onChanged: (DateTime d) => setState(() => _openingDate = d),
                 ),
+                if (editing)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text('Archive account'.tr),
+                    subtitle: Text(
+                      'Hidden when adding transactions and from the home total. Its history stays.'
+                          .tr,
+                    ),
+                    value: _archived,
+                    onChanged: (bool v) => setState(() => _archived = v),
+                  ),
                 const SizedBox(height: AppSpacing.lg),
                 SubmitErrorMessage(_controller.save),
                 Obx(

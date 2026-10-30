@@ -55,3 +55,6 @@ ios/Runner/GoogleService-Info.plist
 # Supabase CLI local state
 supabase/.temp/
 supabase/.branches/
+
+# Local secrets. Never commit.
+credentials.txt

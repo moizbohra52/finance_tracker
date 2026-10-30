@@ -22,8 +22,10 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 36,
+    // A minimum, not a fixed height, so large text does not overflow; the
+    // action keeps the default 48dp tap target.
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 36),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
@@ -32,6 +34,8 @@ class SectionHeader extends StatelessWidget {
               header: true,
               child: Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.2,
@@ -43,8 +47,6 @@ class SectionHeader extends StatelessWidget {
             TextButton(
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                minimumSize: Size.zero,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.sm,
                   vertical: 4,

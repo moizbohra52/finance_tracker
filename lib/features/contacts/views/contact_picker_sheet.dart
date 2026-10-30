@@ -56,7 +56,7 @@ class _ContactPickerSheet extends GetView<ContactController> {
                     horizontal: AppSpacing.md,
                   ),
                   children: <Widget>[
-                    for (final ContactBalance row in controller.visible)
+                    for (final ContactBalance row in controller.all)
                       ContactBalanceTile(
                         row: row,
                         onTap: () => Get.back<Contact>(result: row.contact),

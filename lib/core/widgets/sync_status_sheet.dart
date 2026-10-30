@@ -97,6 +97,7 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip: 'Close'.tr,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -275,7 +276,7 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                             ),
                             trailing: Chip(
                               label: Text(
-                                item.status.name.toUpperCase(),
+                                _statusLabel(item.status),
                                 style: text.labelSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                   fontSize: 10,
@@ -296,12 +297,19 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
     );
   }
 
+  String _statusLabel(SyncItemStatus status) => switch (status) {
+    SyncItemStatus.pending => 'Pending'.tr,
+    SyncItemStatus.processing => 'Processing'.tr,
+    SyncItemStatus.failed => 'Failed'.tr,
+    SyncItemStatus.synced => 'Synced'.tr,
+  };
+
   Color _operationColor(SyncOperation op, ColorScheme colors) {
     switch (op) {
       case SyncOperation.create:
-        return Colors.green;
+        return colors.primary;
       case SyncOperation.update:
-        return Colors.blue;
+        return colors.tertiary;
       case SyncOperation.delete:
       case SyncOperation.replace:
         return colors.error;

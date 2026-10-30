@@ -195,7 +195,7 @@ class ExportView extends GetView<ExportController> {
             value: item.type,
             groupValue: current,
             onChanged: (ExportType? val) {
-              if (val != null) controller.selectedType.value = val;
+              if (val != null) controller.selectType(val);
             },
             secondary: Icon(
               item.icon,
@@ -266,8 +266,11 @@ class ExportView extends GetView<ExportController> {
           ),
         ];
 
+    final List<ExportFormat> available = controller.availableFormats;
     return Row(
-      children: formats.map((item) {
+      children: formats.where((item) => available.contains(item.format)).map((
+        item,
+      ) {
         final bool isSelected = current == item.format;
         final ColorScheme colors = Theme.of(context).colorScheme;
 
@@ -377,91 +380,95 @@ class ExportView extends GetView<ExportController> {
             ),
           ),
 
-          const Divider(height: AppSpacing.xl),
+          // The full report always covers every account, category and type.
+          if (controller.selectedType.value ==
+              ExportType.transactions) ...<Widget>[
+            const Divider(height: AppSpacing.xl),
 
-          // Account Filter
-          BottomSheetDropdown<String?>(
-            value: controller.selectedAccountId.value,
-            options: <String?>[
-              null,
-              ...controller.accounts.map((Account a) => a.id),
-            ],
-            labelOf: (String? id) {
-              if (id == null) return 'All Accounts'.tr;
-              final Account? acc = controller.accounts.firstWhereOrNull(
-                (Account a) => a.id == id,
-              );
-              return acc?.name ?? id;
-            },
-            onChanged: (String? val) {
-              controller.selectedAccountId.value = val;
-            },
-            decoration: InputDecoration(
-              labelText: 'Filter by Account'.tr,
-              prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+            // Account Filter
+            BottomSheetDropdown<String?>(
+              value: controller.selectedAccountId.value,
+              options: <String?>[
+                null,
+                ...controller.accounts.map((Account a) => a.id),
+              ],
+              labelOf: (String? id) {
+                if (id == null) return 'All Accounts'.tr;
+                final Account? acc = controller.accounts.firstWhereOrNull(
+                  (Account a) => a.id == id,
+                );
+                return acc?.name ?? id;
+              },
+              onChanged: (String? val) {
+                controller.selectedAccountId.value = val;
+              },
+              decoration: InputDecoration(
+                labelText: 'Filter by Account'.tr,
+                prefixIcon: const Icon(Icons.account_balance_wallet_outlined),
+              ),
             ),
-          ),
 
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
 
-          // Category Filter
-          BottomSheetDropdown<String?>(
-            value: controller.selectedCategoryId.value,
-            options: <String?>[
-              null,
-              ...controller.categories.map((Category c) => c.id),
-            ],
-            labelOf: (String? id) {
-              if (id == null) return 'All Categories'.tr;
-              final Category? cat = controller.categories.firstWhereOrNull(
-                (Category c) => c.id == id,
-              );
-              return cat?.name ?? id;
-            },
-            onChanged: (String? val) {
-              controller.selectedCategoryId.value = val;
-            },
-            decoration: InputDecoration(
-              labelText: 'Filter by Category'.tr,
-              prefixIcon: const Icon(Icons.category_outlined),
+            // Category Filter
+            BottomSheetDropdown<String?>(
+              value: controller.selectedCategoryId.value,
+              options: <String?>[
+                null,
+                ...controller.categories.map((Category c) => c.id),
+              ],
+              labelOf: (String? id) {
+                if (id == null) return 'All Categories'.tr;
+                final Category? cat = controller.categories.firstWhereOrNull(
+                  (Category c) => c.id == id,
+                );
+                return cat?.name ?? id;
+              },
+              onChanged: (String? val) {
+                controller.selectedCategoryId.value = val;
+              },
+              decoration: InputDecoration(
+                labelText: 'Filter by Category'.tr,
+                prefixIcon: const Icon(Icons.category_outlined),
+              ),
             ),
-          ),
 
-          const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.md),
 
-          // Transaction Type Filter
-          BottomSheetDropdown<TransactionType?>(
-            value: controller.selectedTxType.value,
-            options: const <TransactionType?>[
-              null,
-              TransactionType.income,
-              TransactionType.expense,
-              TransactionType.transfer_in,
-              TransactionType.transfer_out,
-            ],
-            labelOf: (TransactionType? type) {
-              if (type == null) return 'All Types'.tr;
-              switch (type) {
-                case TransactionType.income:
-                  return 'Income'.tr;
-                case TransactionType.expense:
-                  return 'Expense'.tr;
-                case TransactionType.transfer_in:
-                  return 'Transfer In'.tr;
-                case TransactionType.transfer_out:
-                  return 'Transfer Out'.tr;
-                default:
-                  return type.name;
-              }
-            },
-            onChanged: (TransactionType? val) {
-              controller.selectedTxType.value = val;
-            },
-            decoration: InputDecoration(
-              labelText: 'Filter by Transaction Type'.tr,
-              prefixIcon: const Icon(Icons.filter_list_outlined),
+            // Transaction Type Filter
+            BottomSheetDropdown<TransactionType?>(
+              value: controller.selectedTxType.value,
+              options: const <TransactionType?>[
+                null,
+                TransactionType.income,
+                TransactionType.expense,
+                TransactionType.transfer_in,
+                TransactionType.transfer_out,
+              ],
+              labelOf: (TransactionType? type) {
+                if (type == null) return 'All Types'.tr;
+                switch (type) {
+                  case TransactionType.income:
+                    return 'Income'.tr;
+                  case TransactionType.expense:
+                    return 'Expense'.tr;
+                  case TransactionType.transfer_in:
+                    return 'Transfer In'.tr;
+                  case TransactionType.transfer_out:
+                    return 'Transfer Out'.tr;
+                  default:
+                    return type.name;
+                }
+              },
+              onChanged: (TransactionType? val) {
+                controller.selectedTxType.value = val;
+              },
+              decoration: InputDecoration(
+                labelText: 'Filter by Transaction Type'.tr,
+                prefixIcon: const Icon(Icons.filter_list_outlined),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

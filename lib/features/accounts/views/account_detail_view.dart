@@ -131,7 +131,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                 Expanded(
                   child: SummaryTile(
                     icon: Icons.south_west_rounded,
-                    label: 'Total income'.tr,
+                    label: 'Money in'.tr,
                     value: AppFormatters.money(summary.totalIncome),
                     color: money.income,
                   ),
@@ -140,7 +140,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                 Expanded(
                   child: SummaryTile(
                     icon: Icons.north_east_rounded,
-                    label: 'Total expense'.tr,
+                    label: 'Money out'.tr,
                     value: AppFormatters.money(summary.totalExpense),
                     color: money.expense,
                   ),

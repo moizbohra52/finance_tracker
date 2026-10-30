@@ -211,6 +211,9 @@ class ContactDetailController extends GetxController {
       }
     }
     for (final ContactTransaction e in entries) {
+      // As deleteEntry does: the entry goes too, or it lingers in exports
+      // and backups under a contact that no longer exists.
+      await _repository.deleteContactTransaction(e.id);
       try {
         final String txId = ContactFormController.linkedTransactionId(e.id);
         await _transactionRepository.deleteTransaction(txId);

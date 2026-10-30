@@ -75,7 +75,12 @@ class SplitExpenseController extends GetxController {
     members.assignAll(await _repository.getMembers(groupId));
     contacts.assignAll(await _contactsRepository.getContacts());
     try {
-      accounts.assignAll(await _accountsRepository.getAccounts());
+      final String? current = existing?.expense.accountId;
+      accounts.assignAll(
+        (await _accountsRepository.getAccounts()).where(
+          (Account a) => a.isActive || a.id == current,
+        ),
+      );
       categories.assignAll(await _categoriesRepository.getCategories());
     } on AppException {
       // The pickers simply stay empty; validate() then asks for one.

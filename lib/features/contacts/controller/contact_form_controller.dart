@@ -67,7 +67,12 @@ class ContactFormController extends GetxController {
   Future<Transaction?> getLinkedTransaction(String contactTransactionId) async {
     try {
       final String txId = linkedTransactionId(contactTransactionId);
-      return await _transactionRepository.getTransactionById(txId);
+      final Transaction tx = await _transactionRepository.getTransactionById(
+        txId,
+      );
+      // A row deleted from the transactions screen is not preselected, so
+      // saving the entry does not bring the cash movement back.
+      return tx.deletedAt == null ? tx : null;
     } catch (_) {
       return null;
     }

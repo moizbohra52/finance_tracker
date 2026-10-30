@@ -54,7 +54,12 @@ class SplitSettlementController extends GetxController {
     members.assignAll(await _repository.getMembers(groupId));
     contacts.assignAll(await _contactsRepository.getContacts());
     try {
-      accounts.assignAll(await _accountsRepository.getAccounts());
+      final String? current = existing?.accountId;
+      accounts.assignAll(
+        (await _accountsRepository.getAccounts()).where(
+          (Account a) => a.isActive || a.id == current,
+        ),
+      );
     } on AppException {
       // The picker stays empty; the save then fails with a clear message.
     }

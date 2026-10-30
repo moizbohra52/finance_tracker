@@ -329,8 +329,11 @@ class SyncEngine extends GetxService {
           await client.from(table).upsert(<String, dynamic>{
             ...insertPayload(client, clean),
             // A restored row brings back its tombstone state too
-            // (BackupService.restoreBackup).
-            if (restore) 'deleted_at': clean['deleted_at'],
+            // (BackupService.restoreBackup). Any other create is a live row:
+            // a fixed id (split parts, derived rows) written again after a
+            // delete must clear the server tombstone, or the next pull
+            // deletes it here as well.
+            'deleted_at': restore ? clean['deleted_at'] : null,
           }, ignoreDuplicates: onlyIfAbsent);
         }
 
@@ -371,6 +374,11 @@ class SyncEngine extends GetxService {
 
   /// Ids per tombstone request, which keeps the `id=in.(...)` URL short.
   static const int _tombstoneBatch = 100;
+
+  /// Rows asked for per pull request, and rows each page re-reads from the
+  /// one before it ([_pullTable]).
+  static const int _pullPageSize = 1000;
+  static const int _pullRowOverlap = 50;
 
   /// Soft-deletes every live row the user has in [table] on the server except
   /// [keep], including rows this device never pulled. Rows already tombstoned
@@ -458,25 +466,37 @@ class SyncEngine extends GetxService {
       cursor = DateTime.tryParse(lastCursorStr)?.subtract(pullOverlap);
     }
 
-    PostgrestFilterBuilder<List<Map<String, dynamic>>> query = client
-        .from(table)
-        .select();
-
-    if (table == 'categories') {
-      // System or user's own categories
-      query = query.or('user_id.eq.$userId,is_system.eq.true');
-    } else {
-      query = query.eq('user_id', userId);
+    PostgrestFilterBuilder<List<Map<String, dynamic>>> filtered() {
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> query = client
+          .from(table)
+          .select();
+      if (table == 'categories') {
+        // System or user's own categories
+        query = query.or('user_id.eq.$userId,is_system.eq.true');
+      } else {
+        query = query.eq('user_id', userId);
+      }
+      if (cursor != null) {
+        query = query.gte('updated_at', cursor.toUtc().toIso8601String());
+      }
+      return query;
     }
 
-    if (cursor != null) {
-      query = query.gte('updated_at', cursor.toUtc().toIso8601String());
+    // PostgREST caps a response (1000 rows by default), so the delta is read
+    // in pages. Each page starts [_pullRowOverlap] rows back, so a row moved
+    // to the end by a concurrent edit does not shift another one out of view
+    // (a re-read is a harmless upsert). The read ends at a page with nothing
+    // past the overlap, which holds even if the server caps pages lower.
+    final List<Map<String, dynamic>> remoteRows = <Map<String, dynamic>>[];
+    for (int from = 0; ;) {
+      final List<Map<String, dynamic>> page = await filtered()
+          .order('updated_at', ascending: true)
+          .order('id', ascending: true)
+          .range(from, from + _pullPageSize - 1);
+      remoteRows.addAll(from == 0 ? page : page.skip(_pullRowOverlap));
+      if (page.length <= _pullRowOverlap) break;
+      from += page.length - _pullRowOverlap;
     }
-
-    final List<Map<String, dynamic>> remoteRows = await query.order(
-      'updated_at',
-      ascending: true,
-    );
 
     if (remoteRows.isEmpty) return;
 
@@ -598,6 +618,10 @@ class SyncEngine extends GetxService {
     );
   }
 
+  static final RegExp _offsetTimestamp = RegExp(
+    r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?[+-]\d{2}:\d{2}$',
+  );
+
   Future<void> _upsertLocalRow(String table, Map<String, dynamic> row) async {
     final Map<String, dynamic> clean = Map<String, dynamic>.from(row);
 
@@ -608,6 +632,10 @@ class SyncEngine extends GetxService {
       } else if (value is num &&
           (key == 'amount' || key == 'opening_balance')) {
         clean[key] = value.toString();
+      } else if (value is String && _offsetTimestamp.hasMatch(value)) {
+        // Local SQL compares timestamps as text, so they are stored the way
+        // the app writes them ("...Z"), not as the server sends ("+00:00").
+        clean[key] = DateTime.parse(value).toUtc().toIso8601String();
       }
     });
 

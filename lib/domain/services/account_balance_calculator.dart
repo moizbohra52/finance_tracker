@@ -40,24 +40,30 @@ class AccountBalanceCalculator {
     return balance;
   }
 
-  /// Net income for an account: sum of income transactions.
-  static Decimal sumIncome(List<Transaction> transactions) {
+  /// Money into an account: every type [calculateBalance] adds, so
+  /// opening + in - out is the balance.
+  static Decimal sumInflow(List<Transaction> transactions) {
     Decimal total = Decimal.zero;
     for (final t in transactions) {
       if (t.type == TransactionType.income ||
-          t.type == TransactionType.transfer_in) {
+          t.type == TransactionType.transfer_in ||
+          t.type == TransactionType.adjustment_in ||
+          t.type == TransactionType.payment_received) {
         total += t.amount;
       }
     }
     return total;
   }
 
-  /// Net expense for an account: sum of expense transactions (positive number).
-  static Decimal sumExpense(List<Transaction> transactions) {
+  /// Money out of an account (a positive number): every type
+  /// [calculateBalance] subtracts.
+  static Decimal sumOutflow(List<Transaction> transactions) {
     Decimal total = Decimal.zero;
     for (final t in transactions) {
       if (t.type == TransactionType.expense ||
-          t.type == TransactionType.transfer_out) {
+          t.type == TransactionType.transfer_out ||
+          t.type == TransactionType.adjustment_out ||
+          t.type == TransactionType.payment_made) {
         total += t.amount;
       }
     }

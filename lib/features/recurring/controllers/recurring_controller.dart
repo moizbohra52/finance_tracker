@@ -74,7 +74,13 @@ class RecurringController extends GetxController {
     // Materialise anything that came due while the app was closed, then show
     // the list.
     runDue().whenComplete(load);
-    _changes = ever<int>(_notifier.version, (_) => load(silent: true));
+    // Also after every change, a finished sync included: rules pulled on a
+    // fresh login, or a day passing while the app stayed open. runDue is
+    // idempotent and only signals a change when it wrote something.
+    _changes = ever<int>(
+      _notifier.version,
+      (_) => runDue().whenComplete(() => load(silent: true)),
+    );
   }
 
   Category? categoryOf(String? id) {

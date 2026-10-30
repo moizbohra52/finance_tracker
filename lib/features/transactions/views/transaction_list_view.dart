@@ -307,6 +307,7 @@ class _SearchBar extends GetView<TransactionController> {
                     if (value.text.isEmpty) return const SizedBox.shrink();
                     return IconButton(
                       icon: const Icon(Icons.close_rounded, size: 18),
+                      tooltip: 'Clear search'.tr,
                       onPressed: () {
                         searchField.clear();
                         controller.searchText.value = '';
@@ -555,7 +556,7 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(
-                          'Income'.tr,
+                          'Money in'.tr,
                           style: text.labelSmall?.copyWith(
                             color: colors.onSurfaceVariant,
                             fontWeight: FontWeight.w500,
@@ -610,7 +611,7 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[
                         Text(
-                          'Expense'.tr,
+                          'Money out'.tr,
                           style: text.labelSmall?.copyWith(
                             color: colors.onSurfaceVariant,
                             fontWeight: FontWeight.w500,

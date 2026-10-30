@@ -190,6 +190,7 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
+                      tooltip: 'Close'.tr,
                       onPressed: () => Get.back<DeviceContactData>(),
                     ),
                   ],
@@ -218,6 +219,7 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               icon: const Icon(Icons.clear_rounded, size: 18),
+                              tooltip: 'Clear search'.tr,
                               onPressed: () {
                                 _searchController.clear();
                                 _onSearchChanged('');

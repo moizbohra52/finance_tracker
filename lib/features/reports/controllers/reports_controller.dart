@@ -126,6 +126,8 @@ class ReportsController extends GetxController {
     }
     if (_fetchedStart == null || force) isLoading.value = true;
     error.value = null;
+    // A slower earlier load (another period) must not overwrite this one.
+    final int generation = ++_generation;
     try {
       final (
         List<Transaction> transactions,
@@ -140,6 +142,7 @@ class ReportsController extends GetxController {
         _contactRepository.getContacts(),
         _contactRepository.getAllContactTransactions(),
       );
+      if (generation != _generation) return;
       _transactions = transactions;
       _accounts = accounts;
       _categoryIndex = allCategories;
@@ -148,11 +151,13 @@ class ReportsController extends GetxController {
       khata.value = FinanceSummaryCalculator.khata(contacts, entries);
       _recompute();
     } on AppException catch (failure) {
-      error.value = failure.message;
+      if (generation == _generation) error.value = failure.message;
     } finally {
-      isLoading.value = false;
+      if (generation == _generation) isLoading.value = false;
     }
   }
+
+  int _generation = 0;
 
   void _recompute() {
     final ReportPeriod p = period.value;

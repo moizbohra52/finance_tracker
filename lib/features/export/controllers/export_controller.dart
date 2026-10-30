@@ -19,6 +19,7 @@ import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
 import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -60,9 +61,33 @@ class ExportController extends GetxController {
   final ExportService exportService;
   final FileSharingService sharingService;
 
+  /// The formats each scope can really produce, so the chosen file type is
+  /// the one the user gets.
+  static const Map<ExportType, List<ExportFormat>>
+  formatsByType = <ExportType, List<ExportFormat>>{
+    ExportType.transactions: ExportFormat.values,
+    ExportType.accounts: <ExportFormat>[ExportFormat.csv, ExportFormat.excel],
+    ExportType.contacts: ExportFormat.values,
+    ExportType.contactTransactions: <ExportFormat>[
+      ExportFormat.csv,
+      ExportFormat.excel,
+    ],
+    ExportType.budgets: <ExportFormat>[ExportFormat.csv, ExportFormat.excel],
+    ExportType.fullReport: <ExportFormat>[ExportFormat.excel, ExportFormat.pdf],
+  };
+
   // Selected scope & format
   final Rx<ExportType> selectedType = ExportType.transactions.obs;
   final Rx<ExportFormat> selectedFormat = ExportFormat.csv.obs;
+
+  List<ExportFormat> get availableFormats => formatsByType[selectedType.value]!;
+
+  void selectType(ExportType type) {
+    selectedType.value = type;
+    if (!availableFormats.contains(selectedFormat.value)) {
+      selectedFormat.value = availableFormats.first;
+    }
+  }
 
   // Filters
   final Rx<DateRangePreset> datePreset = DateRangePreset.thisMonth.obs;
@@ -327,6 +352,32 @@ class ExportController extends GetxController {
     AppSnackbar.show('Export ready!'.tr);
   }
 
+  /// Current balance per account over all of its transactions, the same
+  /// figures the Accounts screen shows.
+  Future<Map<String, Decimal>> _accountBalances(List<Account> accs) async =>
+      FinanceSummaryCalculator.accountBalances(
+        accs,
+        await transactionRepository.getAllTransactions(),
+      );
+
+  /// Net khata balance per contact from one read of all entries.
+  static Map<String, Decimal> _contactBalances(
+    List<Contact> contacts,
+    List<ContactTransaction> entries,
+  ) {
+    final Map<String, List<ContactTransaction>> byContact =
+        <String, List<ContactTransaction>>{};
+    for (final ContactTransaction e in entries) {
+      byContact.putIfAbsent(e.contactId, () => <ContactTransaction>[]).add(e);
+    }
+    return <String, Decimal>{
+      for (final Contact c in contacts)
+        c.id: c.getCurrentBalance(
+          byContact[c.id] ?? const <ContactTransaction>[],
+        ),
+    };
+  }
+
   Future<void> _exportAccounts(String timeStamp) async {
     final List<Account> accs = await accountRepository.getAccounts();
     if (accs.isEmpty) {
@@ -335,41 +386,30 @@ class ExportController extends GetxController {
     }
 
     statusMessage.value = 'Generating accounts export...'.tr;
+    final Map<String, Decimal> balances = await _accountBalances(accs);
 
     if (selectedFormat.value == ExportFormat.csv) {
-      final String csv = exportService.generateAccountsCsv(accs);
+      final String csv = exportService.generateAccountsCsv(
+        accs,
+        currentBalances: balances,
+      );
       await sharingService.saveAndShareString(
         fileName: 'accounts_$timeStamp.csv',
         content: csv,
         mimeType: 'text/csv',
         subject: 'Accounts Export',
       );
-    } else if (selectedFormat.value == ExportFormat.excel) {
-      final List<int> bytes = exportService.generateAccountsExcel(accs);
+    } else {
+      final List<int> bytes = exportService.generateAccountsExcel(
+        accs,
+        currentBalances: balances,
+      );
       await sharingService.saveAndShareBytes(
         fileName: 'accounts_$timeStamp.xlsx',
         bytes: bytes,
         mimeType:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         subject: 'Accounts Spreadsheet',
-      );
-    } else {
-      // PDF for accounts
-      final List<Transaction> allTxs = await transactionRepository
-          .getAllTransactions();
-      final List<int> pdfBytes = await exportService.generateReportPdf(
-        title: 'Accounts Statement',
-        periodLabel: 'All Active Accounts',
-        transactions: allTxs.take(100).toList(),
-        accountNames: <String, String>{
-          for (final Account a in accs) a.id: a.name,
-        },
-      );
-      await sharingService.saveAndShareBytes(
-        fileName: 'accounts_statement_$timeStamp.pdf',
-        bytes: pdfBytes,
-        mimeType: 'application/pdf',
-        subject: 'Accounts Statement',
       );
     }
 
@@ -385,13 +425,10 @@ class ExportController extends GetxController {
 
     statusMessage.value = 'Generating khata contacts export...'.tr;
 
-    // Calculate balances
-    final Map<String, Decimal> netBalances = <String, Decimal>{};
-    for (final Contact c in contacts) {
-      final List<ContactTransaction> txs = await contactRepository
-          .getContactTransactions(c.id);
-      netBalances[c.id] = c.getCurrentBalance(txs);
-    }
+    final Map<String, Decimal> netBalances = _contactBalances(
+      contacts,
+      await contactRepository.getAllContactTransactions(),
+    );
 
     if (selectedFormat.value == ExportFormat.csv) {
       final String csv = exportService.generateContactsCsv(
@@ -548,6 +585,10 @@ class ExportController extends GetxController {
     final Map<String, String> contactNames = <String, String>{
       for (final Contact c in contacts) c.id: c.name,
     };
+    final Map<String, Decimal> contactBalances = _contactBalances(
+      contacts,
+      contactTxs,
+    );
 
     if (selectedFormat.value == ExportFormat.pdf) {
       Profile? profile;
@@ -564,6 +605,7 @@ class ExportController extends GetxController {
         accountNames: accountNames,
         categoryNames: categoryNames,
         contacts: contacts,
+        contactBalances: contactBalances,
         userName: profile?.fullName ?? authRepository?.currentEmail,
         currencyCode:
             profile?.currencyCode ?? AppFormatters.preferences.currencyCode,
@@ -586,6 +628,8 @@ class ExportController extends GetxController {
         accountNames: accountNames,
         categoryNames: categoryNames,
         contactNames: contactNames,
+        accountBalances: await _accountBalances(accs),
+        contactBalances: contactBalances,
       );
 
       await sharingService.saveAndShareBytes(

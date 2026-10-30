@@ -78,7 +78,7 @@ void main() {
       final SplitExpense back = SplitExpenseModel.fromJson(json);
       expect(back.totalAmount, expense.totalAmount);
       expect(back.splitMode, SplitMode.percent);
-      expect(back.expenseDate, expense.expenseDate);
+      expect(back.expenseDate, expense.expenseDate.toLocal());
       expect(back.note, 'note');
     });
 
@@ -182,7 +182,7 @@ void main() {
       expect(json.containsKey('created_at'), isFalse);
       final SplitSettlement back = SplitSettlementModel.fromJson(json);
       expect(back.amount, settlement.amount);
-      expect(back.settledAt, settlement.settledAt);
+      expect(back.settledAt, settlement.settledAt.toLocal());
       expect(back.accountId, 'acc');
     });
   });

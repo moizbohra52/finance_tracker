@@ -63,8 +63,8 @@ class AccountDetailController extends GetxController {
           loaded.openingBalance,
           transactions,
         ),
-        totalIncome: AccountBalanceCalculator.sumIncome(transactions),
-        totalExpense: AccountBalanceCalculator.sumExpense(transactions),
+        totalIncome: AccountBalanceCalculator.sumInflow(transactions),
+        totalExpense: AccountBalanceCalculator.sumOutflow(transactions),
         transactionCount: transactions.length,
       );
       recent.assignAll(transactions.take(recentCount));

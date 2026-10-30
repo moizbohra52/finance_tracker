@@ -318,11 +318,9 @@ class ExportService {
       final String timeStr = DateFormat('HH:mm:ss').format(tx.transactionDate);
       final double amt = tx.amount.toDouble();
 
-      if (tx.type == TransactionType.income ||
-          tx.type == TransactionType.payment_received) {
+      if (tx.type == TransactionType.income) {
         totalIncome += amt;
-      } else if (tx.type == TransactionType.expense ||
-          tx.type == TransactionType.payment_made) {
+      } else if (tx.type == TransactionType.expense) {
         totalExpense += amt;
       }
 
@@ -613,18 +611,17 @@ class ExportService {
   }) async {
     final pw.Document doc = pw.Document();
 
-    // Calculate totals
+    // Totals as the app shows them: transfers, adjustments and khata/split
+    // payments move money but are not income or expense.
     double totalIncome = 0;
     double totalExpense = 0;
     final Map<String, double> categoryTotals = <String, double>{};
 
     for (final Transaction tx in transactions) {
       final double amt = tx.amount.toDouble();
-      if (tx.type == TransactionType.income ||
-          tx.type == TransactionType.payment_received) {
+      if (tx.type == TransactionType.income) {
         totalIncome += amt;
-      } else if (tx.type == TransactionType.expense ||
-          tx.type == TransactionType.payment_made) {
+      } else if (tx.type == TransactionType.expense) {
         totalExpense += amt;
         final String catName = tx.categoryId != null
             ? (categoryNames?[tx.categoryId] ?? 'Category')
@@ -979,6 +976,8 @@ class ExportService {
                   final double amt = tx.amount.toDouble();
                   final bool isPositive =
                       tx.type == TransactionType.income ||
+                      tx.type == TransactionType.transfer_in ||
+                      tx.type == TransactionType.adjustment_in ||
                       tx.type == TransactionType.payment_received;
                   return <String>[
                     dateStr,

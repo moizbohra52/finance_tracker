@@ -114,37 +114,44 @@ class _OnboardingPage extends StatelessWidget {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          decoration: BoxDecoration(
-            color: colors.primary.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: colors.primary.withValues(alpha: 0.2),
-              width: 2,
+    // Scrolls on short phones, in landscape and with large text.
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: colors.primary.withValues(alpha: 0.2),
+                  width: 2,
+                ),
+              ),
+              child: Icon(icon, size: 64, color: colors.primary),
             ),
-          ),
-          child: Icon(icon, size: 64, color: colors.primary),
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: textTheme.headlineMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: textTheme.bodyLarge?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: AppSpacing.xl),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.5,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        Text(
-          description,
-          textAlign: TextAlign.center,
-          style: textTheme.bodyLarge?.copyWith(color: colors.onSurfaceVariant),
-        ),
-      ],
+      ),
     );
   }
 }

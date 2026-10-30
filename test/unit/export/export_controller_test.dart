@@ -138,6 +138,40 @@ void main() {
       },
     );
 
+    test(
+      'accounts CSV shows the current balance, not the opening one',
+      () async {
+        finance.transactions.add(
+          Transaction(
+            id: 'tx-2',
+            userId: 'u-1',
+            accountId: 'acc-1',
+            type: TransactionType.expense,
+            amount: Decimal.parse('250'),
+            transactionDate: DateTime.now(),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+        controller.selectType(ExportType.accounts);
+        controller.selectedFormat.value = ExportFormat.csv;
+
+        await controller.exportAndShare();
+
+        expect(fakeSharing.lastSharedContent, contains('1000.00,750.00'));
+      },
+    );
+
+    test('a scope only offers formats it can produce', () {
+      controller.selectedFormat.value = ExportFormat.pdf;
+      controller.selectType(ExportType.budgets);
+      expect(controller.availableFormats, isNot(contains(ExportFormat.pdf)));
+      expect(controller.selectedFormat.value, ExportFormat.csv);
+
+      controller.selectType(ExportType.fullReport);
+      expect(controller.selectedFormat.value, ExportFormat.excel);
+    });
+
     test('exports accounts into Excel format', () async {
       controller.selectedType.value = ExportType.accounts;
       controller.selectedFormat.value = ExportFormat.excel;

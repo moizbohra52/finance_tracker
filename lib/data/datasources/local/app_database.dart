@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 5;
+  static const int databaseVersion = 6;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -141,6 +141,43 @@ class AppDatabase {
     if (oldVersion < 5) {
       await _createSplitTables(db);
       await _addSplitLinkColumns(db);
+    }
+    if (oldVersion < 6) await _normalizeServerTimestamps(db);
+  }
+
+  /// Rows pulled before version 6 kept the server's "+00:00" timestamps,
+  /// which sort before the app's own "...Z" text in date-range filters.
+  /// Rewrites them to UTC "Z" text; plain dates have no "T" and are left.
+  static Future<void> _normalizeServerTimestamps(DatabaseExecutor db) async {
+    for (final String table in <String>[
+      'accounts',
+      'categories',
+      'transactions',
+      'contacts',
+      'contact_transactions',
+      'budgets',
+      'recurring_transactions',
+      'reminders',
+      'savings_goals',
+      'savings_contributions',
+      'split_groups',
+      'split_group_members',
+      'split_expenses',
+      'split_expense_parts',
+      'split_settlements',
+      'user_settings',
+      'profiles',
+    ]) {
+      final List<Map<String, Object?>> columns = await db.rawQuery(
+        'PRAGMA table_info($table)',
+      );
+      for (final Map<String, Object?> column in columns) {
+        final String name = column['name']! as String;
+        await db.execute(
+          "UPDATE $table SET $name = strftime('%Y-%m-%dT%H:%M:%fZ', $name) "
+          "WHERE $name LIKE '____-__-__T__:__:__%+00:00'",
+        );
+      }
     }
   }
 
@@ -868,7 +905,9 @@ class AppDatabase {
   }) async {
     final List<Map<String, dynamic>> rows = await db.query(
       'sync_queue',
-      where: "status IN ('pending', 'failed') AND id > ?",
+      // An item still 'processing' was cut off by the app being killed
+      // mid-upload (only one sync runs at a time); uploads are idempotent.
+      where: "status IN ('pending', 'processing', 'failed') AND id > ?",
       whereArgs: <Object>[afterId],
       orderBy: 'id ASC',
       limit: limit,
@@ -878,7 +917,7 @@ class AppDatabase {
 
   Future<int> getPendingQueueCount() async {
     final List<Map<String, dynamic>> res = await db.rawQuery(
-      "SELECT COUNT(*) as cnt FROM sync_queue WHERE status IN ('pending', 'failed')",
+      "SELECT COUNT(*) as cnt FROM sync_queue WHERE status IN ('pending', 'processing', 'failed')",
     );
     if (res.isEmpty) return 0;
     return (res.first['cnt'] as num?)?.toInt() ?? 0;
@@ -952,7 +991,7 @@ class AppDatabase {
       'sync_queue',
       columns: <String>['id'],
       where:
-          "entity = ? AND entity_id = ? AND status IN ('pending', 'processing')",
+          "entity = ? AND entity_id = ? AND status IN ('pending', 'processing', 'failed')",
       whereArgs: <Object>[table, id],
       limit: 1,
     );

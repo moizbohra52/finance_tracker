@@ -42,6 +42,9 @@ class ContactController extends GetxController {
   int get settledCount =>
       _all.where((ContactBalance r) => !r.isReceivable && !r.isPayable).length;
 
+  /// Every contact, whatever the Khata tab's search and filter; for pickers.
+  List<ContactBalance> get all => _all;
+
   /// Contacts matching the current search and filter.
   List<ContactBalance> get visible {
     final String query = searchText.value.trim().toLowerCase();

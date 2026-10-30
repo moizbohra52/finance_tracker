@@ -199,20 +199,26 @@ class _GreetingHeader extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  greeting.text,
-                  style: text.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                    color: colors.onSurface,
+            Flexible(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Flexible(
+                    child: Text(
+                      greeting.text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                        color: colors.onSurface,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Icon(greeting.icon, size: 20, color: colors.primary),
-              ],
+                  const SizedBox(width: AppSpacing.xs),
+                  Icon(greeting.icon, size: 20, color: colors.primary),
+                ],
+              ),
             ),
             Material(
               color: Colors.transparent,
@@ -1243,13 +1249,17 @@ class _KhataSummary extends GetView<HomeController> {
               ),
             );
           }
+          final bool hidden = controller.balanceHidden.value;
+          String show(Object v) => hidden ? '••••' : v.toString();
           return Row(
             children: <Widget>[
               Expanded(
                 child: SummaryTile(
                   icon: Icons.call_received_rounded,
                   label: 'You will get'.tr,
-                  value: AppFormatters.money(controller.khata.value.receivable),
+                  value: show(
+                    AppFormatters.money(controller.khata.value.receivable),
+                  ),
                   color: money.receivable,
                   onTap: () => Get.toNamed<void>(AppRoutes.contacts),
                 ),
@@ -1259,7 +1269,9 @@ class _KhataSummary extends GetView<HomeController> {
                 child: SummaryTile(
                   icon: Icons.call_made_rounded,
                   label: 'You will give'.tr,
-                  value: AppFormatters.money(controller.khata.value.payable),
+                  value: show(
+                    AppFormatters.money(controller.khata.value.payable),
+                  ),
                   color: money.payable,
                   onTap: () => Get.toNamed<void>(AppRoutes.contacts),
                 ),

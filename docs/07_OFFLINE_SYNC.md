@@ -73,6 +73,13 @@ The queue is uploaded in FIFO order, 100 items per read, until it is empty.
 An item that keeps failing does not hold back the items after it, except a
 `replace` item (see Backup restore), which stops the sync until it succeeds.
 
+(2026-10-30) An item left `processing` (the app was killed mid-upload) is
+read again by the next sync, since only one sync runs at a time; it counts as
+unsynced, and a pull does not overwrite a row with a `processing` or `failed`
+item. A `create` upsert always sends `deleted_at` (null unless restoring), so
+a fixed-id row written again after a delete — a split part, a derived row, a
+khata entry's linked transaction — clears its server tombstone.
+
 `savings_contributions` follows `savings_goals` in the pull, backup and
 restore order. A transaction and its contributions are written in one local
 transaction (the transaction first), so the queue never holds a contribution
@@ -118,6 +125,13 @@ matching the device (`BackupService.restoreBackup`):
 
 ## Download
 Pull changes after the last successful sync cursor/timestamp.
+
+(2026-10-30) PostgREST caps a response at 1000 rows, so each table is pulled
+in pages ordered by `updated_at, id`; each page starts 50 rows back so a row
+moved by a concurrent edit does not hide another. The cursor is saved after
+the last page. Pulled timestamps are stored as UTC `...Z` text, the form the
+app writes, because local SQL compares them as text; local database version
+6 rewrites rows pulled earlier in the server's `+00:00` form.
 
 ## Conflict strategy
 For financial transactions, never silently merge monetary values.

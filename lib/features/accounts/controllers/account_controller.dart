@@ -79,6 +79,7 @@ class AccountController extends GetxController {
     required AccountType type,
     required Decimal openingBalance,
     required DateTime openingBalanceDate,
+    bool? isActive,
   }) => save.run(() async {
     final DateTime now = DateTime.now();
     final Account account = Account(
@@ -88,7 +89,7 @@ class AccountController extends GetxController {
       type: type,
       openingBalance: openingBalance,
       openingBalanceDate: openingBalanceDate,
-      isActive: existing?.isActive ?? true,
+      isActive: isActive ?? existing?.isActive ?? true,
       createdAt: existing?.createdAt ?? now,
       updatedAt: now,
     );

@@ -79,7 +79,7 @@ class _SplitMemberPickerSheetState extends State<_SplitMemberPickerSheet> {
                   );
                 }
                 final List<Widget> tiles = <Widget>[
-                  for (final ContactBalance tile in _contacts.visible)
+                  for (final ContactBalance tile in _contacts.all)
                     CheckboxListTile(
                       value: _selected.contains(tile.contact.id),
                       title: ContactBalanceTile(row: tile),

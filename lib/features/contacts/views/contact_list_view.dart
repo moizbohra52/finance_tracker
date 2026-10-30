@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
@@ -188,24 +189,7 @@ class _Summary extends GetView<ContactController> {
                         child: Icon(icon, size: 18, color: color),
                       ),
                       if (isSelected)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: color,
-                            borderRadius: BorderRadius.circular(AppRadius.full),
-                          ),
-                          child: Text(
-                            'Active'.tr,
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                        StatusPill(label: 'Active'.tr, color: color),
                     ],
                   ),
                   const SizedBox(height: 10),
@@ -343,8 +327,24 @@ class _Summary extends GetView<ContactController> {
   }
 }
 
-class _SearchAndFilter extends GetView<ContactController> {
+class _SearchAndFilter extends StatefulWidget {
   const _SearchAndFilter();
+
+  @override
+  State<_SearchAndFilter> createState() => _SearchAndFilterState();
+}
+
+class _SearchAndFilterState extends State<_SearchAndFilter> {
+  final ContactController controller = Get.find<ContactController>();
+  late final TextEditingController _search = TextEditingController(
+    text: controller.searchText.value,
+  );
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -369,6 +369,7 @@ class _SearchAndFilter extends GetView<ContactController> {
           ),
           child: Obx(
             () => TextField(
+              controller: _search,
               onChanged: (String v) => controller.searchText.value = v,
               decoration: InputDecoration(
                 hintText: 'Search name, mobile or notes...'.tr,
@@ -385,7 +386,11 @@ class _SearchAndFilter extends GetView<ContactController> {
                     ? null
                     : IconButton(
                         icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () => controller.searchText.value = '',
+                        tooltip: 'Clear search'.tr,
+                        onPressed: () {
+                          _search.clear();
+                          controller.searchText.value = '';
+                        },
                       ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(

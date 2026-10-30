@@ -251,6 +251,7 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip: 'Close'.tr,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],

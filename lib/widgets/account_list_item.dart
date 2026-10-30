@@ -49,7 +49,11 @@ class AccountTile extends StatelessWidget {
       onTap: onTap,
       leading: IconBadge(icon: accountTypeIcon(account.type)),
       title: account.name,
-      subtitle: subtitle ?? accountTypeLabel(account.type),
+      subtitle:
+          subtitle ??
+          (account.isActive
+              ? accountTypeLabel(account.type)
+              : '${accountTypeLabel(account.type)} · ${'Archived'.tr}'),
       trailing: isHidden
           ? Text(
               '••••',
