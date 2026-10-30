@@ -59,11 +59,10 @@ class ContactFormController extends GetxController {
 
   /// Deterministic transaction ID derived from the contact entry ID so that
   /// creating, editing, and deleting always refer to the same row in transactions.
-  static String linkedTransactionId(String contactTransactionId) =>
-      _uuid.v5(
-        Namespace.url.value,
-        'contact-transaction:$contactTransactionId',
-      );
+  static String linkedTransactionId(String contactTransactionId) => _uuid.v5(
+    Namespace.url.value,
+    'contact-transaction:$contactTransactionId',
+  );
 
   Future<Transaction?> getLinkedTransaction(String contactTransactionId) async {
     try {
@@ -141,21 +140,34 @@ class ContactFormController extends GetxController {
 
     final String txId = linkedTransactionId(id);
     if (accountId != null && accountId.isNotEmpty) {
-      final TransactionType txType = (type == ContactTransactionType.credit ||
+      final TransactionType txType =
+          (type == ContactTransactionType.credit ||
               type == ContactTransactionType.paymentMade)
           ? TransactionType.payment_made
           : TransactionType.payment_received;
 
-      final String displayName = (contactName != null && contactName.trim().isNotEmpty)
+      final String displayName =
+          (contactName != null && contactName.trim().isNotEmpty)
           ? contactName.trim()
           : 'Contact'.tr;
 
       final String defaultDescription = switch (type) {
-        ContactTransactionType.credit => 'Lent to @name'.trParams(<String, String>{'name': displayName}),
-        ContactTransactionType.debit => 'Borrowed from @name'.trParams(<String, String>{'name': displayName}),
-        ContactTransactionType.paymentReceived => 'Payment received from @name'.trParams(<String, String>{'name': displayName}),
-        ContactTransactionType.paymentMade => 'Payment made to @name'.trParams(<String, String>{'name': displayName}),
-        ContactTransactionType.adjustment => 'Adjustment: @name'.trParams(<String, String>{'name': displayName}),
+        ContactTransactionType.credit => 'Lent to @name'.trParams(
+          <String, String>{'name': displayName},
+        ),
+        ContactTransactionType.debit => 'Borrowed from @name'.trParams(
+          <String, String>{'name': displayName},
+        ),
+        ContactTransactionType.paymentReceived =>
+          'Payment received from @name'.trParams(<String, String>{
+            'name': displayName,
+          }),
+        ContactTransactionType.paymentMade => 'Payment made to @name'.trParams(
+          <String, String>{'name': displayName},
+        ),
+        ContactTransactionType.adjustment => 'Adjustment: @name'.trParams(
+          <String, String>{'name': displayName},
+        ),
       };
 
       final Transaction tx = Transaction(

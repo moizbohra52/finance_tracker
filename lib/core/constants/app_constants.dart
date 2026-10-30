@@ -8,6 +8,5 @@ abstract final class AppConstants {
   /// Where Supabase auth emails (confirmation, password reset) send the user
   /// back. Must match the scheme in AndroidManifest.xml and Info.plist, and be
   /// in the Supabase project's redirect allow list.
-  static const String authRedirectUrl =
-      'com.finance.tracker://auth-callback';
+  static const String authRedirectUrl = 'com.finance.tracker://auth-callback';
 }

@@ -63,8 +63,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '681187147024',
     projectId: 'moiz-apps',
     storageBucket: 'moiz-apps.firebasestorage.app',
-    androidClientId: '681187147024-0vdvvnlck1d4mtjhn481tk8ego48j11f.apps.googleusercontent.com',
-    iosClientId: '681187147024-h26m0luroe6d1gu7mg6um5jsmjg6fjt8.apps.googleusercontent.com',
+    androidClientId:
+        '681187147024-0vdvvnlck1d4mtjhn481tk8ego48j11f.apps.googleusercontent.com',
+    iosClientId:
+        '681187147024-h26m0luroe6d1gu7mg6um5jsmjg6fjt8.apps.googleusercontent.com',
     iosBundleId: 'com.finance.tracker',
   );
 }

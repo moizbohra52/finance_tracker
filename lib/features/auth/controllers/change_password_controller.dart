@@ -30,5 +30,4 @@ class ChangePasswordController extends GetxController {
       Get.back<void>();
     }
   }
-
 }

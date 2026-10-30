@@ -21,11 +21,7 @@ import 'package:get/get.dart';
 /// Currency and date formats are account preferences, edited in Settings, so
 /// they are not here.
 class ProfileController extends GetxController {
-  ProfileController(
-    this._profiles,
-    this._authRepository, {
-    this._receipts,
-  });
+  ProfileController(this._profiles, this._authRepository, {this._receipts});
 
   final ProfileRepository _profiles;
   final AuthRepository _authRepository;

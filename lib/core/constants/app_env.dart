@@ -36,18 +36,23 @@ abstract final class AppEnv {
   // Explicit compile-time defines.
   static const String _explicitEnv = String.fromEnvironment('ENV');
   static const String _rawSupabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const String _rawSupabaseKey =
-      String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+  static const String _rawSupabaseKey = String.fromEnvironment(
+    'SUPABASE_PUBLISHABLE_KEY',
+  );
 
-  static const String _devSupabaseUrl =
-      String.fromEnvironment('DEV_SUPABASE_URL');
-  static const String _devSupabaseKey =
-      String.fromEnvironment('DEV_SUPABASE_PUBLISHABLE_KEY');
+  static const String _devSupabaseUrl = String.fromEnvironment(
+    'DEV_SUPABASE_URL',
+  );
+  static const String _devSupabaseKey = String.fromEnvironment(
+    'DEV_SUPABASE_PUBLISHABLE_KEY',
+  );
 
-  static const String _prodSupabaseUrl =
-      String.fromEnvironment('PROD_SUPABASE_URL');
-  static const String _prodSupabaseKey =
-      String.fromEnvironment('PROD_SUPABASE_PUBLISHABLE_KEY');
+  static const String _prodSupabaseUrl = String.fromEnvironment(
+    'PROD_SUPABASE_URL',
+  );
+  static const String _prodSupabaseKey = String.fromEnvironment(
+    'PROD_SUPABASE_PUBLISHABLE_KEY',
+  );
 
   /// Current active environment.
   static Environment get current {

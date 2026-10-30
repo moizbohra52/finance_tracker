@@ -33,14 +33,15 @@ class ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
-    final TextStyle textStyle = (radius < 24
-            ? Theme.of(context).textTheme.titleSmall
-            : Theme.of(context).textTheme.headlineSmall)
-        ?.copyWith(
-          fontWeight: FontWeight.w800,
-          fontSize: radius < 24 ? radius * 0.85 : null,
-          color: colors.primary,
-        ) ??
+    final TextStyle textStyle =
+        (radius < 24
+                ? Theme.of(context).textTheme.titleSmall
+                : Theme.of(context).textTheme.headlineSmall)
+            ?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: radius < 24 ? radius * 0.85 : null,
+              color: colors.primary,
+            ) ??
         TextStyle(
           fontWeight: FontWeight.w800,
           fontSize: radius < 24 ? radius * 0.85 : 20,
@@ -56,10 +57,7 @@ class ProfileAvatar extends StatelessWidget {
                 size: radius * 1.1,
                 color: colors.primary,
               )
-            : Text(
-                initial,
-                style: textStyle,
-              ),
+            : Text(initial, style: textStyle),
       ),
     );
     final String? url = link;
@@ -113,23 +111,21 @@ class ProfileAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         gaplessPlayback: true,
         loadingBuilder:
-            (
-              BuildContext context,
-              Widget child,
-              ImageChunkEvent? progress,
-            ) => progress == null ? child : fallback,
-        errorBuilder:
-            (BuildContext context, Object error, StackTrace? _) => fallback,
+            (BuildContext context, Widget child, ImageChunkEvent? progress) =>
+                progress == null ? child : fallback,
+        errorBuilder: (BuildContext context, Object error, StackTrace? _) =>
+            fallback,
       );
     }
-    final String cleanPath =
-        url.startsWith('file://') ? url.replaceFirst('file://', '') : url;
+    final String cleanPath = url.startsWith('file://')
+        ? url.replaceFirst('file://', '')
+        : url;
     return Image.file(
       File(cleanPath),
       fit: BoxFit.cover,
       gaplessPlayback: true,
-      errorBuilder:
-          (BuildContext context, Object error, StackTrace? _) => fallback,
+      errorBuilder: (BuildContext context, Object error, StackTrace? _) =>
+          fallback,
     );
   }
 }

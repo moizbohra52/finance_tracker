@@ -1107,7 +1107,8 @@ const Map<String, String> hinglish = <String, String>{
   "This friend is in an expense or settlement and can't be removed":
       'Yeh dost kisi kharche ya hisab kitab mein hai, use hataya nahi ja sakta',
   'Choose two different people': 'Do alag log chunein',
-  'Only a settlement with you can use an account': 'Sirf aapki hisab kitab account use kar sakti hai',
+  'Only a settlement with you can use an account':
+      'Sirf aapki hisab kitab account use kar sakti hai',
   'Group members': 'Group members',
   'Group member': 'Group member',
   'Split expenses': 'Split kharche',
@@ -1162,8 +1163,7 @@ const Map<String, String> hinglish = <String, String>{
   'Settlement saved': 'Hisab kitab save ho gayi',
   'Settlement updated': 'Hisab kitab update ho gayi',
   'Settlement deleted': 'Hisab kitab delete ho gayi',
-  'From is who paid; to is who received.':
-      'From ne paise diye, to ne liye.',
+  'From is who paid; to is who received.': 'From ne paise diye, to ne liye.',
   'Not needed': 'Zaroori nahi',
   'Total amount': 'Kul rakam',
   'Paid by': 'Kisne diya',

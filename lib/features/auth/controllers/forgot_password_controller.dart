@@ -21,5 +21,4 @@ class ForgotPasswordController extends GetxController {
     );
     if (succeeded) linkSentTo.value = email;
   }
-
 }

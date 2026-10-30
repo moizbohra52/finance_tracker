@@ -51,65 +51,65 @@ class CategoryBreakdown extends StatelessWidget {
                 ),
                 child: Row(
                   children: <Widget>[
-                IconBadge(icon: r.icon, color: r.color),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Row(
+                    IconBadge(icon: r.icon, color: r.color),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              r.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: text.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  r.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: text.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                            ),
+                              Text(
+                                r.amount,
+                                style: text.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            r.amount,
-                            style: text.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: AppProgressBar(
+                                  value: r.share,
+                                  color: r.color,
+                                  height: 6,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              SizedBox(
+                                width: 44,
+                                child: Text(
+                                  '${AppFormatters.number(r.share * 100, decimalDigits: 0)}%',
+                                  textAlign: TextAlign.end,
+                                  style: text.labelSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: AppProgressBar(
-                              value: r.share,
-                              color: r.color,
-                              height: 6,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          SizedBox(
-                            width: 44,
-                            child: Text(
-                              '${AppFormatters.number(r.share * 100, decimalDigits: 0)}%',
-                              textAlign: TextAlign.end,
-                              style: text.labelSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: colors.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-  ],
-);
+      ],
+    );
   }
 }

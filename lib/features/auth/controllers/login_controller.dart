@@ -23,5 +23,4 @@ class LoginController extends GetxController {
       ),
     );
   }
-
 }
