@@ -118,6 +118,76 @@ Income savings (contributions) rules:
 
 Calculated in `domain/entities/savings_goal.dart` with exact decimals.
 
+## Split expenses
+Friends share a bill inside a group while the user's own books stay exact to
+the paisa. The split tables are the source of truth; the user's expense,
+account movement and khata entries are derived rows written with them. All
+maths lives in `domain/services/split_calculator.dart` and
+`domain/services/split_balances.dart`, exact decimals, paise internally.
+
+### Allocation
+`SplitCalculator.allocate(total, weights)` splits the paise total by weights
+with the largest remainder method; ties go by ascending member id, so every
+device gets the same result. The parts always add up to the total exactly.
+
+- equal: weight 1 for each ticked member, 0 otherwise; at least one ticked
+- exact: the amounts typed (no allocation; must add up to the total)
+- percent: weights are the percentages; they must add up to 100
+- shares: weights are whole numbers >= 0, at least one > 0
+
+### Validation (one expense)
+In this order, each refusal is an English message key:
+- total > 0 and no negative amount
+- total, paid and share amounts have at most 2 decimals
+- sum of paid = total
+- sum of shares = total
+- at least one member other than the user has a paid or share amount > 0
+- the user's share > 0 → category required
+- the user's paid > 0 or the user's share > 0 → account required
+
+### The user's net with each friend (one expense)
+For friend `f`, with `me` the user and `T` the total:
+
+`n_f = (share_f × paid_me − share_me × paid_f) / T`
+
+Exactly, `Σ n_f = paid_me − share_me`. After rounding each `n_f` to paise, the
+largest remainder method forces that sum, so the khata and the account never
+drift by a paisa. `n_f > 0`: the friend owes the user.
+
+### Derived rows for the user (one expense)
+| Condition | Row (uuid v5 id) |
+|---|---|
+| share_me > 0 | `transactions` `expense` of share_me, category, account (`split-expense:<id>:share`) |
+| paid_me > share_me | `transactions` `payment_made` of paid_me − share_me, contact null (`:balance`) |
+| paid_me < share_me | `transactions` `payment_received` of share_me − paid_me, contact null (`:balance`) |
+| n_f > 0 | `contact_transactions` `credit` n_f (`:contact:<contact id>`) |
+| n_f < 0 | `contact_transactions` `debit` −n_f (same id) |
+| n_f = 0 | none (an earlier row with that id is tombstoned) |
+
+Account movement is always `−paid_me`. Date: `expense_date`. If the user
+neither paid nor shares, there are no derived rows.
+
+Checked examples:
+- ₹1200, user paid 800, Rahul 400, four × 300: expense 300 + payment_made 500
+  (account −800); khata Amit +200, Neha +200, Rahul +100.
+- Rahul paid all ₹1200, four × 300: expense 300 + payment_received 300
+  (account 0); khata Rahul −300.
+
+### Group balances
+`SplitBalances.compute` (live rows only):
+- each member's net: Σ(paid − share) over expenses, plus settlements paid,
+  minus settlements received; the nets add to zero
+- pairwise, user with friend: sum of that friend's `n_f` over the group's
+  expenses, minus settlements from the friend to the user, plus settlements
+  from the user to the friend; equals the khata exactly
+- pairwise, friend with friend: `(share_i × paid_j − share_j × paid_i) / T`
+  summed exactly over the expenses, minus their settlements, rounded to paise
+  once; display only, may differ from a by-hand sum by a paisa
+
+Pairs with amount 0 are omitted; a negative result is stored with debtor and
+creditor swapped. A settlement `from → to` of `x` reduces what `from` owes
+`to`; paying more than the outstanding amount flips the direction.
+
 ## Validation
 - amount > 0
 - maximum supported precision 2 decimals for INR

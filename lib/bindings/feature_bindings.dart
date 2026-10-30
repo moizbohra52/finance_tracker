@@ -13,6 +13,7 @@ import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
+import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
@@ -31,6 +32,10 @@ import 'package:finance_tracker/features/reminders/controllers/reminder_controll
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_group_detail_controller.dart';
+import 'package:finance_tracker/features/split/controllers/split_settlement_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/calendar_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
@@ -70,6 +75,7 @@ class TransactionBinding extends Bindings {
       savingsGoals: Get.isRegistered<SavingsGoalRepository>()
           ? Get.find<SavingsGoalRepository>()
           : null,
+      splitRepository: Get.find<SplitRepository>(),
     ),
   );
 }
@@ -95,6 +101,7 @@ class TransactionDetailBinding extends Bindings {
         Get.find<TransactionRepository>(),
         Get.find<DataChangeNotifier>(),
         routeIdArgument(),
+        splitRepository: Get.find<SplitRepository>(),
       ),
       tag: routeIdArgument(),
     );
@@ -142,6 +149,7 @@ class ContactDetailBinding extends Bindings {
         Get.find<DataChangeNotifier>(),
         routeIdArgument(),
         profileRepository: Get.find<ProfileRepository>(),
+        splitRepository: Get.find<SplitRepository>(),
       ),
       tag: routeIdArgument(),
     );
@@ -246,6 +254,62 @@ class NotificationCenterBinding extends Bindings {
       Get.find<NotificationCoordinator>(),
     ),
   );
+}
+
+class SplitGroupBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => SplitGroupController(
+      Get.find<SplitRepository>(),
+      Get.find<ContactRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+/// One detail controller per group id (tagged, like ContactDetailBinding).
+class SplitGroupDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<SplitGroupDetailController>(
+      SplitGroupDetailController(
+        Get.find<SplitRepository>(),
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+        routeIdArgument(),
+      ),
+      tag: routeIdArgument(),
+    );
+  }
+}
+
+class SplitSettlementBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<SplitSettlementController>(
+      SplitSettlementController(
+        Get.find<SplitRepository>(),
+        Get.find<AccountRepository>(),
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+  }
+}
+
+class SplitExpenseBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<SplitExpenseController>(
+      SplitExpenseController(
+        Get.find<SplitRepository>(),
+        Get.find<AccountRepository>(),
+        Get.find<CategoryRepository>(),
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+  }
 }
 
 /// Everything the signed-in shell's tabs need.

@@ -57,6 +57,13 @@ abstract final class AppRoutes {
   static const String contactDetail = '/contact-detail';
   static const String contactEntry = '/contact-entry';
 
+  // Split expenses
+  static const String splitGroups = '/split-groups';
+  static const String splitGroupForm = '/split-group-form';
+  static const String splitGroupDetail = '/split-group-detail';
+  static const String splitExpenseForm = '/split-expense-form';
+  static const String splitSettlementForm = '/split-settlement-form';
+
   // Export and Backup
   static const String export = '/export';
   static const String backup = '/backup';

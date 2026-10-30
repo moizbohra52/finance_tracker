@@ -298,10 +298,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('weeks').last);
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Food & Dining'));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
 
       final RecurringTransaction saved = f.recurring.single;
+      expect(saved.categoryId, 'cat-food');
       expect(saved.frequency, RecurringFrequency.weekly);
       expect(saved.intervalCount, 2);
       expect(saved.amount, Decimal.parse('5000'));
@@ -324,12 +327,37 @@ void main() {
         find.widgetWithText(TextFormField, 'Amount'),
         '799',
       );
+      await tester.tap(find.text('Food & Dining'));
+      await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(FilledButton, 'Save'));
       await tester.pumpAndSettle();
 
+      expect(f.recurring.single.categoryId, 'cat-food');
       expect(f.recurring.single.frequency, RecurringFrequency.monthly);
       expect(f.recurring.single.intervalCount, 1);
       expect(find.textContaining('Monthly'), findsOneWidget);
+    });
+
+    testWidgets('a schedule without a category is not saved', (
+      WidgetTester tester,
+    ) async {
+      await _tall(tester);
+      final FakeFinance f = _seeded();
+      await _start(tester, f);
+      await _openPlan(tester, 'Recurring');
+      await tester.tap(find.byType(FloatingActionButton));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Amount'),
+        '799',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+      await tester.pumpAndSettle();
+
+      expect(f.recurring, isEmpty);
+      expect(find.byType(RecurringFormView), findsOneWidget);
+      expect(find.text('Choose a category'), findsOneWidget);
     });
 
     testWidgets('lists the next run and pauses with the switch', (

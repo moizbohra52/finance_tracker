@@ -17,6 +17,9 @@ Store:
 - reminders
 - savings goals (database version 3; older files get the table on upgrade)
 - savings contributions (database version 4; same upgrade rule)
+- split groups, group members, expenses, expense parts and settlements
+  (database version 5; same upgrade rule, plus the `split_expense_id` /
+  `split_settlement_id` link columns on transactions and contact transactions)
 - sync metadata
 
 ### One database file per signed-in account (2026-10-15)
@@ -74,6 +77,14 @@ An item that keeps failing does not hold back the items after it, except a
 restore order. A transaction and its contributions are written in one local
 transaction (the transaction first), so the queue never holds a contribution
 ahead of the transaction it references.
+
+The five split tables follow `savings_contributions` in the pull order. Every
+split operation writes all of its rows in one local SQLite transaction —
+parents enqueued first: group → members → expense → parts → derived
+`transactions` and `contact_transactions` — so the queue never holds a child
+ahead of its parent and a failure rolls everything back. In the backup restore
+order the split tables sit after `contacts` and before `transactions`, so the
+server's foreign keys never see a missing parent.
 
 Receipt photos are files, not queue rows. A photo attached offline is kept in
 `<app documents>/receipts/<user id>/pending/`, which is their queue

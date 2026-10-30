@@ -82,6 +82,18 @@ class ContactTransaction {
   final DateTime transactionDate;
   final DateTime? dueDate;
   final String? note;
+
+  /// Set when the row is derived from a split expense or settlement.
+  final String? splitExpenseId;
+
+  /// Set when the row is derived from a split settlement.
+  final String? splitSettlementId;
+
+  /// A derived entry is owned by its split group: it can only be changed
+  /// there, not directly (docs/05, "Guards").
+  bool get isSplitDerived =>
+      splitExpenseId != null || splitSettlementId != null;
+
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -95,6 +107,8 @@ class ContactTransaction {
     required this.transactionDate,
     this.dueDate,
     this.note,
+    this.splitExpenseId,
+    this.splitSettlementId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,

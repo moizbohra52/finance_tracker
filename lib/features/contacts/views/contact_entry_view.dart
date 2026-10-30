@@ -102,6 +102,11 @@ class _ContactEntryViewState extends State<ContactEntryView> {
     final ContactEntryArgs? args = _args;
     if (args == null || !(_formKey.currentState?.validate() ?? false)) return;
     final bool editing = args.existing != null;
+    // A derived entry is edited through its split group, not here.
+    if (args.existing?.isSplitDerived ?? false) {
+      AppSnackbar.show('Open it in the group to change or delete it'.tr);
+      return;
+    }
     final String note = _note.text.trim();
     final DateTime combinedDate = DateTime(
       _date.year,
@@ -128,12 +133,12 @@ class _ContactEntryViewState extends State<ContactEntryView> {
       editing
           ? 'Entry updated'.tr
           : (_accountId != null
-              ? '@entry recorded & account updated'.trParams(<String, String>{
-                  'entry': contactEntryLabel(_type),
-                })
-              : '@entry recorded'.trParams(<String, String>{
-                  'entry': contactEntryLabel(_type),
-                })),
+                ? '@entry recorded & account updated'.trParams(<String, String>{
+                    'entry': contactEntryLabel(_type),
+                  })
+                : '@entry recorded'.trParams(<String, String>{
+                    'entry': contactEntryLabel(_type),
+                  })),
     );
     Get.back<void>();
   }
@@ -147,8 +152,10 @@ class _ContactEntryViewState extends State<ContactEntryView> {
         title: editing
             ? 'Edit entry'.tr
             : (_args?.contactName == null
-                ? 'Add entry'.tr
-                : 'Entry for @name'.trParams(<String, String>{'name': _args!.contactName!})),
+                  ? 'Add entry'.tr
+                  : 'Entry for @name'.trParams(<String, String>{
+                      'name': _args!.contactName!,
+                    })),
       ),
       body: SafeArea(
         child: AppContent(
@@ -203,10 +210,9 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                     prefixStyle: text.displaySmall,
                     hintText: '0.00',
                     hintStyle: text.displaySmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant
-                          .withValues(alpha: 0.35),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                     ),
                   ),
                 ),
@@ -291,7 +297,8 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                       labelText: label,
                       helperText: _accountId != null
                           ? helper
-                          : 'Optional: record in bank or cash balance as well'.tr,
+                          : 'Optional: record in bank or cash balance as well'
+                                .tr,
                       helperMaxLines: 2,
                       prefixIcon: Icon(
                         isOutflow
@@ -300,10 +307,7 @@ class _ContactEntryViewState extends State<ContactEntryView> {
                       ),
                       suffixIcon: _accountId != null
                           ? IconButton(
-                              icon: const Icon(
-                                Icons.clear_rounded,
-                                size: 20,
-                              ),
+                              icon: const Icon(Icons.clear_rounded, size: 20),
                               tooltip: 'Clear account'.tr,
                               onPressed: () =>
                                   setState(() => _accountId = null),

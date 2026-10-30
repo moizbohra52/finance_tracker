@@ -13,6 +13,7 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
@@ -344,45 +345,87 @@ class _EntryTile extends GetView<ContactDetailController> {
     final String due = entry.dueDate == null
         ? ''
         : ' · ${'Due @date'.trParams(<String, String>{'date': AppFormatters.date(entry.dueDate!)})}';
-    return AppListTile(
-      onTap: _edit,
-      padding: const EdgeInsets.only(
-        left: AppSpacing.md,
-        top: AppSpacing.sm,
-        bottom: AppSpacing.sm,
-      ),
-      leading: IconBadge(
-        icon: raises ? Icons.call_received_rounded : Icons.call_made_rounded,
-        color: color,
-      ),
-      title: contactEntryLabel(entry.type),
-      subtitle:
-          '${AppFormatters.dateTime(entry.transactionDate)}$due'
-          '${note.isEmpty ? '' : '\n$note'}',
-      subtitleMaxLines: 3,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Text(
-            AppFormatters.signedMoney(entry.amount, positive: raises),
-            style: text.titleSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
+    final bool derived = entry.isSplitDerived;
+    return Obx(() {
+      // linkOf touches splitLinks, so the tile also rebuilds when the group
+      // behind a derived row arrives after the first frame.
+      final SplitLink? link = controller.linkOf(entry);
+      return AppListTile(
+        onTap: derived ? () => controller.openInGroup(entry) : _edit,
+        padding: const EdgeInsets.only(
+          left: AppSpacing.md,
+          top: AppSpacing.sm,
+          bottom: AppSpacing.sm,
+        ),
+        leading: IconBadge(
+          icon: raises ? Icons.call_received_rounded : Icons.call_made_rounded,
+          color: color,
+        ),
+        title: contactEntryLabel(entry.type),
+        subtitle:
+            '${AppFormatters.dateTime(entry.transactionDate)}$due'
+            '${note.isEmpty ? '' : '\n$note'}',
+        subtitleMaxLines: 3,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              AppFormatters.signedMoney(entry.amount, positive: raises),
+              style: text.titleSmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          IconButton(
-            tooltip: 'Edit entry'.tr,
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: _edit,
-          ),
-          IconButton(
-            tooltip: 'Delete entry'.tr,
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () => _delete(context),
-          ),
-        ],
-      ),
-    );
+            if (derived)
+              Padding(
+                padding: const EdgeInsets.only(left: AppSpacing.sm),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Icon(
+                        Icons.groups_outlined,
+                        size: 12,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        link?.groupName ?? '',
+                        style: text.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else ...<Widget>[
+              IconButton(
+                tooltip: 'Edit entry'.tr,
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: _edit,
+              ),
+              IconButton(
+                tooltip: 'Delete entry'.tr,
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _delete(context),
+              ),
+            ],
+          ],
+        ),
+      );
+    });
   }
 }
 
