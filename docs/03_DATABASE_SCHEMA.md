@@ -154,6 +154,79 @@ its transaction nor its goal is deleted. At most one live row per
 of a transaction within its amount and limits them to incomes (offline edits
 upload row by row, so a database check could reject a valid sync).
 
+### split_groups (2026-10-24)
+id UUID PK
+user_id UUID
+name TEXT -- not blank
+created_at
+updated_at
+deleted_at
+
+### split_group_members (2026-10-24)
+id UUID PK -- deterministic uuid v5 of split-member:<group id>:<contact id | me>
+user_id UUID
+group_id UUID -- composite FK (user_id, group_id)
+contact_id UUID nullable -- FK contacts(id); null is the user themself
+created_at
+updated_at
+deleted_at
+
+One person in a group. Every group has exactly one member with contact_id
+null. The deterministic id revives the same row when a contact is re-added,
+on any device.
+
+### split_expenses (2026-10-24)
+id UUID PK
+user_id UUID
+group_id UUID -- composite FK (user_id, group_id)
+title TEXT -- not blank
+total_amount NUMERIC(18,2) -- > 0
+expense_date TIMESTAMPTZ
+split_mode TEXT -- check in ('equal', 'exact', 'percent', 'shares')
+category_id UUID nullable -- plain FK categories(id) + can_use_category, like transactions
+account_id UUID nullable -- composite FK (user_id, account_id)
+note TEXT nullable
+created_at
+updated_at
+deleted_at
+
+### split_expense_parts (2026-10-24)
+id UUID PK -- deterministic uuid v5 of split-part:<expense id>:<member id>
+user_id UUID
+split_expense_id UUID -- composite FK (user_id, split_expense_id)
+member_id UUID -- composite FK (user_id, member_id)
+paid_amount NUMERIC(18,2) -- >= 0
+share_amount NUMERIC(18,2) -- >= 0
+share_input NUMERIC nullable -- the percent or share count typed
+created_at
+updated_at
+deleted_at
+
+One row per member per expense holds both what they paid and what their share
+is, so multiple payers need no extra table. The sums are checked in the app,
+not by the database.
+
+### split_settlements (2026-10-24)
+id UUID PK
+user_id UUID
+group_id UUID -- composite FK (user_id, group_id)
+from_member_id UUID -- composite FK (user_id, from_member_id); check from <> to
+to_member_id UUID -- composite FK (user_id, to_member_id)
+amount NUMERIC(18,2) -- > 0
+settled_at TIMESTAMPTZ
+account_id UUID nullable -- composite FK (user_id, account_id); only with the user as a party
+note TEXT nullable
+created_at
+updated_at
+deleted_at
+
+### Link columns on derived rows (2026-10-24)
+transactions and contact_transactions gain nullable `split_expense_id` and
+`split_settlement_id` UUID columns, composite foreign keys
+`(user_id, split_expense_id)` / `(user_id, split_settlement_id)` to the new
+tables, and one partial index per column. A row with either set is derived
+from a split and cannot be edited or deleted directly (docs/05_FINANCIAL_LOGIC.md).
+
 ### recurring_transactions
 id UUID PK
 user_id UUID
@@ -230,6 +303,26 @@ At minimum:
 - savings_contributions(user_id, transaction_id)
 - savings_contributions(user_id, goal_id)
 - savings_contributions(transaction_id, goal_id) UNIQUE WHERE deleted_at IS NULL
+- split_groups(user_id)
+- split_group_members(user_id)
+- split_group_members(group_id)
+- split_group_members(contact_id) WHERE contact_id IS NOT NULL
+- split_expenses(user_id)
+- split_expenses(group_id)
+- split_expenses(category_id) WHERE category_id IS NOT NULL
+- split_expenses(account_id) WHERE account_id IS NOT NULL
+- split_expense_parts(user_id)
+- split_expense_parts(split_expense_id)
+- split_expense_parts(member_id)
+- split_settlements(user_id)
+- split_settlements(group_id)
+- split_settlements(from_member_id)
+- split_settlements(to_member_id)
+- split_settlements(account_id) WHERE account_id IS NOT NULL
+- transactions(split_expense_id) WHERE split_expense_id IS NOT NULL
+- transactions(split_settlement_id) WHERE split_settlement_id IS NOT NULL
+- contact_transactions(split_expense_id) WHERE split_expense_id IS NOT NULL
+- contact_transactions(split_settlement_id) WHERE split_settlement_id IS NOT NULL
 
 ## Money rules
 Use NUMERIC(18,2). Do not use double/float for persisted monetary values.
@@ -330,6 +423,18 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    pulled from other devices do not refresh the screen until the migration is
    applied; it recovers by itself afterwards. Local SQLite gets the same table
    in database version 4.
+
+15. `20261024100000_split_expenses.sql` - the five split tables (see above)
+   with the four owner-only policies and no `anon` grant, `(user_id, id)`
+   unique keys on `transactions` and `contact_transactions` for the new
+   composite link foreign keys, and the `split_expense_id` /
+   `split_settlement_id` columns on those two tables. **Apply before
+   shipping** the app version that syncs it: without it, uploads for the new
+   tables fail and retry on every sync, and the pull error ends every sync in
+   the error state. Local SQLite gets the same tables in database version 5.
+   The restore order in `BackupService.insertOrder` puts the five split tables
+   after `contacts` and before `transactions` so the server's foreign keys
+   never see a missing parent.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

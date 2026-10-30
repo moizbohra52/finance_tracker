@@ -64,6 +64,20 @@ insert into public.notifications (title, body, type)
 values ('Welcome', 'Your account is ready.', 'security');
 insert into public.savings_goals (name, target_amount, saved_amount)
 values ('A Trip', 50000, 1000);
+insert into public.split_groups (id, name)
+values ('a6000000-0000-4000-8000-000000000001', 'A Goa Trip');
+insert into public.split_group_members (id, group_id, contact_id)
+values
+  ('a6000000-0000-4000-8000-000000000002', 'a6000000-0000-4000-8000-000000000001', null),
+  ('a6000000-0000-4000-8000-000000000003', 'a6000000-0000-4000-8000-000000000001', 'a3000000-0000-4000-8000-000000000001');
+insert into public.split_expenses (id, group_id, title, total_amount, expense_date, split_mode, account_id)
+values ('a6000000-0000-4000-8000-000000000004', 'a6000000-0000-4000-8000-000000000001', 'Dinner', 1200, '2026-10-26T12:00:00Z', 'equal', 'a1000000-0000-4000-8000-000000000001');
+insert into public.split_expense_parts (id, split_expense_id, member_id, paid_amount, share_amount)
+values
+  ('a6000000-0000-4000-8000-000000000005', 'a6000000-0000-4000-8000-000000000004', 'a6000000-0000-4000-8000-000000000002', 800, 300),
+  ('a6000000-0000-4000-8000-000000000006', 'a6000000-0000-4000-8000-000000000004', 'a6000000-0000-4000-8000-000000000003', 400, 300);
+insert into public.split_settlements (id, group_id, from_member_id, to_member_id, amount, settled_at)
+values ('a6000000-0000-4000-8000-000000000007', 'a6000000-0000-4000-8000-000000000001', 'a6000000-0000-4000-8000-000000000003', 'a6000000-0000-4000-8000-000000000002', 200, '2026-10-27T12:00:00Z');
 update public.profiles set mobile = '+910000000000';
 
 do $$
@@ -120,7 +134,12 @@ begin
      + (select count(*) from public.recurring_transactions)
      + (select count(*) from public.reminders)
      + (select count(*) from public.notifications)
-     + (select count(*) from public.savings_goals) <> 0 then
+     + (select count(*) from public.savings_goals)
+     + (select count(*) from public.split_groups)
+     + (select count(*) from public.split_group_members)
+     + (select count(*) from public.split_expenses)
+     + (select count(*) from public.split_expense_parts)
+     + (select count(*) from public.split_settlements) <> 0 then
     raise exception 'FAIL: B can read A financial rows';
   end if;
 
@@ -197,6 +216,48 @@ begin
     values ('a2000000-0000-4000-8000-000000000001', 10, 'monthly', '2026-10-01');
     raise exception 'FAIL: B used an A custom category on a budget';
   exception when insufficient_privilege then null;
+  end;
+
+  -- The split tables reference A rows through composite foreign keys
+  begin
+    insert into public.split_group_members (group_id, contact_id)
+    values ('a6000000-0000-4000-8000-000000000001', null);
+    raise exception 'FAIL: B joined a member into an A group';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.split_expenses (group_id, title, total_amount, expense_date, split_mode)
+    values ('a6000000-0000-4000-8000-000000000001', 'probe', 10, now(), 'equal');
+    raise exception 'FAIL: B created an expense in an A group';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.split_expense_parts (split_expense_id, member_id, paid_amount, share_amount)
+    values ('a6000000-0000-4000-8000-000000000004', 'a6000000-0000-4000-8000-000000000002', 5, 5);
+    raise exception 'FAIL: B created a part on an A expense';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.split_settlements (group_id, from_member_id, to_member_id, amount, settled_at)
+    values (
+      'a6000000-0000-4000-8000-000000000001',
+      'a6000000-0000-4000-8000-000000000003',
+      'a6000000-0000-4000-8000-000000000002',
+      10,
+      now()
+    );
+    raise exception 'FAIL: B created a settlement between A members';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.transactions (account_id, type, amount, split_expense_id)
+    values ('b1000000-0000-4000-8000-000000000001', 'expense', 10, 'a6000000-0000-4000-8000-000000000004');
+    raise exception 'FAIL: B linked a transaction to an A split expense';
+  exception when foreign_key_violation then null;
   end;
 
   -- Creating a shared system category or handing a row to A
@@ -323,7 +384,12 @@ begin
      or exists (select 1 from public.recurring_transactions where user_id = a)
      or exists (select 1 from public.reminders where user_id = a)
      or exists (select 1 from public.notifications where user_id = a)
-     or exists (select 1 from public.savings_goals where user_id = a) then
+     or exists (select 1 from public.savings_goals where user_id = a)
+     or exists (select 1 from public.split_groups where user_id = a)
+     or exists (select 1 from public.split_group_members where user_id = a)
+     or exists (select 1 from public.split_expenses where user_id = a)
+     or exists (select 1 from public.split_expense_parts where user_id = a)
+     or exists (select 1 from public.split_settlements where user_id = a) then
     raise exception 'FAIL: deleting the auth user left data behind';
   end if;
   if not exists (select 1 from public.accounts where user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') then

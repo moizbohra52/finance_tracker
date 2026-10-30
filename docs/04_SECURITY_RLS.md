@@ -45,6 +45,17 @@ For system categories:
   on `(user_id, id)`, so a contribution cannot point at another user's
   transaction or goal (this needed a `(user_id, id)` unique key on
   `savings_goals`). Not covered by the isolation check yet.
+- 2026-10-24: the five split tables (`split_groups`, `split_group_members`,
+  `split_expenses`, `split_expense_parts`, `split_settlements`) have the four
+  owner-only policies and no `anon` grant. Their group, member, expense and
+  settlement references are composite foreign keys on `(user_id, id)`, so a
+  split row cannot point at another user's parent (this needed `(user_id, id)`
+  unique keys on `transactions` and `contact_transactions` for the derived-row
+  link columns). `category_id` follows the `transactions` pattern: a plain
+  foreign key to `categories (id)` with `private.can_use_category(category_id)`
+  in the insert/update policies of `split_expenses`, because system categories
+  have no owner. Covered by the isolation check (reads, composite foreign keys
+  on every child table, cascade on user delete).
 
 ## Ownership
 Never trust user_id supplied by the Flutter client. Where possible derive ownership from auth.uid() in database policies/functions.

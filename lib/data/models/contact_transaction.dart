@@ -11,6 +11,8 @@ class ContactTransactionModel {
   final String transactionDate;
   final String? dueDate;
   final String? note;
+  final String? splitExpenseId;
+  final String? splitSettlementId;
   final String createdAt;
   final String updatedAt;
   final String? deletedAt;
@@ -24,6 +26,8 @@ class ContactTransactionModel {
     required this.transactionDate,
     this.dueDate,
     this.note,
+    this.splitExpenseId,
+    this.splitSettlementId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -39,6 +43,8 @@ class ContactTransactionModel {
         transactionDate: json['transaction_date'] as String,
         dueDate: json['due_date'] as String?,
         note: json['note'] as String?,
+        splitExpenseId: json['split_expense_id'] as String?,
+        splitSettlementId: json['split_settlement_id'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
         deletedAt: json['deleted_at'] as String?,
@@ -53,6 +59,8 @@ class ContactTransactionModel {
     'transaction_date': transactionDate,
     'due_date': dueDate,
     'note': note,
+    'split_expense_id': splitExpenseId,
+    'split_settlement_id': splitSettlementId,
     'created_at': createdAt,
     'updated_at': updatedAt,
     'deleted_at': deletedAt,
@@ -67,6 +75,8 @@ class ContactTransactionModel {
     transactionDate: DateTime.parse(transactionDate).toLocal(),
     dueDate: dueDate != null ? DateTime.parse(dueDate!) : null,
     note: note,
+    splitExpenseId: splitExpenseId,
+    splitSettlementId: splitSettlementId,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
     deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
@@ -85,6 +95,8 @@ class ContactTransactionModel {
         .toIso8601String(),
     dueDate: contactTransaction.dueDate?.toIso8601String().split('T').first,
     note: contactTransaction.note,
+    splitExpenseId: contactTransaction.splitExpenseId,
+    splitSettlementId: contactTransaction.splitSettlementId,
     createdAt: contactTransaction.createdAt.toIso8601String(),
     updatedAt: contactTransaction.updatedAt.toIso8601String(),
     deletedAt: contactTransaction.deletedAt?.toIso8601String(),

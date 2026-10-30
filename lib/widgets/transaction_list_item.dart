@@ -18,6 +18,7 @@ class TransactionListItem extends StatelessWidget {
     required this.subtitle,
     this.iconKey,
     this.onTap,
+    this.groupLabel,
     this.padding = AppListTile.defaultPadding,
   });
 
@@ -30,6 +31,10 @@ class TransactionListItem extends StatelessWidget {
   final String subtitle;
   final String? iconKey;
   final VoidCallback? onTap;
+
+  /// The split group behind a derived row, shown as a small chip; null for a
+  /// plain row.
+  final String? groupLabel;
 
   /// Unused for card layout, preserved for API backward-compatibility.
   final EdgeInsetsGeometry padding;
@@ -199,10 +204,52 @@ class TransactionListItem extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
+                          if (groupLabel != null) ...<Widget>[
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.primaryContainer.withValues(
+                                    alpha: 0.7,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Icon(
+                                      Icons.groups_outlined,
+                                      size: 10,
+                                      color: colors.onPrimaryContainer,
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Flexible(
+                                      child: Text(
+                                        groupLabel!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: text.labelSmall?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          color: colors.onPrimaryContainer,
+                                          fontSize: 10.5,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                          ],
                           Text(
                             AppFormatters.time(transaction.transactionDate),
                             style: text.labelSmall?.copyWith(
-                              color: colors.onSurfaceVariant.withValues(alpha: 0.8),
+                              color: colors.onSurfaceVariant.withValues(
+                                alpha: 0.8,
+                              ),
                               fontSize: 11,
                             ),
                           ),
@@ -215,7 +262,9 @@ class TransactionListItem extends StatelessWidget {
                             Icon(
                               Icons.notes_rounded,
                               size: 11,
-                              color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+                              color: colors.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                             const SizedBox(width: 3),
                             Expanded(
@@ -225,7 +274,9 @@ class TransactionListItem extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: text.bodySmall?.copyWith(
                                   fontSize: 11,
-                                  color: colors.onSurfaceVariant.withValues(alpha: 0.8),
+                                  color: colors.onSurfaceVariant.withValues(
+                                    alpha: 0.8,
+                                  ),
                                   fontStyle: FontStyle.italic,
                                 ),
                               ),

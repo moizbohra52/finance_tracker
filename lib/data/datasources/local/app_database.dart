@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 4;
+  static const int databaseVersion = 5;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -138,6 +138,190 @@ class AppDatabase {
     }
     if (oldVersion < 3) await _createSavingsGoals(db);
     if (oldVersion < 4) await _createSavingsContributions(db);
+    if (oldVersion < 5) {
+      await _createSplitTables(db);
+      await _addSplitLinkColumns(db);
+    }
+  }
+
+  /// The five split tables (docs/03_DATABASE_SCHEMA.md). Money is TEXT,
+  /// every `*_id` reference is indexed.
+  static Future<void> _createSplitTables(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS split_groups (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_groups_user ON split_groups(user_id);',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS split_group_members (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        group_id TEXT NOT NULL,
+        contact_id TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_members_user ON split_group_members(user_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_members_group ON split_group_members(group_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_members_contact ON split_group_members(contact_id);',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS split_expenses (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        group_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        total_amount TEXT NOT NULL,
+        expense_date TEXT NOT NULL,
+        split_mode TEXT NOT NULL,
+        category_id TEXT,
+        account_id TEXT,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_expenses_user ON split_expenses(user_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_expenses_group ON split_expenses(group_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_expenses_category ON split_expenses(category_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_expenses_account ON split_expenses(account_id);',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS split_expense_parts (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        split_expense_id TEXT NOT NULL,
+        member_id TEXT NOT NULL,
+        paid_amount TEXT NOT NULL,
+        share_amount TEXT NOT NULL,
+        share_input TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_parts_user ON split_expense_parts(user_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_parts_expense ON split_expense_parts(split_expense_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_parts_member ON split_expense_parts(member_id);',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS split_settlements (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        group_id TEXT NOT NULL,
+        from_member_id TEXT NOT NULL,
+        to_member_id TEXT NOT NULL,
+        amount TEXT NOT NULL,
+        settled_at TEXT NOT NULL,
+        account_id TEXT,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_settlements_user ON split_settlements(user_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_settlements_group ON split_settlements(group_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_settlements_from ON split_settlements(from_member_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_settlements_to ON split_settlements(to_member_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_split_settlements_account ON split_settlements(account_id);',
+    );
+  }
+
+  /// Adds `split_expense_id` / `split_settlement_id` to `transactions` and
+  /// `contact_transactions` when they do not have them yet.
+  static Future<void> _addSplitLinkColumns(DatabaseExecutor db) async {
+    Future<void> addColumn(String table, String column) async {
+      final List<Map<String, Object?>> tableRows = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        <Object>[table],
+      );
+      if (tableRows.isEmpty) return;
+      final List<Map<String, Object?>> columns = await db.rawQuery(
+        'PRAGMA table_info($table)',
+      );
+      final bool exists = columns.any(
+        (Map<String, Object?> c) => c['name'] == column,
+      );
+      if (!exists) {
+        await db.execute('ALTER TABLE $table ADD COLUMN $column TEXT');
+      }
+    }
+
+    await addColumn('transactions', 'split_expense_id');
+    await addColumn('transactions', 'split_settlement_id');
+    await addColumn('contact_transactions', 'split_expense_id');
+    await addColumn('contact_transactions', 'split_settlement_id');
+    Future<bool> hasTable(String table) async {
+      final List<Map<String, Object?>> rows = await db.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+        <Object>[table],
+      );
+      return rows.isNotEmpty;
+    }
+
+    if (await hasTable('transactions')) {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_split_expense ON transactions(split_expense_id);',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_split_settlement ON transactions(split_settlement_id);',
+      );
+    }
+    if (await hasTable('contact_transactions')) {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_contact_tx_split_expense ON contact_transactions(split_expense_id);',
+      );
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_contact_tx_split_settlement ON contact_transactions(split_settlement_id);',
+      );
+    }
   }
 
   static Future<void> _createSavingsGoals(DatabaseExecutor db) async {
@@ -283,6 +467,8 @@ class AppDatabase {
         payment_method TEXT,
         attachment_url TEXT,
         transfer_id TEXT,
+        split_expense_id TEXT,
+        split_settlement_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         deleted_at TEXT,
@@ -294,6 +480,12 @@ class AppDatabase {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_split_expense ON transactions(split_expense_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_split_settlement ON transactions(split_settlement_id);',
     );
 
     // 4. Contacts
@@ -329,6 +521,8 @@ class AppDatabase {
         transaction_date TEXT NOT NULL,
         due_date TEXT,
         note TEXT,
+        split_expense_id TEXT,
+        split_settlement_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         deleted_at TEXT,
@@ -337,6 +531,12 @@ class AppDatabase {
     ''');
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_contact_tx_contact ON contact_transactions(contact_id, transaction_date DESC);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_contact_tx_split_expense ON contact_transactions(split_expense_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_contact_tx_split_settlement ON contact_transactions(split_settlement_id);',
     );
 
     // 6. Budgets
@@ -418,6 +618,9 @@ class AppDatabase {
     // 8b. Savings Goals
     await _createSavingsGoals(db);
     await _createSavingsContributions(db);
+
+    // 8c. Split Expenses
+    await _createSplitTables(db);
 
     // 9. User Settings
     await db.execute('''
@@ -773,6 +976,11 @@ class AppDatabase {
       'reminders',
       'savings_goals',
       'savings_contributions',
+      'split_groups',
+      'split_group_members',
+      'split_expenses',
+      'split_expense_parts',
+      'split_settlements',
       'user_settings',
       'profiles',
       'sync_queue',

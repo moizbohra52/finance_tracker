@@ -82,10 +82,15 @@ class _Details extends StatelessWidget {
   /// Both legs when [transaction] is part of a transfer.
   final TransferLegs? transfer;
 
-  bool get _editable =>
-      transfer != null ||
-      transaction.type == TransactionType.income ||
-      transaction.type == TransactionType.expense;
+  bool get _editable {
+    if (transaction.splitExpenseId != null ||
+        transaction.splitSettlementId != null) {
+      return false;
+    }
+    return transfer != null ||
+        transaction.type == TransactionType.income ||
+        transaction.type == TransactionType.expense;
+  }
 
   Future<void> _delete(BuildContext context) async {
     final TransactionController list = Get.find<TransactionController>();
@@ -268,6 +273,16 @@ class _Details extends StatelessWidget {
               onPressed: _edit,
             ),
           if (_editable) const SizedBox(height: AppSpacing.md),
+          if (!_editable && transaction.isSplitDerived)
+            AppButton(
+              label: 'Open in group'.tr,
+              icon: Icons.groups_outlined,
+              onPressed: () => Get.find<TransactionDetailController>(
+                tag: transaction.id,
+              ).openInGroup(),
+            ),
+          if (!_editable && transaction.isSplitDerived)
+            const SizedBox(height: AppSpacing.md),
           AppButton(
             label: 'Remind me'.tr,
             icon: Icons.alarm_add_outlined,
@@ -282,15 +297,16 @@ class _Details extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          Obx(
-            () => AppButton(
-              label: 'Delete'.tr,
-              icon: Icons.delete_outline,
-              variant: AppButtonVariant.destructive,
-              isLoading: list.deletion.isBusy.value,
-              onPressed: () => _delete(context),
+          if (!transaction.isSplitDerived)
+            Obx(
+              () => AppButton(
+                label: 'Delete'.tr,
+                icon: Icons.delete_outline,
+                variant: AppButtonVariant.destructive,
+                isLoading: list.deletion.isBusy.value,
+                onPressed: () => _delete(context),
+              ),
             ),
-          ),
         ],
       ),
     );

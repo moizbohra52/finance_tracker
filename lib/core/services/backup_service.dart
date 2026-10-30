@@ -64,6 +64,11 @@ class BackupService {
     'reminders',
     'savings_goals',
     'savings_contributions',
+    'split_groups',
+    'split_group_members',
+    'split_expenses',
+    'split_expense_parts',
+    'split_settlements',
     'user_settings',
     'profiles',
   ];
@@ -81,6 +86,11 @@ class BackupService {
     'reminders',
     'savings_goals',
     'savings_contributions',
+    'split_groups',
+    'split_group_members',
+    'split_expenses',
+    'split_expense_parts',
+    'split_settlements',
   };
 
   /// Columns of the signed-in user's settings and profile rows that a restore
@@ -418,11 +428,21 @@ class BackupService {
         }
 
         // Step 2: Insert rows table by table in dependency order
-        // Order: categories -> accounts -> contacts -> transactions -> contact_transactions -> budgets -> recurring -> reminders -> savings goals -> savings contributions -> settings -> profiles
+        // Order: categories -> accounts -> contacts -> split groups/members ->
+        // split expenses/parts/settlements -> transactions ->
+        // contact_transactions -> budgets -> recurring -> reminders ->
+        // savings goals -> savings contributions -> settings -> profiles.
+        // The split tables come after contacts and before transactions so the
+        // server's foreign keys never see a missing parent.
         const List<String> insertOrder = <String>[
           'categories',
           'accounts',
           'contacts',
+          'split_groups',
+          'split_group_members',
+          'split_expenses',
+          'split_expense_parts',
+          'split_settlements',
           'transactions',
           'contact_transactions',
           'budgets',
