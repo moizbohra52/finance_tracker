@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
+import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
@@ -31,12 +32,14 @@ class ContactFormController extends GetxController {
     this._repository,
     this._transactionRepository,
     this._accountRepository,
+    this._categoryRepository,
     this._notifier,
   );
 
   final ContactRepository _repository;
   final TransactionRepository _transactionRepository;
   final AccountRepository _accountRepository;
+  final CategoryRepository _categoryRepository;
   final DataChangeNotifier _notifier;
 
   static const Uuid _uuid = Uuid();
@@ -63,6 +66,18 @@ class ContactFormController extends GetxController {
     Namespace.url.value,
     'contact-transaction:$contactTransactionId',
   );
+
+  /// The `system_key` of the category the account row of an entry of [type]
+  /// gets, so it is not "Uncategorized" in the transaction list. The
+  /// database says which category has the key.
+  static String? khataCategoryKey(ContactTransactionType type) =>
+      switch (type) {
+        ContactTransactionType.credit => 'khata_lent',
+        ContactTransactionType.debit => 'khata_borrowed',
+        ContactTransactionType.paymentReceived => 'khata_repayment_received',
+        ContactTransactionType.paymentMade => 'khata_repayment_made',
+        ContactTransactionType.adjustment => null,
+      };
 
   Future<Transaction?> getLinkedTransaction(String contactTransactionId) async {
     try {
@@ -175,11 +190,15 @@ class ContactFormController extends GetxController {
         ),
       };
 
+      final String? categoryKey = khataCategoryKey(type);
       final Transaction tx = Transaction(
         id: txId,
         userId: existing?.userId ?? '',
         accountId: accountId,
         contactId: contactId,
+        categoryId: categoryKey == null
+            ? null
+            : await _categoryRepository.systemCategoryId(categoryKey),
         type: txType,
         amount: amount,
         transactionDate: date,

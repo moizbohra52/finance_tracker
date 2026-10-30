@@ -948,6 +948,16 @@ const Map<String, String> hinglish = <String, String>{
   'This permanently deletes your profile, accounts, transactions, khata records, reminders and profile photo. It cannot be undone.':
       'Isse aapki profile, accounts, len-den, khata records, reminders aur profile photo hamesha ke liye delete ho jayenge. Yeh wapas nahi ho sakta.',
   'Profile photo': 'Profile photo',
+  'Add photo': 'Photo jodein',
+  'Change photo': 'Photo badlein',
+  'View photo': 'Photo dekhein',
+  'Remove photo': 'Photo hatayein',
+  'Remove the photo?': 'Photo hatayein?',
+  'You can add a new one any time.': 'Aap kabhi bhi nayi photo jod sakte hain.',
+  'Photo updated': 'Photo update ho gayi',
+  'Photo removed': 'Photo hata di gayi',
+  'The photo will show when you are online':
+      'Internet se judne par photo dikhegi',
   'The account could not be switched. Please try again.':
       'Account nahi badal saka. Kripya phir se koshish karein.',
   'Comma-separated values, opens in Excel & Google Sheets':

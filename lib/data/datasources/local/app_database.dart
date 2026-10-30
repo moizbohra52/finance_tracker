@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 6;
+  static const int databaseVersion = 8;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -122,6 +122,8 @@ class AppDatabase {
 
   static Future<void> _onCreate(Database db, int version) async {
     await _createTables(db);
+    await _addPhotoColumns(db);
+    await _addTextColumn(db, 'categories', 'system_key');
     await _seedSystemCategories(db);
   }
 
@@ -143,6 +145,14 @@ class AppDatabase {
       await _addSplitLinkColumns(db);
     }
     if (oldVersion < 6) await _normalizeServerTimestamps(db);
+    if (oldVersion < 7) await _addPhotoColumns(db);
+    if (oldVersion < 8) {
+      // `system_key`: what a system category is for (CategoryRepository.
+      // systemCategoryId). Seeding adds the khata categories and their keys
+      // and skips the rows already there.
+      await _addTextColumn(db, 'categories', 'system_key');
+      if (await _hasTable(db, 'categories')) await _seedSystemCategories(db);
+    }
   }
 
   /// Rows pulled before version 6 kept the server's "+00:00" timestamps,
@@ -314,36 +324,11 @@ class AppDatabase {
   /// Adds `split_expense_id` / `split_settlement_id` to `transactions` and
   /// `contact_transactions` when they do not have them yet.
   static Future<void> _addSplitLinkColumns(DatabaseExecutor db) async {
-    Future<void> addColumn(String table, String column) async {
-      final List<Map<String, Object?>> tableRows = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
-        <Object>[table],
-      );
-      if (tableRows.isEmpty) return;
-      final List<Map<String, Object?>> columns = await db.rawQuery(
-        'PRAGMA table_info($table)',
-      );
-      final bool exists = columns.any(
-        (Map<String, Object?> c) => c['name'] == column,
-      );
-      if (!exists) {
-        await db.execute('ALTER TABLE $table ADD COLUMN $column TEXT');
-      }
-    }
-
-    await addColumn('transactions', 'split_expense_id');
-    await addColumn('transactions', 'split_settlement_id');
-    await addColumn('contact_transactions', 'split_expense_id');
-    await addColumn('contact_transactions', 'split_settlement_id');
-    Future<bool> hasTable(String table) async {
-      final List<Map<String, Object?>> rows = await db.rawQuery(
-        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
-        <Object>[table],
-      );
-      return rows.isNotEmpty;
-    }
-
-    if (await hasTable('transactions')) {
+    await _addTextColumn(db, 'transactions', 'split_expense_id');
+    await _addTextColumn(db, 'transactions', 'split_settlement_id');
+    await _addTextColumn(db, 'contact_transactions', 'split_expense_id');
+    await _addTextColumn(db, 'contact_transactions', 'split_settlement_id');
+    if (await _hasTable(db, 'transactions')) {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_transactions_split_expense ON transactions(split_expense_id);',
       );
@@ -351,7 +336,7 @@ class AppDatabase {
         'CREATE INDEX IF NOT EXISTS idx_transactions_split_settlement ON transactions(split_settlement_id);',
       );
     }
-    if (await hasTable('contact_transactions')) {
+    if (await _hasTable(db, 'contact_transactions')) {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_contact_tx_split_expense ON contact_transactions(split_expense_id);',
       );
@@ -359,6 +344,39 @@ class AppDatabase {
         'CREATE INDEX IF NOT EXISTS idx_contact_tx_split_settlement ON contact_transactions(split_settlement_id);',
       );
     }
+  }
+
+  static Future<bool> _hasTable(DatabaseExecutor db, String table) async {
+    final List<Map<String, Object?>> rows = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      <Object>[table],
+    );
+    return rows.isNotEmpty;
+  }
+
+  /// Adds a TEXT [column] to [table] when the table exists without it.
+  static Future<void> _addTextColumn(
+    DatabaseExecutor db,
+    String table,
+    String column,
+  ) async {
+    if (!await _hasTable(db, table)) return;
+    final List<Map<String, Object?>> columns = await db.rawQuery(
+      'PRAGMA table_info($table)',
+    );
+    final bool exists = columns.any(
+      (Map<String, Object?> c) => c['name'] == column,
+    );
+    if (!exists) {
+      await db.execute('ALTER TABLE $table ADD COLUMN $column TEXT');
+    }
+  }
+
+  /// `avatar_url` on contacts and split groups (version 7): the photo's
+  /// object name in the avatars bucket, never a URL.
+  static Future<void> _addPhotoColumns(DatabaseExecutor db) async {
+    await _addTextColumn(db, 'contacts', 'avatar_url');
+    await _addTextColumn(db, 'split_groups', 'avatar_url');
   }
 
   static Future<void> _createSavingsGoals(DatabaseExecutor db) async {
@@ -765,6 +783,23 @@ class AppDatabase {
         'type': 'income',
         'icon': 'other_income',
       },
+      // Account rows of khata entries (ContactFormController); income and
+      // expense typed for the pickers, never counted as income or expense
+      // because those rows are payment_received / payment_made.
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000108',
+        'name': 'Money Borrowed',
+        'type': 'income',
+        'icon': 'borrowed',
+        'system_key': 'khata_borrowed',
+      },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000109',
+        'name': 'Repayment Received',
+        'type': 'income',
+        'icon': 'repayment_received',
+        'system_key': 'khata_repayment_received',
+      },
       <String, dynamic>{
         'id': 'c0000000-0000-4000-8000-000000000201',
         'name': 'Food & Dining',
@@ -873,6 +908,20 @@ class AppDatabase {
         'type': 'expense',
         'icon': 'other_expense',
       },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000219',
+        'name': 'Money Lent',
+        'type': 'expense',
+        'icon': 'lent',
+        'system_key': 'khata_lent',
+      },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000220',
+        'name': 'Repayment Made',
+        'type': 'expense',
+        'icon': 'repayment_made',
+        'system_key': 'khata_repayment_made',
+      },
     ];
 
     final String now = DateTime.now().toUtc().toIso8601String();
@@ -890,6 +939,15 @@ class AppDatabase {
         'deleted_at': null,
         'sync_status': 'synced',
       }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      // Also on a row seeded before it had a key.
+      if (seed['system_key'] != null) {
+        await db.update(
+          'categories',
+          <String, dynamic>{'system_key': seed['system_key']},
+          where: 'id = ?',
+          whereArgs: <Object>[seed['id'] as String],
+        );
+      }
     }
   }
 

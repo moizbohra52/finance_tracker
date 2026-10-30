@@ -198,6 +198,14 @@ class FakeCategoryRepository implements CategoryRepository {
   FakeCategoryRepository(this._f);
   final FakeFinance _f;
 
+  /// Every key resolves, to an id that names it; the real mapping lives in
+  /// the database seed (app_database_test checks it).
+  @override
+  Future<String?> systemCategoryId(String key) async {
+    _f.throwPending();
+    return 'system-$key';
+  }
+
   @override
   Future<List<Category>> getCategories() async {
     _f.throwPending();
@@ -527,6 +535,27 @@ class FakeContactRepository implements ContactRepository {
     _f.throwPending();
     final int i = _f.contacts.indexWhere((Contact c) => c.id == contact.id);
     _f.contacts[i] = contact;
+  }
+
+  @override
+  Future<void> setPhoto(String contactId, String? avatarPath) async {
+    _f.throwPending();
+    final int i = _f.contacts.indexWhere((Contact c) => c.id == contactId);
+    final Contact c = _f.contacts[i];
+    _f.contacts[i] = Contact(
+      id: c.id,
+      userId: c.userId,
+      name: c.name,
+      mobile: c.mobile,
+      email: c.email,
+      address: c.address,
+      notes: c.notes,
+      openingBalance: c.openingBalance,
+      openingBalanceType: c.openingBalanceType,
+      createdAt: c.createdAt,
+      updatedAt: DateTime.now(),
+      avatarPath: avatarPath,
+    );
   }
 
   @override
@@ -1170,6 +1199,21 @@ class FakeSplitRepository implements SplitRepository {
         );
       }
     }
+  }
+
+  @override
+  Future<void> setGroupPhoto(String groupId, String? avatarPath) async {
+    _f.throwPending();
+    final int i = _f.splitGroups.indexWhere((SplitGroup g) => g.id == groupId);
+    final SplitGroup g = _f.splitGroups[i];
+    _f.splitGroups[i] = SplitGroup(
+      id: g.id,
+      userId: g.userId,
+      name: g.name,
+      createdAt: g.createdAt,
+      updatedAt: DateTime.now(),
+      avatarPath: avatarPath,
+    );
   }
 
   @override

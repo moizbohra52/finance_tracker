@@ -114,6 +114,13 @@ class SplitGroupDetailController extends GetxController {
     return Decimal.zero;
   }
 
+  /// Saves the group photo's object name (null removes it); the reload that
+  /// the change notice starts shows it.
+  Future<void> setPhoto(String? avatarPath) async {
+    await _repository.setGroupPhoto(groupId, avatarPath);
+    _notifier.markChanged();
+  }
+
   Future<bool> deleteGroup() => deletion.run(() async {
     await _repository.deleteGroup(groupId);
     _notifier.markChanged();

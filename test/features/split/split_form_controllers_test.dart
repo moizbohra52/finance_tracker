@@ -41,6 +41,27 @@ void main() {
   }
 
   group('SplitExpenseController', () {
+    test('a new expense starts shared by the whole group', () async {
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = await makeGroup();
+      final SplitExpenseController c = SplitExpenseController(
+        f.repositories.split,
+        f.repositories.accounts,
+        f.repositories.categories,
+        f.repositories.contacts,
+        DataChangeNotifier(),
+      );
+      Get.put(c);
+      await c.start(groupId: 'g1');
+
+      expect(c.members, hasLength(4));
+      expect(c.ticked, c.members.map((SplitMember m) => m.id).toSet());
+
+      c.totalText.value = '1200';
+      expect(c.shares.values.toSet(), <Decimal>{Decimal.parse('300')});
+    });
+
     test('the spec dinner is valid and previews share 300, get 500', () async {
       Get.testMode = true;
       addTearDown(Get.reset);

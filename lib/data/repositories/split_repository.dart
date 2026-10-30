@@ -278,7 +278,11 @@ class SplitRepository {
       final Map<String, dynamic> groupJson = SplitGroupModel.toJson(group);
       await txn.insert(
         'split_groups',
-        _row(groupJson, group.createdAt, group.updatedAt),
+        // The replace rewrites the whole row; the photo is kept as it was.
+        <String, dynamic>{
+          ..._row(groupJson, group.createdAt, group.updatedAt),
+          'avatar_url': existing?.avatarPath,
+        },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
       await _enqueue(
@@ -919,6 +923,34 @@ class SplitRepository {
           await _tombstoneLive(txn, table, 'id = ?', id, now);
         }
       }
+    });
+    _syncEngine?.notifyNewQueueItem();
+  }
+
+  /// Sets (or with null removes) the group's photo: the object name from
+  /// PhotoStore. Its own update, so the upload carries only avatar_url.
+  Future<void> setGroupPhoto(String groupId, String? avatarPath) async {
+    final AppDatabase database = _database;
+    final DateTime now = DateTime.now();
+    await database.db.transaction((DatabaseExecutor txn) async {
+      await txn.update(
+        'split_groups',
+        <String, dynamic>{
+          'avatar_url': avatarPath,
+          'updated_at': now.toUtc().toIso8601String(),
+          'sync_status': 'pending',
+        },
+        where: 'id = ?',
+        whereArgs: <Object>[groupId],
+      );
+      await _enqueue(
+        txn,
+        SyncOperation.update,
+        'split_groups',
+        groupId,
+        <String, dynamic>{'avatar_url': avatarPath},
+        now,
+      );
     });
     _syncEngine?.notifyNewQueueItem();
   }

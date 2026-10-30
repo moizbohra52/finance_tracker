@@ -13,6 +13,7 @@ class SplitGroup {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.avatarPath,
   });
 
   final String id;
@@ -21,6 +22,9 @@ class SplitGroup {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+
+  /// The photo's object name in the avatars bucket (PhotoStore), or null.
+  final String? avatarPath;
 
   bool get isLive => deletedAt == null;
 
@@ -36,6 +40,7 @@ class SplitGroup {
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      avatarPath: avatarPath,
     );
   }
 }

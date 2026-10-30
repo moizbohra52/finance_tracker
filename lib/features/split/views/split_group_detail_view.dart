@@ -8,6 +8,7 @@ import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
+import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/split.dart';
 import 'package:finance_tracker/domain/services/split_balances.dart';
@@ -17,6 +18,7 @@ import 'package:finance_tracker/features/split/views/split_group_list_view.dart'
     show openSplitGroupForm;
 import 'package:finance_tracker/features/split/views/split_settlement_form_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/entity_photo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -36,6 +38,32 @@ class SplitGroupDetailView extends GetView<SplitGroupDetailController> {
       () => Scaffold(
         appBar: AppAppBar(
           title: controller.detail.value?.group.name ?? '',
+          // The group photo beside the name; a tap views or changes it.
+          titleWidget: switch (controller.detail.value?.group) {
+            final SplitGroup group => Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                EditablePhoto(
+                  name: group.name,
+                  path: group.avatarPath,
+                  folder: PhotoStore.groups,
+                  id: group.id,
+                  save: controller.setPhoto,
+                  icon: Icons.groups_outlined,
+                  size: 38,
+                ),
+                const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    group.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            null => null,
+          },
           actions: <Widget>[
             IconButton(
               tooltip: 'Edit group'.tr,

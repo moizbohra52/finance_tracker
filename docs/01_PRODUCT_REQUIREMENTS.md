@@ -45,6 +45,16 @@
 - Outstanding receivable/payable
 - Transaction timeline
 - Due dates/reminders
+- Photos (2026-10-30): a contact and a split group can have a photo, added,
+  changed, viewed full screen or removed from its page header and shown on
+  its rows. Setting one needs the network (like the profile photo); a shown
+  photo is kept on the phone for offline use.
+- Category of the account row (2026-10-30): an entry with an account gets a
+  system category by type: Money Lent (credit), Money Borrowed (debit),
+  Repayment Received, Repayment Made; none for an adjustment. The database
+  names them (`categories.system_key`, e.g. `khata_lent`); the app holds only
+  the keys. Rows saved before this keep no category until the entry is
+  edited.
 
 ## Split expenses (2026-10-23, revised 2026-10-26)
 - Groups of the user and friends (from Khata contacts), e.g. a trip,

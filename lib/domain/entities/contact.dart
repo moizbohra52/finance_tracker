@@ -14,6 +14,9 @@ class Contact {
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
+  /// The photo's object name in the avatars bucket (PhotoStore), or null.
+  final String? avatarPath;
+
   Contact({
     required this.id,
     required this.userId,
@@ -27,6 +30,7 @@ class Contact {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.avatarPath,
   });
 
   /// Opening balance with its direction: positive when they owe us

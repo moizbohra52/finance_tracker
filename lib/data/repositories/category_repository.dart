@@ -85,6 +85,31 @@ class CategoryRepository {
     });
   }
 
+  /// The id of the live system category the database marks with [key]
+  /// (`categories.system_key`), or null when there is none yet, e.g. before
+  /// its migration is applied.
+  Future<String?> systemCategoryId(String key) async {
+    if (_db != null) {
+      final List<Map<String, dynamic>> rows = await _db.db.query(
+        'categories',
+        columns: <String>['id'],
+        where: 'system_key = ? AND is_system = 1 AND deleted_at IS NULL',
+        whereArgs: <Object>[key],
+        limit: 1,
+      );
+      return rows.isEmpty ? null : rows.first['id'] as String;
+    }
+    return guardSupabase(() async {
+      final Map<String, dynamic>? row = await _supabaseClient
+          .from('categories')
+          .select('id')
+          .eq('system_key', key)
+          .isFilter('deleted_at', null)
+          .maybeSingle();
+      return row?['id'] as String?;
+    });
+  }
+
   Future<Category> getCategoryById(String categoryId) async {
     if (_db != null) {
       final List<Map<String, dynamic>> data = await _db.db.query(

@@ -1,7 +1,9 @@
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
+import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +22,11 @@ void main() {
     final List<Map<String, dynamic>> categories = await database.db.query(
       'categories',
     );
-    expect(categories.length, equals(25));
+    expect(categories.length, equals(29));
+    expect(
+      categories.any((c) => c['name'] == 'Money Lent' && c['is_system'] == 1),
+      isTrue,
+    );
     expect(
       categories.any((c) => c['name'] == 'Salary' && c['is_system'] == 1),
       isTrue,
@@ -31,6 +37,77 @@ void main() {
       ),
       isTrue,
     );
+  });
+
+  test('upgrading a version 6 file adds photo columns and keyed khata '
+      'categories', () async {
+    final Database old = await databaseFactoryFfi.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(
+        version: 6,
+        singleInstance: false,
+        onCreate: (Database db, int _) async {
+          await db.execute(
+            'CREATE TABLE contacts (id TEXT PRIMARY KEY, name TEXT)',
+          );
+          await db.execute(
+            'CREATE TABLE split_groups (id TEXT PRIMARY KEY, name TEXT)',
+          );
+          await db.execute('''
+            CREATE TABLE categories (
+              id TEXT PRIMARY KEY, user_id TEXT, name TEXT, type TEXT,
+              icon TEXT, is_system INTEGER, is_active INTEGER,
+              created_at TEXT, updated_at TEXT, deleted_at TEXT,
+              sync_status TEXT
+            )
+          ''');
+        },
+      ),
+    );
+    await old.insert('contacts', <String, Object?>{'id': 'c', 'name': 'A'});
+
+    await AppDatabase.upgrade(old, 6, AppDatabase.databaseVersion);
+
+    for (final String table in <String>['contacts', 'split_groups']) {
+      final List<Map<String, Object?>> columns = await old.rawQuery(
+        'PRAGMA table_info($table)',
+      );
+      expect(columns.map((c) => c['name']), contains('avatar_url'));
+    }
+    expect((await old.query('contacts')).single['name'], 'A');
+    expect(
+      <String, Object?>{
+        for (final Map<String, Object?> c in await old.query(
+          'categories',
+          where: 'system_key IS NOT NULL',
+        ))
+          c['system_key']! as String: c['name'],
+      },
+      <String, Object?>{
+        'khata_lent': 'Money Lent',
+        'khata_borrowed': 'Money Borrowed',
+        'khata_repayment_received': 'Repayment Received',
+        'khata_repayment_made': 'Repayment Made',
+      },
+    );
+    await old.close();
+  });
+
+  test('the khata keys name their categories in a new database', () async {
+    final CategoryRepository categories = CategoryRepository(
+      SupabaseClient('https://test.supabase.co', 'anon-key'),
+      database: database,
+    );
+    Future<String?> nameOf(String key) async {
+      final String? id = await categories.systemCategoryId(key);
+      return id == null ? null : (await categories.getCategoryById(id)).name;
+    }
+
+    expect(await nameOf('khata_lent'), 'Money Lent');
+    expect(await nameOf('khata_borrowed'), 'Money Borrowed');
+    expect(await nameOf('khata_repayment_received'), 'Repayment Received');
+    expect(await nameOf('khata_repayment_made'), 'Repayment Made');
+    expect(await nameOf('no_such_key'), isNull);
   });
 
   test('a new database has the UPI ID column', () async {

@@ -59,6 +59,7 @@ is_active BOOLEAN
 created_at
 updated_at
 deleted_at
+system_key TEXT -- (2026-10-30) what a system category is for, e.g. khata_lent; unique, system rows only
 
 ### transactions
 id UUID PK
@@ -94,6 +95,7 @@ opening_balance_type TEXT -- receivable/payable
 created_at
 updated_at
 deleted_at
+avatar_url TEXT -- (2026-10-30) photo object name in the avatars bucket, never a URL
 
 ### contact_transactions
 id UUID PK
@@ -161,6 +163,7 @@ name TEXT -- not blank
 created_at
 updated_at
 deleted_at
+avatar_url TEXT -- (2026-10-30) photo object name in the avatars bucket, never a URL
 
 ### split_group_members (2026-10-24)
 id UUID PK -- deterministic uuid v5 of split-member:<group id>:<contact id | me>
@@ -435,6 +438,34 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    The restore order in `BackupService.insertOrder` puts the five split tables
    after `contacts` and before `transactions` so the server's foreign keys
    never see a missing parent.
+
+16. `20261030090000_photos_and_khata_categories.sql` - `avatar_url` on
+   `contacts` and `split_groups` (object names
+   `<user id>/contacts/<id>-<ms>.<ext>` and `<user id>/groups/...` in the
+   existing private `avatars` bucket, whose first-folder policies already
+   cover them), and four system categories for the account rows of khata
+   entries: Money Lent (`...219`), Repayment Made (`...220`), Money Borrowed
+   (`...108`), Repayment Received (`...109`). Contact and group saves never
+   send `avatar_url`; only setting a photo does, as its own update, so
+   everything else syncs before the migration. **Apply before shipping**:
+   until then a set photo stays queued, and khata account rows naming the new
+   categories fail their foreign key and retry. Local SQLite gets the columns
+   and categories in database version 7. An app on database version 6 or
+   older cannot pull `contacts` or `split_groups` rows once the column exists,
+   so update the app first.
+
+17. `20261030100000_category_system_keys.sql` - `categories.system_key`: a
+   stable name for what a system category is for, so the app asks the
+   database for "the `khata_lent` category" (`CategoryRepository.
+   systemCategoryId`) and carries no category ids. A CHECK allows a key on
+   system rows only (a user's category cannot take one) and a partial unique
+   index keeps one row per key. Sets `khata_lent`, `khata_borrowed`,
+   `khata_repayment_received` and `khata_repayment_made` on the four
+   categories of migration 16. Apply after 16; until then the app finds no
+   key and saves khata account rows without a category. Local SQLite gets
+   the column and keys in database version 8 (the seed sets them on new and
+   upgraded files). A pull of a system category from a server without the
+   column clears its key on the phone until the migration is applied.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

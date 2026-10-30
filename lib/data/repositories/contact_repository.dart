@@ -43,6 +43,11 @@ class ContactRepository {
     });
   }
 
+  /// Sets or (null) removes the contact's photo, an object name from
+  /// PhotoStore.
+  Future<void> setPhoto(String contactId, String? avatarPath) =>
+      guardSupabase(() => _contactDatasource.setPhoto(contactId, avatarPath));
+
   // Contact Transactions
   Future<List<ContactTransaction>> getContactTransactions(
     String contactId,

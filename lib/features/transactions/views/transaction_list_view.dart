@@ -5,6 +5,7 @@ import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_badges.dart';
+import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
@@ -13,6 +14,7 @@ import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
 import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
+import 'package:finance_tracker/features/split/views/split_group_list_view.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_filter_sheet.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
@@ -107,38 +109,69 @@ Future<void> _openSplitExpenseFlow() async {
     await Get.toNamed<void>(AppRoutes.splitGroupForm);
     return;
   }
-  final SplitGroupSummary? group =
-      await showModalBottomSheet<SplitGroupSummary>(
-        context: Get.context!,
-        showDragHandle: true,
-        builder: (BuildContext sheet) => SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Text(
-                  'Choose a group'.tr,
-                  style: Theme.of(sheet).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              for (final SplitGroupSummary summary in controller.groups)
-                ListTile(
-                  minTileHeight: AppSizes.minTouchTarget,
-                  title: Text(summary.group.name),
-                  subtitle: Text(
-                    '@count members'.trParams(<String, String>{
-                      'count': '${summary.memberCount}',
-                    }),
-                  ),
-                  onTap: () => Navigator.of(sheet).pop(summary),
-                ),
-            ],
-          ),
+  final SplitGroupSummary?
+  group = await showModalBottomSheet<SplitGroupSummary>(
+    context: Get.context!,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (BuildContext sheet) => SafeArea(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(sheet).height * 0.75,
         ),
-      );
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: Text(
+                'Choose a group'.tr,
+                style: Theme.of(
+                  sheet,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            // The same cards as the groups screen: members and where the
+            // user stands, so the right group is easy to spot.
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                itemCount: controller.groups.length,
+                separatorBuilder: (_, _) =>
+                    const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (BuildContext context, int index) {
+                  final SplitGroupSummary summary = controller.groups[index];
+                  return SplitGroupCard(
+                    summary: summary,
+                    onTap: () => Navigator.of(sheet).pop(summary),
+                  );
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: AppButton(
+                label: 'New group'.tr,
+                icon: Icons.add,
+                variant: AppButtonVariant.secondary,
+                onPressed: () {
+                  Navigator.of(sheet).pop();
+                  Get.toNamed<void>(AppRoutes.splitGroupForm);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
   if (group == null) return;
   await Get.toNamed<void>(
     AppRoutes.splitExpenseForm,

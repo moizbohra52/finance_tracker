@@ -23,6 +23,7 @@ import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
 import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/user_settings.dart';
@@ -180,6 +181,7 @@ Future<void> main() async {
       syncEngine: syncEngine,
       dataChangeNotifier: dataChangeNotifier,
       receiptStore: receiptStore,
+      photoStore: PhotoStore(client),
     ),
   );
 }
@@ -201,6 +203,7 @@ class FinanceTrackerApp extends StatelessWidget {
     this.syncEngine,
     this.dataChangeNotifier,
     ReceiptStore? receiptStore,
+    PhotoStore? photoStore,
   }) : initialBinding = InitialBinding(
          authRepository: authRepository,
          profileRepository: profileRepository,
@@ -216,6 +219,7 @@ class FinanceTrackerApp extends StatelessWidget {
          syncEngine: syncEngine,
          dataChangeNotifier: dataChangeNotifier,
          receiptStore: receiptStore,
+         photoStore: photoStore,
        );
 
   final AuthRepository authRepository;

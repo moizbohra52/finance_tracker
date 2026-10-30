@@ -9,6 +9,8 @@ abstract final class SplitGroupModel {
       ? DateTime.fromMillisecondsSinceEpoch(0)
       : DateTime.parse(v as String);
 
+  /// avatar_url is read but never in toJson: only SplitRepository.setGroupPhoto
+  /// writes it, so a group edit (or a server without the column) leaves it.
   static SplitGroup fromJson(Map<String, dynamic> json) => SplitGroup(
     id: json['id'] as String,
     userId: (json['user_id'] ?? '') as String,
@@ -18,6 +20,7 @@ abstract final class SplitGroupModel {
     deletedAt: json['deleted_at'] == null
         ? null
         : DateTime.parse(json['deleted_at'] as String),
+    avatarPath: json['avatar_url'] as String?,
   );
 
   static Map<String, dynamic> toJson(SplitGroup g) => <String, dynamic>{

@@ -8,6 +8,7 @@ import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
+import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
@@ -132,6 +133,7 @@ class ContactBinding extends Bindings {
         Get.find<ContactRepository>(),
         Get.find<TransactionRepository>(),
         Get.find<AccountRepository>(),
+        Get.find<CategoryRepository>(),
         Get.find<DataChangeNotifier>(),
       ),
     );
@@ -323,6 +325,7 @@ class ShellBinding extends Bindings {
         receipts: Get.isRegistered<ReceiptStore>()
             ? Get.find<ReceiptStore>()
             : null,
+        photos: Get.isRegistered<PhotoStore>() ? Get.find<PhotoStore>() : null,
       ),
       fenix: true,
     );

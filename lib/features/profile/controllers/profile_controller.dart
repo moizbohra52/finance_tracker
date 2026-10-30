@@ -8,6 +8,7 @@ import 'package:finance_tracker/core/utils/validators.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
+import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/receipt_store.dart';
 import 'package:finance_tracker/domain/services/avatar_rules.dart';
@@ -21,11 +22,17 @@ import 'package:get/get.dart';
 /// Currency and date formats are account preferences, edited in Settings, so
 /// they are not here.
 class ProfileController extends GetxController {
-  ProfileController(this._profiles, this._authRepository, {this._receipts});
+  ProfileController(
+    this._profiles,
+    this._authRepository, {
+    this._receipts,
+    this._photos,
+  });
 
   final ProfileRepository _profiles;
   final AuthRepository _authRepository;
   final ReceiptStore? _receipts;
+  final PhotoStore? _photos;
 
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
   final TextEditingController fullNameController = TextEditingController();
@@ -187,6 +194,7 @@ class ProfileController extends GetxController {
     if (path != null) await _removeQuietly(path);
     // Storage is not cleared by the database cascade (docs/04).
     await _receipts?.deleteAll();
+    await _photos?.deleteAll();
     final String? uid = userId;
     if (uid != null && uid.isNotEmpty) {
       await AvatarCache.delete(uid);

@@ -103,12 +103,11 @@ class SplitExpenseController extends GetxController {
     inputText.assignAll(<String, String>{
       for (final SplitMember m in members) m.id: '',
     });
+    // A new expense is shared by the whole group; the user unticks whoever
+    // is out. An edit keeps who had a share.
     ticked.assignAll(<String>{
       for (final SplitMember m in members)
-        if ((existing == null
-            ? m.isMe
-            : _shareOf(existing, m.id) > Decimal.zero))
-          m.id,
+        if (existing == null || _shareOf(existing, m.id) > Decimal.zero) m.id,
     });
     if (existing != null) {
       for (final SplitPart p in existing.parts) {

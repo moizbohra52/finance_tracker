@@ -93,9 +93,7 @@ Future<void> _fillDinner(WidgetTester tester, String rahulPaid) async {
   await tester.pumpAndSettle();
   await tester.enterText(_field('You'), '800');
   await tester.enterText(_field('Rahul'), rahulPaid);
-  await _tick(tester, 'Amit');
-  await _tick(tester, 'Neha');
-  await _tick(tester, 'Rahul');
+  // A new expense starts with the whole group ticked.
   await _pickDropdown(tester, 'Category', 'Food & Dining');
   await _pickDropdown(tester, 'Account', 'Cash');
 }
@@ -234,10 +232,10 @@ void main() {
       'Dinner',
     );
     await tester.enterText(_field('Total amount'), '1200');
-    // Untick the user; Amit and Neha share the whole bill.
+    // Everyone starts ticked; untick the user and Rahul, so Amit and Neha
+    // share the whole bill.
     await _tick(tester, 'You');
-    await _tick(tester, 'Amit');
-    await _tick(tester, 'Neha');
+    await _tick(tester, 'Rahul');
 
     expect(find.text('Choose a category'), findsNothing);
     await _scrollUpTo(
@@ -318,6 +316,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Choose a group'), findsOneWidget);
+      // Group cards, as on the groups screen, and a way to make a new one.
+      expect(find.text('4 members'), findsOneWidget);
+      expect(find.text('New group'), findsOneWidget);
       await tester.tap(find.text('Goa'));
       await tester.pumpAndSettle();
 

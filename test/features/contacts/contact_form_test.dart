@@ -20,6 +20,7 @@ void main() {
       fakeFinance.repositories.contacts,
       fakeFinance.repositories.transactions,
       fakeFinance.repositories.accounts,
+      fakeFinance.repositories.categories,
       DataChangeNotifier(),
     );
     Get.put<ContactFormController>(controller);

@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
+import 'package:finance_tracker/widgets/entity_photo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -93,25 +94,28 @@ class ContactBalanceTile extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                // Avatar Squircle
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: avatarCol.withValues(alpha: isDark ? 0.22 : 0.12),
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: TextStyle(
-                        color: avatarCol,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 18,
+                // The contact's photo, else the initial squircle.
+                if (row.contact.avatarPath != null)
+                  EntityPhoto(name: name, path: row.contact.avatarPath)
+                else
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: avatarCol.withValues(alpha: isDark ? 0.22 : 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Center(
+                      child: Text(
+                        initial,
+                        style: TextStyle(
+                          color: avatarCol,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 18,
+                        ),
                       ),
                     ),
                   ),
-                ),
                 const SizedBox(width: AppSpacing.md),
                 // Contact Details
                 Expanded(

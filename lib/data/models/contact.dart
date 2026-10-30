@@ -15,6 +15,11 @@ class ContactModel {
   final String updatedAt;
   final String? deletedAt;
 
+  /// Read from rows but never written by toJson: only
+  /// ContactDatasource.setPhoto changes it, so a contact edit (or a server
+  /// without the column yet) never touches the photo.
+  final String? avatarPath;
+
   ContactModel({
     required this.id,
     required this.userId,
@@ -28,6 +33,7 @@ class ContactModel {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.avatarPath,
   });
 
   factory ContactModel.fromJson(Map<String, dynamic> json) => ContactModel(
@@ -43,6 +49,7 @@ class ContactModel {
     createdAt: json['created_at'] as String,
     updatedAt: json['updated_at'] as String,
     deletedAt: json['deleted_at'] as String?,
+    avatarPath: json['avatar_url'] as String?,
   );
 
   Map<String, dynamic> toJson() => {
@@ -73,6 +80,7 @@ class ContactModel {
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
     deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
+    avatarPath: avatarPath,
   );
 
   static ContactModel fromEntity(Contact contact) => ContactModel(
@@ -88,5 +96,6 @@ class ContactModel {
     createdAt: contact.createdAt.toIso8601String(),
     updatedAt: contact.updatedAt.toIso8601String(),
     deletedAt: contact.deletedAt?.toIso8601String(),
+    avatarPath: contact.avatarPath,
   );
 }

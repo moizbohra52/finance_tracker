@@ -13,6 +13,7 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
@@ -21,6 +22,7 @@ import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart'
 import 'package:finance_tracker/features/contacts/views/send_reminder_sheet.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/entity_photo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -188,7 +190,13 @@ class _BalanceHeader extends GetView<ContactDetailController> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: <Widget>[
-            IconBadge.initial(contact.name, size: AppSizes.iconLarge),
+            EditablePhoto(
+              name: contact.name,
+              path: contact.avatarPath,
+              folder: PhotoStore.contacts,
+              id: contact.id,
+              save: controller.setPhoto,
+            ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               receivable

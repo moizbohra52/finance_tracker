@@ -14,6 +14,9 @@ abstract class ContactDatasource {
   Future<void> updateContact(ContactModel contact);
   Future<void> deleteContact(String contactId);
 
+  /// Sets or (null) removes the photo; only avatar_url is sent.
+  Future<void> setPhoto(String contactId, String? avatarPath);
+
   // Contact Transactions
   Future<List<ContactTransactionModel>> getContactTransactions(
     String contactId,
@@ -114,6 +117,31 @@ class ContactLocalDatasourceImpl implements ContactDatasource {
         createdAt: DateTime.now(),
       ),
     );
+    _syncEngine?.notifyNewQueueItem();
+  }
+
+  @override
+  Future<void> setPhoto(String contactId, String? avatarPath) async {
+    // The row and its queue item together, so a kill between them cannot
+    // leave a photo that never uploads.
+    await _db.db.transaction((Transaction txn) async {
+      await txn.update(
+        'contacts',
+        <String, dynamic>{'avatar_url': avatarPath, 'sync_status': 'pending'},
+        where: 'id = ?',
+        whereArgs: <Object>[contactId],
+      );
+      await txn.insert(
+        'sync_queue',
+        SyncQueueItem(
+          operation: SyncOperation.update,
+          entity: 'contacts',
+          entityId: contactId,
+          payload: <String, dynamic>{'avatar_url': avatarPath},
+          createdAt: DateTime.now(),
+        ).toRow(),
+      );
+    });
     _syncEngine?.notifyNewQueueItem();
   }
 
@@ -265,6 +293,14 @@ class ContactDatasourceImpl implements ContactDatasource {
     await _supabaseClient
         .from('contacts')
         .update(tombstone())
+        .eq('id', contactId);
+  }
+
+  @override
+  Future<void> setPhoto(String contactId, String? avatarPath) async {
+    await _supabaseClient
+        .from('contacts')
+        .update(<String, dynamic>{'avatar_url': avatarPath})
         .eq('id', contactId);
   }
 

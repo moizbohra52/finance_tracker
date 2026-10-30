@@ -31,6 +31,10 @@ abstract final class CategoryIcons {
     'personal_care': Icons.spa_outlined,
     'donation': Icons.volunteer_activism_outlined,
     'other_expense': Icons.more_horiz,
+    'lent': Icons.call_made_rounded,
+    'borrowed': Icons.call_received_rounded,
+    'repayment_received': Icons.price_check_rounded,
+    'repayment_made': Icons.handshake_outlined,
   };
 
   /// Every icon key a category can use, in display order (the category form

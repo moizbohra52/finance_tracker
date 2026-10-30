@@ -223,6 +223,13 @@ class ContactDetailController extends GetxController {
     _notifier.markChanged();
   });
 
+  /// Saves the photo's object name (null removes it); the reload that the
+  /// change notice starts shows it.
+  Future<void> setPhoto(String? avatarPath) async {
+    await _repository.setPhoto(contactId, avatarPath);
+    _notifier.markChanged();
+  }
+
   Future<bool> deleteEntry(String entryId) => deletion.run(() async {
     final ContactTransaction? entry = entries.firstWhereOrNull(
       (ContactTransaction e) => e.id == entryId,

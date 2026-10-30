@@ -103,6 +103,13 @@ Test both authenticated and unauthenticated access, and attempt cross-user reads
   before the account is deleted. Storage objects are not removed by the
   database cascade, so this step is what removes them. If it fails (for example
   offline), the file remains and is not shown to anyone; it is a known gap.
+- (2026-10-30) Khata contact and split group photos use the same bucket as
+  `<user id>/contacts/<id>-<ms>.<ext>` and `<user id>/groups/...`; the first
+  folder is still the owner, so the same policies cover them. The app
+  downloads them through the authenticated storage API (`PhotoStore`) and
+  keeps a copy under the app documents' `photos/<user id>/`; no URL is
+  stored. Deleting the account also removes both folders
+  (`PhotoStore.deleteAll`), best effort, with the same known gap.
 ### Receipts bucket (2026-10-21)
 - Bucket `receipts`: **private**, 2 MiB per file, `image/jpeg`, `image/png`,
   `image/webp` only. Objects are named `<user id>/<transaction id>`; the same

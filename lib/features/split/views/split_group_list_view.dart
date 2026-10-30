@@ -3,7 +3,6 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
-import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
@@ -12,6 +11,7 @@ import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/entity_photo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -53,7 +53,7 @@ class SplitGroupListView extends GetView<SplitGroupController> {
                 separatorBuilder: (_, _) =>
                     const SizedBox(height: AppSpacing.md),
                 itemBuilder: (BuildContext context, int index) =>
-                    _GroupCard(summary: controller.groups[index]),
+                    SplitGroupCard(summary: controller.groups[index]),
               ),
             ),
           );
@@ -72,10 +72,13 @@ class SplitGroupListView extends GetView<SplitGroupController> {
 void openSplitGroupForm([SplitGroupSummary? existing]) =>
     Get.toNamed<void>(AppRoutes.splitGroupForm, arguments: existing);
 
-class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.summary});
+/// A group with its member count and the user's net. Opens the group detail
+/// unless [onTap] is given (the group chooser picks it instead).
+class SplitGroupCard extends StatelessWidget {
+  const SplitGroupCard({super.key, required this.summary, this.onTap});
 
   final SplitGroupSummary summary;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -99,13 +102,19 @@ class _GroupCard extends StatelessWidget {
         : colors.onSurfaceVariant;
 
     return AppCard(
-      onTap: () => Get.toNamed<void>(
-        AppRoutes.splitGroupDetail,
-        arguments: summary.group.id,
-      ),
+      onTap:
+          onTap ??
+          () => Get.toNamed<void>(
+            AppRoutes.splitGroupDetail,
+            arguments: summary.group.id,
+          ),
       child: Row(
         children: <Widget>[
-          IconBadge(icon: Icons.groups_outlined, color: colors.primary),
+          EntityPhoto(
+            name: summary.group.name,
+            path: summary.group.avatarPath,
+            icon: Icons.groups_outlined,
+          ),
           const SizedBox(width: AppSpacing.sm + AppSpacing.xs),
           Expanded(
             child: Column(
