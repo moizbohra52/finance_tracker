@@ -135,7 +135,9 @@ class ContactBalanceTile extends StatelessWidget {
                             Icon(
                               Icons.phone_outlined,
                               size: 11.5,
-                              color: colors.onSurfaceVariant.withValues(alpha: 0.7),
+                              color: colors.onSurfaceVariant.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                             const SizedBox(width: 4),
                             Expanded(
@@ -155,7 +157,9 @@ class ContactBalanceTile extends StatelessWidget {
                         Text(
                           'No phone number'.tr,
                           style: text.labelSmall?.copyWith(
-                            color: colors.onSurfaceVariant.withValues(alpha: 0.5),
+                            color: colors.onSurfaceVariant.withValues(
+                              alpha: 0.5,
+                            ),
                             fontStyle: FontStyle.italic,
                             fontSize: 11,
                           ),
@@ -187,7 +191,7 @@ class ContactBalanceTile extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: (statusColor ?? colors.onSurfaceVariant)
                             .withValues(alpha: isDark ? 0.2 : 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

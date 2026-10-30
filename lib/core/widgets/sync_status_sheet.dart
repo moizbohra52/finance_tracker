@@ -81,7 +81,7 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
                   height: 4,
                   decoration: BoxDecoration(
                     color: colors.outlineVariant.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                 ),
               ),

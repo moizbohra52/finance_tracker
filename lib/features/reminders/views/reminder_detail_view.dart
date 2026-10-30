@@ -82,7 +82,9 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
   Future<void> _complete(Reminder reminder) async {
     if (await controller.complete(reminder)) {
       AppSnackbar.show(
-        reminder.repeat.repeats ? 'Done. Next one scheduled'.tr : 'Marked as done'.tr,
+        reminder.repeat.repeats
+            ? 'Done. Next one scheduled'.tr
+            : 'Marked as done'.tr,
       );
     }
   }
@@ -133,7 +135,11 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
     });
   }
 
-  Widget _body(BuildContext context, Reminder? reminder, Contact? contactEntity) {
+  Widget _body(
+    BuildContext context,
+    Reminder? reminder,
+    Contact? contactEntity,
+  ) {
     if (controller.isLoading.value) {
       return LoadingState(message: 'Loading reminder'.tr);
     }
@@ -231,9 +237,6 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
           if (contactEntity != null) ...<Widget>[
             const SizedBox(height: AppSpacing.md),
             FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
               icon: const Icon(Icons.send_rounded, size: 18),
               label: Text('Send Reminder (WhatsApp / SMS)'.tr),
               onPressed: () => SendReminderSheet.show(

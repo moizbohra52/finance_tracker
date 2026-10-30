@@ -93,6 +93,18 @@ abstract final class AppShadows {
           spreadRadius: -6,
         ),
       ];
+
+  /// The one soft shadow for raised cards (pulse, summary, overlays) that
+  /// are not hero surfaces but still float above the page. Cards that already
+  /// draw a border can stay flat; never stack a custom shadow here.
+  static List<BoxShadow> card(Color base, {bool isDark = false}) => <BoxShadow>[
+    BoxShadow(
+      color: base.withValues(alpha: isDark ? 0.18 : 0.06),
+      blurRadius: 14,
+      offset: const Offset(0, 4),
+      spreadRadius: -4,
+    ),
+  ];
 }
 
 abstract final class AppSizes {

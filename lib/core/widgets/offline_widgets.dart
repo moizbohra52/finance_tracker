@@ -59,7 +59,7 @@ class OfflineBanner extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: colors.primary.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
                     child: Text(
                       '@count pending'.trParams(<String, String>{

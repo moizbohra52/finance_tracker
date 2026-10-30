@@ -352,13 +352,7 @@ class _FinancialPulseCard extends GetView<HomeController> {
                 ),
                 width: 1,
               ),
-              boxShadow: <BoxShadow>[
-                BoxShadow(
-                  color: colors.shadow.withValues(alpha: isDark ? 0.2 : 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
+              boxShadow: AppShadows.card(colors.shadow, isDark: isDark),
             ),
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
@@ -737,13 +731,7 @@ class _EmptySpendingCard extends StatelessWidget {
           color: colors.outlineVariant.withValues(alpha: isDark ? 0.25 : 0.45),
           width: 1,
         ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: colors.shadow.withValues(alpha: isDark ? 0.2 : 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: AppShadows.card(colors.shadow, isDark: isDark),
       ),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -859,15 +847,6 @@ class _EmptySpendingCard extends StatelessWidget {
             onPressed: _openExpenseForm,
             icon: const Icon(Icons.add_rounded, size: 18),
             label: Text('Add your first expense'.tr),
-            style: FilledButton.styleFrom(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.sm,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.full),
-              ),
-            ),
           ),
           const SizedBox(height: AppSpacing.md),
           // Pro tip banner

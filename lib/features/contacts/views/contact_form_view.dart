@@ -129,8 +129,9 @@ class _ContactFormViewState extends State<ContactFormView> {
     }
 
     _searchDebounce = Timer(const Duration(milliseconds: 250), () async {
-      final List<DeviceContactData> results =
-          await DeviceContactsService.instance.searchContacts(clean);
+      final List<DeviceContactData> results = await DeviceContactsService
+          .instance
+          .searchContacts(clean);
       if (mounted && _nameFocus.hasFocus) {
         setState(() {
           _suggestions = results;
@@ -175,9 +176,9 @@ class _ContactFormViewState extends State<ContactFormView> {
       final int phoneCount = contact.phones.length;
       if (phoneCount > 1) {
         AppSnackbar.show(
-          'Filled details from contacts (@count numbers added)'.trParams(<String, String>{
-            'count': '$phoneCount',
-          }),
+          'Filled details from contacts (@count numbers added)'.trParams(
+            <String, String>{'count': '$phoneCount'},
+          ),
         );
       } else {
         AppSnackbar.show('Filled details from contacts'.tr);
@@ -219,11 +220,13 @@ class _ContactFormViewState extends State<ContactFormView> {
       openingBalanceType: _openingType,
     );
     if (!saved) return;
-    AppSnackbar.show(_existing == null ? 'Contact added'.tr : 'Contact updated'.tr);
+    AppSnackbar.show(
+      _existing == null ? 'Contact added'.tr : 'Contact updated'.tr,
+    );
     Get.back<void>();
   }
 
-  Widget _buildSuggestionsBox(ColorScheme colors, TextTheme text) {
+  Widget _buildSuggestionsBox(ColorScheme colors, TextTheme text, bool isDark) {
     if (!_showSuggestions || _suggestions.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -232,18 +235,12 @@ class _ContactFormViewState extends State<ContactFormView> {
       margin: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.sm),
       decoration: BoxDecoration(
         color: colors.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(AppSpacing.sm),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
           color: colors.primary.withValues(alpha: 0.3),
           width: 1.2,
         ),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppShadows.card(colors.shadow, isDark: isDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,9 +259,9 @@ class _ContactFormViewState extends State<ContactFormView> {
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
-                    'Phone contacts suggestions (@count)'.trParams(<String, String>{
-                      'count': '${_suggestions.length}',
-                    }),
+                    'Phone contacts suggestions (@count)'.trParams(
+                      <String, String>{'count': '${_suggestions.length}'},
+                    ),
                     style: text.labelSmall?.copyWith(
                       color: colors.primary,
                       fontWeight: FontWeight.w700,
@@ -273,7 +270,7 @@ class _ContactFormViewState extends State<ContactFormView> {
                 ),
                 InkWell(
                   onTap: () => setState(() => _showSuggestions = false),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.full),
                   child: const Padding(
                     padding: EdgeInsets.all(3),
                     child: Icon(Icons.close_rounded, size: 15),
@@ -307,9 +304,7 @@ class _ContactFormViewState extends State<ContactFormView> {
               ),
               title: Text(
                 s.displayName,
-                style: text.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+                style: text.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               subtitle: s.phones.isNotEmpty
                   ? Text(
@@ -333,10 +328,12 @@ class _ContactFormViewState extends State<ContactFormView> {
                       ),
                       decoration: BoxDecoration(
                         color: colors.secondaryContainer,
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Text(
-                        '@count numbers'.trParams(<String, String>{'count': '${s.phones.length}'}),
+                        '@count numbers'.trParams(<String, String>{
+                          'count': '${s.phones.length}',
+                        }),
                         style: text.labelSmall?.copyWith(
                           fontSize: 9.5,
                           fontWeight: FontWeight.bold,
@@ -458,7 +455,9 @@ class _ContactFormViewState extends State<ContactFormView> {
               Expanded(
                 child: AppTextField(
                   label: _mobileControllers.length > 1
-                      ? 'Mobile @number (optional)'.trParams(<String, String>{'number': '${i + 1}'})
+                      ? 'Mobile @number (optional)'.trParams(<String, String>{
+                          'number': '${i + 1}',
+                        })
                       : 'Mobile (optional)'.tr,
                   controller: _mobileControllers[i],
                   keyboardType: TextInputType.phone,
@@ -479,8 +478,8 @@ class _ContactFormViewState extends State<ContactFormView> {
                     ),
                     onPressed: () {
                       setState(() {
-                        final TextEditingController removed =
-                            _mobileControllers.removeAt(i);
+                        final TextEditingController removed = _mobileControllers
+                            .removeAt(i);
                         removed.dispose();
                       });
                     },
@@ -519,6 +518,7 @@ class _ContactFormViewState extends State<ContactFormView> {
     final bool editing = _existing != null;
     final ColorScheme colors = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppAppBar(
@@ -560,7 +560,7 @@ class _ContactFormViewState extends State<ContactFormView> {
                         )
                       : null,
                 ),
-                _buildSuggestionsBox(colors, text),
+                _buildSuggestionsBox(colors, text, isDark),
                 const SizedBox(height: AppSpacing.md),
                 _buildMobileSection(colors, text),
                 const SizedBox(height: AppSpacing.md),
@@ -615,7 +615,8 @@ class _ContactFormViewState extends State<ContactFormView> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  helperText: 'What was already owed before you started here.'.tr,
+                  helperText:
+                      'What was already owed before you started here.'.tr,
                   validator: Validators.nonNegativeAmount,
                 ),
                 const SizedBox(height: AppSpacing.lg),

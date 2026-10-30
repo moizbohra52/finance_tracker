@@ -78,7 +78,8 @@ class ContactListContent extends GetView<ContactController> {
           icon: Icons.people_outline,
           title: 'No contacts yet'.tr,
           message:
-              'Add the people you lend to or borrow from, then record credit and debit entries against them.'.tr,
+              'Add the people you lend to or borrow from, then record credit and debit entries against them.'
+                  .tr,
           actionLabel: 'Add contact'.tr,
           onAction: openAddContact,
         );
@@ -116,9 +117,7 @@ class ContactListContent extends GetView<ContactController> {
                         ),
                       ),
                 ),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 120),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
           ),
         ),
@@ -184,7 +183,7 @@ class _Summary extends GetView<ContactController> {
                         height: 34,
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: isDark ? 0.25 : 0.14),
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
                         child: Icon(icon, size: 18, color: color),
                       ),
@@ -196,7 +195,7 @@ class _Summary extends GetView<ContactController> {
                           ),
                           decoration: BoxDecoration(
                             color: color,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
                           child: Text(
                             'Active'.tr,
@@ -253,21 +252,19 @@ class _Summary extends GetView<ContactController> {
                 child: heroCard(
                   label: 'You will get'.tr,
                   amount: AppFormatters.money(receivable),
-                  subtitle:
-                      controller.receivableCount == 1
+                  subtitle: controller.receivableCount == 1
                       ? '1 contact'.tr
                       : '@count contacts'.trParams(<String, String>{
                           'count': '${controller.receivableCount}',
                         }),
                   icon: Icons.arrow_downward_rounded,
                   color: money.receivable,
-                  isSelected:
-                      controller.filter.value == KhataFilter.receivable,
+                  isSelected: controller.filter.value == KhataFilter.receivable,
                   onTap: () {
                     controller.filter.value =
                         controller.filter.value == KhataFilter.receivable
-                            ? KhataFilter.all
-                            : KhataFilter.receivable;
+                        ? KhataFilter.all
+                        : KhataFilter.receivable;
                   },
                 ),
               ),
@@ -276,8 +273,7 @@ class _Summary extends GetView<ContactController> {
                 child: heroCard(
                   label: 'You will give'.tr,
                   amount: AppFormatters.money(payable),
-                  subtitle:
-                      controller.payableCount == 1
+                  subtitle: controller.payableCount == 1
                       ? '1 contact'.tr
                       : '@count contacts'.trParams(<String, String>{
                           'count': '${controller.payableCount}',
@@ -288,8 +284,8 @@ class _Summary extends GetView<ContactController> {
                   onTap: () {
                     controller.filter.value =
                         controller.filter.value == KhataFilter.payable
-                            ? KhataFilter.all
-                            : KhataFilter.payable;
+                        ? KhataFilter.all
+                        : KhataFilter.payable;
                   },
                 ),
               ),
@@ -303,8 +299,9 @@ class _Summary extends GetView<ContactController> {
               color: isDark ? colors.surfaceContainerLow : colors.surface,
               borderRadius: BorderRadius.circular(AppRadius.sm),
               border: Border.all(
-                color:
-                    colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.5),
+                color: colors.outlineVariant.withValues(
+                  alpha: isDark ? 0.3 : 0.5,
+                ),
                 width: 1,
               ),
             ),
@@ -321,12 +318,16 @@ class _Summary extends GetView<ContactController> {
                 Expanded(
                   child: Text(
                     isNetPositive
-                        ? 'Net Position: You have +@amount to receive'.trParams(<String, String>{
-                            'amount': AppFormatters.money(net),
-                          })
-                        : 'Net Position: You have -@amount to pay'.trParams(<String, String>{
-                            'amount': AppFormatters.money(net.abs()),
-                          }),
+                        ? 'Net Position: You have +@amount to receive'.trParams(
+                            <String, String>{
+                              'amount': AppFormatters.money(net),
+                            },
+                          )
+                        : 'Net Position: You have -@amount to pay'.trParams(
+                            <String, String>{
+                              'amount': AppFormatters.money(net.abs()),
+                            },
+                          ),
                     style: text.labelSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: colors.onSurface,
@@ -360,7 +361,9 @@ class _SearchAndFilter extends GetView<ContactController> {
             color: isDark ? colors.surfaceContainerLow : colors.surface,
             borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
-              color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
+              color: colors.outlineVariant.withValues(
+                alpha: isDark ? 0.3 : 0.6,
+              ),
               width: 1,
             ),
           ),
@@ -415,8 +418,9 @@ class _SearchAndFilter extends GetView<ContactController> {
                   side: BorderSide(
                     color: isSelected
                         ? Colors.transparent
-                        : colors.outlineVariant
-                            .withValues(alpha: isDark ? 0.3 : 0.6),
+                        : colors.outlineVariant.withValues(
+                            alpha: isDark ? 0.3 : 0.6,
+                          ),
                     width: 1,
                   ),
                 ),
@@ -435,12 +439,13 @@ class _SearchAndFilter extends GetView<ContactController> {
                           label,
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight:
-                                isSelected ? FontWeight.w700 : FontWeight.w600,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w600,
                             color: isSelected
                                 ? (isDark
-                                    ? colors.onPrimaryContainer
-                                    : colors.onPrimary)
+                                      ? colors.onPrimaryContainer
+                                      : colors.onPrimary)
                                 : colors.onSurface,
                           ),
                         ),
@@ -453,11 +458,11 @@ class _SearchAndFilter extends GetView<ContactController> {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? (isDark
-                                    ? colors.primary.withValues(alpha: 0.3)
-                                    : Colors.white.withValues(alpha: 0.25))
+                                      ? colors.primary.withValues(alpha: 0.3)
+                                      : Colors.white.withValues(alpha: 0.25))
                                 : (activeColor ?? colors.onSurfaceVariant)
-                                    .withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(10),
+                                      .withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
                           ),
                           child: Text(
                             '$count',
@@ -466,8 +471,8 @@ class _SearchAndFilter extends GetView<ContactController> {
                               fontWeight: FontWeight.w700,
                               color: isSelected
                                   ? (isDark
-                                      ? colors.onPrimaryContainer
-                                      : colors.onPrimary)
+                                        ? colors.onPrimaryContainer
+                                        : colors.onPrimary)
                                   : (activeColor ?? colors.onSurfaceVariant),
                             ),
                           ),

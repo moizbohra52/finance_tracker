@@ -113,7 +113,12 @@ class _RecurringFormViewState extends State<RecurringFormView> {
     setState(() => _dateError = dateError);
     final String? accountId = _effectiveAccount(_controller.accounts);
     final String? categoryId = _categoryId;
-    if (!valid || dateError != null || accountId == null || categoryId == null) return;
+    if (!valid ||
+        dateError != null ||
+        accountId == null ||
+        categoryId == null) {
+      return;
+    }
     final String note = _note.text.trim();
     final bool saved = await _controller.saveRule(
       id: _existing?.id ?? _id,
@@ -138,7 +143,8 @@ class _RecurringFormViewState extends State<RecurringFormView> {
       context,
       title: 'Delete this schedule?'.tr,
       message:
-          'No new transactions will be created. Transactions already recorded stay.'.tr,
+          'No new transactions will be created. Transactions already recorded stay.'
+              .tr,
     );
     if (!confirmed) return;
     if (await _controller.deleteRule(_existing!.id)) {
@@ -164,7 +170,9 @@ class _RecurringFormViewState extends State<RecurringFormView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppAppBar(title: _editing ? 'Edit recurring'.tr : 'Add recurring'.tr),
+      appBar: AppAppBar(
+        title: _editing ? 'Edit recurring'.tr : 'Add recurring'.tr,
+      ),
       body: SafeArea(
         child: Obx(() {
           if (!_controller.lookupsLoaded.value) {
@@ -256,10 +264,9 @@ class _RecurringFormViewState extends State<RecurringFormView> {
                 prefixStyle: text.displaySmall,
                 hintText: '0.00',
                 hintStyle: text.displaySmall?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.35),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                 ),
               ),
             ),

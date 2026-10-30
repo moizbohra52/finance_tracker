@@ -189,7 +189,9 @@ class TransactionListItem extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: colors.surfaceContainerHighest
                                     .withValues(alpha: 0.6),
-                                borderRadius: BorderRadius.circular(4),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.full,
+                                ),
                               ),
                               child: Text(
                                 subtitle,
@@ -215,7 +217,9 @@ class TransactionListItem extends StatelessWidget {
                                   color: colors.primaryContainer.withValues(
                                     alpha: 0.7,
                                   ),
-                                  borderRadius: BorderRadius.circular(4),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.full,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -309,7 +313,7 @@ class TransactionListItem extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: badgeColor.withValues(alpha: isDark ? 0.2 : 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,

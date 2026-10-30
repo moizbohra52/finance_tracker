@@ -110,12 +110,12 @@ class ExportView extends GetView<ExportController> {
                     FilledButton.icon(
                       onPressed: exporting ? null : controller.exportAndShare,
                       icon: exporting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: IconTheme.of(context).color,
                               ),
                             )
                           : const Icon(Icons.share_outlined),
@@ -130,15 +130,6 @@ class ExportView extends GetView<ExportController> {
                                         .name
                                         .toUpperCase(),
                                   }),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.md,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
                       ),
                     ),
                   ],
@@ -270,7 +261,8 @@ class ExportView extends GetView<ExportController> {
             name: 'PDF',
             ext: '.pdf',
             icon: Icons.picture_as_pdf_outlined,
-            desc: 'Clean, professional report suitable for sharing & printing'.tr,
+            desc:
+                'Clean, professional report suitable for sharing & printing'.tr,
           ),
         ];
 
