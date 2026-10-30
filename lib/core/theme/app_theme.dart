@@ -1,6 +1,7 @@
 import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -173,7 +174,7 @@ abstract final class AppTheme {
         elevation: isDark ? 0 : 1,
         color: surfaceColor,
         surfaceTintColor: Colors.transparent,
-        shadowColor: colorScheme.shadow.withValues(alpha: 0.12),
+        shadowColor: colorScheme.shadow.withValues(alpha: 0.08),
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -188,6 +189,10 @@ abstract final class AppTheme {
         backgroundColor: surfaceColor,
         surfaceTintColor: Colors.transparent,
         modalBackgroundColor: surfaceColor,
+        dragHandleColor: colorScheme.outlineVariant.withValues(
+          alpha: isDark ? 0.5 : 0.8,
+        ),
+        dragHandleSize: const Size(36, 4),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppRadius.xl),
@@ -379,6 +384,168 @@ abstract final class AppTheme {
         color: colorScheme.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.4),
         thickness: 1,
         space: 1,
+      ),
+      // Fresh, cohesive defaults for the surfaces Material draws itself, so
+      // pickers, menus and feedback match the app instead of stock M3.
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: colorScheme.inverseSurface,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onInverseSurface,
+          fontWeight: FontWeight.w500,
+        ),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+      ),
+      datePickerTheme: DatePickerThemeData(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: isDark ? 0 : 4,
+        shadowColor: colorScheme.shadow.withValues(alpha: 0.16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+        dayShape: const WidgetStatePropertyAll<CircleBorder>(CircleBorder()),
+        todayBorder: BorderSide(color: colorScheme.primary, width: 1.4),
+        headerBackgroundColor: tones.deep,
+        headerForegroundColor: Colors.white,
+        cancelButtonStyle: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll<Color>(colorScheme.primary),
+        ),
+        confirmButtonStyle: ButtonStyle(
+          foregroundColor: WidgetStatePropertyAll<Color>(colorScheme.primary),
+        ),
+      ),
+      timePickerTheme: TimePickerThemeData(
+        backgroundColor: surfaceColor,
+        elevation: isDark ? 0 : 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
+        dialHandColor: colorScheme.primary,
+        dialBackgroundColor: colorScheme.surfaceContainerHigh,
+        hourMinuteColor: colorScheme.surfaceContainerHigh,
+        hourMinuteShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: isDark ? 0 : 4,
+        shadowColor: colorScheme.shadow.withValues(alpha: 0.16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          side: isDark
+              ? BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+                )
+              : BorderSide.none,
+        ),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll<Color>(surfaceColor),
+          surfaceTintColor: const WidgetStatePropertyAll<Color>(
+            Colors.transparent,
+          ),
+          elevation: WidgetStatePropertyAll<double>(isDark ? 0 : 4),
+          shadowColor: WidgetStatePropertyAll<Color>(
+            colorScheme.shadow.withValues(alpha: 0.16),
+          ),
+          shape: WidgetStatePropertyAll<OutlinedBorder>(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+          ),
+        ),
+      ),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll<Color>(surfaceColor),
+          surfaceTintColor: const WidgetStatePropertyAll<Color>(
+            Colors.transparent,
+          ),
+          shape: WidgetStatePropertyAll<OutlinedBorder>(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+            ),
+          ),
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        labelColor: colorScheme.primary,
+        unselectedLabelColor: colorScheme.onSurfaceVariant,
+        indicatorColor: colorScheme.primary,
+        dividerColor: colorScheme.outlineVariant.withValues(
+          alpha: isDark ? 0.3 : 0.4,
+        ),
+        labelStyle: textTheme.labelLarge,
+        unselectedLabelStyle: textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: colorScheme.onSurfaceVariant,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colorScheme.primary,
+        linearTrackColor: colorScheme.surfaceContainerHighest,
+        circularTrackColor: colorScheme.surfaceContainerHighest,
+        refreshBackgroundColor: surfaceColor,
+      ),
+      sliderTheme: SliderThemeData(
+        trackHeight: 5,
+        activeTrackColor: colorScheme.primary,
+        inactiveTrackColor: colorScheme.surfaceContainerHighest,
+        thumbColor: colorScheme.primary,
+        overlayColor: colorScheme.primary.withValues(alpha: 0.12),
+        valueIndicatorColor: colorScheme.inverseSurface,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: colorScheme.inverseSurface,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        textStyle: textTheme.labelMedium?.copyWith(
+          color: colorScheme.onInverseSurface,
+        ),
+        waitDuration: const Duration(milliseconds: 450),
+      ),
+      expansionTileTheme: ExpansionTileThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        collapsedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: colorScheme.primary,
+        selectionColor: colorScheme.primary.withValues(alpha: 0.22),
+        selectionHandleColor: colorScheme.primary,
+      ),
+      scrollbarTheme: ScrollbarThemeData(
+        thickness: const WidgetStatePropertyAll<double>(4),
+        radius: const Radius.circular(AppRadius.full),
+        thumbColor: WidgetStatePropertyAll<Color>(
+          colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+        ),
+        trackVisibility: const WidgetStatePropertyAll<bool>(false),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+        },
       ),
     );
   }

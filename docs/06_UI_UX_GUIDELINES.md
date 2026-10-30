@@ -126,6 +126,11 @@ Inspired by fintech UI kits such as Coinpay (inspiration only, see
 - **Shapes.** Buttons, the floating action button, chips and the navigation
   indicator are pills; cards and inputs keep rounded corners
   (`AppRadius.lg` / `AppRadius.md`); sheets and dialogs use `AppRadius.xl`.
+- **Material surfaces are themed to match.** Date and time pickers, menus,
+  snackbars, tabs, tooltips, sliders, scrollbars and text selection all draw
+  from the app's colours and radii (`AppTheme`), and page changes use the
+  Material 3 forward-fade transition, so nothing falls back to stock M3
+  styling that clashes with the rest of the app.
 - **Inputs** are filled with the card colour, so fields read as white on the
   grey page.
 - **Icons** in rows, tiles and empty states sit in a tinted circle
