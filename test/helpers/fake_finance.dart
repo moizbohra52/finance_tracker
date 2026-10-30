@@ -201,7 +201,18 @@ class FakeCategoryRepository implements CategoryRepository {
   @override
   Future<List<Category>> getCategories() async {
     _f.throwPending();
-    return _f.categories.where((Category c) => c.deletedAt == null).toList();
+    // Same visibility rule as the real repository: pickers and filters only
+    // offer active, non-deleted categories.
+    return _f.categories
+        .where((Category c) => c.deletedAt == null && c.isActive)
+        .toList();
+  }
+
+  @override
+  Future<List<Category>> getAllCategories() async {
+    _f.throwPending();
+    // Display lookups resolve names from every stored row.
+    return _f.categories.toList();
   }
 
   @override

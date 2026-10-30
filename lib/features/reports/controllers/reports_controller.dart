@@ -54,7 +54,10 @@ class ReportsController extends GetxController {
   final RxInt transactionCount = 0.obs;
 
   List<Transaction> _transactions = <Transaction>[];
-  List<Category> _categories = <Category>[];
+
+  /// Every stored category row, so report rows keep their label after a
+  /// category is switched off, deleted, or tombstoned by sync.
+  List<Category> _categoryIndex = <Category>[];
   List<Account> _accounts = <Account>[];
   DateTime? _fetchedStart;
   DateTime? _fetchedEnd;
@@ -81,7 +84,7 @@ class ReportsController extends GetxController {
 
   Category? categoryOf(String? id) {
     if (id == null) return null;
-    for (final Category c in _categories) {
+    for (final Category c in _categoryIndex) {
       if (c.id == id) return c;
     }
     return null;
@@ -127,19 +130,19 @@ class ReportsController extends GetxController {
       final (
         List<Transaction> transactions,
         List<Account> accounts,
-        List<Category> categories,
+        List<Category> allCategories,
         List<Contact> contacts,
         List<ContactTransaction> entries,
       ) = await wait5(
         _transactionRepository.getAllTransactions(start: start, end: end),
         _accountRepository.getAccounts(),
-        _categoryRepository.getCategories(),
+        _categoryRepository.getAllCategories(),
         _contactRepository.getContacts(),
         _contactRepository.getAllContactTransactions(),
       );
       _transactions = transactions;
       _accounts = accounts;
-      _categories = categories;
+      _categoryIndex = allCategories;
       _fetchedStart = start;
       _fetchedEnd = end;
       khata.value = FinanceSummaryCalculator.khata(contacts, entries);

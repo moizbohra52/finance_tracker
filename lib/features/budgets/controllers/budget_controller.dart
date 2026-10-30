@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
@@ -36,6 +37,11 @@ class BudgetController extends GetxController {
 
   final RxList<BudgetStatus> statuses = <BudgetStatus>[].obs;
   final RxList<Category> categories = <Category>[].obs;
+
+  /// Every stored category row, so budget rows keep their label after a
+  /// category is switched off, deleted, or tombstoned by sync. [categories]
+  /// stays active-only for the form's picker.
+  final RxList<Category> categoryIndex = <Category>[].obs;
   final RxBool isLoading = true.obs;
   final RxnString error = RxnString();
   final SubmitState save = SubmitState();
@@ -64,7 +70,7 @@ class BudgetController extends GetxController {
 
   Category? categoryOf(String? id) {
     if (id == null) return null;
-    for (final Category c in categories) {
+    for (final Category c in categoryIndex) {
       if (c.id == id) return c;
     }
     return null;
@@ -87,8 +93,10 @@ class BudgetController extends GetxController {
     error.value = null;
     try {
       final List<Budget> budgets = await _budgetRepository.getBudgets();
-      final List<Category> loadedCategories = await _categoryRepository
-          .getCategories();
+      final (List<Category> active, List<Category> all) = await wait2(
+        _categoryRepository.getCategories(),
+        _categoryRepository.getAllCategories(),
+      );
       final DateTime now = DateTime.now();
       final (DateTime, DateTime)? window = BudgetCalculator.window(
         budgets,
@@ -100,7 +108,8 @@ class BudgetController extends GetxController {
               start: window.$1,
               end: window.$2,
             );
-      categories.assignAll(loadedCategories);
+      categories.assignAll(active);
+      categoryIndex.assignAll(all);
       final List<BudgetStatus> computed = BudgetCalculator.statuses(
         budgets,
         transactions,

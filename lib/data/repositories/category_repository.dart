@@ -52,6 +52,39 @@ class CategoryRepository {
     });
   }
 
+  /// Every stored category row, including inactive and deleted ones.
+  ///
+  /// Pickers and filters keep using [getCategories]; name lookups use this so
+  /// older transactions and budgets keep their label after a category is
+  /// switched off, deleted, or tombstoned by sync from another device.
+  Future<List<Category>> getAllCategories() async {
+    if (_db != null) {
+      final List<Map<String, dynamic>> data = await _db.db.query(
+        'categories',
+        orderBy: 'name ASC',
+      );
+      return data
+          .map(
+            (Map<String, dynamic> json) =>
+                CategoryModel.fromJson(json).toEntity(),
+          )
+          .toList();
+    }
+
+    return guardSupabase(() async {
+      final List<Map<String, dynamic>> data = await _supabaseClient
+          .from('categories')
+          .select()
+          .order('name');
+      return data
+          .map(
+            (Map<String, dynamic> json) =>
+                CategoryModel.fromJson(json).toEntity(),
+          )
+          .toList();
+    });
+  }
+
   Future<Category> getCategoryById(String categoryId) async {
     if (_db != null) {
       final List<Map<String, dynamic>> data = await _db.db.query(
