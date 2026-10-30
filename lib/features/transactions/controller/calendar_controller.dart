@@ -41,7 +41,10 @@ class CalendarController extends GetxController {
 
   /// Every transaction of [month], newest first.
   List<Transaction> items = <Transaction>[];
-  List<Category> _categories = <Category>[];
+
+  /// Every stored category row, so day rows keep their label after a category
+  /// is switched off, deleted, or tombstoned by sync.
+  List<Category> _categoryIndex = <Category>[];
   List<Account> _accounts = <Account>[];
 
   // GetX does not dispose workers, and the notifier outlives this
@@ -70,7 +73,7 @@ class CalendarController extends GetxController {
   }
 
   Category? categoryOf(String? id) =>
-      _categories.firstWhereOrNull((Category c) => c.id == id);
+      _categoryIndex.firstWhereOrNull((Category c) => c.id == id);
 
   String accountName(String id) =>
       _accounts.firstWhereOrNull((Account a) => a.id == id)?.name ??
@@ -89,20 +92,20 @@ class CalendarController extends GetxController {
       final (
         List<Transaction> loaded,
         List<Account> accounts,
-        List<Category> categories,
+        List<Category> allCategories,
       ) = await wait3(
         _transactionRepository.getAllTransactions(
           start: period.start,
           end: period.end,
         ),
         _accountRepository.getAccounts(),
-        _categoryRepository.getCategories(),
+        _categoryRepository.getAllCategories(),
       );
       // A month switch while loading: the newer load owns the screen.
       if (month.value != start) return;
       items = loaded;
       _accounts = accounts;
-      _categories = categories;
+      _categoryIndex = allCategories;
       days.assignAll(ReportCalculator.trend(loaded, period));
       summary.value = ReportCalculator.summary(loaded, period);
       _showDay();

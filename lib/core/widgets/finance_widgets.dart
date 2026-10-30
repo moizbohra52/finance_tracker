@@ -108,7 +108,9 @@ class BalanceCard extends StatelessWidget {
 
     return Semantics(
       container: true,
-      label: 'Current balance @amount'.trParams(<String, String>{'amount': show(currentBalance)}),
+      label: 'Current balance @amount'.trParams(<String, String>{
+        'amount': show(currentBalance),
+      }),
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -117,13 +119,7 @@ class BalanceCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: card.withValues(alpha: 0.22),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          boxShadow: AppShadows.floating(card, alpha: 0.28),
           border: Border.all(color: onCard.withValues(alpha: 0.16), width: 1.2),
         ),
         child: ClipRRect(
@@ -186,7 +182,9 @@ class BalanceCard extends StatelessWidget {
                               child: IconButton(
                                 padding: EdgeInsets.zero,
                                 iconSize: 20,
-                                tooltip: isHidden ? 'Show balance'.tr : 'Hide balance'.tr,
+                                tooltip: isHidden
+                                    ? 'Show balance'.tr
+                                    : 'Hide balance'.tr,
                                 color: onCard,
                                 icon: Icon(
                                   isHidden
@@ -224,10 +222,16 @@ class BalanceCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: onCard.withValues(alpha: 0.14),
-                                borderRadius: BorderRadius.circular(AppRadius.full),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.full,
+                                ),
                               ),
                               child: Text(
-                                'Opening balance @amount'.trParams(<String, String>{'amount': show(openingBalance)}),
+                                'Opening balance @amount'.trParams(
+                                  <String, String>{
+                                    'amount': show(openingBalance),
+                                  },
+                                ),
                                 style: text.labelMedium?.copyWith(
                                   color: onCard.withValues(alpha: 0.9),
                                   fontWeight: FontWeight.w500,
@@ -310,50 +314,50 @@ class _CardFlow extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: onCard.withValues(alpha: 0.1), width: 1),
           ),
-      child: Row(
-        children: <Widget>[
-          IconBadge(
-            icon: icon,
-            color: onCard,
-            background: onCard.withValues(alpha: 0.16),
-            size: AppSizes.iconBadgeSmall,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                // Wraps to a second line on narrow phones; a label cut to
-                // "Income this mo…" is worse than a taller tile.
-                Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: text.labelSmall?.copyWith(
-                    color: onCard.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    value,
-                    style: text.titleSmall?.copyWith(
-                      color: onCard,
-                      fontWeight: FontWeight.w700,
+          child: Row(
+            children: <Widget>[
+              IconBadge(
+                icon: icon,
+                color: onCard,
+                background: onCard.withValues(alpha: 0.16),
+                size: AppSizes.iconBadgeSmall,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    // Wraps to a second line on narrow phones; a label cut to
+                    // "Income this mo…" is worse than a taller tile.
+                    Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.labelSmall?.copyWith(
+                        color: onCard.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 1),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        value,
+                        style: text.titleSmall?.copyWith(
+                          color: onCard,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
-    ),
-  ),
-);
+    );
   }
 }
 

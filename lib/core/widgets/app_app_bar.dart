@@ -120,14 +120,9 @@ class AppAppBar extends StatelessWidget implements PreferredSizeWidget {
         if (showMenu)
           PopupMenuButton<String>(
             tooltip: 'More options'.tr,
-            icon: Icon(
-              Icons.more_vert_rounded,
-              color: colors.onSurface,
-            ),
+            icon: Icon(Icons.more_vert_rounded, color: colors.onSurface),
             elevation: 6,
-            shadowColor: colors.shadow.withValues(
-              alpha: isDark ? 0.4 : 0.12,
-            ),
+            shadowColor: colors.shadow.withValues(alpha: isDark ? 0.4 : 0.12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
               side: BorderSide(
@@ -204,10 +199,7 @@ class AppBackButton extends StatelessWidget {
     return Center(
       child: IconButton(
         tooltip: tooltip,
-        icon: Icon(
-          Icons.arrow_back_rounded,
-          color: color ?? colors.onSurface,
-        ),
+        icon: Icon(Icons.arrow_back_rounded, color: color ?? colors.onSurface),
         onPressed: onPressed ?? () => Navigator.maybePop(context),
       ),
     );

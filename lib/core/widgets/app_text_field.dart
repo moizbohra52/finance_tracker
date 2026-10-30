@@ -81,9 +81,9 @@ class _AppTextFieldState extends State<AppTextField> {
       onChanged: widget.onChanged,
       onFieldSubmitted: widget.onFieldSubmitted,
       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+        fontSize: 15,
+        fontWeight: FontWeight.w500,
+      ),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hintText,

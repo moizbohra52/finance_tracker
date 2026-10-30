@@ -58,8 +58,8 @@ class DeviceContactsService {
   Future<bool> requestPermission() async {
     if (!isSupported) return false;
     try {
-      final fc.PermissionStatus status =
-          await fc.FlutterContacts.permissions.request(fc.PermissionType.read);
+      final fc.PermissionStatus status = await fc.FlutterContacts.permissions
+          .request(fc.PermissionType.read);
       return status == fc.PermissionStatus.granted ||
           status == fc.PermissionStatus.limited;
     } catch (_) {
@@ -135,16 +135,11 @@ class DeviceContactsService {
           if (formatted != null && formatted.isNotEmpty) {
             address = formatted;
           } else {
-            final List<String> parts = <String?>[
-              a.street,
-              a.city,
-              a.state,
-              a.postalCode,
-              a.country,
-            ]
-                .where((String? s) => s != null && s.trim().isNotEmpty)
-                .map((String? s) => s!.trim())
-                .toList();
+            final List<String> parts =
+                <String?>[a.street, a.city, a.state, a.postalCode, a.country]
+                    .where((String? s) => s != null && s.trim().isNotEmpty)
+                    .map((String? s) => s!.trim())
+                    .toList();
             if (parts.isNotEmpty) {
               address = parts.join(', ');
             }
@@ -243,8 +238,9 @@ class DeviceContactsService {
           .toSet()
           .toList();
 
-      final String? email =
-          picked.emails.isNotEmpty ? picked.emails.first.address.trim() : null;
+      final String? email = picked.emails.isNotEmpty
+          ? picked.emails.first.address.trim()
+          : null;
 
       String? address;
       if (picked.addresses.isNotEmpty) {
@@ -252,7 +248,8 @@ class DeviceContactsService {
       }
 
       String? notes;
-      if (picked.notes.isNotEmpty && picked.notes.first.note.trim().isNotEmpty) {
+      if (picked.notes.isNotEmpty &&
+          picked.notes.first.note.trim().isNotEmpty) {
         notes = picked.notes.first.note.trim();
       } else if (picked.organizations.isNotEmpty &&
           picked.organizations.first.name != null &&

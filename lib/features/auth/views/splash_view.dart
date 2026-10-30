@@ -33,21 +33,12 @@ class SplashView extends GetView<SplashController> {
                 width: 110,
                 height: 110,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.25),
-                      blurRadius: 30,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  boxShadow: AppShadows.floating(colors.primary, alpha: 0.25),
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(26),
-                  child: Image.asset(
-                    'assets/logo.png',
-                    fit: BoxFit.contain,
-                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  child: Image.asset('assets/logo.png', fit: BoxFit.contain),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),

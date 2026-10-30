@@ -72,12 +72,39 @@ abstract final class AppSpacing {
 }
 
 abstract final class AppRadius {
-  static const double xs = 6;
-  static const double sm = 10;
-  static const double md = 14;
-  static const double lg = 20;
-  static const double xl = 28;
+  static const double xs = 8;
+  static const double sm = 12;
+  static const double md = 16;
+  static const double lg = 24;
+  static const double xl = 32;
   static const double full = 999;
+}
+
+/// One soft, layered shadow used by hero surfaces (balance card, floating
+/// bars) so elevated elements float the same way everywhere.
+abstract final class AppShadows {
+  /// A wide, faint drop shadow. Keep alpha low: heavy shadows read dated.
+  static List<BoxShadow> floating(Color base, {double alpha = 0.16}) =>
+      <BoxShadow>[
+        BoxShadow(
+          color: base.withValues(alpha: alpha),
+          blurRadius: 28,
+          offset: const Offset(0, 10),
+          spreadRadius: -6,
+        ),
+      ];
+
+  /// The one soft shadow for raised cards (pulse, summary, overlays) that
+  /// are not hero surfaces but still float above the page. Cards that already
+  /// draw a border can stay flat; never stack a custom shadow here.
+  static List<BoxShadow> card(Color base, {bool isDark = false}) => <BoxShadow>[
+    BoxShadow(
+      color: base.withValues(alpha: isDark ? 0.18 : 0.06),
+      blurRadius: 14,
+      offset: const Offset(0, 4),
+      spreadRadius: -4,
+    ),
+  ];
 }
 
 abstract final class AppSizes {

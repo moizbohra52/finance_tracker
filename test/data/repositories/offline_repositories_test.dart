@@ -319,6 +319,50 @@ void main() {
       },
     );
 
+    test('transactions keep their category name after it is deactivated or '
+        'deleted', () async {
+      // A category the user switched off, and one they deleted, that older
+      // transactions still point at (docs/05_FINANCIAL_LOGIC.md: categories
+      // are labels on transactions, not part of the money math).
+      final Category inactive = Category(
+        id: 'cat-inactive',
+        userId: 'user-1',
+        name: 'Old Hobby',
+        type: CategoryType.expense,
+        icon: 'hobby',
+        isSystem: false,
+        isActive: false,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await categoryRepo.createCategory(inactive);
+      final Category gone = Category(
+        id: 'cat-gone',
+        userId: 'user-1',
+        name: 'Deleted Plan',
+        type: CategoryType.expense,
+        icon: 'plan',
+        isSystem: false,
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+      await categoryRepo.createCategory(gone);
+      await categoryRepo.deleteCategory('cat-gone');
+
+      // Pickers and filters only offer usable categories.
+      final List<Category> visible = await categoryRepo.getCategories();
+      expect(visible.any((c) => c.id == 'cat-inactive'), isFalse);
+      expect(visible.any((c) => c.id == 'cat-gone'), isFalse);
+
+      // Display lookups still resolve names from every stored row, so older
+      // transactions never lose their label.
+      final List<Category> all = await categoryRepo.getAllCategories();
+      expect(all.length, equals(27)); // 25 system + the two above
+      expect(all.any((c) => c.id == 'cat-inactive'), isTrue);
+      expect(all.any((c) => c.id == 'cat-gone'), isTrue);
+    });
+
     test('Data survives app restart with pending sync queue intact', () async {
       final Account account = Account(
         id: 'acc-restart',

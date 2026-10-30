@@ -331,12 +331,6 @@ class _SearchBar extends GetView<TransactionController> {
               '${(controller.typeFilter.value != null ? 1 : 0) + (controller.accountFilter.value != null ? 1 : 0) + (controller.categoryFilter.value != null ? 1 : 0) + (controller.rangeFilter.value != null ? 1 : 0)}',
             ),
             child: IconButton.filledTonal(
-              style: IconButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                padding: const EdgeInsets.all(12),
-              ),
               tooltip: 'Filter transactions'.tr,
               icon: const Icon(Icons.tune_rounded),
               onPressed: () => showTransactionFilterSheet(context),
@@ -345,12 +339,6 @@ class _SearchBar extends GetView<TransactionController> {
         ),
         const SizedBox(width: AppSpacing.sm),
         IconButton.filledTonal(
-          style: IconButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            padding: const EdgeInsets.all(12),
-          ),
           tooltip: 'Calendar view'.tr,
           icon: const Icon(Icons.calendar_month_outlined),
           onPressed: () => Get.toNamed<void>(AppRoutes.transactionCalendar),
@@ -537,13 +525,7 @@ class _TransactionSummaryCard extends GetView<TransactionController> {
             color: colors.outlineVariant.withValues(alpha: isDark ? 0.3 : 0.6),
             width: 1,
           ),
-          boxShadow: <BoxShadow>[
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          boxShadow: AppShadows.card(colors.shadow, isDark: isDark),
         ),
         child: Row(
           children: <Widget>[
@@ -829,7 +811,7 @@ class _GroupedList extends GetView<TransactionController> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceContainerHighest
                         .withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -851,7 +833,7 @@ class _GroupedList extends GetView<TransactionController> {
                         ),
                         decoration: BoxDecoration(
                           color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
                         child: Text(
                           '$count',

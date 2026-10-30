@@ -1091,7 +1091,8 @@ const Map<String, String> hindi = <String, String>{
   "This friend is in an expense or settlement and can't be removed":
       'यह दोस्त किसी खर्च या हिसाब किताब में है, उसे हटाया नहीं जा सकता',
   'Choose two different people': 'दो अलग लोग चुनें',
-  'Only a settlement with you can use an account': 'केवल आपके साथ की हिसाब किताब खाता इस्तेमाल कर सकती है',
+  'Only a settlement with you can use an account':
+      'केवल आपके साथ की हिसाब किताब खाता इस्तेमाल कर सकती है',
   'Group members': 'समूह के सदस्य',
   'Group member': 'समूह सदस्य',
   'Split expenses': 'स्प्लिट खर्च',
@@ -1146,8 +1147,7 @@ const Map<String, String> hindi = <String, String>{
   'Settlement saved': 'हिसाब किताब सेव हो गई',
   'Settlement updated': 'हिसाब किताब अपडेट हो गई',
   'Settlement deleted': 'हिसाब किताब डिलीट हो गई',
-  'From is who paid; to is who received.':
-      'फ्रॉम ने पैसे दिए; टू ने लिए।',
+  'From is who paid; to is who received.': 'फ्रॉम ने पैसे दिए; टू ने लिए।',
   'Not needed': 'ज़रूरी नहीं',
   'Total amount': 'कुल राशि',
   'Paid by': 'किसने दिया',

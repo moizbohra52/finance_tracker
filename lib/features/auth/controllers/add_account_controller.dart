@@ -24,5 +24,4 @@ class AddAccountController extends GetxController {
       ),
     );
   }
-
 }

@@ -38,5 +38,4 @@ class RegisterController extends GetxController {
     });
     if (succeeded && !signedIn) confirmationSentTo.value = email;
   }
-
 }

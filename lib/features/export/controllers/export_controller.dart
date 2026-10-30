@@ -4,6 +4,7 @@ import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/export_service.dart';
 import 'package:finance_tracker/core/services/file_sharing_service.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/models/profile.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
@@ -75,6 +76,10 @@ class ExportController extends GetxController {
   final RxList<Account> accounts = <Account>[].obs;
   final RxList<Category> categories = <Category>[].obs;
 
+  /// Every stored category row, so exported rows keep the category name even
+  /// when the category was later switched off, deleted, or tombstoned by sync.
+  final RxList<Category> allCategories = <Category>[].obs;
+
   // Status
   final RxBool isLoadingOptions = false.obs;
   final RxBool isExporting = false.obs;
@@ -90,9 +95,13 @@ class ExportController extends GetxController {
     isLoadingOptions.value = true;
     try {
       final List<Account> accs = await accountRepository.getAccounts();
-      final List<Category> cats = await categoryRepository.getCategories();
+      final (List<Category> cats, List<Category> all) = await wait2(
+        categoryRepository.getCategories(),
+        categoryRepository.getAllCategories(),
+      );
       accounts.assignAll(accs);
       categories.assignAll(cats);
+      allCategories.assignAll(all);
     } catch (e) {
       debugPrint('Error loading export filter options: $e');
     } finally {
@@ -201,7 +210,7 @@ class ExportController extends GetxController {
         for (final Account a in accounts) a.id: a.name,
       };
       final Map<String, String> categoryNames = <String, String>{
-        for (final Category c in categories) c.id: c.name,
+        for (final Category c in allCategories) c.id: c.name,
       };
 
       final String timeStamp = DateFormat(

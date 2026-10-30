@@ -86,6 +86,12 @@ class TransactionController extends GetxController {
 
   /// The split group behind derived rows, keyed by expense/settlement id.
   final RxMap<String, SplitLink> splitLinks = <String, SplitLink>{}.obs;
+
+  /// Every stored category row (including inactive and deleted ones), used to
+  /// resolve names and icons for display so rows never lose their label when a
+  /// category is switched off, deleted, or tombstoned by sync. Pickers and the
+  /// filter sheet keep using [categories].
+  final RxList<Category> categoryIndex = <Category>[].obs;
   final RxnString lookupError = RxnString();
   final RxBool lookupsLoaded = false.obs;
 
@@ -142,12 +148,18 @@ class TransactionController extends GetxController {
 
   Future<void> loadLookups() async {
     try {
-      final (List<Account> a, List<Category> c) = await wait2(
+      final (
+        List<Account> a,
+        List<Category> c,
+        List<Category> all,
+      ) = await wait3(
         _accountRepository.getAccounts(),
         _categoryRepository.getCategories(),
+        _categoryRepository.getAllCategories(),
       );
       accounts.assignAll(a.where((Account x) => x.isActive));
       categories.assignAll(c);
+      categoryIndex.assignAll(all);
       lookupError.value = null;
     } on AppException catch (failure) {
       lookupError.value = failure.message;
@@ -171,7 +183,7 @@ class TransactionController extends GetxController {
 
   Category? categoryOf(String? id) {
     if (id == null) return null;
-    for (final Category c in categories) {
+    for (final Category c in categoryIndex) {
       if (c.id == id) return c;
     }
     return null;

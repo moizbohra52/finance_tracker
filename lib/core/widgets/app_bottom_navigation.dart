@@ -1,3 +1,4 @@
+import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -54,8 +55,8 @@ class AppBottomNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme colors = Theme.of(context).colorScheme;
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    // A soft shadow lifts the bar off the page in light mode; in dark mode a
-    // hairline does the same job.
+    // A soft, wide shadow lifts the bar off the page in light mode; in dark
+    // mode a hairline does the same job.
     return DecoratedBox(
       decoration: BoxDecoration(
         border: isDark
@@ -67,13 +68,7 @@ class AppBottomNavigation extends StatelessWidget {
             : null,
         boxShadow: isDark
             ? null
-            : <BoxShadow>[
-                BoxShadow(
-                  color: colors.shadow.withValues(alpha: 0.06),
-                  blurRadius: 16,
-                  offset: const Offset(0, -4),
-                ),
-              ],
+            : AppShadows.floating(colors.shadow, alpha: 0.1),
       ),
       child: NavigationBarTheme(
         data: Theme.of(context).navigationBarTheme,

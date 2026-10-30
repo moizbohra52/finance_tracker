@@ -4,6 +4,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
+import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/offline_widgets.dart';
@@ -132,12 +133,20 @@ class _ActivityList extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: _HeaderTile(label: 'Balance'.tr, value: netText),
+                child: _HeaderTile(
+                  label: 'Balance'.tr,
+                  value: netText,
+                  valueColor: net > Decimal.zero
+                      ? FinanceColors.of(context).receivable
+                      : net < Decimal.zero
+                      ? FinanceColors.of(context).payable
+                      : null,
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Balances'.tr, style: text.titleSmall),
+          SectionHeader(title: 'Balances'.tr),
           const SizedBox(height: AppSpacing.sm),
           if (detail.balances.pairs.isEmpty)
             Text(
@@ -150,7 +159,7 @@ class _ActivityList extends StatelessWidget {
             for (final PairBalance pair in detail.balances.pairs)
               _BalanceRow(controller: controller, pair: pair),
           const SizedBox(height: AppSpacing.lg),
-          Text('Activity'.tr, style: text.titleSmall),
+          SectionHeader(title: 'Activity'.tr),
           const SizedBox(height: AppSpacing.sm),
           if (controller.activity.isEmpty)
             Padding(
@@ -183,10 +192,15 @@ class _ActivityList extends StatelessWidget {
 }
 
 class _HeaderTile extends StatelessWidget {
-  const _HeaderTile({required this.label, required this.value});
+  const _HeaderTile({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
 
   final String label;
   final String value;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +225,10 @@ class _HeaderTile extends StatelessWidget {
           FittedBox(
             child: Text(
               value,
-              style: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              style: text.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: valueColor,
+              ),
             ),
           ),
         ],
@@ -289,7 +306,7 @@ class _ActivityRow extends StatelessWidget {
       ) =>
         ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.receipt_long_outlined),
+          leading: const IconBadge(icon: Icons.receipt_long_outlined),
           title: Text(
             expense.title,
             maxLines: 1,
@@ -324,7 +341,10 @@ class _ActivityRow extends StatelessWidget {
         ),
       SplitActivitySettlement(:final SplitSettlement settlement) => ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.handshake_outlined),
+        leading: IconBadge(
+          icon: Icons.handshake_outlined,
+          color: FinanceColors.of(context).income,
+        ),
         title: Text(
           '@from paid @to'.trParams(<String, String>{
             'from': controller.memberNameById(settlement.fromMemberId),

@@ -30,10 +30,10 @@ class SavedLoginStore {
   /// Every saved account with a valid session in the current environment,
   /// most recently used first.
   List<SavedLogin> logins() => List<SavedLogin>.unmodifiable(
-        _entries
-            .where((_Entry e) => e.session != null && e.session!.isNotEmpty)
-            .map((_Entry e) => e.login),
-      );
+    _entries
+        .where((_Entry e) => e.session != null && e.session!.isNotEmpty)
+        .map((_Entry e) => e.login),
+  );
 
   SavedLogin? login(String userId) {
     final _Entry? entry = _find(userId);

@@ -207,12 +207,6 @@ class _BalanceHeader extends GetView<ContactDetailController> {
             if (balance != Decimal.zero) ...<Widget>[
               const SizedBox(height: AppSpacing.md),
               FilledButton.tonalIcon(
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                ),
                 icon: const Icon(Icons.send_rounded, size: 18),
                 label: Text('Send Reminder (WhatsApp / SMS)'.tr),
                 onPressed: () => SendReminderSheet.show(

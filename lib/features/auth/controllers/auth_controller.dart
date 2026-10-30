@@ -34,7 +34,8 @@ class AuthController extends GetxController {
   /// Signs the active account out of this device. AuthController itself then
   /// moves on (to another signed-in account, or to sign-in).
   Future<void> signOut([String? userId]) async {
-    _signingOutUserId = userId ?? _authRepository.currentUserId ?? _accounts.activeUserId;
+    _signingOutUserId =
+        userId ?? _authRepository.currentUserId ?? _accounts.activeUserId;
     await _authRepository.signOut();
   }
 

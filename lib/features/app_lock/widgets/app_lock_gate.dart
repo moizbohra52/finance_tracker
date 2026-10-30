@@ -27,10 +27,7 @@ class AppLockGate extends StatelessWidget {
           if (child != null)
             IgnorePointer(
               ignoring: locked,
-              child: FocusScope(
-                canRequestFocus: !locked,
-                child: child!,
-              ),
+              child: FocusScope(canRequestFocus: !locked, child: child!),
             ),
           if (locked) _LockScreen(controller: controller),
         ],
@@ -63,7 +60,7 @@ class _LockScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                     child: Image.asset(
                       'assets/logo.png',
                       width: 72,

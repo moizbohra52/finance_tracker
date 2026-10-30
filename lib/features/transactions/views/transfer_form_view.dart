@@ -192,7 +192,8 @@ class _TransferFormViewState extends State<TransferFormView> {
               icon: Icons.swap_horiz_rounded,
               title: 'Add another account'.tr,
               message:
-                  'A transfer moves money between two of your accounts, for example from a bank account to cash.'.tr,
+                  'A transfer moves money between two of your accounts, for example from a bank account to cash.'
+                      .tr,
               actionLabel: 'Add account'.tr,
               onAction: () => Get.toNamed<void>(AppRoutes.accountForm),
             );
@@ -249,10 +250,9 @@ class _TransferFormViewState extends State<TransferFormView> {
                 prefixStyle: text.displaySmall,
                 hintText: '0.00',
                 hintStyle: text.displaySmall?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurfaceVariant
-                      .withValues(alpha: 0.35),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
                 ),
               ),
             ),

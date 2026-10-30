@@ -366,25 +366,15 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
               ),
               const SizedBox(height: AppSpacing.md),
 
-              // Primary: WhatsApp Send Button
+              // Primary: WhatsApp Send Button (brand colours, theme shape)
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   backgroundColor: _kWhatsAppColor,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
                 ),
                 onPressed: _isSending ? null : _handleWhatsApp,
                 icon: const Icon(Icons.chat_bubble_rounded),
-                label: Text(
-                  'Send on WhatsApp'.tr,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                label: Text('Send on WhatsApp'.tr),
               ),
               const SizedBox(height: AppSpacing.sm),
 
@@ -393,12 +383,6 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                 children: <Widget>[
                   Expanded(
                     child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
-                      ),
                       onPressed: _isSending ? null : _handleSms,
                       icon: const Icon(Icons.sms_outlined),
                       label: Text('Send via SMS'.tr),
@@ -406,15 +390,6 @@ class _SendReminderSheetState extends State<SendReminderSheet> {
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12,
-                        horizontal: AppSpacing.md,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                    ),
                     onPressed: _isSending ? null : _handleShare,
                     icon: const Icon(Icons.share_outlined),
                     label: Text('Share'.tr),

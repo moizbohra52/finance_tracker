@@ -52,7 +52,10 @@ class HomeController extends GetxController {
   /// This month's expense by category, largest first.
   final RxList<CategoryTotal> monthCategories = <CategoryTotal>[].obs;
 
-  List<Category> _categories = <Category>[];
+  /// Every stored category row, so dashboard rows and the top-categories list
+  /// keep their labels after a category is switched off, deleted, or
+  /// tombstoned by sync.
+  List<Category> _categoryIndex = <Category>[];
   bool _hasLoaded = false;
 
   // GetX does not dispose workers, and the notifier outlives this
@@ -74,7 +77,7 @@ class HomeController extends GetxController {
 
   Category? categoryOf(String? id) {
     if (id == null) return null;
-    for (final Category c in _categories) {
+    for (final Category c in _categoryIndex) {
       if (c.id == id) return c;
     }
     return null;
@@ -96,13 +99,13 @@ class HomeController extends GetxController {
         List<Transaction> transactions,
         List<Contact> contacts,
         List<ContactTransaction> contactTransactions,
-        List<Category> categories,
+        List<Category> allCategories,
       ) = await wait5(
         _accountRepository.getAccounts(),
         _transactionRepository.getAllTransactions(),
         _contactRepository.getContacts(),
         _contactRepository.getAllContactTransactions(),
-        _categoryRepository.getCategories(),
+        _categoryRepository.getAllCategories(),
       );
 
       final List<Account> active = loadedAccounts
@@ -113,7 +116,7 @@ class HomeController extends GetxController {
       final DateTime now = DateTime.now();
       final DateTime startOfDay = DateTime(now.year, now.month, now.day);
 
-      _categories = categories;
+      _categoryIndex = allCategories;
       accounts.assignAll(active);
       balances.assignAll(byAccount);
       recent.assignAll(transactions.take(_recentCount));

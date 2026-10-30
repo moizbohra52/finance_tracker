@@ -11,9 +11,7 @@ Future<DeviceContactData?> showDeviceContactPicker(BuildContext context) {
     isScrollControlled: true,
     backgroundColor: Theme.of(context).colorScheme.surface,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(AppSpacing.lg),
-      ),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.lg)),
     ),
     builder: (BuildContext context) => const DeviceContactPickerSheet(),
   );
@@ -160,7 +158,7 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                   height: 4,
                   decoration: BoxDecoration(
                     color: colors.onSurfaceVariant.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                 ),
               ),
@@ -294,7 +292,8 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                               ),
                               const SizedBox(height: AppSpacing.xs),
                               Text(
-                                'Please allow Track Day to read your contacts to auto-fill customer and vendor details into Khata.'.tr,
+                                'Please allow Track Day to read your contacts to auto-fill customer and vendor details into Khata.'
+                                    .tr,
                                 textAlign: TextAlign.center,
                                 style: text.bodySmall?.copyWith(
                                   color: colors.onSurfaceVariant,
@@ -412,16 +411,19 @@ class _DeviceContactPickerSheetState extends State<DeviceContactPickerSheet> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: colors.secondaryContainer,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadius.full,
+                                          ),
                                         ),
                                         child: Text(
-                                          '@count numbers'.trParams(<String, String>{
-                                            'count': '${contact.phones.length}',
-                                          }),
+                                          '@count numbers'.trParams(
+                                            <String, String>{
+                                              'count':
+                                                  '${contact.phones.length}',
+                                            },
+                                          ),
                                           style: text.labelSmall?.copyWith(
-                                            color:
-                                                colors.onSecondaryContainer,
+                                            color: colors.onSecondaryContainer,
                                             fontWeight: FontWeight.w600,
                                             fontSize: 10,
                                           ),

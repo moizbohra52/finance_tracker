@@ -44,6 +44,11 @@ class RecurringController extends GetxController {
   final RxList<RecurringTransaction> rules = <RecurringTransaction>[].obs;
   final RxList<Account> accounts = <Account>[].obs;
   final RxList<Category> categories = <Category>[].obs;
+
+  /// Every stored category row, so rule rows keep their label after a
+  /// category is switched off, deleted, or tombstoned by sync. [categories]
+  /// stays active-only for the form's picker.
+  final RxList<Category> categoryIndex = <Category>[].obs;
   final RxBool isLoading = true.obs;
   final RxnString error = RxnString();
   final RxBool lookupsLoaded = false.obs;
@@ -74,7 +79,7 @@ class RecurringController extends GetxController {
 
   Category? categoryOf(String? id) {
     if (id == null) return null;
-    for (final Category c in categories) {
+    for (final Category c in categoryIndex) {
       if (c.id == id) return c;
     }
     return null;
@@ -110,7 +115,12 @@ class RecurringController extends GetxController {
       );
       rules.assignAll(loaded);
       accounts.assignAll(loadedAccounts.where((Account a) => a.isActive));
-      categories.assignAll(await _categoryRepository.getCategories());
+      final (List<Category> active, List<Category> all) = await wait2(
+        _categoryRepository.getCategories(),
+        _categoryRepository.getAllCategories(),
+      );
+      categories.assignAll(active);
+      categoryIndex.assignAll(all);
     } on AppException catch (failure) {
       if (!silent || rules.isEmpty) error.value = failure.message;
     } finally {
