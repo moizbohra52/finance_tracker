@@ -94,13 +94,20 @@ Alerts:
 Prevent duplicate alerts for the same budget threshold and period.
 
 ## Savings goal
-A goal tracks progress only: the user updates saved_amount by hand and can put
-parts of an income into it, and a goal never moves money, creates a transaction
-or changes an account balance (an income keeps its full amount).
+A goal tracks progress only: saved_amount is the starting amount (set in the
+goal form), the user adds money to it by hand ("Add money") and can put parts
+of an income into it, and a goal never moves money, creates a transaction or
+changes an account balance (an income keeps its full amount).
 
 totalSaved = saved_amount + sum(live contributions)
 
-A contribution is live when neither it nor its income transaction is deleted.
+Contributions are of two kinds: money added by hand (no income, dated by
+added_at) and parts of incomes. A contribution is live when it is not deleted
+and, for an income's part, its income transaction is not deleted. Adding
+money writes a new row instead of raising saved_amount, so the total is
+always derived (a retried or two-device add never counts twice) and every
+addition is in the goal's history. Removing a hand-added row from the history
+lowers the total by its amount.
 
 remaining = max(target - totalSaved, 0)
 
@@ -109,6 +116,8 @@ progress = totalSaved / target, capped at 100%
 reached = totalSaved >= target
 
 overdue = not reached and today is after target_date (the date is inclusive)
+
+Money added by hand: amount > 0, one row per Add money.
 
 Income savings (contributions) rules:
 - each part > 0

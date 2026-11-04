@@ -14,8 +14,11 @@ import 'package:finance_tracker/domain/entities/savings_contribution.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
+import 'package:finance_tracker/features/savings/controllers/savings_goal_detail_controller.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_detail_view.dart';
 import 'package:finance_tracker/features/savings/views/savings_goal_form_view.dart';
 import 'package:finance_tracker/features/savings/views/savings_goal_list_view.dart';
+import 'package:finance_tracker/features/savings/widgets/add_money_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -166,25 +169,48 @@ void main() {
       expect(c.goals, isEmpty);
     });
 
-    test('adding money raises the saved amount and keeps the rest', () async {
-      final FakeFinance f = FakeFinance()
-        ..savingsGoals.add(goal(targetDate: DateTime(2027)));
-      final SavingsGoalController c = controller(f);
-      await c.load();
+    test(
+      'adding money is a dated history entry; the starting amount stays',
+      () async {
+        final FakeFinance f = FakeFinance()
+          ..savingsGoals.add(goal(targetDate: DateTime(2027)));
+        final SavingsGoalController c = controller(f);
+        await c.load();
 
-      expect(await c.addMoney(c.goals.single, Decimal.parse('100.50')), isTrue);
-      await c.load();
-      final SavingsGoal g = c.goals.single;
-      expect(g.savedAmount, Decimal.parse('350.50'));
-      expect(g.name, 'New phone');
-      expect(g.targetAmount, Decimal.parse('1000'));
-      expect(g.targetDate, DateTime(2027));
-      expect(f.savingsGoals, hasLength(1));
+        // The same sheet id twice (a retried save) adds once.
+        for (int i = 0; i < 2; i++) {
+          expect(
+            await c.addMoney(
+              id: 'add-1',
+              goal: c.goals.single,
+              amount: Decimal.parse('100.50'),
+            ),
+            isTrue,
+          );
+        }
+        await c.load();
+        final SavingsGoal g = c.goals.single;
+        expect(g.savedAmount, Decimal.parse('250'));
+        expect(g.addedAmount, Decimal.parse('100.50'));
+        expect(g.totalSaved, Decimal.parse('350.50'));
+        expect(g.targetDate, DateTime(2027));
+        final SavingsContribution entry = f.contributions.single;
+        expect(entry.transactionId, isNull);
+        expect(entry.goalId, 'g1');
+        expect(entry.addedAt, isNotNull);
+        expect(f.savingsGoals.single.savedAmount, Decimal.parse('250'));
+      },
+    );
+
+    test('afterAdding previews the goal without changing it', () {
+      final SavingsGoal g = goal();
+      final SavingsGoal after = g.afterAdding(Decimal.parse('750'));
+      expect(after.totalSaved, Decimal.parse('1000'));
+      expect(after.isReached, isTrue);
+      expect(g.totalSaved, Decimal.parse('250'));
     });
 
-    testWidgets('Add money on a goal card saves the new total', (
-      WidgetTester tester,
-    ) async {
+    Future<FakeFinance> openSheet(WidgetTester tester) async {
       await initializeDateFormatting(AppConstants.defaultLocale);
       Get.testMode = true;
       addTearDown(Get.reset);
@@ -197,15 +223,125 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-
       await tester.tap(find.text('Add money'));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextFormField), '100');
-      await tester.tap(find.text('Add'));
+      expect(find.byType(AddMoneySheet), findsOneWidget);
+      return f;
+    }
+
+    testWidgets('Add money opens a sheet that previews and saves an entry', (
+      WidgetTester tester,
+    ) async {
+      final FakeFinance f = await openSheet(tester);
+
+      await tester.enterText(
+        find.descendant(
+          of: find.byType(AddMoneySheet),
+          matching: find.byType(TextFormField),
+        ),
+        '100',
+      );
+      await tester.pump();
+      expect(find.text('After adding'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(AddMoneySheet),
+          matching: find.text('₹350.00 of ₹1,000.00'),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('Add ₹100.00'));
       await tester.pumpAndSettle();
 
-      expect(f.savingsGoals.single.savedAmount, Decimal.parse('350'));
-      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.byType(AddMoneySheet), findsNothing);
+      expect(f.contributions.single.amount, Decimal.parse('100'));
+      expect(f.savingsGoals.single.savedAmount, Decimal.parse('250'));
+      expect(find.text('₹350.00 of ₹1,000.00'), findsOneWidget);
+    });
+
+    testWidgets('the amount-left chip fills the rest and the preview says '
+        'the goal is reached', (WidgetTester tester) async {
+      await openSheet(tester);
+
+      await tester.tap(find.widgetWithText(ActionChip, '₹750.00 left'));
+      await tester.pump();
+      expect(find.text('This reaches your goal'), findsOneWidget);
+
+      await tester.tap(find.text('Add ₹750.00'));
+      await tester.pumpAndSettle();
+      expect(find.text('Goal reached'), findsOneWidget);
+    });
+
+    testWidgets('the goal detail lists the history and removes money added '
+        'by hand after confirming', (WidgetTester tester) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      final FakeFinance f = FakeFinance()
+        ..addAccount('Cash', '0')
+        ..savingsGoals.add(goal());
+      f.addTransaction(id: 't1', type: TransactionType.income, amount: '5000');
+      f.contributions.addAll(<SavingsContribution>[
+        SavingsContribution(
+          id: 'c1',
+          userId: 'u',
+          transactionId: 't1',
+          goalId: 'g1',
+          amount: Decimal.parse('500'),
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+        SavingsContribution(
+          id: 'm1',
+          userId: 'u',
+          transactionId: null,
+          goalId: 'g1',
+          amount: Decimal.parse('100'),
+          addedAt: DateTime(2026, 11, 1, 10),
+          createdAt: DateTime(2026, 11, 1, 10),
+          updatedAt: DateTime(2026, 11, 1, 10),
+        ),
+      ]);
+      final DataChangeNotifier notifier = DataChangeNotifier();
+      Get.put(SavingsGoalController(f.repositories.savingsGoals, notifier));
+      Get.put(
+        SavingsGoalDetailController(
+          f.repositories.savingsGoals,
+          notifier,
+          'g1',
+        ),
+        tag: 'g1',
+      );
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const SavingsGoalDetailView(goalId: 'g1'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('₹850.00'), findsOneWidget);
+      expect(find.text('History'), findsOneWidget);
+      expect(find.text('Added money'), findsOneWidget);
+      expect(find.text('+₹100.00'), findsOneWidget);
+      expect(find.text('+₹500.00'), findsOneWidget);
+      expect(find.text('Starting amount'), findsOneWidget);
+
+      await tester.tap(find.text('Added money'));
+      await tester.pumpAndSettle();
+      expect(find.text('Remove this entry?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Added money'), findsNothing);
+      expect(find.text('₹750.00'), findsOneWidget);
+      expect(
+        f.contributions
+            .firstWhere((SavingsContribution c) => c.id == 'm1')
+            .deletedAt,
+        isNotNull,
+      );
     });
 
     testWidgets('goal card shows the total and the part from income', (
@@ -262,29 +398,28 @@ void main() {
       expect(find.textContaining('from income'), findsNothing);
     });
 
-    testWidgets(
-      'goal form says how much of the saved amount came from income',
-      (WidgetTester tester) async {
-        await initializeDateFormatting(AppConstants.defaultLocale);
-        Get.testMode = true;
-        addTearDown(Get.reset);
-        Get.put(controller(FakeFinance()));
-        await tester.pumpWidget(
-          GetMaterialApp(theme: AppTheme.light, home: const SizedBox()),
-        );
-        unawaited(
-          Get.to<void>(
-            () => const SavingsGoalFormView(),
-            arguments: goal(contributed: '500'),
-          ),
-        );
-        await tester.pumpAndSettle();
+    testWidgets('goal form says how much was added after the starting amount', (
+      WidgetTester tester,
+    ) async {
+      await initializeDateFormatting(AppConstants.defaultLocale);
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      Get.put(controller(FakeFinance()));
+      await tester.pumpWidget(
+        GetMaterialApp(theme: AppTheme.light, home: const SizedBox()),
+      );
+      unawaited(
+        Get.to<void>(
+          () => const SavingsGoalFormView(),
+          arguments: goal(contributed: '500'),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.text('+ ₹500.00 added from income'), findsOneWidget);
-        // The field still edits only the part saved by hand.
-        expect(find.widgetWithText(TextFormField, '250'), findsOneWidget);
-      },
-    );
+      expect(find.text('+ ₹500.00 added later (see history)'), findsOneWidget);
+      // The field edits only the starting amount.
+      expect(find.widgetWithText(TextFormField, '250'), findsOneWidget);
+    });
 
     test('a failed load or save shows the error', () async {
       final FakeFinance f = FakeFinance()..nextError = const NetworkFailure();

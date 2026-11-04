@@ -70,6 +70,9 @@ A user must never be able to:
 ## Secrets
 - The Supabase publishable key (or legacy anon key) may be included in the client.
 - Supabase service-role key must never be included in Flutter.
+- The `send-push` Edge Function accepts only the service-role key and keeps
+  the Firebase service account in the `FCM_SERVICE_ACCOUNT` function secret
+  (docs/08, "Push sender").
 - Never commit .env files containing secrets.
 - Do not log access/refresh tokens.
 

@@ -30,6 +30,7 @@ abstract final class AppRoutes {
   static const String recurringForm = '/recurring-form';
   static const String savingsGoals = '/savings-goals';
   static const String savingsGoalForm = '/savings-goal-form';
+  static const String savingsGoalDetail = '/savings-goal-detail';
 
   // Reminders and notifications
   static const String reminders = '/reminders';

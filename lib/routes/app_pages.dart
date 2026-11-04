@@ -37,6 +37,7 @@ import 'package:finance_tracker/features/reminders/views/reminder_detail_view.da
 import 'package:finance_tracker/features/reminders/views/reminder_form_view.dart';
 import 'package:finance_tracker/features/reminders/views/reminder_list_view.dart';
 import 'package:finance_tracker/features/reports/views/reports_view.dart';
+import 'package:finance_tracker/features/savings/views/savings_goal_detail_view.dart';
 import 'package:finance_tracker/features/savings/views/savings_goal_form_view.dart';
 import 'package:finance_tracker/features/savings/views/savings_goal_list_view.dart';
 import 'package:finance_tracker/features/settings/views/information_views.dart';
@@ -249,6 +250,12 @@ abstract final class AppPages {
       page: () => const SavingsGoalFormView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: SavingsGoalBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.savingsGoalDetail,
+      page: () => SavingsGoalDetailView(goalId: routeIdArgument()),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: SavingsGoalDetailBinding(),
     ),
 
     // Reminders and notifications

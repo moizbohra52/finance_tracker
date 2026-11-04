@@ -1215,5 +1215,26 @@ const Map<String, String> hindi = <String, String>{
   '@saved to savings · @left left': '@saved बचत में · @left बचे',
   'Savings': 'बचत',
   '@amount from income': '@amount आमदनी से',
+  // Savings goal history
+  'This savings goal no longer exists': 'यह बचत लक्ष्य अब मौजूद नहीं है',
+  'History': 'इतिहास',
+  'of @amount': '@amount में से',
+  'Remove this entry?': 'यह एंट्री हटाएँ?',
+  '@goal goes down by @amount.': '@goal में @amount कम हो जाएँगे।',
+  'Entry removed': 'एंट्री हटा दी गई',
+  'Money you add shows up here.': 'आप जो पैसे जोड़ेंगे, वे यहाँ दिखेंगे।',
+  'Starting amount': 'शुरुआती रकम',
+  'From income': 'आमदनी से',
+  'Added money': 'पैसे जोड़े',
+  '@date · from income': '@date · आमदनी से',
+  '@date · tap to remove': '@date · हटाने के लिए टैप करें',
+  '+ @amount added later (see history)':
+      '+ बाद में @amount जोड़े गए (इतिहास देखें)',
+  'Already saved before you start adding money':
+      'पैसे जोड़ना शुरू करने से पहले की बचत',
+  'Money added to @goal': '@goal में पैसे जोड़ दिए गए',
+  'Add @amount': '@amount जोड़ें',
+  'After adding': 'जोड़ने के बाद',
+  'This reaches your goal': 'इससे आपका लक्ष्य पूरा हो जाएगा',
   '+ @amount added from income': '+ @amount आमदनी से जुड़े',
 };

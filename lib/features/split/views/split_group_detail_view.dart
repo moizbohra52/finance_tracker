@@ -67,7 +67,7 @@ class SplitGroupDetailView extends GetView<SplitGroupDetailController> {
           actions: <Widget>[
             IconButton(
               tooltip: 'Edit group'.tr,
-              icon: const Icon(Icons.settings_outlined),
+              icon: const Icon(Icons.edit_outlined),
               onPressed: () async {
                 final SplitGroupDetail? detail = controller.detail.value;
                 if (detail == null) return;

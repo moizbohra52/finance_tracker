@@ -1231,5 +1231,27 @@ const Map<String, String> hinglish = <String, String>{
   '@saved to savings · @left left': '@saved bachat mein · @left bacha',
   'Savings': 'Bachat',
   '@amount from income': '@amount aamdani se',
+  // Savings goal history
+  'This savings goal no longer exists':
+      'Yeh bachat lakshya ab maujood nahi hai',
+  'History': 'History',
+  'of @amount': '@amount mein se',
+  'Remove this entry?': 'Yeh entry hatayein?',
+  '@goal goes down by @amount.': '@goal mein @amount kam ho jayenge.',
+  'Entry removed': 'Entry hata di gayi',
+  'Money you add shows up here.': 'Aap jo paise jodenge, woh yahan dikhenge.',
+  'Starting amount': 'Shuruaati rakam',
+  'From income': 'Aamdani se',
+  'Added money': 'Paise jode',
+  '@date · from income': '@date · aamdani se',
+  '@date · tap to remove': '@date · hatane ke liye tap karein',
+  '+ @amount added later (see history)':
+      '+ baad mein @amount jode gaye (history dekhein)',
+  'Already saved before you start adding money':
+      'Paise jodna shuru karne se pehle ki bachat',
+  'Money added to @goal': '@goal mein paise jod diye gaye',
+  'Add @amount': '@amount jodein',
+  'After adding': 'Jodne ke baad',
+  'This reaches your goal': 'Isse aapka lakshya poora ho jayega',
   '+ @amount added from income': '+ @amount aamdani se jude',
 };

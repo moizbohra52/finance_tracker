@@ -58,3 +58,6 @@ supabase/.branches/
 
 # Local secrets. Never commit.
 credentials.txt
+# Edge Function secrets and Firebase service account keys (send-push).
+supabase/functions/.env
+*firebase-adminsdk*.json

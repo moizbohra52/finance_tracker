@@ -224,14 +224,47 @@ sign-out discards it.
   Background: the OS shows messages that have a `notification` block; the tap
   arrives on `onMessageOpenedApp`. Terminated: the launching tap is read with
   `getInitialMessage`. **Data-only messages are not supported.**
-- **Sender contract** (not implemented in this phase): a server (for example a
-  Supabase Edge Function using the FCM HTTP v1 API with a service account kept
-  in Supabase secrets) sends to `device_tokens` rows where `active`, with a
-  `notification` block containing a generic title/body and
-  `data: {type, reference_id, user_id}`, `android.notification.channel_id =
-  alerts_sv`. `user_id` is the row's `user_id`: one device can be registered
-  for several accounts, and the app opens the push in that account.
-  No sender exists yet, so no remote pushes are delivered today.
+- **Sender:** the `send-push` Edge Function, below.
+
+### Push sender (2026-11-04)
+`supabase/functions/send-push/` (`handler.ts` holds the logic, `index.ts`
+serves it). It sends one notification to every active `device_tokens` row of
+one user through the FCM HTTP v1 API.
+- **Server only.** The caller must send `Authorization: Bearer <service role
+  key>` (compared in constant time with `SUPABASE_SERVICE_ROLE_KEY`, which
+  Supabase injects); anything else is 401. The anon key or a user's JWT can
+  never push, so no user can notify another. Gateway JWT verification stays
+  on (default `verify_jwt`).
+- **Request:** `POST` JSON
+  `{user_id, type, reference_id?, title, body?}`. `user_id` and
+  `reference_id` must be uuids, `type` 1-40 of `a-z_` (the app's types, see
+  Deep links; an unknown one opens the notification center), `title` 1-100
+  characters, `body` at most 500. Invalid input is 400.
+- **Message:** `notification {title, body}`,
+  `data {type, user_id, reference_id}` (all strings),
+  `android.priority = high`, `android.notification.channel_id = alerts_sv`,
+  `apns.payload.aps.sound = default`. The caller supplies the text and must
+  follow "What a notification may contain": generic text, never amounts or
+  contact names.
+- **Credentials:** the Firebase service account key (JSON) in the
+  `FCM_SERVICE_ACCOUNT` function secret. The function signs an RS256 JWT
+  with it (WebCrypto, no dependency) for a Google access token (scope
+  `firebase.messaging`) and reuses it for an hour in a warm instance.
+- **Tokens:** read and updated through PostgREST with the service role key
+  (RLS does not apply to it; it never leaves the server). A send answered
+  with FCM `UNREGISTERED` or `SENDER_ID_MISMATCH` sets that row's
+  `active = false`. Other failures leave the token alone.
+- **Response:** `{sent, failed, deactivated}`; 200, or 502 when nothing was
+  sent and something failed (a retry may help; a partial success is 200 so a
+  retry does not notify devices twice). No active device is
+  `{sent: 0, ...}`. Tokens, texts and keys are never logged; only status and
+  FCM error codes are.
+- **Not stored:** the push is not written to `notifications`; a caller that
+  wants it in the notification center inserts that row itself. Nothing calls
+  the function yet: it is the sender a server-side job (cron, database
+  webhook, another function) uses.
+- **Tests:** `node --test supabase/functions/send-push/handler.test.ts`
+  (Node 22.18+ runs the TypeScript directly; `deno test` runs it as well).
 
 ### Firebase setup (one time per environment)
 1. Create a Firebase project; add Android app `com.finance.tracker` and an
@@ -242,6 +275,15 @@ sign-out discards it.
 3. iOS: enable the Push Notifications and Background Modes > Remote
    notifications capabilities in Xcode and upload an APNs key to Firebase.
 4. Never place FCM server credentials or the Supabase service-role key in the app.
+5. Push sender: in Firebase console > Project settings > Service accounts,
+   generate a private key (JSON; gitignored as `*firebase-adminsdk*.json`,
+   never commit it), then
+   `supabase secrets set FCM_SERVICE_ACCOUNT="$(cat <key file>.json)"` and
+   `supabase functions deploy send-push`. Call it with
+   `curl -X POST https://<project>.supabase.co/functions/v1/send-push
+   -H "Authorization: Bearer <service role key>"
+   -H "Content-Type: application/json"
+   -d '{"user_id":"<uuid>","type":"reminder","reference_id":"<uuid>","title":"Collect payment","body":"Money to collect"}'`.
 
 ### Khata due dates (2026-11-04)
 A khata entry with a due date gets an ordinary one-time reminder at 09:00
@@ -292,5 +334,6 @@ other reminder. Rules live in `domain/services/khata_due_reminders.dart`
     another load).
 
 ### Not in this phase
-Notification buttons on iOS, the FCM sender, a notification-center delete,
+Notification buttons on iOS, anything that calls the push sender, a
+notification-center delete,
 and synced notification settings.

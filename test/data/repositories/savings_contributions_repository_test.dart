@@ -252,4 +252,129 @@ void main() {
       contains((SyncOperation.delete, 'savings_contributions')),
     );
   });
+
+  group('money added by hand', () {
+    SavingsContribution added(String id, String amount, DateTime at) =>
+        SavingsContribution(
+          id: id,
+          userId: 'u',
+          transactionId: null,
+          goalId: 'g1',
+          amount: Decimal.parse(amount),
+          addedAt: at,
+          createdAt: at,
+          updatedAt: at,
+        );
+
+    test('is stored without an income, queued once per id, and summed '
+        'apart from incomes', () async {
+      await createGoal();
+      await repo.createTransaction(
+        _income(),
+        contributions: <SavingsContribution>[_contribution('c1', 'g1', '5000')],
+      );
+      final SavingsContribution m1 = added('m1', '300', DateTime(2026, 10, 25));
+      await goals.addMoney(m1);
+      await goals.addMoney(m1); // A retried save upserts the same row.
+
+      final SavingsGoal goal = (await goals.getSavingsGoals()).single;
+      expect(goal.savedAmount, Decimal.parse('100'));
+      expect(goal.addedAmount, Decimal.parse('300'));
+      expect(goal.contributedAmount, Decimal.parse('5000'));
+      expect(goal.totalSaved, Decimal.parse('5400'));
+
+      final List<Map<String, Object?>> rows = await database.db.query(
+        'savings_contributions',
+        where: 'id = ?',
+        whereArgs: <Object>['m1'],
+      );
+      expect(rows.single['transaction_id'], isNull);
+      final SyncQueueItem item = (await database.getPendingQueue()).lastWhere(
+        (SyncQueueItem i) => i.entityId == 'm1',
+      );
+      expect(item.operation, SyncOperation.create);
+      expect(item.payload['transaction_id'], isNull);
+      expect(
+        DateTime.parse(
+          item.payload['added_at'] as String,
+        ).isAtSameMomentAs(DateTime(2026, 10, 25)),
+        isTrue,
+      );
+    });
+
+    test('history lists both kinds newest first, in pages', () async {
+      await createGoal();
+      await repo.createTransaction(
+        _income(),
+        contributions: <SavingsContribution>[_contribution('c1', 'g1', '5000')],
+      );
+      await goals.addMoney(added('m1', '300', DateTime(2026, 10, 25, 9)));
+      await goals.addMoney(added('m2', '50', DateTime(2026, 10, 23)));
+
+      final List<SavingsHistoryEntry> all = await goals.getHistory('g1');
+      expect(all.map((SavingsHistoryEntry e) => e.contribution.id), <String>[
+        'm1',
+        'c1',
+        'm2',
+      ]);
+      expect(all[1].contribution.isFromIncome, isTrue);
+      expect(all[1].date, DateTime(2026, 10, 24));
+      expect(all[0].date, DateTime(2026, 10, 25, 9));
+
+      final List<SavingsHistoryEntry> first = await goals.getHistory(
+        'g1',
+        limit: 2,
+      );
+      final List<SavingsHistoryEntry> rest = await goals.getHistory(
+        'g1',
+        offset: 2,
+        limit: 2,
+      );
+      expect(
+        <String>[
+          for (final SavingsHistoryEntry e in <SavingsHistoryEntry>[
+            ...first,
+            ...rest,
+          ])
+            e.contribution.id,
+        ],
+        <String>['m1', 'c1', 'm2'],
+      );
+    });
+
+    test('deleteContribution removes money added by hand, never the part '
+        'of an income', () async {
+      await createGoal();
+      await repo.createTransaction(
+        _income(),
+        contributions: <SavingsContribution>[_contribution('c1', 'g1', '5000')],
+      );
+      await goals.addMoney(added('m1', '300', DateTime(2026, 10, 25)));
+
+      await goals.deleteContribution('m1');
+      await goals.deleteContribution('c1');
+
+      expect(
+        (await goals.getHistory(
+          'g1',
+        )).map((SavingsHistoryEntry e) => e.contribution.id),
+        <String>['c1'],
+      );
+      expect((await goals.getSavingsGoals()).single.addedAmount, Decimal.zero);
+      final List<SyncQueueItem> deletes = <SyncQueueItem>[
+        for (final SyncQueueItem i in await database.getPendingQueue())
+          if (i.operation == SyncOperation.delete) i,
+      ];
+      expect(deletes.map((SyncQueueItem i) => i.entityId), <String>['m1']);
+    });
+
+    test('deleting the goal removes its money added by hand too', () async {
+      await createGoal();
+      await goals.addMoney(added('m1', '300', DateTime(2026, 10, 25)));
+
+      await goals.deleteSavingsGoal('g1');
+
+      expect(await goals.getHistory('g1'), isEmpty);
+    });
+  });
 }

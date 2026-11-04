@@ -656,19 +656,29 @@ class FakeSavingsGoalRepository implements SavingsGoalRepository {
   FakeSavingsGoalRepository(this._f);
   final FakeFinance _f;
 
+  /// Same rule as the real repository: not deleted, and added by hand or
+  /// part of an income that still exists.
+  Iterable<SavingsContribution> _live() {
+    final Map<String, Transaction> liveTransactions = <String, Transaction>{
+      for (final Transaction t in _f.transactions)
+        if (t.deletedAt == null) t.id: t,
+    };
+    return _f.contributions.where(
+      (SavingsContribution c) =>
+          c.deletedAt == null &&
+          (c.transactionId == null ||
+              liveTransactions.containsKey(c.transactionId)),
+    );
+  }
+
   @override
   Future<List<SavingsGoal>> getSavingsGoals() async {
     _f.throwPending();
-    // Same rule as the real repository: live rows whose income still exists.
-    final Set<String> liveTransactions = <String>{
-      for (final Transaction t in _f.transactions)
-        if (t.deletedAt == null) t.id,
-    };
-    final Map<String, Decimal> sums = SavingsSplit.sumByGoal(
-      _f.contributions.where(
-        (SavingsContribution c) =>
-            c.deletedAt == null && liveTransactions.contains(c.transactionId),
-      ),
+    final Map<String, Decimal> fromIncome = SavingsSplit.sumByGoal(
+      _live().where((SavingsContribution c) => c.isFromIncome),
+    );
+    final Map<String, Decimal> byHand = SavingsSplit.sumByGoal(
+      _live().where((SavingsContribution c) => !c.isFromIncome),
     );
     return <SavingsGoal>[
       for (final SavingsGoal g in _f.savingsGoals)
@@ -679,12 +689,61 @@ class FakeSavingsGoalRepository implements SavingsGoalRepository {
             name: g.name,
             targetAmount: g.targetAmount,
             savedAmount: g.savedAmount,
-            contributedAmount: sums[g.id],
+            contributedAmount: fromIncome[g.id],
+            addedAmount: byHand[g.id],
             targetDate: g.targetDate,
             createdAt: g.createdAt,
             updatedAt: g.updatedAt,
           ),
     ];
+  }
+
+  @override
+  Future<void> addMoney(SavingsContribution contribution) async {
+    _f.throwPending();
+    _f.contributions
+      ..removeWhere((SavingsContribution c) => c.id == contribution.id)
+      ..add(contribution);
+  }
+
+  @override
+  Future<void> deleteContribution(String id) async {
+    _f.throwPending();
+    final int i = _f.contributions.indexWhere(
+      (SavingsContribution c) => c.id == id && !c.isFromIncome,
+    );
+    if (i >= 0) {
+      _f.contributions[i] = _f.contributions[i].copyWith(
+        deletedAt: DateTime.now(),
+      );
+    }
+  }
+
+  @override
+  Future<List<SavingsHistoryEntry>> getHistory(
+    String goalId, {
+    int offset = 0,
+    int limit = 50,
+  }) async {
+    _f.throwPending();
+    Transaction? income(String? id) =>
+        _f.transactions.where((Transaction t) => t.id == id).firstOrNull;
+    final List<SavingsHistoryEntry> all =
+        <SavingsHistoryEntry>[
+          for (final SavingsContribution c in _live())
+            if (c.goalId == goalId)
+              SavingsHistoryEntry(
+                contribution: c,
+                date: c.addedAt ?? income(c.transactionId)!.transactionDate,
+                incomeTitle: c.isFromIncome
+                    ? income(c.transactionId)!.description
+                    : null,
+              ),
+        ]..sort(
+          (SavingsHistoryEntry a, SavingsHistoryEntry b) =>
+              b.date.compareTo(a.date),
+        );
+    return all.skip(offset).take(limit).toList();
   }
 
   @override

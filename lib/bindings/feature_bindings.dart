@@ -32,6 +32,7 @@ import 'package:finance_tracker/features/recurring/controllers/recurring_control
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/reports/controllers/reports_controller.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
+import 'package:finance_tracker/features/savings/controllers/savings_goal_detail_controller.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
 import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
@@ -237,6 +238,23 @@ class SavingsGoalBinding extends Bindings {
       Get.find<DataChangeNotifier>(),
     ),
   );
+}
+
+/// One history controller per goal id; the goal itself comes from the
+/// shared SavingsGoalController.
+class SavingsGoalDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    SavingsGoalBinding().dependencies();
+    Get.put<SavingsGoalDetailController>(
+      SavingsGoalDetailController(
+        Get.find<SavingsGoalRepository>(),
+        Get.find<DataChangeNotifier>(),
+        routeIdArgument(),
+      ),
+      tag: routeIdArgument(),
+    );
+  }
 }
 
 class ReminderBinding extends Bindings {

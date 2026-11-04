@@ -130,7 +130,7 @@ id UUID PK
 user_id UUID
 name TEXT -- not blank
 target_amount NUMERIC(18,2) -- > 0
-saved_amount NUMERIC(18,2) -- >= 0, default 0; updated by hand
+saved_amount NUMERIC(18,2) -- >= 0, default 0; the starting amount (goal form)
 target_date DATE nullable
 created_at
 updated_at
@@ -139,15 +139,25 @@ deleted_at
 A goal only tracks progress: it never moves money or changes an account
 balance (docs/05_FINANCIAL_LOGIC.md).
 
-### savings_contributions (2026-10-24)
+### savings_contributions (2026-10-24, money added by hand 2026-11-04)
 id UUID PK
 user_id UUID
-transaction_id UUID -- the income being split; composite FK (user_id, transaction_id)
+transaction_id UUID nullable -- the income being split; composite FK (user_id, transaction_id); null for money added by hand
 goal_id UUID -- composite FK (user_id, goal_id); needs unique (user_id, id) on savings_goals
 amount NUMERIC(18,2) -- > 0
+added_at TIMESTAMPTZ nullable -- when money added by hand was added; null for an income's part
 created_at
 updated_at
 deleted_at
+
+CHECK `(transaction_id is null) = (added_at is not null)`: a row is exactly one
+of the two kinds. A goal's "Add money" writes a row without an income
+(`SavingsGoalRepository.addMoney`; the id is generated once per Add money
+sheet, so a retry upserts it), and the goal's history lists both kinds,
+newest first by `added_at` or the income's `transaction_date`. Rows without
+an income can be removed from the history; an income's part changes only
+with its income. `created_at` is not used as the date: the server sets it
+when an offline row uploads.
 
 The part of one income that the user put towards a goal; it records the split
 only and moves no money. Counted towards the goal only while neither the row,
@@ -466,6 +476,16 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    the column and keys in database version 8 (the seed sets them on new and
    upgraded files). A pull of a system category from a server without the
    column clears its key on the phone until the migration is applied.
+
+18. `20261104090000_savings_goal_history.sql` - `savings_contributions`:
+   `transaction_id` becomes nullable, `added_at` is added, and the CHECK
+   above. No data moves: existing goals keep `saved_amount` as their
+   starting amount. RLS and policies are unchanged. **Apply before
+   shipping** the app version with goal history: until then a hand-added
+   row fails to upload (not null / unknown column) and retries on every
+   sync; income rows still upload, because the app sends `added_at` only on
+   hand-added rows. Local SQLite rebuilds the table in database version 9
+   (SQLite cannot drop NOT NULL), keeping its rows and indexes.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

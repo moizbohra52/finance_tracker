@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 8;
+  static const int databaseVersion = 9;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -153,6 +153,30 @@ class AppDatabase {
       await _addTextColumn(db, 'categories', 'system_key');
       if (await _hasTable(db, 'categories')) await _seedSystemCategories(db);
     }
+    if (oldVersion < 9 && await _hasTable(db, 'savings_contributions')) {
+      await _allowHandAddedContributions(db);
+    }
+  }
+
+  /// Version 9 (savings goal history): money added to a goal by hand is a
+  /// contribution without an income, so `transaction_id` becomes optional
+  /// and `added_at` dates the row. SQLite cannot drop NOT NULL, so the table
+  /// is rebuilt with its rows. The old indexes go first, or the rebuilt
+  /// table's `CREATE INDEX IF NOT EXISTS` would find their names taken.
+  static Future<void> _allowHandAddedContributions(DatabaseExecutor db) async {
+    await db.execute('DROP INDEX IF EXISTS idx_savings_contributions_tx');
+    await db.execute('DROP INDEX IF EXISTS idx_savings_contributions_goal');
+    await db.execute(
+      'ALTER TABLE savings_contributions RENAME TO savings_contributions_v8',
+    );
+    await _createSavingsContributions(db);
+    await db.execute(
+      'INSERT INTO savings_contributions (id, user_id, transaction_id, '
+      'goal_id, amount, created_at, updated_at, deleted_at, sync_status) '
+      'SELECT id, user_id, transaction_id, goal_id, amount, created_at, '
+      'updated_at, deleted_at, sync_status FROM savings_contributions_v8',
+    );
+    await db.execute('DROP TABLE savings_contributions_v8');
   }
 
   /// Rows pulled before version 6 kept the server's "+00:00" timestamps,
@@ -404,9 +428,10 @@ class AppDatabase {
       CREATE TABLE IF NOT EXISTS savings_contributions (
         id TEXT PRIMARY KEY,
         user_id TEXT,
-        transaction_id TEXT NOT NULL,
+        transaction_id TEXT,
         goal_id TEXT NOT NULL,
         amount TEXT NOT NULL,
+        added_at TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         deleted_at TEXT,

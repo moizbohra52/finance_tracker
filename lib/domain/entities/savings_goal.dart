@@ -1,7 +1,8 @@
 import 'package:decimal/decimal.dart';
 
-/// Money the user is putting aside for something. [savedAmount] is updated by
-/// hand, and income contributions add to it through [contributedAmount]: a goal
+/// Money the user is putting aside for something. [savedAmount] is the
+/// starting amount (set in the goal form); money added later by hand
+/// ([addedAmount]) and from incomes ([contributedAmount]) adds to it. A goal
 /// never moves money or changes an account balance.
 class SavingsGoal {
   SavingsGoal({
@@ -15,7 +16,9 @@ class SavingsGoal {
     required this.updatedAt,
     this.deletedAt,
     Decimal? contributedAmount,
-  }) : contributedAmount = contributedAmount ?? Decimal.zero;
+    Decimal? addedAmount,
+  }) : contributedAmount = contributedAmount ?? Decimal.zero,
+       addedAmount = addedAmount ?? Decimal.zero;
 
   final String id;
   final String userId;
@@ -26,14 +29,32 @@ class SavingsGoal {
   /// Sum of the income contributions to this goal; derived, never stored here.
   final Decimal contributedAmount;
 
+  /// Sum of the money added by hand ("Add money"); derived, never stored here.
+  final Decimal addedAmount;
+
   /// Optional calendar day (time of day is ignored) to reach the target by.
   final DateTime? targetDate;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
 
-  /// Saved by hand plus contributed from incomes.
-  Decimal get totalSaved => savedAmount + contributedAmount;
+  /// Starting amount, plus added by hand, plus contributed from incomes.
+  Decimal get totalSaved => savedAmount + addedAmount + contributedAmount;
+
+  /// This goal once [amount] more is added by hand (the Add money preview).
+  SavingsGoal afterAdding(Decimal amount) => SavingsGoal(
+    id: id,
+    userId: userId,
+    name: name,
+    targetAmount: targetAmount,
+    savedAmount: savedAmount,
+    targetDate: targetDate,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+    deletedAt: deletedAt,
+    contributedAmount: contributedAmount,
+    addedAmount: addedAmount + amount,
+  );
 
   bool get isReached => totalSaved >= targetAmount;
 

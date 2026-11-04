@@ -189,6 +189,12 @@ void main() {
       live.where((SplitMember m) => m.contactId == 'c2').single.id,
       SplitIds.member('g1', 'c2'),
     );
+    // Queued as a create (upsert clearing the server tombstone), or the next
+    // pull would remove the friend again.
+    final List<SyncQueueItem> revived = (await queue())
+        .where((SyncQueueItem i) => i.entityId == SplitIds.member('g1', 'c2'))
+        .toList();
+    expect(revived.last.operation, SyncOperation.create);
   });
 
   test('blank name and empty friends are refused', () async {

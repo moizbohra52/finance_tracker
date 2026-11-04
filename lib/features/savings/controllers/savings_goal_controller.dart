@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/savings_goal_repository.dart';
+import 'package:finance_tracker/domain/entities/savings_contribution.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
@@ -79,16 +80,33 @@ class SavingsGoalController extends GetxController {
     _notifier.markChanged();
   });
 
-  /// Adds [amount] to what is saved. The update stores the new total, so a
-  /// retried save writes the same value instead of adding twice.
-  Future<bool> addMoney(SavingsGoal goal, Decimal amount) => saveGoal(
-    id: goal.id,
-    existing: goal,
-    name: goal.name,
-    targetAmount: goal.targetAmount,
-    savedAmount: goal.savedAmount + amount,
-    targetDate: goal.targetDate,
-  );
+  /// The goal with [goalId] as last loaded, or null once it is gone.
+  SavingsGoal? byId(String goalId) =>
+      goals.firstWhereOrNull((SavingsGoal g) => g.id == goalId);
+
+  /// Adds [amount] to [goal] by hand, dated now, as an entry of its history.
+  /// [id] is generated once per Add money sheet, so a retried save upserts
+  /// the same entry instead of adding twice.
+  Future<bool> addMoney({
+    required String id,
+    required SavingsGoal goal,
+    required Decimal amount,
+  }) => save.run(() async {
+    final DateTime now = DateTime.now();
+    await _repository.addMoney(
+      SavingsContribution(
+        id: id,
+        userId: goal.userId,
+        transactionId: null,
+        goalId: goal.id,
+        amount: amount,
+        addedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+    _notifier.markChanged();
+  });
 
   Future<bool> deleteGoal(String goalId) => deletion.run(() async {
     await _repository.deleteSavingsGoal(goalId);

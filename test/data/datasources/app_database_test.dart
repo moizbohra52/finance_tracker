@@ -139,6 +139,57 @@ void main() {
     await old.close();
   });
 
+  test('upgrading a version 8 file keeps contributions and lets money added '
+      'by hand have no income', () async {
+    final Database old = await databaseFactoryFfi.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(version: 8, singleInstance: false),
+    );
+    await old.execute(
+      'CREATE TABLE savings_contributions (id TEXT PRIMARY KEY, user_id TEXT, '
+      'transaction_id TEXT NOT NULL, goal_id TEXT NOT NULL, '
+      'amount TEXT NOT NULL, created_at TEXT NOT NULL, '
+      'updated_at TEXT NOT NULL, deleted_at TEXT, '
+      "sync_status TEXT NOT NULL DEFAULT 'synced')",
+    );
+    await old.execute(
+      'CREATE INDEX idx_savings_contributions_tx '
+      'ON savings_contributions(transaction_id)',
+    );
+    await old.insert('savings_contributions', <String, Object?>{
+      'id': 'c1',
+      'transaction_id': 't1',
+      'goal_id': 'g1',
+      'amount': '500',
+      'created_at': '2026-10-24T00:00:00Z',
+      'updated_at': '2026-10-24T00:00:00Z',
+    });
+
+    await AppDatabase.upgrade(old, 8, AppDatabase.databaseVersion);
+
+    expect((await old.query('savings_contributions')).single['id'], 'c1');
+    await old.insert('savings_contributions', <String, Object?>{
+      'id': 'm1',
+      'goal_id': 'g1',
+      'amount': '300',
+      'added_at': '2026-11-04T00:00:00Z',
+      'created_at': '2026-11-04T00:00:00Z',
+      'updated_at': '2026-11-04T00:00:00Z',
+    });
+    final List<Map<String, Object?>> indexes = await old.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type = 'index' "
+      "AND tbl_name = 'savings_contributions'",
+    );
+    expect(
+      indexes.map((Map<String, Object?> r) => r['name']),
+      containsAll(<String>[
+        'idx_savings_contributions_tx',
+        'idx_savings_contributions_goal',
+      ]),
+    );
+    await old.close();
+  });
+
   test(
     'upgrading a version 3 file adds the savings contributions table',
     () async {

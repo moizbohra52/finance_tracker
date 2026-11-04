@@ -7,9 +7,12 @@ abstract final class SavingsContributionModel {
       SavingsContribution(
         id: json['id'] as String,
         userId: json['user_id'] as String,
-        transactionId: json['transaction_id'] as String,
+        transactionId: json['transaction_id'] as String?,
         goalId: json['goal_id'] as String,
         amount: Decimal.parse(json['amount'].toString()),
+        addedAt: json['added_at'] == null
+            ? null
+            : DateTime.parse(json['added_at'] as String).toLocal(),
         createdAt: DateTime.parse(json['created_at'] as String),
         updatedAt: DateTime.parse(json['updated_at'] as String),
         deletedAt: json['deleted_at'] == null
@@ -24,5 +27,8 @@ abstract final class SavingsContributionModel {
         'transaction_id': c.transactionId,
         'goal_id': c.goalId,
         'amount': c.amount.toString(),
+        // Only on money added by hand, so an income's rows still upload to a
+        // server without the column (docs/03, savings goal history).
+        if (c.addedAt != null) 'added_at': c.addedAt!.toUtc().toIso8601String(),
       };
 }

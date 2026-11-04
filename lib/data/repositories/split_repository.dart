@@ -294,9 +294,13 @@ class SplitRepository {
         now,
       );
       for (final SplitMember member in wanted) {
-        final bool isNew = member.isMe
-            ? knownMe == null
-            : !knownByContact.containsKey(member.contactId);
+        final SplitMember? known = member.isMe
+            ? knownMe
+            : knownByContact[member.contactId];
+        // A friend added back is a create too: the create upsert clears the
+        // server tombstone, an update never touches deleted_at, and the next
+        // pull would remove them again.
+        final bool isNew = known == null || !known.isLive;
         final Map<String, dynamic> json = SplitMemberModel.toJson(member);
         await txn.insert(
           'split_group_members',

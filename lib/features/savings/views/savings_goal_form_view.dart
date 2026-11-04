@@ -11,6 +11,7 @@ import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/features/savings/controllers/savings_goal_controller.dart';
+import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -84,14 +85,21 @@ class _SavingsGoalFormViewState extends State<SavingsGoalFormView> {
     if (!confirmed) return;
     if (await _controller.deleteGoal(_existing!.id)) {
       AppSnackbar.show('Savings goal deleted'.tr);
-      Get.back<void>();
+      // Back past the goal's detail too, which has nothing left to show.
+      Get.until(
+        (Route<dynamic> route) =>
+            route.settings.name == AppRoutes.savingsGoals || route.isFirst,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final bool editing = _existing != null;
-    final Decimal contributed = _existing?.contributedAmount ?? Decimal.zero;
+    // Added by hand or from incomes after the start; listed in the history.
+    final Decimal later =
+        (_existing?.addedAmount ?? Decimal.zero) +
+        (_existing?.contributedAmount ?? Decimal.zero);
     final DateTime now = DateTime.now();
 
     return Scaffold(
@@ -132,16 +140,18 @@ class _SavingsGoalFormViewState extends State<SavingsGoalFormView> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppTextField(
-                  label: 'Saved so far'.tr,
+                  label: 'Starting amount'.tr,
                   controller: _saved,
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  helperText: contributed > Decimal.zero
-                      ? '+ @amount added from income'.trParams(<String, String>{
-                          'amount': AppFormatters.money(contributed),
-                        })
-                      : null,
+                  helperText: later > Decimal.zero
+                      ? '+ @amount added later (see history)'.trParams(
+                          <String, String>{
+                            'amount': AppFormatters.money(later),
+                          },
+                        )
+                      : 'Already saved before you start adding money'.tr,
                   validator: Validators.nonNegativeAmount,
                 ),
                 const SizedBox(height: AppSpacing.md),
