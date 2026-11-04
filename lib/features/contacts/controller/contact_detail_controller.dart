@@ -8,9 +8,11 @@ import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
+import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/services/khata_due_reminders.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/services/reminder_sender_service.dart';
 import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
@@ -28,9 +30,11 @@ class ContactDetailController extends GetxController {
     this.contactId, {
     ProfileRepository? profileRepository,
     this._splitRepository,
+    ReminderRepository? reminderRepository,
     this.exportService = const ExportService(),
     this.sharingService = const FileSharingService(),
-  }) : _profiles = profileRepository;
+  }) : _profiles = profileRepository,
+       _reminders = reminderRepository;
 
   final ContactRepository _repository;
   final TransactionRepository _transactionRepository;
@@ -40,6 +44,9 @@ class ContactDetailController extends GetxController {
 
   /// Null where split groups are not available (tests without them).
   final SplitRepository? _splitRepository;
+
+  /// Removes an entry's due-date reminder with it; null in tests.
+  final ReminderRepository? _reminders;
   final ExportService exportService;
   final FileSharingService sharingService;
 
@@ -214,6 +221,9 @@ class ContactDetailController extends GetxController {
       // As deleteEntry does: the entry goes too, or it lingers in exports
       // and backups under a contact that no longer exists.
       await _repository.deleteContactTransaction(e.id);
+      if (e.dueDate != null) {
+        await _reminders?.delete(KhataDueReminders.id(e.id));
+      }
       try {
         final String txId = ContactFormController.linkedTransactionId(e.id);
         await _transactionRepository.deleteTransaction(txId);
@@ -240,6 +250,9 @@ class ContactDetailController extends GetxController {
       );
     }
     await _repository.deleteContactTransaction(entryId);
+    if (entry?.dueDate != null) {
+      await _reminders?.delete(KhataDueReminders.id(entryId));
+    }
     try {
       final String txId = ContactFormController.linkedTransactionId(entryId);
       await _transactionRepository.deleteTransaction(txId);

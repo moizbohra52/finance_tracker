@@ -1059,6 +1059,15 @@ class AppDatabase {
   /// Metadata key holding the user whose data the local tables hold.
   static const String localOwnerKey = 'local_owner';
 
+  /// Set after this device's first complete pull of the account
+  /// (SyncEngine.syncAll). The `cursor_` prefix makes clearAllUserData drop
+  /// it with the cursors, since the data then has to be pulled again.
+  static const String pulledKey = 'cursor_pulled';
+
+  /// Each contact's balance sign at the last reminders load
+  /// (KhataDueReminders.plan), as JSON.
+  static const String khataDueBalancesKey = 'khata_due_balances';
+
   /// Wipes all non-system data, the upload queue and the pull cursors, in one
   /// transaction. Used when the signed-in user changes: the local tables are
   /// not scoped by user, so another account must never read or upload them.
@@ -1086,7 +1095,11 @@ class AppDatabase {
     }
     await txn.delete('categories', where: 'is_system = 0');
     // Without its rows the next sign-in must pull everything again.
-    await txn.delete('sync_metadata', where: "key LIKE 'cursor_%'");
+    await txn.delete(
+      'sync_metadata',
+      where: "key LIKE 'cursor_%' OR key = ?",
+      whereArgs: <Object>[AppDatabase.khataDueBalancesKey],
+    );
   });
 }
 

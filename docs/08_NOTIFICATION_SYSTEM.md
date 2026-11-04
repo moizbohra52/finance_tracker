@@ -243,6 +243,54 @@ sign-out discards it.
    notifications capabilities in Xcode and upload an APNs key to Firebase.
 4. Never place FCM server credentials or the Supabase service-role key in the app.
 
+### Khata due dates (2026-11-04)
+A khata entry with a due date gets an ordinary one-time reminder at 09:00
+local on that date, so it is scheduled, listed, synced and actionable like any
+other reminder. Rules live in `domain/services/khata_due_reminders.dart`
+(`KhataDueReminders`). No schema change.
+- Id: `uuid v5("contact-transaction-due:<entry id>")`
+  (`KhataDueReminders.id`), the same on every device and retry.
+- Type/title: credit -> `receivable` "Collect payment", debit -> `payable`
+  "Pay dues", others -> `khata` "Khata follow-up" (no name or amount in the
+  title). `contact_id` and `amount` are the entry's; `transaction_id` stays
+  null (it references `transactions`, not `contact_transactions`).
+- **On save** (`ContactFormController._syncDueReminder`): written when the
+  entry is new or its due date, type or amount changes (active again, snooze
+  cleared); a note-only edit keeps a reminder already marked done. Clearing
+  the due date, deleting the entry or deleting the contact soft-deletes it.
+  Saving an entry with a due date asks for notification permission the same
+  way saving a reminder does.
+- **On every reminders load** (`ReminderController._applyKhataDue`, before
+  the device schedule is synced; the shell loads at launch, on resume and
+  after every data change), `KhataDueReminders.plan`:
+  - *Backfill:* an entry due today or later with no live reminder gets one,
+    created only if absent (`ReminderRepository.create(onlyIfAbsent: true)`:
+    local check including tombstones, server `ignoreDuplicates`), so a
+    reminder the user deleted is never brought back. Created done if the dues
+    are already cleared. Past due dates are skipped. Backfill waits until this
+    device has pulled the account once (`ReminderRepository.hasPulled`, the
+    `cursor_pulled` metadata row written after `downloadDelta` in
+    `SyncEngine.syncAll`): before that, a reminder another device deleted or
+    completed is not in the local database, and a pending local copy would
+    win over the server's.
+  - *Auto-complete:* an open due reminder is marked done
+    (`ReminderCalculator.complete`) when the contact's balance
+    (`Contact.getCurrentBalance`) went from having those dues at the previous
+    load to not having them now (receivable: they owe nothing, `<= 0`;
+    payable: the user owes nothing, `>= 0`; khata: settled). The previous
+    load's balance sign per contact is stored as JSON in the account's
+    `sync_metadata` (`khata_due_balances`, dropped by `clearAllUserData`), so
+    changes made between launches or pulled from another device are compared
+    too. Any balance change counts (repayment, deleting any entry, opening
+    balance edit, split settlement, sync, restore); a name or photo edit does
+    not. A part payment leaves the reminder open, and a reminder the user
+    reopens while the dues are cleared stays open until they are owed and
+    cleared again. A contact seen for the first time is only recorded.
+  - Runs one at a time (`_loadApplyingKhataDue`), each run reading fresh
+    data, so overlapping loads cannot save older balances over newer ones.
+    Its writes do not call `DataChangeNotifier.markChanged` (that would start
+    another load).
+
 ### Not in this phase
 Notification buttons on iOS, the FCM sender, a notification-center delete,
 and synced notification settings.

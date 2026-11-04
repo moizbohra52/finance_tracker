@@ -135,6 +135,8 @@ class ContactBinding extends Bindings {
         Get.find<AccountRepository>(),
         Get.find<CategoryRepository>(),
         Get.find<DataChangeNotifier>(),
+        reminderRepository: Get.find<ReminderRepository>(),
+        notifications: Get.find<NotificationCoordinator>(),
       ),
     );
   }
@@ -152,6 +154,7 @@ class ContactDetailBinding extends Bindings {
         routeIdArgument(),
         profileRepository: Get.find<ProfileRepository>(),
         splitRepository: Get.find<SplitRepository>(),
+        reminderRepository: Get.find<ReminderRepository>(),
       ),
       tag: routeIdArgument(),
     );

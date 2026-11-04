@@ -54,6 +54,9 @@ class FakeFinance {
   final List<Budget> budgets = <Budget>[];
   final List<RecurringTransaction> recurring = <RecurringTransaction>[];
   final List<Reminder> reminders = <Reminder>[];
+
+  /// What ReminderRepository.hasPulled answers.
+  bool pulled = true;
   final List<SavingsGoal> savingsGoals = <SavingsGoal>[];
   final List<SavingsContribution> contributions = <SavingsContribution>[];
   final List<SplitGroup> splitGroups = <SplitGroup>[];
@@ -760,8 +763,11 @@ class FakeReminderRepository implements ReminderRepository {
   }
 
   @override
-  Future<void> create(Reminder reminder) async {
+  Future<void> create(Reminder reminder, {bool onlyIfAbsent = false}) async {
     _f.throwPending();
+    if (onlyIfAbsent && _f.reminders.any((Reminder r) => r.id == reminder.id)) {
+      return;
+    }
     _f.reminders
       ..removeWhere((Reminder r) => r.id == reminder.id)
       ..add(reminder);
@@ -779,6 +785,18 @@ class FakeReminderRepository implements ReminderRepository {
     _f.throwPending();
     _f.reminders.removeWhere((Reminder r) => r.id == id);
   }
+
+  @override
+  Future<bool> hasPulled() async => _f.pulled;
+
+  Map<String, int> _balances = <String, int>{};
+
+  @override
+  Future<Map<String, int>> readKhataBalances() async => _balances;
+
+  @override
+  Future<void> saveKhataBalances(Map<String, int> balances) async =>
+      _balances = balances;
 }
 
 class FakeNotificationRepository implements NotificationRepository {

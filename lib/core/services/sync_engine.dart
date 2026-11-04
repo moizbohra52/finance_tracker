@@ -196,6 +196,10 @@ class SyncEngine extends GetxService {
 
       // 2. Download remote changes
       await downloadDelta();
+      await _db.setMetadata(
+        AppDatabase.pulledKey,
+        DateTime.now().toUtc().toIso8601String(),
+      );
 
       lastSyncedAt.value = DateTime.now();
       state.value = SyncState.synced;

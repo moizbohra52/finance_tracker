@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:finance_tracker/core/errors/supabase_error_mapper.dart';
 import 'package:finance_tracker/core/services/sync_engine.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
@@ -43,8 +45,22 @@ class ReminderRepository {
   }
 
   /// Upserts on the client-generated id, so a retried create never duplicates.
-  Future<void> create(Reminder reminder) async {
+  ///
+  /// With [onlyIfAbsent] an existing row with the same id, live or deleted, is
+  /// left untouched (generated reminders: a re-run never brings back or
+  /// overwrites one the user deleted or changed).
+  Future<void> create(Reminder reminder, {bool onlyIfAbsent = false}) async {
     if (_db != null) {
+      if (onlyIfAbsent) {
+        final List<Map<String, dynamic>> existing = await _db.db.query(
+          'reminders',
+          columns: <String>['id'],
+          where: 'id = ?',
+          whereArgs: <Object>[reminder.id],
+          limit: 1,
+        );
+        if (existing.isNotEmpty) return;
+      }
       final Map<String, dynamic> json = ReminderModel.toJson(reminder);
       await _db.db.insert('reminders', <String, dynamic>{
         ...json,
@@ -59,7 +75,10 @@ class ReminderRepository {
           operation: SyncOperation.create,
           entity: 'reminders',
           entityId: reminder.id,
-          payload: json,
+          payload: <String, dynamic>{
+            ...json,
+            if (onlyIfAbsent) '__only_if_absent': true,
+          },
           createdAt: DateTime.now(),
         ),
       );
@@ -72,6 +91,7 @@ class ReminderRepository {
           .from('reminders')
           .upsert(
             insertPayload(_supabaseClient, ReminderModel.toJson(reminder)),
+            ignoreDuplicates: onlyIfAbsent,
           );
     });
   }
@@ -111,6 +131,37 @@ class ReminderRepository {
           .update(updatePayload(ReminderModel.toJson(reminder)))
           .eq('id', reminder.id);
     });
+  }
+
+  /// Whether this device has pulled the account at least once, so local rows
+  /// (deleted ones included) reflect the server and a generated reminder
+  /// created only if absent cannot bring back one deleted elsewhere. Without
+  /// a local database the server is used directly.
+  Future<bool> hasPulled() async {
+    final AppDatabase? db = _db;
+    return db == null || await db.getMetadata(AppDatabase.pulledKey) != null;
+  }
+
+  Map<String, int> _khataBalances = <String, int>{};
+
+  /// Each contact's balance sign at the last reminders load
+  /// (KhataDueReminders.plan). Kept in the account's database, so a change
+  /// made while the app was closed or pulled from another device is seen.
+  Future<Map<String, int>> readKhataBalances() async {
+    final AppDatabase? db = _db;
+    if (db == null) return _khataBalances;
+    final String? raw = await db.getMetadata(AppDatabase.khataDueBalancesKey);
+    if (raw == null) return <String, int>{};
+    return (jsonDecode(raw) as Map<String, dynamic>).cast<String, int>();
+  }
+
+  Future<void> saveKhataBalances(Map<String, int> balances) async {
+    final AppDatabase? db = _db;
+    if (db == null) {
+      _khataBalances = balances;
+      return;
+    }
+    await db.setMetadata(AppDatabase.khataDueBalancesKey, jsonEncode(balances));
   }
 
   Future<void> delete(String id) async {

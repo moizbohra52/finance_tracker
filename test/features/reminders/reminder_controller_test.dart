@@ -2,7 +2,9 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_permission_state.dart';
+import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/services/khata_due_reminders.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
@@ -450,5 +452,90 @@ void main() {
         }
       },
     );
+  });
+
+  group('khata due dates', () {
+    final DateTime then = DateTime.now().subtract(const Duration(days: 1));
+    final DateTime due = DateTime.now().add(const Duration(days: 3));
+
+    void addContact() => finance.contacts.add(
+      Contact(
+        id: 'c-due',
+        userId: 'u',
+        name: 'Amit',
+        openingBalance: Decimal.zero,
+        openingBalanceType: 'receivable',
+        createdAt: then,
+        updatedAt: then,
+      ),
+    );
+
+    void addEntry(
+      String id,
+      ContactTransactionType type, {
+      DateTime? dueDate,
+    }) => finance.contactTransactions.add(
+      ContactTransaction(
+        id: id,
+        userId: 'u',
+        contactId: 'c-due',
+        type: type,
+        amount: Decimal.parse('500'),
+        transactionDate: then,
+        dueDate: dueDate,
+        createdAt: then,
+        updatedAt: then,
+      ),
+    );
+
+    test('a due date without a reminder gets one when reminders load; '
+        'clearing the dues marks it done, and a reopen stays open', () async {
+      addContact();
+      addEntry('lent', ContactTransactionType.credit, dueDate: due);
+
+      await controller.load();
+      final Reminder r = controller.byId(KhataDueReminders.id('lent'))!;
+      expect(r.type, ReminderType.receivable);
+      expect(r.isCompleted, isFalse);
+      expect(notifications.local.scheduled, hasLength(1));
+
+      addEntry('paid', ContactTransactionType.paymentReceived);
+      await controller.load();
+      expect(controller.byId(r.id)!.isCompleted, isTrue);
+      expect(notifications.local.scheduled, isEmpty);
+
+      expect(await controller.reopen(controller.byId(r.id)!), isTrue);
+      await controller.load();
+      expect(controller.byId(r.id)!.isCompleted, isFalse);
+    });
+
+    test('backfill waits for the first pull', () async {
+      finance.pulled = false;
+      addContact();
+      addEntry('lent', ContactTransactionType.credit, dueDate: due);
+
+      await controller.load();
+      expect(controller.byId(KhataDueReminders.id('lent')), isNull);
+
+      finance.pulled = true;
+      await controller.load();
+      expect(controller.byId(KhataDueReminders.id('lent')), isNotNull);
+    });
+
+    test('overlapping loads apply one at a time', () async {
+      addContact();
+      addEntry('lent', ContactTransactionType.credit, dueDate: due);
+      await controller.load();
+      addEntry('paid', ContactTransactionType.paymentReceived);
+
+      await Future.wait(<Future<void>>[
+        controller.load(silent: true),
+        controller.load(silent: true),
+      ]);
+      expect(
+        controller.byId(KhataDueReminders.id('lent'))!.isCompleted,
+        isTrue,
+      );
+    });
   });
 }

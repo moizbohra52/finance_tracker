@@ -8,6 +8,7 @@ import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
+import 'package:finance_tracker/domain/services/khata_due_reminders.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
@@ -151,10 +152,8 @@ class ReminderController extends GetxController {
     if (!silent) isLoading.value = true;
     error.value = null;
     try {
-      final (List<Reminder> loaded, List<Contact> loadedContacts) = await wait2(
-        _repository.getAll(),
-        _contactRepository.getContacts(),
-      );
+      final (List<Reminder> loaded, List<Contact> loadedContacts) =
+          await _loadApplyingKhataDue();
       reminders.assignAll(loaded);
       contacts.assignAll(loadedContacts);
       await _notifications.syncReminders(loaded);
@@ -164,6 +163,63 @@ class ReminderController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> _khataTail = Future<void>.value();
+
+  /// Reminders and contacts, after khata due dates were applied. One run at a
+  /// time, each on fresh data, so an older read never saves balances over the
+  /// newer ones the next run compares with.
+  Future<(List<Reminder>, List<Contact>)> _loadApplyingKhataDue() {
+    final Future<(List<Reminder>, List<Contact>)> run = _khataTail.then(
+      (_) => _applyKhataDue(),
+    );
+    _khataTail = run.then<void>((_) {}).catchError((Object _) {});
+    return run;
+  }
+
+  /// Gives khata due dates without a reminder one, and marks due reminders
+  /// done once their dues are cleared (KhataDueReminders.plan). Runs before
+  /// the schedule is synced, so a cleared reminder never fires. Backfill waits
+  /// for the first pull (ReminderRepository.hasPulled). Its writes do not
+  /// announce a change: that would start another load.
+  Future<(List<Reminder>, List<Contact>)> _applyKhataDue() async {
+    final (
+      List<Reminder> live,
+      List<Contact> contacts,
+      List<ContactTransaction> entries,
+      Map<String, int> previous,
+      bool pulled,
+    ) = await wait5(
+      _repository.getAll(),
+      _contactRepository.getContacts(),
+      _contactRepository.getAllContactTransactions(),
+      _repository.readKhataBalances(),
+      _repository.hasPulled(),
+    );
+    final ({
+      List<Reminder> create,
+      List<Reminder> complete,
+      Map<String, int> balances,
+    })
+    plan = KhataDueReminders.plan(
+      contacts: contacts,
+      entries: entries,
+      reminders: live,
+      previous: previous,
+      now: DateTime.now(),
+      titleOf: (String title) => title.tr,
+    );
+    final List<Reminder> create = pulled ? plan.create : const <Reminder>[];
+    for (final Reminder r in create) {
+      await _repository.create(r, onlyIfAbsent: true);
+    }
+    for (final Reminder r in plan.complete) {
+      await _repository.update(r);
+    }
+    await _repository.saveKhataBalances(plan.balances);
+    final bool changed = create.isNotEmpty || plan.complete.isNotEmpty;
+    return (changed ? await _repository.getAll() : live, contacts);
   }
 
   /// [id] is generated once per form so a retried save upserts one row.

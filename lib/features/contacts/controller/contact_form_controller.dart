@@ -1,13 +1,16 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/khata_due_reminders.dart';
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
@@ -33,14 +36,20 @@ class ContactFormController extends GetxController {
     this._transactionRepository,
     this._accountRepository,
     this._categoryRepository,
-    this._notifier,
-  );
+    this._notifier, {
+    ReminderRepository? reminderRepository,
+    this._notifications,
+  }) : _reminders = reminderRepository;
 
   final ContactRepository _repository;
   final TransactionRepository _transactionRepository;
   final AccountRepository _accountRepository;
   final CategoryRepository _categoryRepository;
   final DataChangeNotifier _notifier;
+
+  /// Null in tests that do not cover due-date reminders.
+  final ReminderRepository? _reminders;
+  final NotificationCoordinator? _notifications;
 
   static const Uuid _uuid = Uuid();
 
@@ -138,84 +147,129 @@ class ContactFormController extends GetxController {
     required DateTime? dueDate,
     required String? note,
     String? accountId,
-  }) => save.run(() async {
-    final DateTime now = DateTime.now();
-    final ContactTransaction transaction = ContactTransaction(
-      id: id,
-      userId: existing?.userId ?? '',
-      contactId: contactId,
-      type: type,
-      amount: amount,
-      transactionDate: date,
-      dueDate: dueDate,
-      note: note,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    );
-    if (existing == null) {
-      await _repository.createContactTransaction(transaction);
-    } else {
-      await _repository.updateContactTransaction(transaction);
-    }
-
-    final String txId = linkedTransactionId(id);
-    if (accountId != null && accountId.isNotEmpty) {
-      final TransactionType txType =
-          (type == ContactTransactionType.credit ||
-              type == ContactTransactionType.paymentMade)
-          ? TransactionType.payment_made
-          : TransactionType.payment_received;
-
-      final String displayName =
-          (contactName != null && contactName.trim().isNotEmpty)
-          ? contactName.trim()
-          : 'Contact'.tr;
-
-      final String defaultDescription = switch (type) {
-        ContactTransactionType.credit => 'Lent to @name'.trParams(
-          <String, String>{'name': displayName},
-        ),
-        ContactTransactionType.debit => 'Borrowed from @name'.trParams(
-          <String, String>{'name': displayName},
-        ),
-        ContactTransactionType.paymentReceived =>
-          'Payment received from @name'.trParams(<String, String>{
-            'name': displayName,
-          }),
-        ContactTransactionType.paymentMade => 'Payment made to @name'.trParams(
-          <String, String>{'name': displayName},
-        ),
-        ContactTransactionType.adjustment => 'Adjustment: @name'.trParams(
-          <String, String>{'name': displayName},
-        ),
-      };
-
-      final String? categoryKey = khataCategoryKey(type);
-      final Transaction tx = Transaction(
-        id: txId,
+  }) async {
+    final bool saved = await save.run(() async {
+      final DateTime now = DateTime.now();
+      final ContactTransaction transaction = ContactTransaction(
+        id: id,
         userId: existing?.userId ?? '',
-        accountId: accountId,
         contactId: contactId,
-        categoryId: categoryKey == null
-            ? null
-            : await _categoryRepository.systemCategoryId(categoryKey),
-        type: txType,
+        type: type,
         amount: amount,
         transactionDate: date,
+        dueDate: dueDate,
         note: note,
-        description: defaultDescription,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       );
-      await _transactionRepository.createTransaction(tx);
-    } else if (existing != null) {
-      try {
-        await _transactionRepository.deleteTransaction(txId);
-      } catch (_) {}
-    }
+      if (existing == null) {
+        await _repository.createContactTransaction(transaction);
+      } else {
+        await _repository.updateContactTransaction(transaction);
+      }
+      await _syncDueReminder(existing, transaction);
 
-    _notifier.markChanged();
-  });
+      final String txId = linkedTransactionId(id);
+      if (accountId != null && accountId.isNotEmpty) {
+        final TransactionType txType =
+            (type == ContactTransactionType.credit ||
+                type == ContactTransactionType.paymentMade)
+            ? TransactionType.payment_made
+            : TransactionType.payment_received;
+
+        final String displayName =
+            (contactName != null && contactName.trim().isNotEmpty)
+            ? contactName.trim()
+            : 'Contact'.tr;
+
+        final String defaultDescription = switch (type) {
+          ContactTransactionType.credit => 'Lent to @name'.trParams(
+            <String, String>{'name': displayName},
+          ),
+          ContactTransactionType.debit => 'Borrowed from @name'.trParams(
+            <String, String>{'name': displayName},
+          ),
+          ContactTransactionType.paymentReceived =>
+            'Payment received from @name'.trParams(<String, String>{
+              'name': displayName,
+            }),
+          ContactTransactionType.paymentMade =>
+            'Payment made to @name'.trParams(<String, String>{
+              'name': displayName,
+            }),
+          ContactTransactionType.adjustment => 'Adjustment: @name'.trParams(
+            <String, String>{'name': displayName},
+          ),
+        };
+
+        final String? categoryKey = khataCategoryKey(type);
+        final Transaction tx = Transaction(
+          id: txId,
+          userId: existing?.userId ?? '',
+          accountId: accountId,
+          contactId: contactId,
+          categoryId: categoryKey == null
+              ? null
+              : await _categoryRepository.systemCategoryId(categoryKey),
+          type: txType,
+          amount: amount,
+          transactionDate: date,
+          note: note,
+          description: defaultDescription,
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        );
+        await _transactionRepository.createTransaction(tx);
+      } else if (existing != null) {
+        try {
+          await _transactionRepository.deleteTransaction(txId);
+        } catch (_) {}
+      }
+
+      _notifier.markChanged();
+    });
+    // As when a reminder is saved: the natural moment to ask, at most once.
+    final NotificationCoordinator? notifications = _notifications;
+    if (saved &&
+        dueDate != null &&
+        notifications != null &&
+        notifications.preferences.value.enabled &&
+        notifications.permission.value.canPrompt) {
+      await notifications.requestPermission();
+    }
+    return saved;
+  }
+
+  /// A due date gets a one-time reminder (KhataDueReminders), through the
+  /// regular reminders (schedule, notification center, sync). It is rewritten,
+  /// and so active again, only when the due date, type or amount changes:
+  /// editing the note does not bring back a reminder already marked done.
+  Future<void> _syncDueReminder(
+    ContactTransaction? existing,
+    ContactTransaction entry,
+  ) async {
+    final ReminderRepository? reminders = _reminders;
+    if (reminders == null) return;
+    if (entry.dueDate == null) {
+      if (existing?.dueDate != null) {
+        await reminders.delete(KhataDueReminders.id(entry.id));
+      }
+      return;
+    }
+    if (existing != null &&
+        existing.dueDate == entry.dueDate &&
+        existing.type == entry.type &&
+        existing.amount == entry.amount) {
+      return;
+    }
+    await reminders.create(
+      KhataDueReminders.build(
+        entry,
+        title: KhataDueReminders.kind(entry.type).$2.tr,
+        now: DateTime.now(),
+      ),
+    );
+  }
 
   static String newId() => _uuid.v4();
 }

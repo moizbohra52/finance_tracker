@@ -238,12 +238,20 @@ void main() {
       () async {
         await seedFor('user-a');
         await syncEngine.claimLocalData('user-a');
+        await database.setMetadata(AppDatabase.pulledKey, '2026-11-04');
+        await database.setMetadata(AppDatabase.khataDueBalancesKey, '{}');
 
         await syncEngine.claimLocalData('user-b');
 
         expect(await count('accounts'), 0);
         expect(await database.getPendingQueueCount(), 0);
         expect(await database.getMetadata('cursor_accounts_user-a'), isNull);
+        // user-b has not pulled yet, and user-a's khata balances are not theirs.
+        expect(await database.getMetadata(AppDatabase.pulledKey), isNull);
+        expect(
+          await database.getMetadata(AppDatabase.khataDueBalancesKey),
+          isNull,
+        );
         expect(await database.getMetadata(AppDatabase.localOwnerKey), 'user-b');
         // System categories are shared and survive.
         expect(
