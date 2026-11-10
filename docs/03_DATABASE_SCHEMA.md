@@ -397,7 +397,8 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    before shipping the app version that sends it**: settings sync writes every
    preference column, so an unknown `upi_id` column fails the upload. The
    local SQLite file moves to version 2 (`AppDatabase.upgrade` adds the same
-   column), the first local schema upgrade.
+   column), the first local schema upgrade. Its CHECK could not run in
+   Postgres; migration 19 fixes it.
 
 10. `20261021100000_receipts_bucket.sql` - the private `receipts` storage
    bucket (2 MiB, jpeg/png/webp) with owner-only policies, same pattern as
@@ -486,6 +487,17 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    sync; income rows still upload, because the app sends `added_at` only on
    hand-added rows. Local SQLite rebuilds the table in database version 9
    (SQLite cannot drop NOT NULL), keeping its rows and indexes.
+
+19. `20261110090000_upi_id_check_bound.sql` - fixes the `user_settings.upi_id`
+   CHECK from migration 9. Its pattern allowed up to 256 characters before
+   the `@`; Postgres accepts a repetition count of at most 255 and only
+   compiles the pattern when a UPI ID is first written, so migration 9
+   applied cleanly and every settings upload that carried a UPI ID was then
+   rejected (`invalid regular expression`, SQLSTATE 2201B) and stayed in the
+   sync queue as failed. The limit is now 255, the same as
+   `Validators.upiIdPattern`; `validators_upi_test.dart` compares the two and
+   checks the counts. No column or policy change. **Apply it** (`supabase db
+   push`): the next sync then uploads the queued settings on its own.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

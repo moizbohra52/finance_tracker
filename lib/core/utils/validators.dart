@@ -10,10 +10,11 @@ abstract final class Validators {
   static final RegExp _digit = RegExp(r'\d');
   static final RegExp _mobile = RegExp(r'^\+?[0-9][0-9 -]{6,18}[0-9]$');
 
-  /// handle@bank. Mirrors the user_settings.upi_id CHECK in Supabase.
-  static final RegExp _upiId = RegExp(
-    r'^[a-zA-Z0-9._-]{2,256}@[a-zA-Z]{2,64}$',
-  );
+  /// handle@bank. The same pattern as the user_settings.upi_id CHECK in
+  /// Supabase; validators_upi_test.dart compares the two. Postgres allows a
+  /// repetition count of at most 255.
+  static const String upiIdPattern = r'^[a-zA-Z0-9._-]{2,255}@[a-zA-Z]{2,64}$';
+  static final RegExp _upiId = RegExp(upiIdPattern);
 
   static String? requiredField(String? value, String fieldName) =>
       (value == null || value.trim().isEmpty)
