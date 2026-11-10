@@ -45,8 +45,9 @@ Future<void> main() async {
   if (!AppEnv.isConfigured) {
     throw StateError(
       '[AppEnv] Supabase credentials missing for [${AppEnv.current.name.toUpperCase()}] environment.\n'
-      'Please check your env.${AppEnv.current.name}.json or provide '
-      'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.',
+      'Run with --dart-define-from-file=env.json and set '
+      '${AppEnv.current.name.toUpperCase()}_SUPABASE_URL and '
+      '${AppEnv.current.name.toUpperCase()}_SUPABASE_PUBLISHABLE_KEY in it.',
     );
   }
   developer.log(

@@ -15,10 +15,16 @@ void main() {
       expect(AppDatabase.databaseName, 'finance_tracker_dev.db');
     });
 
-    test('dev fallback credentials are configured by default', () {
-      expect(AppEnv.isConfigured, isTrue);
-      expect(AppEnv.supabaseUrl, isNotEmpty);
-      expect(AppEnv.supabasePublishableKey, isNotEmpty);
-    });
+    test(
+      'has no hardcoded credentials when env.json is not passed',
+      () {
+        expect(AppEnv.isConfigured, isFalse);
+        expect(AppEnv.supabaseUrl, isEmpty);
+        expect(AppEnv.supabasePublishableKey, isEmpty);
+      },
+      skip:
+          const bool.hasEnvironment('DEV_SUPABASE_URL') ||
+          const bool.hasEnvironment('SUPABASE_URL'),
+    );
   });
 }

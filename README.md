@@ -34,10 +34,12 @@ Requires Flutter 3.44+ (Dart 3.12+). Targets Android and iOS.
 ### Environment
 
 Configuration is handled in `lib/core/constants/app_env.dart` with automatic environment detection:
-- **Dev Mode** (`flutter run`): Automatically uses Dev Supabase and `finance_tracker_dev.db` without needing any extra flags!
-- **Prod Mode** (`flutter run --release` or `flutter build`): Uses Production Supabase and `finance_tracker.db`.
-- **VS Code / IDE**: Pre-configured launch profiles exist in `.vscode/launch.json` for 1-click Dev and Prod launching.
-- **Optional CLI override**: Pass `--dart-define=ENV=dev` or `--dart-define-from-file=env.dev.json` / `env.prod.json`.
+Copy `env.example.json` to `env.json` (gitignored) and fill both `DEV_*` and `PROD_*` keys. Always pass it:
+
+- **Dev Mode** (`flutter run --dart-define-from-file=env.json`): Uses `DEV_*` Supabase and `finance_tracker_dev.db`.
+- **Prod Mode** (`flutter run --release` / `flutter build apk --dart-define-from-file=env.json`): Uses `PROD_*` Supabase and `finance_tracker.db`.
+- **VS Code / IDE**: Launch profiles in `.vscode/launch.json` already pass `env.json`.
+- **Optional override**: Add `--dart-define=ENV=dev` or `--dart-define=ENV=prod` to force an environment.
 
 ### Checks
 
