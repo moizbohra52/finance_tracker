@@ -1,5 +1,6 @@
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_form_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
@@ -8,6 +9,7 @@ import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
+import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:finance_tracker/widgets/contact_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -288,6 +290,35 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(find.byType(DashboardView), findsOneWidget);
+    });
+  });
+
+  group('account detail', () {
+    testWidgets('lists the account\'s transactions under their day', (
+      WidgetTester tester,
+    ) async {
+      final FakeFinance f = _seeded();
+      f.addTransaction(
+        id: 't3',
+        type: TransactionType.expense,
+        amount: '120',
+        categoryId: 'cat-food',
+        note: 'Tea',
+        date: DateTime.now().subtract(const Duration(days: 1)),
+      );
+      await _start(tester, finance: f);
+      await tester.scrollUntilVisible(find.byType(AccountTile), 200);
+      await tapAndSettle(tester, find.byType(AccountTile));
+      expect(find.byType(AccountDetailView), findsOneWidget);
+      expect(find.text('All transactions'), findsOneWidget);
+
+      // The same day headers as the Transactions tab: rows show only a time.
+      await tester.scrollUntilVisible(find.text('Today'), 200);
+      expect(find.text('Today'), findsOneWidget);
+      await tester.scrollUntilVisible(find.text('Yesterday'), 200);
+      expect(find.text('Yesterday'), findsOneWidget);
+      expect(find.text('Salary'), findsOneWidget);
+      expect(find.text('Food & Dining'), findsNWidgets(2));
     });
   });
 

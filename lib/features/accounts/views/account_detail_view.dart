@@ -19,6 +19,7 @@ import 'package:finance_tracker/features/accounts/controllers/account_detail_con
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/account_list_item.dart';
+import 'package:finance_tracker/widgets/transaction_day_header.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -111,7 +112,10 @@ class AccountDetailView extends GetView<AccountDetailController> {
     final TransactionController list = Get.find<TransactionController>();
     final AccountController accounts = Get.find<AccountController>();
 
-    final List<Transaction> items = controller.items;
+    // Grouped by day like the Transactions tab: a row shows only its time.
+    final List<TransactionListRow> rows = groupTransactionsByDay(
+      controller.items,
+    );
     final bool loadingMore = controller.isLoadingMore.value;
     // Rows are built lazily, outside the Obx, so subscribe here to the
     // lookups they read; else rows built before the lookups load stay bare.
@@ -187,8 +191,9 @@ class AccountDetailView extends GetView<AccountDetailController> {
                 );
         }),
         SectionHeader(title: 'All transactions'.tr),
-        const SizedBox(height: AppSpacing.sm),
-        if (items.isEmpty)
+        // The first day header brings its own space above.
+        if (rows.isEmpty) ...<Widget>[
+          const SizedBox(height: AppSpacing.sm),
           AppCard(
             child: EmptyState(
               icon: Icons.receipt_long_outlined,
@@ -196,6 +201,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
               message: 'Income and expenses for this account show here.'.tr,
             ),
           ),
+        ],
       ],
     );
 
@@ -207,13 +213,13 @@ class AccountDetailView extends GetView<AccountDetailController> {
             if (n.metrics.extentAfter < 300) controller.loadMore();
             return false;
           },
-          // Header, one row per transaction, then the loading footer.
+          // Header, the day headers and transactions, then the loading footer.
           child: ListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: items.length + 2,
+            itemCount: rows.length + 2,
             itemBuilder: (BuildContext context, int index) {
               if (index == 0) return header;
-              if (index > items.length) {
+              if (index > rows.length) {
                 return loadingMore
                     ? const Padding(
                         padding: EdgeInsets.all(AppSpacing.md),
@@ -221,25 +227,29 @@ class AccountDetailView extends GetView<AccountDetailController> {
                       )
                     : const SizedBox(height: AppSpacing.lg);
               }
-              final Transaction t = items[index - 1];
-              return TransactionListItem(
-                padding: AppListTile.flatPadding,
-                transaction: t,
-                // This list holds one account's rows, so a transfer's
-                // other leg is looked up in the full list.
-                title: TransactionListItem.titleFor(
-                  t,
-                  categoryName: list.categoryOf(t.categoryId)?.name,
-                  nearby: list.items,
-                  accountName: list.accountName,
-                ),
-                iconKey: list.categoryOf(t.categoryId)?.icon,
-                subtitle: account.name,
-                onTap: () => Get.toNamed<void>(
-                  AppRoutes.transactionDetail,
-                  arguments: t.id,
-                ),
-              );
+              return switch (rows[index - 1]) {
+                TransactionDayRow(:final String label, :final int count) =>
+                  TransactionDayHeader(label: label, count: count),
+                TransactionItemRow(transaction: final Transaction t) =>
+                  TransactionListItem(
+                    padding: AppListTile.flatPadding,
+                    transaction: t,
+                    // This list holds one account's rows, so a transfer's
+                    // other leg is looked up in the full list.
+                    title: TransactionListItem.titleFor(
+                      t,
+                      categoryName: list.categoryOf(t.categoryId)?.name,
+                      nearby: list.items,
+                      accountName: list.accountName,
+                    ),
+                    iconKey: list.categoryOf(t.categoryId)?.icon,
+                    subtitle: account.name,
+                    onTap: () => Get.toNamed<void>(
+                      AppRoutes.transactionDetail,
+                      arguments: t.id,
+                    ),
+                  ),
+              };
             },
           ),
         ),
