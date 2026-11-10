@@ -3,7 +3,6 @@ import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_badges.dart';
-import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
@@ -54,7 +53,38 @@ class AccountDetailView extends GetView<AccountDetailController> {
     return Obx(() {
       final Account? account = controller.account.value;
       return Scaffold(
-        appBar: AppAppBar(title: account?.name ?? 'Account'.tr),
+        appBar: AppAppBar(
+          title: account?.name ?? 'Account'.tr,
+          // In the bar, not under the list: the list now has no end.
+          actions: <Widget>[
+            if (account != null) ...<Widget>[
+              IconButton(
+                tooltip: 'Transfer money'.tr,
+                icon: const Icon(Icons.swap_horiz_rounded),
+                onPressed: () => Get.toNamed<void>(
+                  AppRoutes.transferForm,
+                  arguments: TransferFormArgs(fromAccountId: account.id),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Edit account & opening balance'.tr,
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => Get.toNamed<void>(
+                  AppRoutes.accountForm,
+                  arguments: account,
+                ),
+              ),
+              IconButton(
+                tooltip: 'Delete account'.tr,
+                icon: const Icon(Icons.delete_outline),
+                color: Theme.of(context).colorScheme.error,
+                onPressed: Get.find<AccountController>().deletion.isBusy.value
+                    ? null
+                    : () => _delete(context, account),
+              ),
+            ],
+          ],
+        ),
         body: SafeArea(child: _body(context, account)),
       );
     });
@@ -81,143 +111,137 @@ class AccountDetailView extends GetView<AccountDetailController> {
     final TransactionController list = Get.find<TransactionController>();
     final AccountController accounts = Get.find<AccountController>();
 
-    return AppContent(
-      child: RefreshIndicator(
-        onRefresh: controller.load,
-        child: ListView(
+    final List<Transaction> items = controller.items;
+    final bool loadingMore = controller.isLoadingMore.value;
+    // Rows are built lazily, outside the Obx, so subscribe here to the
+    // lookups they read; else rows built before the lookups load stay bare.
+    list.categoryIndex.length;
+    list.accounts.length;
+
+    final Widget header = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        AppCard(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            children: <Widget>[
+              IconBadge(
+                icon: accountTypeIcon(account.type),
+                size: AppSizes.iconLarge,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text('Current balance'.tr, style: text.labelLarge),
+              Text(
+                AppFormatters.money(summary.balance),
+                style: text.displaySmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                account.openingBalanceDate == null
+                    ? 'Opening balance @amount'.trParams(<String, String>{
+                        'amount': AppFormatters.money(account.openingBalance),
+                      })
+                    : 'Opening balance @amount on @date'.trParams(<
+                        String,
+                        String
+                      >{
+                        'amount': AppFormatters.money(account.openingBalance),
+                        'date': AppFormatters.date(account.openingBalanceDate!),
+                      }),
+                style: text.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
           children: <Widget>[
-            AppCard(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                children: <Widget>[
-                  IconBadge(
-                    icon: accountTypeIcon(account.type),
-                    size: AppSizes.iconLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text('Current balance'.tr, style: text.labelLarge),
-                  Text(
-                    AppFormatters.money(summary.balance),
-                    style: text.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    account.openingBalanceDate == null
-                        ? 'Opening balance @amount'.trParams(<String, String>{
-                            'amount': AppFormatters.money(
-                              account.openingBalance,
-                            ),
-                          })
-                        : 'Opening balance @amount on @date'
-                              .trParams(<String, String>{
-                                'amount': AppFormatters.money(
-                                  account.openingBalance,
-                                ),
-                                'date': AppFormatters.date(
-                                  account.openingBalanceDate!,
-                                ),
-                              }),
-                    style: text.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+            Expanded(
+              child: SummaryTile(
+                icon: Icons.south_west_rounded,
+                label: 'Money in'.tr,
+                value: AppFormatters.money(summary.totalIncome),
+                color: money.income,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: SummaryTile(
-                    icon: Icons.south_west_rounded,
-                    label: 'Money in'.tr,
-                    value: AppFormatters.money(summary.totalIncome),
-                    color: money.income,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: SummaryTile(
-                    icon: Icons.north_east_rounded,
-                    label: 'Money out'.tr,
-                    value: AppFormatters.money(summary.totalExpense),
-                    color: money.expense,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            SectionHeader(title: 'Recent activity'.tr),
-            const SizedBox(height: AppSpacing.sm),
-            if (controller.recent.isEmpty)
-              AppCard(
-                child: EmptyState(
-                  icon: Icons.receipt_long_outlined,
-                  title: 'No transactions yet'.tr,
-                  message: 'Income and expenses for this account show here.'.tr,
-                ),
-              )
-            else
-              AppListCard(
-                children: <Widget>[
-                  for (final Transaction t in controller.recent)
-                    TransactionListItem(
-                      transaction: t,
-                      // This list holds one account's rows, so a transfer's
-                      // other leg is looked up in the full list.
-                      title: TransactionListItem.titleFor(
-                        t,
-                        categoryName: list.categoryOf(t.categoryId)?.name,
-                        nearby: list.items,
-                        accountName: list.accountName,
-                      ),
-                      iconKey: list.categoryOf(t.categoryId)?.icon,
-                      subtitle: account.name,
-                      onTap: () => Get.toNamed<void>(
-                        AppRoutes.transactionDetail,
-                        arguments: t.id,
-                      ),
-                    ),
-                ],
-              ),
-            const SizedBox(height: AppSpacing.lg),
-            Obx(() {
-              final String? deleteError = accounts.deletion.error.value;
-              return deleteError == null
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: InlineMessage(message: deleteError),
-                    );
-            }),
-            AppButton(
-              label: 'Transfer money'.tr,
-              icon: Icons.swap_horiz_rounded,
-              variant: AppButtonVariant.secondary,
-              onPressed: () => Get.toNamed<void>(
-                AppRoutes.transferForm,
-                arguments: TransferFormArgs(fromAccountId: account.id),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppButton(
-              label: 'Edit account & opening balance'.tr,
-              icon: Icons.edit_outlined,
-              onPressed: () =>
-                  Get.toNamed<void>(AppRoutes.accountForm, arguments: account),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Obx(
-              () => AppButton(
-                label: 'Delete account'.tr,
-                icon: Icons.delete_outline,
-                variant: AppButtonVariant.destructive,
-                isLoading: accounts.deletion.isBusy.value,
-                onPressed: () => _delete(context, account),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: SummaryTile(
+                icon: Icons.north_east_rounded,
+                label: 'Money out'.tr,
+                value: AppFormatters.money(summary.totalExpense),
+                color: money.expense,
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Obx(() {
+          final String? deleteError = accounts.deletion.error.value;
+          return deleteError == null
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: InlineMessage(message: deleteError),
+                );
+        }),
+        SectionHeader(title: 'All transactions'.tr),
+        const SizedBox(height: AppSpacing.sm),
+        if (items.isEmpty)
+          AppCard(
+            child: EmptyState(
+              icon: Icons.receipt_long_outlined,
+              title: 'No transactions yet'.tr,
+              message: 'Income and expenses for this account show here.'.tr,
+            ),
+          ),
+      ],
+    );
+
+    return AppContent(
+      child: RefreshIndicator(
+        onRefresh: controller.load,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification n) {
+            if (n.metrics.extentAfter < 300) controller.loadMore();
+            return false;
+          },
+          // Header, one row per transaction, then the loading footer.
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: items.length + 2,
+            itemBuilder: (BuildContext context, int index) {
+              if (index == 0) return header;
+              if (index > items.length) {
+                return loadingMore
+                    ? const Padding(
+                        padding: EdgeInsets.all(AppSpacing.md),
+                        child: Center(child: CircularProgressIndicator()),
+                      )
+                    : const SizedBox(height: AppSpacing.lg);
+              }
+              final Transaction t = items[index - 1];
+              return TransactionListItem(
+                padding: AppListTile.flatPadding,
+                transaction: t,
+                // This list holds one account's rows, so a transfer's
+                // other leg is looked up in the full list.
+                title: TransactionListItem.titleFor(
+                  t,
+                  categoryName: list.categoryOf(t.categoryId)?.name,
+                  nearby: list.items,
+                  accountName: list.accountName,
+                ),
+                iconKey: list.categoryOf(t.categoryId)?.icon,
+                subtitle: account.name,
+                onTap: () => Get.toNamed<void>(
+                  AppRoutes.transactionDetail,
+                  arguments: t.id,
+                ),
+              );
+            },
+          ),
         ),
       ),
     );

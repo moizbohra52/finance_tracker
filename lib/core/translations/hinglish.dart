@@ -598,7 +598,7 @@ const Map<String, String> hinglish = <String, String>{
   'Money out': 'Paisa gaya',
   'Total income': 'Kul aamdani',
   'Total expense': 'Kul kharcha',
-  'Recent activity': 'Haal ki activity',
+  'All transactions': 'Saare len-den',
   'Income and expenses for this account show here.':
       'Is account ki aamdani aur kharcha yahan dikhenge.',
   'Transfer money': 'Paisa transfer karein',
