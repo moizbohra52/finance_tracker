@@ -98,8 +98,45 @@ Future<void> _fillDinner(WidgetTester tester, String rahulPaid) async {
   await _pickDropdown(tester, 'Account', 'Cash');
 }
 
+/// How far the floated label of the field labelled [label] reaches above the
+/// top edge of the list of the form [form]. An outlined field draws its
+/// floated label across its top border, so part of it sits above the field;
+/// a list that starts right at its first field cuts that part off.
+double _labelAboveList(WidgetTester tester, Type form, String label) {
+  final Rect list = tester.getRect(
+    find.descendant(of: find.byType(form), matching: find.byType(ListView)),
+  );
+  final Rect text = tester.getRect(
+    find.descendant(
+      of: find.descendant(
+        of: find.byType(form),
+        matching: find.widgetWithText(TextField, label),
+      ),
+      matching: find.text(label),
+    ),
+  );
+  return list.top - text.top;
+}
+
 void main() {
   tearDown(Get.reset);
+
+  testWidgets('the title label is not cut off once it floats', (
+    WidgetTester tester,
+  ) async {
+    final FakeFinance f = await dinner()
+      ..addAccount('Cash', '1000');
+    await _start(tester, f);
+    await _openForm(tester);
+
+    await tester.enterText(_field('Title'), 'Dinner');
+    await tester.pumpAndSettle();
+
+    expect(
+      _labelAboveList(tester, SplitExpenseFormView, 'Title'),
+      lessThanOrEqualTo(0),
+    );
+  });
 
   testWidgets('the spec dinner saves end to end', (WidgetTester tester) async {
     final FakeFinance f = await dinner()
@@ -347,5 +384,10 @@ void main() {
 
     expect(find.byType(SplitGroupFormView), findsOneWidget);
     expect(find.text('Group name'), findsOneWidget);
+    // The name field is focused at once, so its label is already floated.
+    expect(
+      _labelAboveList(tester, SplitGroupFormView, 'Group name'),
+      lessThanOrEqualTo(0),
+    );
   });
 }

@@ -18,6 +18,7 @@ import 'package:finance_tracker/features/split/views/split_group_list_view.dart'
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_filter_sheet.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/transaction_day_header.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -771,45 +772,16 @@ class _ActiveFilters extends GetView<TransactionController> {
   }
 }
 
-/// Rows are either a day header or a transaction.
-sealed class _Row {}
-
-class _HeaderRow extends _Row {
-  _HeaderRow(this.label, this.count);
-  final String label;
-  final int count;
-}
-
-class _ItemRow extends _Row {
-  _ItemRow(this.transaction);
-  final Transaction transaction;
-}
-
 class _GroupedList extends GetView<TransactionController> {
   const _GroupedList({required this.scroll});
 
   final ScrollController scroll;
 
-  List<_Row> _rows() {
-    final List<_Row> rows = <_Row>[];
-    final Map<String, List<Transaction>> grouped =
-        <String, List<Transaction>>{};
-    for (final Transaction t in controller.items) {
-      final String label = AppFormatters.dayLabel(t.transactionDate);
-      grouped.putIfAbsent(label, () => <Transaction>[]).add(t);
-    }
-    for (final MapEntry<String, List<Transaction>> entry in grouped.entries) {
-      rows.add(_HeaderRow(entry.key, entry.value.length));
-      for (final Transaction t in entry.value) {
-        rows.add(_ItemRow(t));
-      }
-    }
-    return rows;
-  }
-
   @override
   Widget build(BuildContext context) => Obx(() {
-    final List<_Row> rows = _rows();
+    final List<TransactionListRow> rows = groupTransactionsByDay(
+      controller.items,
+    );
     final bool loadingMore = controller.isLoadingMore.value;
     // Rows are built lazily, outside this Obx, so subscribe here to the
     // lookups they read; else rows built before the lookups load stay bare.
@@ -828,90 +800,28 @@ class _GroupedList extends GetView<TransactionController> {
           );
         }
         return switch (rows[index]) {
-          _HeaderRow(:final String label, :final int count) => Padding(
-            padding: const EdgeInsets.only(
-              top: AppSpacing.md,
-              bottom: AppSpacing.xs,
-              left: 2,
-              right: 2,
+          TransactionDayRow(:final String label, :final int count) =>
+            TransactionDayHeader(label: label, count: count),
+          TransactionItemRow(:final Transaction transaction) =>
+            TransactionListItem(
+              padding: AppListTile.flatPadding,
+              transaction: transaction,
+              title: TransactionListItem.titleFor(
+                transaction,
+                categoryName: controller
+                    .categoryOf(transaction.categoryId)
+                    ?.name,
+                nearby: controller.items,
+                accountName: controller.accountName,
+              ),
+              iconKey: controller.categoryOf(transaction.categoryId)?.icon,
+              subtitle: controller.accountName(transaction.accountId),
+              groupLabel: controller.groupLabelOf(transaction),
+              onTap: () => Get.toNamed<void>(
+                AppRoutes.transactionDetail,
+                arguments: transaction.id,
+              ),
             ),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 3.5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest
-                        .withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          letterSpacing: 0.5,
-                          fontSize: 10.5,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.full),
-                        ),
-                        child: Text(
-                          '$count',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Divider(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.outlineVariant.withValues(alpha: 0.4),
-                    thickness: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _ItemRow(:final Transaction transaction) => TransactionListItem(
-            padding: AppListTile.flatPadding,
-            transaction: transaction,
-            title: TransactionListItem.titleFor(
-              transaction,
-              categoryName: controller.categoryOf(transaction.categoryId)?.name,
-              nearby: controller.items,
-              accountName: controller.accountName,
-            ),
-            iconKey: controller.categoryOf(transaction.categoryId)?.icon,
-            subtitle: controller.accountName(transaction.accountId),
-            groupLabel: controller.groupLabelOf(transaction),
-            onTap: () => Get.toNamed<void>(
-              AppRoutes.transactionDetail,
-              arguments: transaction.id,
-            ),
-          ),
         };
       },
     );

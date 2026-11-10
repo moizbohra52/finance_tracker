@@ -31,7 +31,9 @@ import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/features/app_lock/widgets/app_lock_gate.dart';
 import 'package:finance_tracker/routes/app_pages.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -42,6 +44,12 @@ Future<void> main() async {
   // DateFormat needs symbols for any locale other than en_US.
   await initializeDateFormatting(AppConstants.defaultLocale);
   await initializeDateFormatting(AppLanguage.hindi.dateLocale);
+  // The bundled font's licence, on the licences screen (Settings > About).
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(const <String>[
+      AppTheme.fontFamily,
+    ], await rootBundle.loadString('assets/fonts/Inter-LICENSE.txt'));
+  });
   if (!AppEnv.isConfigured) {
     throw StateError(
       '[AppEnv] Supabase credentials missing for [${AppEnv.current.name.toUpperCase()}] environment.\n'

@@ -589,7 +589,7 @@ const Map<String, String> hindi = <String, String>{
   'Money out': 'पैसा गया',
   'Total income': 'कुल आमदनी',
   'Total expense': 'कुल खर्च',
-  'Recent activity': 'हाल की गतिविधि',
+  'All transactions': 'सभी लेन-देन',
   'Income and expenses for this account show here.':
       'इस अकाउंट की आमदनी और खर्च यहाँ दिखेंगे।',
   'Transfer money': 'पैसा ट्रांसफ़र करें',

@@ -6,6 +6,41 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 abstract final class AppTheme {
+  /// The bundled font (pubspec.yaml, assets/fonts). Hindi text falls back to
+  /// the phone's font: Inter has no Devanagari.
+  static const String fontFamily = 'Inter';
+
+  /// Every digit the same width, so amounts line up down a list and do not
+  /// shift while a number changes.
+  static const List<FontFeature> _figures = <FontFeature>[
+    FontFeature.tabularFigures(),
+  ];
+
+  /// A text style that does not come from the text theme must name the font
+  /// itself: where a widget replaces the inherited style instead of merging
+  /// with it (a button's label), a style without a family is drawn in the
+  /// phone's font.
+  static TextStyle? _figured(TextStyle? style) =>
+      style?.copyWith(fontFeatures: _figures);
+
+  static TextTheme _withFigures(TextTheme t) => t.copyWith(
+    displayLarge: _figured(t.displayLarge),
+    displayMedium: _figured(t.displayMedium),
+    displaySmall: _figured(t.displaySmall),
+    headlineLarge: _figured(t.headlineLarge),
+    headlineMedium: _figured(t.headlineMedium),
+    headlineSmall: _figured(t.headlineSmall),
+    titleLarge: _figured(t.titleLarge),
+    titleMedium: _figured(t.titleMedium),
+    titleSmall: _figured(t.titleSmall),
+    bodyLarge: _figured(t.bodyLarge),
+    bodyMedium: _figured(t.bodyMedium),
+    bodySmall: _figured(t.bodySmall),
+    labelLarge: _figured(t.labelLarge),
+    labelMedium: _figured(t.labelMedium),
+    labelSmall: _figured(t.labelSmall),
+  );
+
   static ThemeData get light => lightFor(AppAccentColor.indigo);
   static ThemeData get dark => darkFor(AppAccentColor.indigo);
 
@@ -69,14 +104,16 @@ abstract final class AppTheme {
     const StadiumBorder controlShape = StadiumBorder();
     const Size buttonMinimumSize = Size(64, AppSizes.buttonHeight);
 
-    final TextTheme baseText =
-        (isDark
-                ? Typography.material2021().white
-                : Typography.material2021().black)
-            .apply(
-              bodyColor: colorScheme.onSurface,
-              displayColor: colorScheme.onSurface,
-            );
+    final TextTheme baseText = _withFigures(
+      (isDark
+              ? Typography.material2021().white
+              : Typography.material2021().black)
+          .apply(
+            fontFamily: fontFamily,
+            bodyColor: colorScheme.onSurface,
+            displayColor: colorScheme.onSurface,
+          ),
+    );
 
     final TextTheme textTheme = baseText.copyWith(
       displaySmall: baseText.displaySmall?.copyWith(
@@ -142,6 +179,7 @@ abstract final class AppTheme {
       brightness: brightness,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: scaffoldBg,
+      fontFamily: fontFamily,
       textTheme: textTheme,
       extensions: <ThemeExtension<dynamic>>[
         if (isDark) FinanceColors.dark else FinanceColors.light,
@@ -220,6 +258,8 @@ abstract final class AppTheme {
           minimumSize: buttonMinimumSize,
           shape: controlShape,
           textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFeatures: _figures,
             fontWeight: FontWeight.w600,
             fontSize: 15,
             letterSpacing: 0.2,
@@ -238,6 +278,8 @@ abstract final class AppTheme {
             width: 1.2,
           ),
           textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFeatures: _figures,
             fontWeight: FontWeight.w600,
             fontSize: 15,
             letterSpacing: 0.2,
@@ -247,6 +289,8 @@ abstract final class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           textStyle: const TextStyle(
+            fontFamily: fontFamily,
+            fontFeatures: _figures,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.1,
           ),

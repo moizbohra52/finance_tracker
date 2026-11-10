@@ -120,8 +120,17 @@ class _SplitExpenseFormViewState extends State<SplitExpenseFormView> {
             ? const Center(child: CircularProgressIndicator())
             : Form(
                 key: _formKey,
+                // Room above the first field and no clipping, as in the other
+                // forms: a floated label is drawn across the field's top
+                // border, so the list would cut it off at its edge.
                 child: ListView(
+                  clipBehavior: Clip.none,
+                  padding: const EdgeInsets.only(
+                    top: AppSpacing.sm,
+                    bottom: AppSpacing.xxl,
+                  ),
                   children: <Widget>[
+                    const SizedBox(height: AppSpacing.xs),
                     AppTextField(
                       label: 'Title'.tr,
                       controller: _title,

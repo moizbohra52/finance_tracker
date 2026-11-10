@@ -40,6 +40,14 @@ class AccountBalanceCalculator {
     return balance;
   }
 
+  /// The same balance from totals already summed ([sumInflow] and
+  /// [sumOutflow] rules), for screens that do not load every row.
+  static Decimal balanceFromTotals(
+    Decimal openingBalance,
+    Decimal inflow,
+    Decimal outflow,
+  ) => openingBalance + inflow - outflow;
+
   /// Money into an account: every type [calculateBalance] adds, so
   /// opening + in - out is the balance.
   static Decimal sumInflow(List<Transaction> transactions) {
