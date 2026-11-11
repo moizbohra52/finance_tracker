@@ -19,7 +19,8 @@ import '../../helpers/fakes.dart';
 
 /// Tests draw every font as square boxes, far wider than real text. Loading
 /// the app's own font files gives text its real width, so a row that is too
-/// tight for the font shows up as an overflow error.
+/// tight for the font shows up as an overflow error. Called from setUpAll:
+/// inside a widget test, real file and engine work never completes.
 Future<void> _loadAppFont() async {
   final FontLoader loader = FontLoader(AppTheme.fontFamily);
   final List<File> files =
@@ -31,7 +32,7 @@ Future<void> _loadAppFont() async {
         ..sort((File a, File b) => a.path.compareTo(b.path));
   for (final File file in files) {
     loader.addFont(
-      file.readAsBytes().then((Uint8List b) => ByteData.sublistView(b)),
+      Future<ByteData>.value(ByteData.sublistView(file.readAsBytesSync())),
     );
   }
   await loader.load();
@@ -106,12 +107,12 @@ FakeFinance _busy() {
 }
 
 void main() {
+  setUpAll(_loadAppFont);
   tearDown(Get.reset);
 
   testWidgets('the main screens fit a 360 dp wide phone in the app font', (
     WidgetTester tester,
   ) async {
-    await _loadAppFont();
     tester.view.physicalSize = const Size(360, 740);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -143,8 +144,7 @@ void main() {
 
     // A transaction's detail screen, then the add form.
     await _tapTab(tester, Icons.receipt_long_outlined);
-    await tester.tap(find.byType(TransactionListItem).first);
-    await tester.pumpAndSettle();
+    await tapAndSettle(tester, find.byType(TransactionListItem).first);
     expect(find.byType(TransactionDetailView), findsOneWidget);
     await _scrollThrough(tester);
     await tester.pageBack();
