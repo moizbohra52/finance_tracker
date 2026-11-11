@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
@@ -13,6 +14,8 @@ import 'package:finance_tracker/features/transactions/views/transaction_form_vie
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:finance_tracker/widgets/contact_list_item.dart';
+import 'package:finance_tracker/widgets/transaction_day_header.dart';
+import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -100,6 +103,20 @@ void main() {
       expect(find.text('Salary'), findsOneWidget);
       expect(find.text('−₹250.00'), findsOneWidget);
       expect(find.text('+₹5,000.00'), findsOneWidget);
+
+      // Grouped under the day, and each row is its own card, not one card
+      // inside another.
+      expect(
+        find.widgetWithText(TransactionDayHeader, 'Today'),
+        findsOneWidget,
+      );
+      expect(
+        find.ancestor(
+          of: find.byType(TransactionListItem).first,
+          matching: find.byType(AppCard),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('shows net worth and this month against last month', (

@@ -25,6 +25,7 @@ import 'package:finance_tracker/features/dashboard/controllers/home_controller.d
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/account_list_item.dart';
+import 'package:finance_tracker/widgets/transaction_day_header.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -1431,24 +1432,34 @@ class _RecentTransactions extends GetView<HomeController> {
               ),
             );
           }
-          return AppListCard(
+          // Each row is its own card, so no card around them; grouped by day
+          // like the Transactions tab, as a row shows only its time.
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              for (final Transaction t in controller.recent)
-                TransactionListItem(
-                  transaction: t,
-                  title: TransactionListItem.titleFor(
-                    t,
-                    categoryName: controller.categoryOf(t.categoryId)?.name,
-                    nearby: controller.recent,
-                    accountName: controller.accountName,
-                  ),
-                  iconKey: controller.categoryOf(t.categoryId)?.icon,
-                  subtitle: controller.accountName(t.accountId),
-                  onTap: () => Get.toNamed<void>(
-                    AppRoutes.transactionDetail,
-                    arguments: t.id,
-                  ),
-                ),
+              for (final TransactionListRow row in groupTransactionsByDay(
+                controller.recent,
+              ))
+                switch (row) {
+                  TransactionDayRow(:final String label, :final int count) =>
+                    TransactionDayHeader(label: label, count: count),
+                  TransactionItemRow(transaction: final Transaction t) =>
+                    TransactionListItem(
+                      transaction: t,
+                      title: TransactionListItem.titleFor(
+                        t,
+                        categoryName: controller.categoryOf(t.categoryId)?.name,
+                        nearby: controller.recent,
+                        accountName: controller.accountName,
+                      ),
+                      iconKey: controller.categoryOf(t.categoryId)?.icon,
+                      subtitle: controller.accountName(t.accountId),
+                      onTap: () => Get.toNamed<void>(
+                        AppRoutes.transactionDetail,
+                        arguments: t.id,
+                      ),
+                    ),
+                },
             ],
           );
         }),

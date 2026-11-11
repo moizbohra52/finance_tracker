@@ -4,7 +4,6 @@ import 'package:finance_tracker/core/theme/finance_colors.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
-import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/charts.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
@@ -253,28 +252,24 @@ class _DayList extends GetView<CalendarController> {
                 'day': day,
               }),
             )
+          // Each row is its own card, so no card around them.
           else
-            AppListCard(
-              children: <Widget>[
-                for (final Transaction t in items)
-                  TransactionListItem(
-                    padding: AppListTile.flatPadding,
-                    transaction: t,
-                    title: TransactionListItem.titleFor(
-                      t,
-                      categoryName: controller.categoryOf(t.categoryId)?.name,
-                      nearby: controller.items,
-                      accountName: controller.accountName,
-                    ),
-                    iconKey: controller.categoryOf(t.categoryId)?.icon,
-                    subtitle: controller.accountName(t.accountId),
-                    onTap: () => Get.toNamed<void>(
-                      AppRoutes.transactionDetail,
-                      arguments: t.id,
-                    ),
-                  ),
-              ],
-            ),
+            for (final Transaction t in items)
+              TransactionListItem(
+                transaction: t,
+                title: TransactionListItem.titleFor(
+                  t,
+                  categoryName: controller.categoryOf(t.categoryId)?.name,
+                  nearby: controller.items,
+                  accountName: controller.accountName,
+                ),
+                iconKey: controller.categoryOf(t.categoryId)?.icon,
+                subtitle: controller.accountName(t.accountId),
+                onTap: () => Get.toNamed<void>(
+                  AppRoutes.transactionDetail,
+                  arguments: t.id,
+                ),
+              ),
         ],
       );
     });
