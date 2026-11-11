@@ -70,7 +70,7 @@ class ContactTransactionModel {
     id: id,
     userId: userId,
     contactId: contactId,
-    type: _parseContactTransactionType(type),
+    type: parseType(type),
     amount: Decimal.parse(amount),
     transactionDate: DateTime.parse(transactionDate).toLocal(),
     dueDate: dueDate != null ? DateTime.parse(dueDate!) : null,
@@ -102,7 +102,8 @@ class ContactTransactionModel {
     deletedAt: contactTransaction.deletedAt?.toIso8601String(),
   );
 
-  static ContactTransactionType _parseContactTransactionType(String type) {
+  /// The stored type string as a [ContactTransactionType].
+  static ContactTransactionType parseType(String type) {
     switch (type) {
       case 'credit':
         return ContactTransactionType.credit;

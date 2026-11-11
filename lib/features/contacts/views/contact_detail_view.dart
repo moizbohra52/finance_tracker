@@ -116,45 +116,118 @@ class ContactDetailView extends GetView<ContactDetailController> {
         message: 'It may have been deleted.'.tr,
       );
     }
+    final List<ContactTransaction> entries = controller.entries;
+    final bool loadingMore = controller.isLoadingMore.value;
+    final Widget header = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _BalanceHeader(contact: contact, id: id),
+        const SizedBox(height: AppSpacing.md),
+        _EntryActions(contact: contact),
+        const SizedBox(height: AppSpacing.lg),
+        SectionHeader(title: 'Ledger'.tr),
+        const SizedBox(height: AppSpacing.sm),
+        Obx(() {
+          final String? deleteError = controller.deletion.error.value;
+          return deleteError == null
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: InlineMessage(message: deleteError),
+                );
+        }),
+        if (entries.isEmpty)
+          AppCard(
+            child: EmptyState(
+              icon: Icons.menu_book_outlined,
+              title: 'No entries yet'.tr,
+              message: 'Add a credit or debit to start this ledger.'.tr,
+            ),
+          ),
+      ],
+    );
     return AppContent(
       child: RefreshIndicator(
         onRefresh: controller.load,
-        child: ListView(
-          children: <Widget>[
-            _BalanceHeader(contact: contact, id: id),
-            const SizedBox(height: AppSpacing.md),
-            _EntryActions(contact: contact),
-            const SizedBox(height: AppSpacing.lg),
-            SectionHeader(title: 'Ledger'.tr),
-            const SizedBox(height: AppSpacing.sm),
-            Obx(() {
-              final String? deleteError = controller.deletion.error.value;
-              return deleteError == null
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: InlineMessage(message: deleteError),
-                    );
-            }),
-            if (controller.entries.isEmpty)
-              AppCard(
-                child: EmptyState(
-                  icon: Icons.menu_book_outlined,
-                  title: 'No entries yet'.tr,
-                  message: 'Add a credit or debit to start this ledger.'.tr,
-                ),
-              )
-            else
-              AppListCard(
-                children: <Widget>[
-                  for (final ContactTransaction e in controller.entries)
-                    _EntryTile(entry: e, id: id),
-                ],
-              ),
-            const SizedBox(height: AppSpacing.lg),
-            _ContactInfo(contact: contact, balance: controller.balance.value),
-          ],
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification n) {
+            if (n.metrics.extentAfter < 300) controller.loadMore();
+            return false;
+          },
+          // Header, one row per entry, then a footer: the loading spinner,
+          // or the contact's details once the whole ledger is loaded, under
+          // it as before paging.
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: entries.length + 2,
+            itemBuilder: (BuildContext context, int index) {
+              if (index == 0) return header;
+              if (index > entries.length) {
+                if (loadingMore) {
+                  return const Padding(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.lg),
+                  child: controller.hasMore.value
+                      ? const SizedBox.shrink()
+                      : _ContactInfo(
+                          contact: contact,
+                          balance: controller.balance.value,
+                        ),
+                );
+              }
+              final int i = index - 1;
+              return _LedgerRow(
+                isFirst: i == 0,
+                isLast: i == entries.length - 1,
+                child: _EntryTile(entry: entries[i], id: id),
+              );
+            },
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// One ledger row, drawn as part of one card: the card colour, round corners
+/// on the first and last row, and a divider above every row but the first,
+/// as AppListCard draws them, while the rows are still built lazily.
+class _LedgerRow extends StatelessWidget {
+  const _LedgerRow({
+    required this.isFirst,
+    required this.isLast,
+    required this.child,
+  });
+
+  final bool isFirst;
+  final bool isLast;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    const Radius corner = Radius.circular(AppRadius.lg);
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      borderRadius: BorderRadius.vertical(
+        top: isFirst ? corner : Radius.zero,
+        bottom: isLast ? corner : Radius.zero,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (!isFirst)
+            const Divider(
+              height: 1,
+              indent: AppListTile.textInset,
+              endIndent: AppSpacing.md,
+            ),
+          child,
+        ],
       ),
     );
   }

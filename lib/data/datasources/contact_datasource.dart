@@ -18,7 +18,15 @@ abstract class ContactDatasource {
   Future<void> setPhoto(String contactId, String? avatarPath);
 
   // Contact Transactions
+  /// Newest first; with [limit], one page of them starting at [offset].
   Future<List<ContactTransactionModel>> getContactTransactions(
+    String contactId, {
+    int? limit,
+    int offset = 0,
+  });
+
+  /// The type and amount of each live entry of [contactId], for its balance.
+  Future<List<({String type, String amount})>> getContactEntryAmounts(
     String contactId,
   );
   Future<List<ContactTransactionModel>> getAllContactTransactions();
@@ -147,19 +155,40 @@ class ContactLocalDatasourceImpl implements ContactDatasource {
 
   @override
   Future<List<ContactTransactionModel>> getContactTransactions(
-    String contactId,
-  ) async {
+    String contactId, {
+    int? limit,
+    int offset = 0,
+  }) async {
     final List<Map<String, dynamic>> rows = await _db.db.query(
       'contact_transactions',
       where: 'contact_id = ? AND deleted_at IS NULL',
       whereArgs: <Object>[contactId],
-      orderBy: 'transaction_date DESC',
+      // The id breaks ties, so pages never repeat or skip an entry.
+      orderBy: 'transaction_date DESC, id DESC',
+      limit: limit,
+      offset: limit == null ? null : offset,
     );
     return rows
         .map(
           (Map<String, dynamic> json) => ContactTransactionModel.fromJson(json),
         )
         .toList();
+  }
+
+  @override
+  Future<List<({String type, String amount})>> getContactEntryAmounts(
+    String contactId,
+  ) async {
+    final List<Map<String, dynamic>> rows = await _db.db.query(
+      'contact_transactions',
+      columns: <String>['type', 'amount'],
+      where: 'contact_id = ? AND deleted_at IS NULL',
+      whereArgs: <Object>[contactId],
+    );
+    return <({String type, String amount})>[
+      for (final Map<String, dynamic> r in rows)
+        (type: r['type'] as String, amount: r['amount'].toString()),
+    ];
   }
 
   @override
@@ -307,20 +336,40 @@ class ContactDatasourceImpl implements ContactDatasource {
   // Contact Transactions
   @override
   Future<List<ContactTransactionModel>> getContactTransactions(
-    String contactId,
-  ) async {
-    final response = await _supabaseClient
+    String contactId, {
+    int? limit,
+    int offset = 0,
+  }) async {
+    // The id breaks ties, so pages never repeat or skip an entry.
+    final PostgrestTransformBuilder<PostgrestList> ordered = _supabaseClient
         .from('contact_transactions')
         .select()
         .eq('contact_id', contactId)
         .isFilter('deleted_at', null)
-        .order('transaction_date', ascending: false);
-
-    final List<dynamic> raw = response as List<dynamic>;
-    final List<Map<String, dynamic>> data = raw
-        .map((e) => e as Map<String, dynamic>)
-        .toList();
+        .order('transaction_date', ascending: false)
+        .order('id', ascending: false);
+    final List<Map<String, dynamic>> data = limit == null
+        ? await ordered
+        : await ordered.range(offset, offset + limit - 1);
     return data.map((json) => ContactTransactionModel.fromJson(json)).toList();
+  }
+
+  @override
+  Future<List<({String type, String amount})>> getContactEntryAmounts(
+    String contactId,
+  ) async {
+    // shortcut: one request, so PostgREST's row cap (1000 by default) limits
+    // it, as it does getContactTransactions; page it like SyncEngine's pull
+    // if this online-only path ever serves larger ledgers.
+    final List<Map<String, dynamic>> rows = await _supabaseClient
+        .from('contact_transactions')
+        .select('type, amount')
+        .eq('contact_id', contactId)
+        .isFilter('deleted_at', null);
+    return <({String type, String amount})>[
+      for (final Map<String, dynamic> r in rows)
+        (type: r['type'] as String, amount: r['amount'].toString()),
+    ];
   }
 
   @override

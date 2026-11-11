@@ -35,6 +35,14 @@ User pays ₹2,000 -> receivable becomes ₹3,000.
 If user owes contact ₹5,000 -> payable ₹5,000.
 User pays ₹2,000 -> payable becomes ₹3,000.
 
+Balance = signed opening balance + the entries' signed amounts
+(`ContactTransaction.signedOf`: credit, payment made and adjustment add;
+debit and payment received subtract). The contact screen loads its ledger 30
+entries at a time, so it takes the entries' total from
+`ContactRepository.getEntriesTotal`, which reads only the type and amount
+columns, and adds it with `Contact.balanceWith`. The statement PDF and a
+contact delete read the whole ledger, never just the loaded pages.
+
 ## Opening balance
 Opening balance is the starting point for an account/contact. It must be included in current balance.
 

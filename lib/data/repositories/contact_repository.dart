@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/supabase_error_mapper.dart';
 import 'package:finance_tracker/data/datasources/contact_datasource.dart';
 import 'package:finance_tracker/data/models/contact.dart';
@@ -49,16 +50,37 @@ class ContactRepository {
       guardSupabase(() => _contactDatasource.setPhoto(contactId, avatarPath));
 
   // Contact Transactions
+  /// Newest first; with [limit], one page of them starting at [offset].
   Future<List<ContactTransaction>> getContactTransactions(
-    String contactId,
-  ) async {
+    String contactId, {
+    int? limit,
+    int offset = 0,
+  }) async {
     return guardSupabase(() async {
       final transactionModels = await _contactDatasource.getContactTransactions(
         contactId,
+        limit: limit,
+        offset: offset,
       );
       return transactionModels.map((model) => model.toEntity()).toList();
     });
   }
+
+  /// What [contactId]'s live entries add to the balance
+  /// (ContactTransaction.signedOf), read from the type and amount columns
+  /// only, so a paged ledger still shows the full balance
+  /// (Contact.balanceWith).
+  Future<Decimal> getEntriesTotal(String contactId) => guardSupabase(() async {
+    Decimal total = Decimal.zero;
+    for (final ({String type, String amount}) row
+        in await _contactDatasource.getContactEntryAmounts(contactId)) {
+      total += ContactTransaction.signedOf(
+        ContactTransactionModel.parseType(row.type),
+        Decimal.parse(row.amount),
+      );
+    }
+    return total;
+  });
 
   Future<List<ContactTransaction>> getAllContactTransactions() async {
     return guardSupabase(() async {

@@ -584,14 +584,38 @@ class FakeContactRepository implements ContactRepository {
     }
   }
 
+  /// Same order and paging as the real datasource.
   @override
   Future<List<ContactTransaction>> getContactTransactions(
-    String contactId,
-  ) async {
+    String contactId, {
+    int? limit,
+    int offset = 0,
+  }) async {
     _f.throwPending();
-    return _f.contactTransactions
-        .where((ContactTransaction t) => t.contactId == contactId)
-        .toList();
+    final List<ContactTransaction> rows =
+        _f.contactTransactions
+            .where(
+              (ContactTransaction t) =>
+                  t.contactId == contactId && t.deletedAt == null,
+            )
+            .toList()
+          ..sort((ContactTransaction a, ContactTransaction b) {
+            final int byDate = b.transactionDate.compareTo(a.transactionDate);
+            return byDate != 0 ? byDate : b.id.compareTo(a.id);
+          });
+    return limit == null ? rows : rows.skip(offset).take(limit).toList();
+  }
+
+  @override
+  Future<Decimal> getEntriesTotal(String contactId) async {
+    _f.throwPending();
+    Decimal total = Decimal.zero;
+    for (final ContactTransaction t in _f.contactTransactions) {
+      if (t.contactId == contactId && t.deletedAt == null) {
+        total += t.signedAmount;
+      }
+    }
+    return total;
   }
 
   @override
