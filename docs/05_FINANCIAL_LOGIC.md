@@ -197,6 +197,25 @@ Pairs with amount 0 are omitted; a negative result is stored with debtor and
 creditor swapped. A settlement `from → to` of `x` reduces what `from` owes
 `to`; paying more than the outstanding amount flips the direction.
 
+## Home insights
+`InsightsCalculator` (domain/services), shown on the home screen.
+
+- **Net worth** = current balance of active accounts + total khata
+  receivable - total khata payable. Archived accounts are left out, as in the
+  overall balance. Shown only when it differs from the balance, that is when
+  someone owes or is owed money.
+- **Spending so far** compares this month with the same days of last month:
+  this month from the 1st to the end of today, last month from the 1st to the
+  end of the same day of the month, or to its last day when it is shorter
+  (31 March compares with all of February). Spending is expense only, as in
+  the monthly summary: transfers, adjustments and deleted rows do not count.
+- **Change** = (this month - last month) / last month x 100, rounded to a
+  whole percent. No percent is shown when last month had no spending by then.
+- **Biggest rise** is the expense category with the largest increase over
+  the same two windows; a category new this month counts its whole amount.
+  None is shown when no category rose. A tie goes to the category with more
+  spending this month.
+
 ## Validation
 - amount > 0
 - maximum supported precision 2 decimals for INR

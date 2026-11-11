@@ -11,6 +11,7 @@ import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
+import 'package:finance_tracker/domain/services/insights_calculator.dart';
 import 'package:finance_tracker/domain/services/report_calculator.dart';
 import 'package:finance_tracker/domain/services/report_period.dart';
 import 'package:get/get.dart';
@@ -51,6 +52,10 @@ class HomeController extends GetxController {
 
   /// This month's expense by category, largest first.
   final RxList<CategoryTotal> monthCategories = <CategoryTotal>[].obs;
+
+  /// Net worth, and this month's spending against the same days of last
+  /// month (InsightsCalculator).
+  final Rx<MonthInsights> insights = MonthInsights.zero.obs;
 
   /// Every stored category row, so dashboard rows and the top-categories list
   /// keep their labels after a category is switched off, deleted, or
@@ -144,6 +149,12 @@ class HomeController extends GetxController {
       khata.value = FinanceSummaryCalculator.khata(
         contacts,
         contactTransactions,
+      );
+      insights.value = InsightsCalculator.month(
+        transactions: transactions,
+        accountsBalance: currentBalance.value,
+        khata: khata.value,
+        now: now,
       );
       contactCount.value = contacts.length;
       _hasLoaded = true;

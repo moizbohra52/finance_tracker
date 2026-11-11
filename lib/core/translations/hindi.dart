@@ -260,6 +260,13 @@ const Map<String, String> hindi = <String, String>{
   'Current balance': 'मौजूदा बैलेंस',
   'Show balance': 'बैलेंस दिखाएँ',
   'Hide balance': 'बैलेंस छिपाएँ',
+  'Net worth incl. khata @amount': 'खाता मिलाकर कुल संपत्ति @amount',
+  '@percent% more than the same days last month':
+      'पिछले महीने के इन्हीं दिनों से @percent% ज़्यादा',
+  '@percent% less than the same days last month':
+      'पिछले महीने के इन्हीं दिनों से @percent% कम',
+  'Same as the same days last month': 'पिछले महीने के इन्हीं दिनों जितना',
+  '@category spending up @amount': '@category में @amount ज़्यादा खर्च',
   'Opening balance @amount': 'शुरुआती बैलेंस @amount',
   'Income this month': 'इस महीने की आमदनी',
   'Expense this month': 'इस महीने का खर्च',

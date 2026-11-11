@@ -17,6 +17,7 @@ import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
+import 'package:finance_tracker/domain/services/insights_calculator.dart';
 import 'package:finance_tracker/domain/services/report_calculator.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_picker_sheet.dart';
@@ -462,12 +463,92 @@ class _FinancialPulseCard extends GetView<HomeController> {
                     ),
                   ],
                 ),
+                ..._insightLines(context, controller.insights.value),
               ],
             ),
           ),
         ),
       );
     });
+  }
+}
+
+/// This month against the same days of last month, and the category that
+/// rose most. Each line has an arrow as well as a colour, so the meaning
+/// never rests on colour alone.
+List<Widget> _insightLines(BuildContext context, MonthInsights insights) {
+  final FinanceColors money = FinanceColors.of(context);
+  final ColorScheme colors = Theme.of(context).colorScheme;
+  final int? change = insights.changePercent;
+  final CategoryIncrease? rise = insights.topIncrease;
+  return <Widget>[
+    if (change != null)
+      _InsightLine(
+        icon: change > 0
+            ? Icons.trending_up_rounded
+            : change < 0
+            ? Icons.trending_down_rounded
+            : Icons.trending_flat_rounded,
+        color: change > 0
+            ? money.expense
+            : change < 0
+            ? money.income
+            : colors.onSurfaceVariant,
+        text: change > 0
+            ? '@percent% more than the same days last month'.trParams(
+                <String, String>{'percent': '$change'},
+              )
+            : change < 0
+            ? '@percent% less than the same days last month'.trParams(
+                <String, String>{'percent': '${-change}'},
+              )
+            : 'Same as the same days last month'.tr,
+      ),
+    if (rise != null)
+      _InsightLine(
+        icon: Icons.arrow_upward_rounded,
+        color: money.expense,
+        text: '@category spending up @amount'.trParams(<String, String>{
+          'category':
+              Get.find<HomeController>().categoryOf(rise.categoryId)?.name ??
+              'Uncategorised'.tr,
+          'amount': AppFormatters.money(rise.amount),
+        }),
+      ),
+  ];
+}
+
+class _InsightLine extends StatelessWidget {
+  const _InsightLine({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
+
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Row(
+        children: <Widget>[
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -483,6 +564,7 @@ class _BalanceSection extends GetView<HomeController> {
       monthExpense: controller.month.value.expense,
       isHidden: controller.balanceHidden.value,
       onToggleHidden: controller.toggleBalanceHidden,
+      netWorth: controller.insights.value.netWorth,
       onTap: () => Get.toNamed<void>(AppRoutes.accounts),
       onOpeningBalanceTap: () => Get.toNamed<void>(AppRoutes.accounts),
       onIncomeTap: () => _openTransactionsFiltered(

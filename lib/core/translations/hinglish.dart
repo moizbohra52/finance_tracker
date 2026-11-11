@@ -267,6 +267,13 @@ const Map<String, String> hinglish = <String, String>{
   'Current balance': 'Abhi ka balance',
   'Show balance': 'Balance dikhayein',
   'Hide balance': 'Balance chhupayein',
+  'Net worth incl. khata @amount': 'Khata milakar net worth @amount',
+  '@percent% more than the same days last month':
+      'Pichhle mahine ke inhi dinon se @percent% zyada',
+  '@percent% less than the same days last month':
+      'Pichhle mahine ke inhi dinon se @percent% kam',
+  'Same as the same days last month': 'Pichhle mahine ke inhi dinon jitna',
+  '@category spending up @amount': '@category mein @amount zyada kharch',
   'Opening balance @amount': 'Opening balance @amount',
   'Income this month': 'Is mahine ki aamdani',
   'Expense this month': 'Is mahine ka kharcha',

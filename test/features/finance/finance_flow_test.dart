@@ -1,4 +1,6 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_form_view.dart';
@@ -98,6 +100,60 @@ void main() {
       expect(find.text('Salary'), findsOneWidget);
       expect(find.text('−₹250.00'), findsOneWidget);
       expect(find.text('+₹5,000.00'), findsOneWidget);
+    });
+
+    testWidgets('shows net worth and this month against last month', (
+      WidgetTester tester,
+    ) async {
+      final DateTime now = DateTime.now();
+      final FakeFinance f = FakeFinance()..addAccount('Cash', '10000');
+      // The 1st of each month is inside "so far" whatever today's date.
+      f.addTransaction(
+        id: 'this-month',
+        type: TransactionType.expense,
+        amount: '1500',
+        categoryId: 'cat-food',
+        date: DateTime(now.year, now.month),
+      );
+      f.addTransaction(
+        id: 'last-month',
+        type: TransactionType.expense,
+        amount: '1000',
+        categoryId: 'cat-food',
+        date: DateTime(now.year, now.month - 1),
+      );
+      // Ravi owes the user 2,500, so net worth is above the balance.
+      f.contacts.add(
+        Contact(
+          id: 'c-ravi',
+          userId: 'user-1',
+          name: 'Ravi',
+          openingBalance: Decimal.parse('2500'),
+          openingBalanceType: 'receivable',
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+      await _start(tester, finance: f);
+
+      // 10,000 - 1,500 - 1,000 = 7,500 in accounts, + 2,500 owed.
+      expect(find.text('Net worth incl. khata ₹10,000.00'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('50% more than the same days last month'),
+        200,
+      );
+      expect(
+        find.text('50% more than the same days last month'),
+        findsOneWidget,
+      );
+      expect(find.text('Food & Dining spending up ₹500.00'), findsOneWidget);
+    });
+
+    testWidgets('hides net worth when there is no khata', (
+      WidgetTester tester,
+    ) async {
+      await _start(tester, finance: _seeded());
+      expect(find.textContaining('Net worth'), findsNothing);
     });
 
     testWidgets('shows an error with retry when loading fails', (

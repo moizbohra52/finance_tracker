@@ -72,6 +72,7 @@ class BalanceCard extends StatelessWidget {
     required this.monthExpense,
     required this.isHidden,
     required this.onToggleHidden,
+    this.netWorth,
     this.onTap,
     this.onOpeningBalanceTap,
     this.onIncomeTap,
@@ -84,6 +85,10 @@ class BalanceCard extends StatelessWidget {
   final Decimal monthExpense;
   final bool isHidden;
   final VoidCallback onToggleHidden;
+
+  /// Balance with khata added in; shown only when it differs from
+  /// [currentBalance], that is when someone owes or is owed money.
+  final Decimal? netWorth;
   final VoidCallback? onTap;
   final VoidCallback? onOpeningBalanceTap;
   final VoidCallback? onIncomeTap;
@@ -247,6 +252,19 @@ class BalanceCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (netWorth != null &&
+                            netWorth != currentBalance) ...<Widget>[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Net worth incl. khata @amount'.trParams(
+                              <String, String>{'amount': show(netWorth!)},
+                            ),
+                            style: text.labelMedium?.copyWith(
+                              color: onCard.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         IntrinsicHeight(
                           child: Row(
