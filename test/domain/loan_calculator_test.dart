@@ -205,6 +205,28 @@ void main() {
       expect(LoanCalculator.schedule(l, payments), isEmpty);
     });
 
+    test(
+      'a zero rate count after a prepayment is exact, not a double ceil',
+      () {
+        // 5.70 / 1.14 is 5.000000000000001 in doubles, which would give 6.
+        final Loan l = loan(
+          principal: '11.40',
+          rate: '0',
+          months: 10,
+          emi: '1.14',
+        );
+        final List<LoanPayment> payments = [
+          payment('x', LoanPaymentKind.extra, d('5.70'), Decimal.zero),
+        ];
+        expect(LoanCalculator.outstanding(l, payments), d('5.70'));
+        expect(LoanCalculator.instalmentsLeft(l, payments), 5);
+        expect(
+          LoanCalculator.schedule(l, payments),
+          hasLength(LoanCalculator.instalmentsLeft(l, payments)),
+        );
+      },
+    );
+
     test('at least one EMI is left while something is owed', () {
       final Loan l = loan(principal: '1000', rate: '0', months: 2);
       final List<LoanPayment> payments = [

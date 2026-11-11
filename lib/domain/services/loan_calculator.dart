@@ -101,11 +101,13 @@ abstract final class LoanCalculator {
     if (!live.any((LoanPayment p) => p.kind == LoanPaymentKind.extra)) {
       return byTenure;
     }
+    if (loan.annualRate == Decimal.zero) {
+      return math.max(1, (owed / _emiOf(loan)).ceil().toInt());
+    }
     // Doubles only count months here; no amount is ever a double.
     final double e = _emiOf(loan).toDouble();
     final double o = owed.toDouble();
     final double r = loan.annualRate.toDouble() / 1200;
-    if (r == 0) return math.max(1, (o / e).ceil());
     final double interestShare = e - o * r;
     // An EMI that does not even cover the interest never pays the loan off.
     if (interestShare <= 0) return byTenure;
