@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/domain/entities/loan.dart';
+import 'package:finance_tracker/domain/services/split_calculator.dart';
 import 'package:rational/rational.dart';
 
 /// One repayment of a loan split into principal and interest.
@@ -36,11 +37,33 @@ class LoanInstalment {
   final Decimal balanceAfter;
 }
 
+/// Where a loan stands: what is owed, what has been paid and what is next.
+/// [nextDueDate] is null for a closed loan; [instalmentsLeft] is null unless
+/// the loan is an EMI loan.
+class LoanStatus {
+  const LoanStatus({
+    required this.outstanding,
+    required this.principalRepaid,
+    required this.interestPaid,
+    this.nextDueDate,
+    this.nextAmount,
+    this.instalmentsLeft,
+  });
+
+  final Decimal outstanding;
+  final Decimal principalRepaid;
+  final Decimal interestPaid;
+  final DateTime? nextDueDate;
+  final Decimal? nextAmount;
+  final int? instalmentsLeft;
+}
+
 /// Money rules for loans and EMIs (docs/superpowers/specs/
 /// 2026-11-11-loans-emi-design.md). Amounts are `Decimal`, rounded to paisa.
 abstract final class LoanCalculator {
   static final Decimal _one = Decimal.one;
   static final Decimal _twelveHundred = Decimal.fromInt(1200);
+  static final Decimal _maxAnnualRate = Decimal.fromInt(60);
 
   /// [date] moved by [months] months; the day is kept but clamped to the
   /// length of the target month (31 Jan -> 28/29 Feb). Date only.
@@ -153,6 +176,251 @@ abstract final class LoanCalculator {
       );
     }
     return rows;
+  }
+
+  /// Interest of a `monthly_interest` loan up to [asOf], in whole months: month
+  /// k is complete once its anniversary (the start date plus k months) has
+  /// come, and costs one month of interest on the principal owed at its start.
+  /// 0 for an EMI loan.
+  static Decimal accruedInterest(
+    Loan loan,
+    List<LoanPayment> payments,
+    DateTime asOf,
+  ) {
+    if (loan.method != LoanMethod.monthlyInterest) return Decimal.zero;
+    final DateTime today = _dateOnly(asOf);
+    final List<LoanPayment> live = payments
+        .where((LoanPayment p) => p.isLive)
+        .toList();
+    Decimal total = Decimal.zero;
+    for (int k = 1; !addMonths(loan.startDate, k).isAfter(today); k++) {
+      final DateTime monthStart = addMonths(loan.startDate, k - 1);
+      final Decimal owed = live
+          .where((LoanPayment p) => !_dateOnly(p.paidAt).isAfter(monthStart))
+          .fold(
+            loan.principal,
+            (Decimal o, LoanPayment p) => o - p.principalPart,
+          );
+      total += monthlyInterest(owed, loan.annualRate);
+    }
+    return total;
+  }
+
+  /// Interest accrued up to [asOf] less the interest parts paid by then; never
+  /// below 0.
+  static Decimal unpaidInterest(
+    Loan loan,
+    List<LoanPayment> payments,
+    DateTime asOf,
+  ) {
+    final DateTime today = _dateOnly(asOf);
+    final Decimal unpaid = payments
+        .where(
+          (LoanPayment p) => p.isLive && !_dateOnly(p.paidAt).isAfter(today),
+        )
+        .fold(
+          accruedInterest(loan, payments, asOf),
+          (Decimal u, LoanPayment p) => u - p.interestPart,
+        );
+    return unpaid < Decimal.zero ? Decimal.zero : unpaid;
+  }
+
+  /// The next date a payment is due; null for a closed loan. An EMI loan's is
+  /// that of the next scheduled instalment. A monthly-interest loan's is the
+  /// first anniversary of the start date after the latest live payment (or
+  /// after the start), so an unpaid month stays overdue.
+  static DateTime? nextDueDate(Loan loan, List<LoanPayment> payments) {
+    if (loan.isClosed) return null;
+    final Iterable<LoanPayment> live = payments.where(
+      (LoanPayment p) => p.isLive,
+    );
+    if (loan.method == LoanMethod.emi) {
+      return dueDate(
+        loan,
+        live
+                .where((LoanPayment p) => p.kind == LoanPaymentKind.scheduled)
+                .length +
+            1,
+      );
+    }
+    final DateTime? last = _latestPaymentDay(live);
+    int k = 1;
+    while (last != null && !addMonths(loan.startDate, k).isAfter(last)) {
+      k++;
+    }
+    return addMonths(loan.startDate, k);
+  }
+
+  /// Proposes how a payment of [amount] splits (or, with no [amount], what the
+  /// form should fill in). [earlier] holds the loan's other payments, not the
+  /// one being edited. Interest comes first; with [closing] the amount clears
+  /// the loan (outstanding, plus unpaid interest for a monthly-interest loan).
+  static LoanPart suggest(
+    Loan loan,
+    List<LoanPayment> earlier, {
+    required LoanPaymentKind kind,
+    required DateTime paidAt,
+    Decimal? amount,
+    bool closing = false,
+  }) {
+    final Decimal owed = outstanding(loan, earlier);
+    if (loan.method == LoanMethod.monthlyInterest) {
+      final Decimal unpaid = unpaidInterest(loan, earlier, paidAt);
+      return _interestFirst(closing ? owed + unpaid : amount ?? unpaid, unpaid);
+    }
+    if (kind == LoanPaymentKind.extra) {
+      final Decimal principal = closing ? owed : amount ?? Decimal.zero;
+      return LoanPart(
+        amount: principal,
+        principal: principal,
+        interest: Decimal.zero,
+      );
+    }
+    if (amount != null) {
+      return _interestFirst(amount, monthlyInterest(owed, loan.annualRate));
+    }
+    final List<LoanInstalment> rows = schedule(loan, earlier);
+    if (rows.isEmpty) {
+      return LoanPart(
+        amount: Decimal.zero,
+        principal: Decimal.zero,
+        interest: Decimal.zero,
+      );
+    }
+    return LoanPart(
+      amount: rows.first.amount,
+      principal: rows.first.principal,
+      interest: rows.first.interest,
+    );
+  }
+
+  /// Owed, paid so far and what comes next, from the live payments.
+  static LoanStatus status(Loan loan, List<LoanPayment> payments) {
+    final Iterable<LoanPayment> live = payments.where(
+      (LoanPayment p) => p.isLive,
+    );
+    final DateTime? due = nextDueDate(loan, payments);
+    final bool isEmi = loan.method == LoanMethod.emi;
+    Decimal? nextAmount;
+    if (isEmi) {
+      final List<LoanInstalment> rows = schedule(loan, payments);
+      if (rows.isNotEmpty) nextAmount = rows.first.amount;
+    } else if (due != null) {
+      nextAmount = unpaidInterest(loan, payments, due);
+    }
+    return LoanStatus(
+      outstanding: outstanding(loan, payments),
+      principalRepaid: live.fold(
+        Decimal.zero,
+        (Decimal a, LoanPayment p) => a + p.principalPart,
+      ),
+      interestPaid: live.fold(
+        Decimal.zero,
+        (Decimal a, LoanPayment p) => a + p.interestPart,
+      ),
+      nextDueDate: due,
+      nextAmount: nextAmount,
+      instalmentsLeft: isEmi ? instalmentsLeft(loan, payments) : null,
+    );
+  }
+
+  /// The first thing wrong with [loan], as an English message key, or null.
+  /// Also refuses what the maths cannot take: no EMI, a tenure outside 1..480.
+  static String? validateLoan(Loan loan) {
+    final bool isEmi = loan.method == LoanMethod.emi;
+    final Decimal? emiAmount = loan.emiAmount;
+    if (loan.name.trim().isEmpty) return 'Give the loan a name';
+    if (loan.accountId.isEmpty) return 'Choose an account';
+    if (loan.principal <= Decimal.zero) return 'Amount must be more than zero';
+    if (SplitCalculator.hasSubPaise(loan.principal) ||
+        (emiAmount != null && SplitCalculator.hasSubPaise(emiAmount))) {
+      return 'Amounts can have at most 2 decimals';
+    }
+    if (loan.annualRate < Decimal.zero || loan.annualRate > _maxAnnualRate) {
+      return isEmi
+          ? 'Interest rate must be between 0% and 60% a year'
+          : 'Interest rate must be between 0% and 5% a month';
+    }
+    if (!isEmi) return null;
+    final int? months = loan.tenureMonths;
+    if (months == null || months < 1 || months > 480) {
+      return 'Tenure must be 1 to 480 months';
+    }
+    if (emiAmount == null || emiAmount <= Decimal.zero) return 'Enter the EMI';
+    if (loan.annualRate > Decimal.zero &&
+        emiAmount <= monthlyInterest(loan.principal, loan.annualRate)) {
+      return "The EMI does not cover the first month's interest";
+    }
+    final DateTime? first = loan.firstDueDate;
+    if (first == null) return 'Choose the first EMI date';
+    if (_dateOnly(first).isBefore(_dateOnly(loan.startDate))) {
+      return 'The first EMI cannot be before the loan starts';
+    }
+    return null;
+  }
+
+  /// The first thing wrong with [payment] on [loan], as an English message
+  /// key, or null. [earlier] holds the loan's other payments (deleted ones are
+  /// ignored). The interest part of an EMI or closing payment is not capped.
+  static String? validatePayment(
+    Loan loan,
+    List<LoanPayment> earlier,
+    LoanPayment payment,
+  ) {
+    if (payment.amount <= Decimal.zero) return 'Amount must be more than zero';
+    if (<Decimal>[
+      payment.amount,
+      payment.principalPart,
+      payment.interestPart,
+    ].any(SplitCalculator.hasSubPaise)) {
+      return 'Amounts can have at most 2 decimals';
+    }
+    if (payment.principalPart < Decimal.zero ||
+        payment.interestPart < Decimal.zero ||
+        payment.principalPart + payment.interestPart != payment.amount) {
+      return 'Principal and interest must add up to the amount';
+    }
+    final DateTime day = _dateOnly(payment.paidAt);
+    final DateTime? last = _latestPaymentDay(
+      earlier.where((LoanPayment p) => p.isLive),
+    );
+    if (day.isBefore(_dateOnly(loan.startDate)) ||
+        (last != null && day.isBefore(last))) {
+      return 'A payment cannot be dated before the previous one or the loan '
+          'start';
+    }
+    final Decimal owed = outstanding(loan, earlier);
+    if (owed <= Decimal.zero) return 'This loan is already repaid';
+    if (payment.principalPart > owed) {
+      return 'This is more than the principal still owed';
+    }
+    if (loan.method == LoanMethod.monthlyInterest &&
+        payment.amount > owed + unpaidInterest(loan, earlier, payment.paidAt)) {
+      return 'This is more than is owed';
+    }
+    return null;
+  }
+
+  /// [amount] with interest taken first, up to [interestDue]; the rest is
+  /// principal.
+  static LoanPart _interestFirst(Decimal amount, Decimal interestDue) {
+    final Decimal interest = amount < interestDue ? amount : interestDue;
+    return LoanPart(
+      amount: amount,
+      principal: amount - interest,
+      interest: interest,
+    );
+  }
+
+  static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  static DateTime? _latestPaymentDay(Iterable<LoanPayment> payments) {
+    DateTime? latest;
+    for (final LoanPayment p in payments) {
+      final DateTime day = _dateOnly(p.paidAt);
+      if (latest == null || day.isAfter(latest)) latest = day;
+    }
+    return latest;
   }
 
   static Decimal _emiOf(Loan loan) =>
