@@ -180,3 +180,10 @@ Colours and sizes come from the theme and `AppSizes`, `AppSpacing` and
   (`confirmDestructive`); any save or delete that succeeds gives a light tap
   (`SubmitState.onSuccess`, set in `main.dart`). The phone's own haptics
   setting decides whether they are felt.
+- **Swipe to delete.** Rows in the Transactions tab, on an account screen
+  and in a khata ledger swipe left to delete (`SwipeToDelete`). A swipe asks
+  the same confirmation as the row's Delete button (`confirmDeleteTransaction`
+  for transactions, which removes both legs of a transfer) and slides the row
+  away only once the delete succeeded. Rows made by a split group do not
+  swipe: they are changed in the group. The Delete button stays, so the
+  action never depends on knowing the gesture.

@@ -13,6 +13,7 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/core/widgets/swipe_to_delete.dart';
 import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
@@ -323,7 +324,9 @@ class _EntryTile extends GetView<ContactDetailController> {
     );
   }
 
-  Future<void> _delete(BuildContext context) async {
+  /// Asks, deletes and says so; returns whether the entry went. Used by the
+  /// delete button and by a swipe on the row.
+  Future<bool> _delete(BuildContext context) async {
     final bool confirmed = await confirmDestructive(
       context,
       title: 'Delete entry?'.tr,
@@ -334,7 +337,9 @@ class _EntryTile extends GetView<ContactDetailController> {
     );
     if (confirmed && await controller.deleteEntry(entry.id)) {
       AppSnackbar.show('Entry deleted'.tr);
+      return true;
     }
+    return false;
   }
 
   @override
@@ -352,79 +357,92 @@ class _EntryTile extends GetView<ContactDetailController> {
       // linkOf touches splitLinks, so the tile also rebuilds when the group
       // behind a derived row arrives after the first frame.
       final SplitLink? link = controller.linkOf(entry);
-      return AppListTile(
-        onTap: derived ? () => controller.openInGroup(entry) : _edit,
-        padding: const EdgeInsets.only(
-          left: AppSpacing.md,
-          top: AppSpacing.sm,
-          bottom: AppSpacing.sm,
+      return SwipeToDelete(
+        key: ValueKey<String>(entry.id),
+        // An entry made by a split group is changed in the group.
+        enabled: !derived,
+        onDelete: () => _delete(context),
+        onDismissed: () => controller.entries.removeWhere(
+          (ContactTransaction e) => e.id == entry.id,
         ),
-        leading: IconBadge(
-          icon: raises ? Icons.call_received_rounded : Icons.call_made_rounded,
-          color: color,
-        ),
-        title: contactEntryLabel(entry.type),
-        subtitle:
-            '${AppFormatters.dateTime(entry.transactionDate)}$due'
-            '${note.isEmpty ? '' : '\n$note'}',
-        subtitleMaxLines: 3,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              AppFormatters.signedMoney(entry.amount, positive: raises),
-              style: text.titleSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w700,
+        child: AppListTile(
+          onTap: derived ? () => controller.openInGroup(entry) : _edit,
+          padding: const EdgeInsets.only(
+            left: AppSpacing.md,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.sm,
+          ),
+          leading: IconBadge(
+            icon: raises
+                ? Icons.call_received_rounded
+                : Icons.call_made_rounded,
+            color: color,
+          ),
+          title: contactEntryLabel(entry.type),
+          subtitle:
+              '${AppFormatters.dateTime(entry.transactionDate)}$due'
+              '${note.isEmpty ? '' : '\n$note'}',
+          subtitleMaxLines: 3,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                AppFormatters.signedMoney(entry.amount, positive: raises),
+                style: text.titleSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            if (derived)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.sm),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(
-                        Icons.groups_outlined,
-                        size: 12,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        link?.groupName ?? '',
-                        style: text.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+              if (derived)
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.sm),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.groups_outlined,
+                          size: 12,
                           color: Theme.of(
                             context,
                           ).colorScheme.onPrimaryContainer,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 3),
+                        Text(
+                          link?.groupName ?? '',
+                          style: text.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                )
+              else ...<Widget>[
+                IconButton(
+                  tooltip: 'Edit entry'.tr,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: _edit,
                 ),
-              )
-            else ...<Widget>[
-              IconButton(
-                tooltip: 'Edit entry'.tr,
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _edit,
-              ),
-              IconButton(
-                tooltip: 'Delete entry'.tr,
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _delete(context),
-              ),
+                IconButton(
+                  tooltip: 'Delete entry'.tr,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _delete(context),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       );
     });

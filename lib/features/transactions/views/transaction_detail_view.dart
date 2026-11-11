@@ -6,8 +6,6 @@ import 'package:finance_tracker/core/widgets/app_badges.dart';
 import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
-import 'package:finance_tracker/core/widgets/app_pickers.dart';
-import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
@@ -21,6 +19,7 @@ import 'package:finance_tracker/domain/services/transfer_legs.dart';
 import 'package:finance_tracker/features/reminders/controllers/reminder_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_detail_controller.dart';
+import 'package:finance_tracker/features/transactions/views/delete_transaction.dart';
 import 'package:finance_tracker/features/transactions/widgets/receipt_preview.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -93,36 +92,11 @@ class _Details extends StatelessWidget {
   }
 
   Future<void> _delete(BuildContext context) async {
-    final TransactionController list = Get.find<TransactionController>();
-    final TransferLegs? transfer = this.transfer;
-    final String amount = AppFormatters.money(transaction.amount);
-    final bool confirmed = await confirmDestructive(
+    if (await confirmDeleteTransaction(
       context,
-      title: transfer == null
-          ? 'Delete transaction?'.tr
-          : 'Delete transfer?'.tr,
-      message: transfer == null
-          ? 'This @type of @amount will be removed from your balance.'.trParams(
-              <String, String>{
-                'type': transaction.type.label.toLowerCase(),
-                'amount': amount,
-              },
-            )
-          : 'This transfer of @amount from @from to @to will be removed from both accounts.'
-                .trParams(<String, String>{
-                  'amount': amount,
-                  'from': list.accountName(transfer.fromAccountId),
-                  'to': list.accountName(transfer.toAccountId),
-                }),
-    );
-    if (!confirmed) return;
-    final bool deleted = transfer == null
-        ? await list.deleteTransaction(transaction.id)
-        : await list.deleteTransfer(transfer.transferId);
-    if (deleted) {
-      AppSnackbar.show(
-        transfer == null ? 'Transaction deleted'.tr : 'Transfer deleted'.tr,
-      );
+      transaction,
+      transfer: transfer,
+    )) {
       Get.back<void>();
     }
   }

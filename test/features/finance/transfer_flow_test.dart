@@ -150,6 +150,37 @@ void main() {
     expect(find.text('Transfer deleted'), findsOneWidget);
   });
 
+  testWidgets('swiping one leg of a transfer deletes both', (
+    WidgetTester tester,
+  ) async {
+    final FakeFinance f = _twoAccounts();
+    _seedTransfer(f);
+    await _start(tester, f);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byIcon(Icons.receipt_long_outlined),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.drag(find.text('From Cash'), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete transfer?'), findsOneWidget);
+    await tapAndSettle(
+      tester,
+      find.descendant(
+        of: find.byType(AppDialog),
+        matching: find.widgetWithText(FilledButton, 'Delete'),
+      ),
+    );
+
+    expect(_live(f), isEmpty, reason: 'both legs are gone');
+    expect(find.text('To Bank'), findsNothing);
+    expect(find.text('From Cash'), findsNothing);
+    expect(find.text('Transfer deleted'), findsOneWidget);
+  });
+
   testWidgets('editing the amount keeps the same transfer', (
     WidgetTester tester,
   ) async {

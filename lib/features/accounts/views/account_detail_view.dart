@@ -11,12 +11,14 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/core/widgets/swipe_to_delete.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/account_transaction_summary.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_controller.dart';
 import 'package:finance_tracker/features/accounts/controllers/account_detail_controller.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
+import 'package:finance_tracker/features/transactions/views/delete_transaction.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:finance_tracker/widgets/transaction_day_header.dart';
@@ -231,22 +233,32 @@ class AccountDetailView extends GetView<AccountDetailController> {
                 TransactionDayRow(:final String label, :final int count) =>
                   TransactionDayHeader(label: label, count: count),
                 TransactionItemRow(transaction: final Transaction t) =>
-                  TransactionListItem(
-                    padding: AppListTile.flatPadding,
-                    transaction: t,
-                    // This list holds one account's rows, so a transfer's
-                    // other leg is looked up in the full list.
-                    title: TransactionListItem.titleFor(
-                      t,
-                      categoryName: list.categoryOf(t.categoryId)?.name,
-                      nearby: list.items,
-                      accountName: list.accountName,
+                  SwipeToDelete(
+                    key: ValueKey<String>(t.id),
+                    // A row made by a split group is changed in the group.
+                    enabled: !t.isSplitDerived,
+                    margin: TransactionListItem.cardMargin,
+                    onDelete: () => swipeDeleteTransaction(context, t),
+                    onDismissed: () => controller.items.removeWhere(
+                      (Transaction x) => x.id == t.id,
                     ),
-                    iconKey: list.categoryOf(t.categoryId)?.icon,
-                    subtitle: account.name,
-                    onTap: () => Get.toNamed<void>(
-                      AppRoutes.transactionDetail,
-                      arguments: t.id,
+                    child: TransactionListItem(
+                      padding: AppListTile.flatPadding,
+                      transaction: t,
+                      // This list holds one account's rows, so a transfer's
+                      // other leg is looked up in the full list.
+                      title: TransactionListItem.titleFor(
+                        t,
+                        categoryName: list.categoryOf(t.categoryId)?.name,
+                        nearby: list.items,
+                        accountName: list.accountName,
+                      ),
+                      iconKey: list.categoryOf(t.categoryId)?.icon,
+                      subtitle: account.name,
+                      onTap: () => Get.toNamed<void>(
+                        AppRoutes.transactionDetail,
+                        arguments: t.id,
+                      ),
                     ),
                   ),
               };

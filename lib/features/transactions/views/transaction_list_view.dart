@@ -10,12 +10,14 @@ import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/core/widgets/swipe_to_delete.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
 import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
 import 'package:finance_tracker/features/split/views/split_group_list_view.dart';
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
+import 'package:finance_tracker/features/transactions/views/delete_transaction.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_filter_sheet.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:finance_tracker/widgets/transaction_day_header.dart';
@@ -802,8 +804,16 @@ class _GroupedList extends GetView<TransactionController> {
         return switch (rows[index]) {
           TransactionDayRow(:final String label, :final int count) =>
             TransactionDayHeader(label: label, count: count),
-          TransactionItemRow(:final Transaction transaction) =>
-            TransactionListItem(
+          TransactionItemRow(:final Transaction transaction) => SwipeToDelete(
+            key: ValueKey<String>(transaction.id),
+            // A row made by a split group is changed in the group.
+            enabled: !transaction.isSplitDerived,
+            margin: TransactionListItem.cardMargin,
+            onDelete: () => swipeDeleteTransaction(context, transaction),
+            onDismissed: () => controller.items.removeWhere(
+              (Transaction t) => t.id == transaction.id,
+            ),
+            child: TransactionListItem(
               padding: AppListTile.flatPadding,
               transaction: transaction,
               title: TransactionListItem.titleFor(
@@ -822,6 +832,7 @@ class _GroupedList extends GetView<TransactionController> {
                 arguments: transaction.id,
               ),
             ),
+          ),
         };
       },
     );

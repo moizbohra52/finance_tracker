@@ -278,6 +278,43 @@ void main() {
       expect(find.text('Food & Dining'), findsNothing);
     });
 
+    testWidgets('swiping a row left deletes it after the same confirmation', (
+      WidgetTester tester,
+    ) async {
+      final FakeFinance f = await _start(tester, finance: _seeded());
+      await _tapNav(tester, Icons.receipt_long_outlined);
+
+      Future<void> swipeLunch() async {
+        await tester.drag(find.text('Food & Dining'), const Offset(-600, 0));
+        await tester.pumpAndSettle();
+      }
+
+      await swipeLunch();
+      expect(find.text('Delete transaction?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(
+        f.transactions.every((Transaction t) => t.deletedAt == null),
+        isTrue,
+      );
+      expect(
+        find.text('Food & Dining'),
+        findsOneWidget,
+        reason: 'it springs back',
+      );
+
+      await swipeLunch();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(
+        f.transactions.firstWhere((Transaction t) => t.id == 't1').deletedAt,
+        isNotNull,
+      );
+      expect(find.text('Food & Dining'), findsNothing);
+      expect(find.text('Transaction deleted'), findsOneWidget);
+      expect(find.text('Salary'), findsOneWidget);
+    });
+
     testWidgets('see all from home opens the list route and goes back', (
       WidgetTester tester,
     ) async {
@@ -319,6 +356,35 @@ void main() {
       expect(find.text('Yesterday'), findsOneWidget);
       expect(find.text('Salary'), findsOneWidget);
       expect(find.text('Food & Dining'), findsNWidgets(2));
+    });
+
+    testWidgets('a row on the account screen deletes with a swipe', (
+      WidgetTester tester,
+    ) async {
+      // Tall enough that the row to swipe is fully on screen.
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final FakeFinance f = await _start(tester, finance: _seeded());
+      await tester.scrollUntilVisible(find.byType(AccountTile), 200);
+      await tapAndSettle(tester, find.byType(AccountTile));
+      await tester.scrollUntilVisible(find.text('Salary'), 200);
+
+      await tester.drag(find.text('Salary'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete transaction?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(
+        f.transactions.firstWhere((Transaction t) => t.id == 't2').deletedAt,
+        isNotNull,
+      );
+      expect(find.byType(AccountDetailView), findsOneWidget);
+      expect(find.text('Salary'), findsNothing);
+      // The balance follows: 1,000 opening - 250 lunch.
+      expect(find.text('₹750.00'), findsWidgets);
     });
   });
 

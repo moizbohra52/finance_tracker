@@ -39,6 +39,9 @@ class TransactionListItem extends StatelessWidget {
   /// Unused for card layout, preserved for API backward-compatibility.
   final EdgeInsetsGeometry padding;
 
+  /// The gap above and below the card.
+  static const EdgeInsets cardMargin = EdgeInsets.symmetric(vertical: 4);
+
   /// Row title for [t]: its category's name; for a transfer leg "To ..." or
   /// "From ..." naming the other account when [nearby] holds the other leg;
   /// otherwise its type ("Expense", "Transfer in").
@@ -125,7 +128,7 @@ class TransactionListItem extends StatelessWidget {
         transaction.note!.trim().toLowerCase() != title.trim().toLowerCase();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: cardMargin,
       child: Material(
         color: colors.surface,
         shape: RoundedRectangleBorder(
