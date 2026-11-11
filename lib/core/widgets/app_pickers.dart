@@ -2,6 +2,7 @@ import 'package:finance_tracker/core/theme/app_tokens.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 /// Read-only field that opens the platform date picker.
@@ -125,7 +126,10 @@ Future<bool> confirmDestructive(
             backgroundColor: Theme.of(dialogContext).colorScheme.error,
             foregroundColor: Theme.of(dialogContext).colorScheme.onError,
           ),
-          onPressed: () => Navigator.of(dialogContext).pop(true),
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Navigator.of(dialogContext).pop(true);
+          },
           child: Text(confirmLabel ?? 'Delete'.tr),
         ),
       ],

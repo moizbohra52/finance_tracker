@@ -18,6 +18,7 @@ import 'package:finance_tracker/core/theme/app_accent_color.dart';
 import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/core/theme/theme_controller.dart';
 import 'package:finance_tracker/core/translations/app_translations.dart';
+import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/datasources/local/saved_login_store.dart';
@@ -44,6 +45,8 @@ Future<void> main() async {
   // DateFormat needs symbols for any locale other than en_US.
   await initializeDateFormatting(AppConstants.defaultLocale);
   await initializeDateFormatting(AppLanguage.hindi.dateLocale);
+  // A light tap after any save or delete succeeds (SubmitState).
+  SubmitState.onSuccess = HapticFeedback.lightImpact;
   // The bundled font's licence, on the licences screen (Settings > About).
   LicenseRegistry.addLicense(() async* {
     yield LicenseEntryWithLineBreaks(const <String>[

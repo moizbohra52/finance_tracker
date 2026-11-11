@@ -205,8 +205,8 @@ class _BalanceHeader extends GetView<ContactDetailController> {
               style: text.labelLarge,
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              AppFormatters.money(balance.abs()),
+            CountUpMoney(
+              balance.abs(),
               style: text.displaySmall?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,

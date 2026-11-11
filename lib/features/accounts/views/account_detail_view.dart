@@ -135,8 +135,8 @@ class AccountDetailView extends GetView<AccountDetailController> {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text('Current balance'.tr, style: text.labelLarge),
-              Text(
-                AppFormatters.money(summary.balance),
+              CountUpMoney(
+                summary.balance,
                 style: text.displaySmall?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: AppSpacing.xs),

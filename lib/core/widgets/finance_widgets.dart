@@ -202,13 +202,18 @@ class BalanceCard extends StatelessWidget {
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
-                          child: Text(
-                            show(currentBalance),
-                            style: text.displaySmall?.copyWith(
-                              color: onCard,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.8,
-                            ),
+                          child: Builder(
+                            builder: (BuildContext context) {
+                              final TextStyle? style = text.displaySmall
+                                  ?.copyWith(
+                                    color: onCard,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.8,
+                                  );
+                              return isHidden
+                                  ? Text(_mask, style: style)
+                                  : CountUpMoney(currentBalance, style: style);
+                            },
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -550,6 +555,35 @@ class MoneyText extends StatelessWidget {
       style: (style ?? Theme.of(context).textTheme.titleSmall)?.copyWith(
         color: color,
         fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+/// A headline amount that counts up when first shown and eases to a new value
+/// when it changes. Frames in between show a rounded figure; the last frame
+/// is always [amount] exactly. Shown at once when the phone turns animations
+/// off.
+class CountUpMoney extends StatelessWidget {
+  const CountUpMoney(this.amount, {super.key, this.style});
+
+  final Decimal amount;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final double end = amount.toDouble();
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: end),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : AppSizes.countUpAnimation,
+      curve: Curves.easeOutCubic,
+      builder: (_, double value, _) => Text(
+        AppFormatters.money(
+          value == end ? amount : Decimal.parse(value.toStringAsFixed(2)),
+        ),
+        style: style,
       ),
     );
   }
