@@ -214,6 +214,14 @@ class _AppShellViewState extends State<AppShellView> {
               centerTitle: false,
               automaticallyImplyLeading: false,
               actions: <Widget>[
+                // The Khata tab's way into split groups (the standalone
+                // Khata route has its own).
+                if (_selectedIndex == 2)
+                  IconButton(
+                    tooltip: 'Split groups'.tr,
+                    icon: const Icon(Icons.groups_outlined),
+                    onPressed: () => Get.toNamed<void>(AppRoutes.splitGroups),
+                  ),
                 IconButton(
                   tooltip: 'Search transactions'.tr,
                   icon: const Icon(Icons.search_rounded),
