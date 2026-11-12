@@ -88,6 +88,12 @@ class SplitGroupController extends GetxController {
     _notifier.markChanged();
   });
 
+  /// Saves the group photo's object name (null removes it).
+  Future<void> setGroupPhoto(String groupId, String? avatarPath) async {
+    await _repository.setGroupPhoto(groupId, avatarPath);
+    _notifier.markChanged();
+  }
+
   /// The members of a saved group, for the edit form's prefill.
   Future<List<SplitMember>> membersOf(String groupId) =>
       _repository.getMembers(groupId);

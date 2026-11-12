@@ -1119,6 +1119,8 @@ const Map<String, String> hindi = <String, String>{
   'Split group': 'स्प्लिट समूह',
   'Give the group a name': 'समूह का नाम लिखें',
   'Add at least one friend': 'कम से कम एक दोस्त जोड़ें',
+  'You can add a group photo after creating the group.':
+      'समूह बनाने के बाद आप उसकी फ़ोटो जोड़ सकते हैं।',
   "This friend is in an expense or settlement and can't be removed":
       'यह दोस्त किसी खर्च या हिसाब किताब में है, उसे हटाया नहीं जा सकता',
   'Choose two different people': 'दो अलग लोग चुनें',

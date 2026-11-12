@@ -6,10 +6,12 @@ import 'package:finance_tracker/core/widgets/app_pickers.dart';
 import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
+import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/split.dart';
 import 'package:finance_tracker/features/split/controllers/split_group_controller.dart';
 import 'package:finance_tracker/features/split/widgets/split_member_picker_sheet.dart';
+import 'package:finance_tracker/widgets/entity_photo.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -30,6 +32,10 @@ class _SplitGroupFormViewState extends State<SplitGroupFormView> {
   final RxSet<String> _selected = <String>{}.obs;
   SplitGroupSummary? _existing;
 
+  /// The group's photo. The passed summary is a snapshot, so the form keeps
+  /// its own copy and updates it when the photo changes.
+  final RxnString _avatarPath = RxnString();
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +43,7 @@ class _SplitGroupFormViewState extends State<SplitGroupFormView> {
     if (arguments is SplitGroupSummary) {
       _existing = arguments;
       _name.text = arguments.group.name;
+      _avatarPath.value = arguments.group.avatarPath;
       _controller.membersOf(arguments.group.id).then((
         List<SplitMember> members,
       ) {
@@ -53,6 +60,11 @@ class _SplitGroupFormViewState extends State<SplitGroupFormView> {
   void dispose() {
     _name.dispose();
     super.dispose();
+  }
+
+  Future<void> _savePhoto(String groupId, String? path) async {
+    await _controller.setGroupPhoto(groupId, path);
+    _avatarPath.value = path;
   }
 
   Future<void> _addFriends() async {
@@ -132,7 +144,24 @@ class _SplitGroupFormViewState extends State<SplitGroupFormView> {
               bottom: AppSpacing.xxl,
             ),
             children: <Widget>[
-              const SizedBox(height: AppSpacing.xs),
+              if (_existing case final SplitGroupSummary existing) ...<Widget>[
+                Center(
+                  child: Obx(
+                    () => EditablePhoto(
+                      name: existing.group.name,
+                      path: _avatarPath.value,
+                      folder: PhotoStore.groups,
+                      id: existing.group.id,
+                      save: (String? path) =>
+                          _savePhoto(existing.group.id, path),
+                      icon: Icons.groups_outlined,
+                      size: 80,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ] else
+                const SizedBox(height: AppSpacing.xs),
               AppTextField(
                 label: 'Group name'.tr,
                 controller: _name,
@@ -141,6 +170,15 @@ class _SplitGroupFormViewState extends State<SplitGroupFormView> {
                     ? 'Give the group a name'.tr
                     : null,
               ),
+              if (_existing == null) ...<Widget>[
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'You can add a group photo after creating the group.'.tr,
+                  style: text.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               Row(
                 children: <Widget>[

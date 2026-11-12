@@ -1135,6 +1135,8 @@ const Map<String, String> hinglish = <String, String>{
   'Split group': 'Split group',
   'Give the group a name': 'Group ka naam likhein',
   'Add at least one friend': 'Kam se kam ek dost jodein',
+  'You can add a group photo after creating the group.':
+      'Group banane ke baad aap uski photo jod sakte hain.',
   "This friend is in an expense or settlement and can't be removed":
       'Yeh dost kisi kharche ya hisab kitab mein hai, use hataya nahi ja sakta',
   'Choose two different people': 'Do alag log chunein',

@@ -148,6 +148,17 @@ class SplitGroupCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
+          // The chooser passes its own onTap and has no use for the menu.
+          if (onTap == null)
+            PopupMenuButton<String>(
+              onSelected: (_) => openSplitGroupForm(summary),
+              itemBuilder: (BuildContext _) => <PopupMenuEntry<String>>[
+                PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Text('Edit group'.tr),
+                ),
+              ],
+            ),
         ],
       ),
     );
