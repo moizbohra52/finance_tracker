@@ -343,8 +343,8 @@ void main() {
   );
 
   group('payments', () {
-    Loan ravi() => Loan(
-      id: 'ravi',
+    Loan ravi({String id = 'ravi'}) => Loan(
+      id: id,
       userId: '',
       direction: LoanDirection.given,
       method: LoanMethod.monthlyInterest,
@@ -881,6 +881,33 @@ void main() {
         expect((await rows('reminders')).single['deleted_at'], isNotNull);
       },
     );
+
+    test('getLoans orders open loans by due date, then closed ones', () async {
+      await repo.saveLoan(
+        loan(id: 'late', name: 'Late', firstDueDate: DateTime(2027, 5, 5)),
+      );
+      await repo.saveLoan(
+        loan(id: 'soon', name: 'Soon', firstDueDate: DateTime(2027, 2, 5)),
+      );
+      await repo.saveLoan(ravi(id: 'a-old').copyWith(name: 'Old'));
+      await repo.saveLoan(ravi(id: 'b-newer').copyWith(name: 'Newer'));
+      await repo.savePayment(
+        pay('c1', DateTime(2027, 3, 15), '10000', '400', loanId: 'a-old'),
+      );
+      await repo.savePayment(
+        pay('c2', DateTime(2027, 3, 16), '10000', '400', loanId: 'b-newer'),
+      );
+
+      final List<LoanSummary> loans = await repo.getLoans();
+
+      expect(loans.map((LoanSummary s) => s.loan.id).toList(), <String>[
+        'soon',
+        'late',
+        'b-newer',
+        'a-old',
+      ]);
+      expect(loans.first.status.outstanding, d('500000'));
+    });
 
     test('copyWith can clear closedAt', () {
       final Loan closed = loan(closedAt: now);
