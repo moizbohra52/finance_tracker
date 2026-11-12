@@ -4,8 +4,10 @@ import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/services/loan_calculator.dart';
+import 'package:finance_tracker/features/loans/controllers/loan_detail_controller.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_form_controller.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_list_controller.dart';
+import 'package:finance_tracker/features/loans/controllers/loan_payment_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
@@ -339,5 +341,292 @@ void main() {
       expect(f.loans.single.closedAt, DateTime(2027, 6, 1));
       expect(f.loans.single.note, 'paid off');
     });
+  });
+
+  LoanPayment payment(
+    String id,
+    DateTime paidAt, {
+    String amount = '10379.18',
+    String principal = '6629.18',
+    String interest = '3750',
+  }) => LoanPayment(
+    id: id,
+    userId: 'u',
+    loanId: 'loan-1',
+    accountId: 'acc-1',
+    kind: LoanPaymentKind.scheduled,
+    paidAt: paidAt,
+    amount: Decimal.parse(amount),
+    principalPart: Decimal.parse(principal),
+    interestPart: Decimal.parse(interest),
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  Loan ravi() => Loan(
+    id: 'ravi',
+    userId: 'u',
+    direction: LoanDirection.given,
+    method: LoanMethod.monthlyInterest,
+    name: 'Ravi',
+    accountId: 'acc-1',
+    principal: Decimal.parse('10000'),
+    annualRate: Decimal.parse('24'),
+    startDate: DateTime(2027, 1, 1),
+    movedMoney: true,
+    createdAt: now,
+    updatedAt: now,
+  );
+
+  group('LoanDetailController', () {
+    LoanDetailController build(FakeFinance f, DataChangeNotifier n) {
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      return Get.put(LoanDetailController(f.repositories.loans, n, 'loan-1'));
+    }
+
+    test('loads the schedule; only the latest payment can change', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(loan('loan-1'));
+      final LoanDetailController c = build(f, DataChangeNotifier());
+      await c.load();
+      expect(c.schedule, hasLength(60));
+      expect(c.isLoading.value, isFalse);
+
+      final LoanPayment older = payment('p1', DateTime(2027, 2, 5));
+      final LoanPayment newer = payment(
+        'p2',
+        DateTime(2027, 3, 5),
+        principal: '6663.77',
+        interest: '3715.41',
+      );
+      f.loanPayments.addAll(<LoanPayment>[older, newer]);
+      await c.load();
+      expect(c.schedule, hasLength(58));
+      expect(c.canChange(newer), isTrue);
+      expect(c.canChange(older), isFalse);
+
+      expect(await c.deletePayment('p1'), isFalse);
+      expect(c.deletion.error.value, 'Only the latest payment can be changed');
+      expect(await c.deletePayment('p2'), isTrue);
+      await Future<void>.delayed(Duration.zero);
+      expect(c.detail.value!.payments.map((LoanPayment p) => p.id), <String>[
+        'p1',
+      ]);
+    });
+
+    test(
+      'reloads on the notifier; deleting the loan marks the change',
+      () async {
+        final FakeFinance f = FakeFinance();
+        f.loans.add(loan('loan-1'));
+        final DataChangeNotifier n = DataChangeNotifier();
+        final LoanDetailController c = build(f, n);
+        await c.load();
+        f.loanPayments.add(payment('p1', DateTime(2027, 2, 5)));
+        n.markChanged();
+        await Future<void>.delayed(Duration.zero);
+        expect(c.detail.value!.payments, hasLength(1));
+
+        final int version = n.version.value;
+        expect(await c.deleteLoan(), isTrue);
+        expect(n.version.value, greaterThan(version));
+        expect(f.loans.single.isLive, isFalse);
+      },
+    );
+
+    test('shows the load error', () async {
+      final FakeFinance f = FakeFinance();
+      final LoanDetailController c = build(f, DataChangeNotifier());
+      await c.load();
+      expect(c.error.value, isNotNull);
+      expect(c.detail.value, isNull);
+    });
+  });
+
+  group('LoanPaymentController', () {
+    Future<LoanPaymentController> build(
+      FakeFinance f,
+      Object? args, {
+      DataChangeNotifier? notifier,
+    }) async {
+      Get.testMode = true;
+      addTearDown(Get.reset);
+      f.addAccount('Cash', '1000');
+      final LoanPaymentController c = Get.put(
+        LoanPaymentController(
+          f.repositories.loans,
+          f.repositories.accounts,
+          notifier ?? DataChangeNotifier(),
+        ),
+      );
+      await c.start(LoanPaymentArgs.of(args));
+      return c;
+    }
+
+    test('args accept a bare id or an object, nothing else', () {
+      expect(LoanPaymentArgs.of('loan-1').loanId, 'loan-1');
+      expect(LoanPaymentArgs.of('loan-1').kind, LoanPaymentKind.scheduled);
+      const LoanPaymentArgs a = LoanPaymentArgs(loanId: 'x', closing: true);
+      expect(LoanPaymentArgs.of(a), same(a));
+      expect(() => LoanPaymentArgs.of(3), throwsArgumentError);
+      expect(() => LoanPaymentArgs.of(null), throwsArgumentError);
+    });
+
+    test('prefills the next EMI and re-splits what is typed', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(loan('loan-1'));
+      final LoanPaymentController c = await build(f, 'loan-1');
+
+      c.setDate(DateTime(2027, 2, 5));
+      expect(c.accountId.value, 'acc-1');
+      expect(c.amountText.value, '10379.18');
+      expect(c.principalText.value, '6629.18');
+      expect(c.interestText.value, '3750.00');
+      expect(c.error, isNull);
+
+      c.setAmount('12000');
+      expect(c.principalText.value, '8250.00');
+      expect(c.interestText.value, '3750.00');
+
+      c.setInterest('3000');
+      expect(c.principalText.value, '9000.00');
+      c.setPrincipal('8000');
+      expect(c.interestText.value, '4000.00');
+    });
+
+    test('saves, notifies and a retry upserts one payment', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(loan('loan-1'));
+      final DataChangeNotifier n = DataChangeNotifier();
+      final LoanPaymentController c = await build(f, 'loan-1', notifier: n);
+      c.setDate(DateTime(2027, 2, 5));
+      c.note.value = ' first ';
+      final int version = n.version.value;
+
+      expect(await c.savePayment(), isTrue);
+      expect(await c.savePayment(), isTrue);
+      expect(n.version.value, greaterThan(version));
+      expect(f.loanPayments, hasLength(1));
+      expect(f.loanPayments.single.note, 'first');
+      expect(f.loanPayments.single.kind, LoanPaymentKind.scheduled);
+      expect(f.loanPayments.single.paidAt, DateTime(2027, 2, 5));
+    });
+
+    test(
+      'a back-dated payment shows the date message and is refused',
+      () async {
+        final FakeFinance f = FakeFinance();
+        f.loans.add(loan('loan-1'));
+        f.loanPayments.add(payment('p1', DateTime(2027, 3, 5)));
+        final LoanPaymentController c = await build(f, 'loan-1');
+
+        c.setDate(DateTime(2027, 2, 10));
+        expect(
+          c.error,
+          'A payment cannot be dated before the previous one or the loan start',
+        );
+        expect(await c.savePayment(), isFalse);
+        expect(c.save.error.value, c.error);
+        expect(f.loanPayments, hasLength(1));
+      },
+    );
+
+    test('a monthly loan prefills the unpaid interest', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(ravi());
+      final LoanPaymentController c = await build(f, 'ravi');
+      c.setDate(DateTime(2027, 3, 15));
+      expect(c.amountText.value, '400.00');
+      expect(c.principalText.value, '0.00');
+      expect(c.interestText.value, '400.00');
+
+      c.setAmount('3000');
+      expect(c.principalText.value, '2600.00');
+      expect(c.interestText.value, '400.00');
+      expect(c.error, isNull);
+    });
+
+    test('closing prefills the payoff; kind follows the loan method', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(ravi());
+      final LoanPaymentController c = await build(
+        f,
+        const LoanPaymentArgs(
+          loanId: 'ravi',
+          kind: LoanPaymentKind.extra,
+          closing: true,
+        ),
+      );
+      c.setDate(DateTime(2027, 3, 15));
+      expect(c.amountText.value, '10400.00');
+      expect(c.kind, LoanPaymentKind.scheduled);
+      expect(await c.savePayment(), isTrue);
+      expect(f.loans.single.isClosed, isTrue);
+    });
+
+    test(
+      'closing an EMI loan is an extra payment of the outstanding',
+      () async {
+        final FakeFinance g = FakeFinance();
+        g.loans.add(loan('loan-1'));
+        final LoanPaymentController e = await build(
+          g,
+          const LoanPaymentArgs(
+            loanId: 'loan-1',
+            kind: LoanPaymentKind.extra,
+            closing: true,
+          ),
+        );
+        expect(e.kind, LoanPaymentKind.extra);
+        expect(e.amountText.value, '500000.00');
+        expect(e.interestText.value, '0.00');
+      },
+    );
+
+    test(
+      'an edit prefills the payment and checks the other payments',
+      () async {
+        final FakeFinance f = FakeFinance();
+        f.loans.add(loan('loan-1'));
+        final LoanPayment p1 = payment('p1', DateTime(2027, 2, 5));
+        final LoanPayment p2 = payment(
+          'p2',
+          DateTime(2027, 3, 5),
+          principal: '6663.77',
+          interest: '3715.41',
+        );
+        f.loanPayments.addAll(<LoanPayment>[p1, p2]);
+        final LoanPaymentController c = await build(
+          f,
+          LoanPaymentArgs(loanId: 'loan-1', existing: p2),
+        );
+        expect(c.amountText.value, '10379.18');
+        expect(c.principalText.value, '6663.77');
+        expect(c.paidAt.value, DateTime(2027, 3, 5));
+
+        c.setDate(DateTime(2027, 2, 1));
+        expect(c.error, isNotNull);
+        c.setDate(DateTime(2027, 3, 6));
+        c.setAmount('11000');
+        expect(c.error, isNull);
+        expect(await c.savePayment(), isTrue);
+        expect(f.loanPayments, hasLength(2));
+        expect(
+          f.loanPayments.firstWhere((LoanPayment p) => p.id == 'p2').amount,
+          Decimal.parse('11000'),
+        );
+      },
+    );
+
+    test(
+      'an inactive loan account falls back to the first active one',
+      () async {
+        final FakeFinance f = FakeFinance();
+        f.loans.add(loan('loan-1').copyWith(accountId: 'gone'));
+        final LoanPaymentController c = await build(f, 'loan-1');
+        expect(c.accountId.value, 'acc-1');
+      },
+    );
   });
 }
