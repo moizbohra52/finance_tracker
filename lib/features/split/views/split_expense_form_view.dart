@@ -161,6 +161,7 @@ class _SplitExpenseFormViewState extends State<SplitExpenseFormView> {
                     const SizedBox(height: AppSpacing.xs),
                     Obx(
                       () => SegmentedButton<bool>(
+                        showSelectedIcon: false,
                         segments: <ButtonSegment<bool>>[
                           ButtonSegment<bool>(
                             value: false,
@@ -201,6 +202,7 @@ class _SplitExpenseFormViewState extends State<SplitExpenseFormView> {
                     const SizedBox(height: AppSpacing.xs),
                     Obx(
                       () => SegmentedButton<SplitMode>(
+                        showSelectedIcon: false,
                         segments: <ButtonSegment<SplitMode>>[
                           ButtonSegment<SplitMode>(
                             value: SplitMode.equal,
