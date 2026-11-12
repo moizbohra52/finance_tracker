@@ -411,8 +411,10 @@ class _EntryActions extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        // A Wrap, not a Row: with large text or a longer translation the two
+        // buttons move onto a second line instead of overflowing.
+        Wrap(
+          alignment: WrapAlignment.center,
           children: <Widget>[
             TextButton(
               onPressed: () => _add(ContactTransactionType.paymentReceived),

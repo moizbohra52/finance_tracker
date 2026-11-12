@@ -5,9 +5,11 @@ import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
+import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
 import 'package:finance_tracker/widgets/account_list_item.dart';
+import 'package:finance_tracker/widgets/contact_list_item.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -155,6 +157,29 @@ void main() {
     await tester.tap(find.text('Add expense'));
     await tester.pumpAndSettle();
     expect(find.byType(TransactionFormView), findsOneWidget);
+    await _scrollThrough(tester);
+  });
+
+  // The Payment received / Payment made row sat in a Row and overflowed once
+  // text was larger than normal, which many people set on a small phone.
+  testWidgets('a contact fits a 360 dp phone with large text', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await pumpApp(
+      tester,
+      auth: FakeAuthRepository(signedIn: true),
+      finance: _busy(),
+    );
+    await _tapTab(tester, Icons.people_outline);
+    await tapAndSettle(tester, find.byType(ContactBalanceTile).first);
+    expect(find.byType(ContactDetailView), findsOneWidget);
+    expect(find.text('Payment received'), findsOneWidget);
     await _scrollThrough(tester);
   });
 }
