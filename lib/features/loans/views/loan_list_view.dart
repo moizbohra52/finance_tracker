@@ -55,7 +55,7 @@ class LoanListView extends GetView<LoanListController> {
           }
           return AppContent(
             child: RefreshIndicator(
-              onRefresh: controller.load,
+              onRefresh: () => controller.load(silent: true),
               child: _LoanList(controller: controller),
             ),
           );
@@ -146,6 +146,7 @@ class _LoanList extends StatelessWidget {
           ],
           if (closed.isNotEmpty)
             ExpansionTile(
+              key: const ValueKey<String>('closed-loans'),
               title: Text(
                 'Closed (@count)'.trParams(<String, String>{
                   'count': '${closed.length}',

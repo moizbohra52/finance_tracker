@@ -79,6 +79,13 @@ class LoanFormController extends GetxController {
   final RxBool termsLocked = false.obs;
   final SubmitState save = SubmitState();
 
+  /// True while [start] loads the pickers and, for an edit, the loan.
+  final RxBool isLoading = false.obs;
+
+  /// Set when the loan being edited could not be loaded; the form is then not
+  /// shown (a retry calls [start] again).
+  final RxnString loadError = RxnString();
+
   late final List<Worker> _workers;
   late DateTime _previousStart;
   Loan? _existing;
@@ -101,6 +108,16 @@ class LoanFormController extends GetxController {
 
   /// Loads the pickers and fills the draft from [LoanFormArgs.existing].
   Future<void> start(LoanFormArgs args) async {
+    isLoading.value = true;
+    loadError.value = null;
+    try {
+      await _start(args);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _start(LoanFormArgs args) async {
     final Loan? existing = args.existing;
     _existing = existing;
     try {
@@ -123,8 +140,11 @@ class LoanFormController extends GetxController {
       termsLocked.value = (await _repository.getLoan(
         existing.id,
       )).payments.isNotEmpty;
-    } on AppException {
-      // The repository refuses term changes after a payment anyway.
+    } on AppException catch (failure) {
+      // Without the payments the form cannot tell whether the terms are
+      // locked, so it must not open editable.
+      loadError.value = failure.message;
+      return;
     }
     // Loading must not overwrite the stored EMI text, whatever follows.
     _emiEdited = true;

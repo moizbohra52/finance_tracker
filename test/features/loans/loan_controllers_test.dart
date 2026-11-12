@@ -365,6 +365,41 @@ void main() {
       expect(f.loans.single.closedAt, DateTime(2027, 6, 1));
       expect(f.loans.single.note, 'paid off');
     });
+
+    test('loading is on while start runs and off after', () async {
+      final FakeFinance f = FakeFinance();
+      final Loan existing = loan('loan-1');
+      f.loans.add(existing);
+      final LoanFormController c = await build(f);
+      expect(c.isLoading.value, isFalse);
+
+      final Future<void> started = c.start(LoanFormArgs(existing: existing));
+      expect(c.isLoading.value, isTrue);
+      await started;
+      expect(c.isLoading.value, isFalse);
+      expect(c.loadError.value, isNull);
+    });
+
+    test(
+      'a loan that cannot be loaded sets loadError, a retry clears it',
+      () async {
+        final FakeFinance f = FakeFinance();
+        final Loan existing = loan('loan-1');
+        f.loans.add(existing);
+        final LoanFormController c = await build(f);
+
+        f.failAll = const NetworkFailure();
+        await c.start(LoanFormArgs(existing: existing));
+        expect(c.loadError.value, const NetworkFailure().message);
+        expect(c.isLoading.value, isFalse);
+        expect(c.name.value, isEmpty);
+
+        f.failAll = null;
+        await c.start(LoanFormArgs(existing: existing));
+        expect(c.loadError.value, isNull);
+        expect(c.name.value, 'Loan loan-1');
+      },
+    );
   });
 
   LoanPayment payment(

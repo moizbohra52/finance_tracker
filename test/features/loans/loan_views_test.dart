@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/services/loan_calculator.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_form_controller.dart';
@@ -21,6 +22,7 @@ Loan _loan(
   String name, {
   LoanDirection direction = LoanDirection.taken,
   String principal = '500000',
+  String accountId = 'acc-1',
 }) {
   final DateTime now = DateTime(2027, 1, 5, 12);
   return Loan(
@@ -29,7 +31,7 @@ Loan _loan(
     direction: direction,
     method: LoanMethod.emi,
     name: name,
-    accountId: 'acc-1',
+    accountId: accountId,
     principal: Decimal.parse(principal),
     annualRate: Decimal.parse('9'),
     tenureMonths: 60,
@@ -191,5 +193,99 @@ void main() {
     expect(field('Principal').enabled, isFalse);
     expect(field('Interest rate (% a year)').enabled, isFalse);
     expect(field('Loan name').enabled, isTrue);
+
+    // The pickers have no enabled flag: they are out of focus and touch.
+    Finder lockedAround(Finder control) => find.ancestor(
+      of: control,
+      matching: find.byWidgetPredicate(
+        (Widget w) => w is ExcludeFocus && w.excluding,
+      ),
+    );
+    expect(lockedAround(find.text('Start date')), findsOneWidget);
+    expect(lockedAround(find.text('First EMI date')), findsOneWidget);
+    expect(lockedAround(find.text('Account')), findsOneWidget);
+    expect(lockedAround(find.byType(Switch)), findsWidgets);
+    expect(lockedAround(find.text('EMI').first), findsOneWidget);
+    expect(lockedAround(find.text('Taken')), findsOneWidget);
+
+    await tester.tap(find.byType(Switch), warnIfMissed: false);
+    await tester.tap(find.text('Start date'), warnIfMissed: false);
+    await tester.tap(find.text('Cash'), warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+    expect(find.byType(DatePickerDialog), findsNothing);
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  testWidgets('an edit shows the skeleton first, then the filled fields', (
+    WidgetTester tester,
+  ) async {
+    final FakeFinance f = FakeFinance()..addAccount('Cash', '1000');
+    final Loan loan = _loan('a', 'Car loan');
+    f.loans.add(loan);
+    await _start(tester, f);
+    final Completer<void> gate = f.getLoanGate = Completer<void>();
+    unawaited(
+      Get.toNamed<void>(
+        AppRoutes.loanForm,
+        arguments: LoanFormArgs(existing: loan),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(SkeletonList), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Loan name'), findsNothing);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(SkeletonList), findsNothing);
+    expect(find.text('Car loan'), findsOneWidget);
+    expect(find.text('500000'), findsOneWidget);
+    expect(find.text('10379.18'), findsOneWidget);
+  });
+
+  testWidgets('an edit that cannot load offers retry, not an editable form', (
+    WidgetTester tester,
+  ) async {
+    final FakeFinance f = FakeFinance()..addAccount('Cash', '1000');
+    final Loan loan = _loan('a', 'Car loan');
+    f.loans.add(loan);
+    await _start(tester, f);
+    f.failAll = const NetworkFailure();
+    unawaited(
+      Get.toNamed<void>(
+        AppRoutes.loanForm,
+        arguments: LoanFormArgs(existing: loan),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Try again'), findsOneWidget);
+    expect(find.widgetWithText(TextFormField, 'Loan name'), findsNothing);
+
+    f.failAll = null;
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(find.text('Try again'), findsNothing);
+    expect(find.text('Car loan'), findsOneWidget);
+  });
+
+  testWidgets('an edit whose account is not in the list still opens', (
+    WidgetTester tester,
+  ) async {
+    final FakeFinance f = FakeFinance()..addAccount('Cash', '1000');
+    final Loan loan = _loan('a', 'Car loan', accountId: 'acc-gone');
+    f.loans.add(loan);
+    await _start(tester, f);
+    unawaited(
+      Get.toNamed<void>(
+        AppRoutes.loanForm,
+        arguments: LoanFormArgs(existing: loan),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Car loan'), findsOneWidget);
+    expect(find.text('Cash'), findsNothing);
   });
 }

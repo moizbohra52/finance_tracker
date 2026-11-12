@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
@@ -112,6 +114,9 @@ class FakeFinance {
   /// While set, every repository call fails (use when several controllers
   /// load at startup and a single [nextError] would hit only one of them).
   AppException? failAll;
+
+  /// While set, `getLoan` waits for it (a slow load, to see loading states).
+  Completer<void>? getLoanGate;
 
   void throwPending() {
     if (failAll != null) throw failAll!;
@@ -1527,6 +1532,7 @@ class FakeLoanRepository implements LoanRepository {
 
   @override
   Future<LoanDetail> getLoan(String loanId) async {
+    await _f.getLoanGate?.future;
     _f.throwPending();
     for (final Loan l in _f.loans) {
       if (l.id != loanId || !l.isLive) continue;
