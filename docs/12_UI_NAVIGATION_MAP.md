@@ -92,7 +92,7 @@ New routes:
 |---|---|---|---|
 | `/reminders` | Reminder list (overdue / upcoming / completed, enable switch, permission banner) | `ReminderBinding` -> `ReminderController` | Home "Reminders" tile |
 | `/reminder-form` | Add / edit reminder (arg: `ReminderFormArgs`) | `ReminderBinding` | list FAB, contact detail "Add reminder", transaction detail "Remind me", reminder detail "Edit" |
-| `/reminder-detail` | Reminder with Mark as done, Snooze, Edit, Delete, link to contact/transaction (arg: id) | `ReminderBinding` | list row, notification tap |
+| `/reminder-detail` | Reminder with Mark as done (Mark as paid on a loan reminder), Snooze, Edit, Delete, link to contact/transaction (arg: id) | `ReminderBinding` | list row, notification tap |
 | `/notifications` | Notification center (paged, mark read, mark all read) | `NotificationCenterBinding` -> `NotificationCenterController` | app-bar bell, Home "Notifications" tile, unknown notification tap |
 
 - The app-bar bell on the shell shows the unread count (`99+` at the cap).

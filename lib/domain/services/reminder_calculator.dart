@@ -23,6 +23,11 @@ enum ReminderAction {
   const ReminderAction(this.label);
 
   final String label;
+
+  /// The button text: Done on a loan reminder records the payment, so it reads
+  /// Paid there. The action id stays [name].
+  String labelFor({required bool loan}) =>
+      this == done && loan ? 'Paid' : label;
 }
 
 /// Date maths and state rules for reminders. No I/O, no clock: every method

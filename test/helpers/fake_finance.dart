@@ -1620,6 +1620,24 @@ class FakeLoanRepository implements LoanRepository {
   }
 
   @override
+  Future<LoanPayment?> recordDuePayment(String loanId, {DateTime? now}) async {
+    _f.throwPending();
+    final int index = _f.loans.indexWhere(
+      (Loan l) => l.id == loanId && l.isLive,
+    );
+    if (index < 0) return null;
+    final LoanPayment? payment = LoanRepository.dueDraft(
+      _f.loans[index],
+      _live(loanId),
+      now ?? DateTime.now(),
+      'due-${_f.loanPayments.length + 1}',
+    );
+    if (payment == null) return null;
+    await savePayment(payment);
+    return payment;
+  }
+
+  @override
   Future<void> deletePayment(String paymentId) async {
     _f.throwPending();
     final int index = _f.loanPayments.indexWhere(

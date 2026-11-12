@@ -764,6 +764,144 @@ void main() {
       },
     );
 
+    group('recordDuePayment', () {
+      test('records the due EMI from the loan account', () async {
+        await repo.saveLoan(loan());
+        final int queueBefore = (await queue()).length;
+
+        final LoanPayment? paid = await repo.recordDuePayment(
+          'loan-1',
+          now: DateTime(2027, 2, 5, 10),
+        );
+
+        expect(paid, isNotNull);
+        expect(paid!.amount, d('10379.18'));
+        expect(paid.principalPart, d('6629.18'));
+        expect(paid.interestPart, d('3750.00'));
+        expect(paid.kind, LoanPaymentKind.scheduled);
+        expect(paid.accountId, 'acc-1');
+        expect(paid.paidAt, DateTime(2027, 2, 5));
+        final Map<String, Object?> stored = (await liveRows(
+          'loan_payments',
+        )).single;
+        expect(stored['id'], paid.id);
+        expect(stored['account_id'], 'acc-1');
+        expect(
+          (await liveRows(
+            'transactions',
+            'id = \'${LoanIds.paymentPrincipal(paid.id)}\'',
+          )).single['amount'],
+          '6629.18',
+        );
+        expect(
+          (await liveRows(
+            'transactions',
+            'id = \'${LoanIds.paymentInterest(paid.id)}\'',
+          )).single['amount'],
+          '3750',
+        );
+        final Map<String, Object?> reminder = (await liveRows(
+          'reminders',
+        )).single;
+        expect(
+          DateTime.parse(reminder['remind_at']! as String).toLocal(),
+          DateTime(2027, 3, 5, 9),
+        );
+        expect(
+          (await queue()).skip(queueBefore).map((SyncQueueItem i) => i.entity),
+          <String>[
+            'loan_payments',
+            'transactions',
+            'transactions',
+            'reminders',
+          ],
+        );
+      });
+
+      test('a monthly-interest loan records the interest due', () async {
+        await repo.saveLoan(ravi());
+
+        final LoanPayment? paid = await repo.recordDuePayment(
+          'ravi',
+          now: DateTime(2027, 3, 15, 9),
+        );
+
+        expect(paid!.amount, d('400'));
+        expect(paid.principalPart, Decimal.zero);
+        expect(paid.interestPart, d('400'));
+        expect(paid.paidAt, DateTime(2027, 3, 15));
+        final Map<String, Object?> only = (await liveRows(
+          'transactions',
+        )).single;
+        expect(only['id'], LoanIds.paymentInterest(paid.id));
+        expect(only['type'], 'income');
+        expect(only['amount'], '400');
+      });
+
+      test('returns null and writes nothing when nothing is due', () async {
+        await repo.saveLoan(ravi());
+        final int queueBefore = (await queue()).length;
+
+        // 20 Jan: the first month is not complete yet.
+        final LoanPayment? paid = await repo.recordDuePayment(
+          'ravi',
+          now: DateTime(2027, 1, 20),
+        );
+
+        expect(paid, isNull);
+        expect(await liveCount('loan_payments'), 0);
+        expect((await queue()).length, queueBefore);
+      });
+
+      test('returns null for a closed, deleted or unknown loan', () async {
+        await repo.saveLoan(ravi());
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 3, 15), '10000', '400', loanId: 'ravi'),
+        );
+        await repo.saveLoan(loan(id: 'gone'));
+        await repo.deleteLoan('gone');
+        final int queueBefore = (await queue()).length;
+        final DateTime later = DateTime(2027, 4, 2);
+
+        expect(await repo.recordDuePayment('ravi', now: later), isNull);
+        expect(await repo.recordDuePayment('gone', now: later), isNull);
+        expect(await repo.recordDuePayment('nope', now: later), isNull);
+
+        expect(await liveCount('loan_payments'), 1);
+        expect((await queue()).length, queueBefore);
+      });
+
+      test(
+        'is dated no earlier than the loan start or its last payment',
+        () async {
+          await repo.saveLoan(loan());
+          await repo.savePayment(first());
+
+          final LoanPayment? second = await repo.recordDuePayment(
+            'loan-1',
+            now: DateTime(2027, 2, 1),
+          );
+
+          expect(second!.paidAt, DateTime(2027, 2, 5));
+          expect(second.amount, d('10379.18'));
+          expect(await liveCount('loan_payments'), 2);
+
+          await repo.saveLoan(
+            loan(
+              id: 'later',
+              startDate: DateTime(2027, 6, 1),
+              firstDueDate: DateTime(2027, 7, 1),
+            ),
+          );
+          final LoanPayment? early = await repo.recordDuePayment(
+            'later',
+            now: DateTime(2027, 5, 20),
+          );
+          expect(early!.paidAt, DateTime(2027, 6, 1));
+        },
+      );
+    });
+
     group('the reminder keeps a snooze or done the user set', () {
       final String snoozed = DateTime(2027, 2, 4, 9).toUtc().toIso8601String();
 
@@ -1010,6 +1148,10 @@ void main() {
     await expectLater(none.saveLoan(loan()), throwsA(isA<DatabaseFailure>()));
     await expectLater(none.deleteLoan('x'), throwsA(isA<DatabaseFailure>()));
     await expectLater(none.deletePayment('x'), throwsA(isA<DatabaseFailure>()));
+    await expectLater(
+      none.recordDuePayment('x'),
+      throwsA(isA<DatabaseFailure>()),
+    );
     await expectLater(
       none.savePayment(
         LoanPayment(

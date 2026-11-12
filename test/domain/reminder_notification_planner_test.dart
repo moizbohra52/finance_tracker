@@ -158,6 +158,20 @@ void main() {
       );
     });
 
+    test('a loan payload is told apart, owner tag or not', () {
+      expect(ReminderNotificationPlanner.isLoanPayload('loan:abc'), isTrue);
+      expect(ReminderNotificationPlanner.isLoanPayload('u-1|loan:abc'), isTrue);
+      expect(
+        ReminderNotificationPlanner.isLoanPayload('reminder:${idOf(8)}'),
+        isFalse,
+      );
+      expect(
+        ReminderNotificationPlanner.isLoanPayload('u-1|reminder:${idOf(8)}'),
+        isFalse,
+      );
+      expect(ReminderNotificationPlanner.isLoanPayload(null), isFalse);
+    });
+
     test('a repeating reminder keeps its repeat at its next occurrence', () {
       final PlannedNotification n = ReminderNotificationPlanner.plan(
         <Reminder>[

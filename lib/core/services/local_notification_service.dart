@@ -178,6 +178,7 @@ class LocalNotificationService {
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
     for (final PlannedNotification n in planned) {
+      final bool isLoan = ReminderNotificationPlanner.isLoanPayload(n.payload);
       await _plugin.zonedSchedule(
         id: n.id,
         scheduledDate: tz.TZDateTime.from(n.fireAt, tz.local),
@@ -191,7 +192,10 @@ class LocalNotificationService {
             // Handled without opening the app; tapping one also clears the
             // notification.
             for (final ReminderAction action in ReminderAction.values)
-              AndroidNotificationAction(action.name, action.label.tr),
+              AndroidNotificationAction(
+                action.name,
+                action.labelFor(loan: isLoan).tr,
+              ),
           ],
         ),
         androidScheduleMode: mode,

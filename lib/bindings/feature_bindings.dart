@@ -271,6 +271,7 @@ class ReminderBinding extends Bindings {
       Get.find<ContactRepository>(),
       Get.find<NotificationCoordinator>(),
       Get.find<DataChangeNotifier>(),
+      loanRepository: Get.find<LoanRepository>(),
     ),
   );
 }

@@ -3,6 +3,7 @@ import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/services/notification_permission_state.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/services/khata_due_reminders.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
@@ -21,6 +22,7 @@ void main() {
   late FakeFinance finance;
   late NotificationsHandle notifications;
   late ReminderController controller;
+  late DataChangeNotifier notifier;
 
   Future<void> setUpController({bool granted = true}) async {
     finance = FakeFinance();
@@ -30,11 +32,13 @@ void main() {
       local: FakeLocalNotifications(granted: granted),
     );
     await notifications.coordinator.initialize();
+    notifier = DataChangeNotifier();
     controller = ReminderController(
       finance.repositories.reminders,
       finance.repositories.contacts,
       notifications.coordinator,
-      DataChangeNotifier(),
+      notifier,
+      loanRepository: finance.repositories.loans,
     );
     await controller.load();
   }
@@ -308,6 +312,73 @@ void main() {
       expect(await controller.complete(finance.reminders.single), isFalse);
       expect(controller.action.error.value, isNotNull);
       expect(finance.reminders.single.isCompleted, isFalse);
+    });
+  });
+
+  group('marking a loan reminder paid', () {
+    Loan loan(LoanMethod method) => Loan(
+      id: 'loan-1',
+      userId: 'u',
+      direction: LoanDirection.taken,
+      method: method,
+      name: 'Car loan',
+      accountId: 'acc-1',
+      principal: Decimal.parse('12000'),
+      annualRate: Decimal.zero,
+      tenureMonths: method == LoanMethod.emi ? 12 : null,
+      startDate: DateTime(2026, 8, 5),
+      firstDueDate: method == LoanMethod.emi ? DateTime(2026, 9, 5) : null,
+      movedMoney: true,
+      createdAt: DateTime(2026, 8, 5),
+      updatedAt: DateTime(2026, 8, 5),
+    );
+
+    Future<Reminder> seed(LoanMethod method) async {
+      finance.loans.add(loan(method));
+      final Reminder due = makeReminder(
+        type: ReminderType.loan,
+        title: 'Loan payment due',
+        loanId: 'loan-1',
+        remindAt: DateTime.now().subtract(const Duration(hours: 2)),
+      );
+      finance.reminders.add(due);
+      await controller.load();
+      return due;
+    }
+
+    test('records the due instalment from the loan account', () async {
+      final Reminder due = await seed(LoanMethod.emi);
+
+      expect(await controller.markLoanPaid(due), LoanPaidOutcome.recorded);
+
+      final LoanPayment paid = finance.loanPayments.single;
+      expect(paid.amount, Decimal.parse('1000'));
+      expect(paid.accountId, 'acc-1');
+      expect(paid.kind, LoanPaymentKind.scheduled);
+      expect(notifier.version.value, 1, reason: 'open screens reload');
+      expect(controller.action.error.value, isNull);
+    });
+
+    test('with nothing due it completes the reminder as before', () async {
+      final Reminder due = await seed(LoanMethod.monthlyInterest);
+
+      expect(await controller.markLoanPaid(due), LoanPaidOutcome.completed);
+
+      expect(finance.loanPayments, isEmpty);
+      expect(finance.reminders.single.isCompleted, isTrue);
+      expect(notifier.version.value, 0);
+    });
+
+    test('a failure is reported and nothing is written', () async {
+      final Reminder due = await seed(LoanMethod.emi);
+      finance.nextError = const NetworkFailure();
+
+      expect(await controller.markLoanPaid(due), LoanPaidOutcome.failed);
+
+      expect(controller.action.error.value, isNotNull);
+      expect(finance.loanPayments, isEmpty);
+      expect(finance.reminders.single.isCompleted, isFalse);
+      expect(notifier.version.value, 0);
     });
   });
 

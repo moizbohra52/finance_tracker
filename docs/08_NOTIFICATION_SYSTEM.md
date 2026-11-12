@@ -350,12 +350,33 @@ live in `LoanRepository`; no further schema change.
   `AppRoutes.loanPaymentForm`, a bad id -> notification center). Notifications
   scheduled earlier keep their `reminder:<id>` payload and open the reminder
   detail as before.
-- **Mark done** and **Snooze** work on it: `NotificationTarget.reminderId` maps
+- **Paid** and **Snooze** work on it: `NotificationTarget.reminderId` maps
   the `loan:` target back to `LoanIds.reminder(<loan id>)` for
   `reminderActionInBackground`.
-- The reminder detail of a loan reminder has **Record payment** (opens the
-  payment form) and no Edit (the loan owns the date and title); Delete, Mark as
-  done and Snooze stay.
+- **Paid** is the Done button (action id `done`, label chosen per notification
+  by `ReminderAction.labelFor`, from `ReminderNotificationPlanner.isLoanPayload`)
+  and records the due instalment in one tap: `applyReminderAction` calls
+  `LoanRepository.recordDuePayment` (the suggested split, from the loan's own
+  account, dated today but never before the loan start or its latest payment,
+  saved through `savePayment` so the derived rows, closing and the reminder
+  move are exactly those of a typed payment) instead of completing the
+  reminder, then reschedules it at its new date. A loan that closes leaves no
+  reminder, so its notification is cancelled. With nothing due (a
+  monthly-interest loan whose interest is paid) the reminder is completed as
+  any other.
+- A tap delivered twice records once: the notification exists only for a due
+  date that has come, and a recorded instalment moves the reminder to a later
+  one, so a reminder whose date is still in the future was already handled and
+  the tap does nothing. Notifications scheduled before this change keep the
+  label "Mark done" until the next reschedule; the tap still records.
+- The reminder detail of a loan reminder has **Mark as paid** (the same
+  one-tap payment, via `ReminderController.markLoanPaid`; "Payment recorded"),
+  **Record payment** (opens the prefilled payment form) and no Edit (the loan
+  owns the date and title); Delete and Snooze stay.
+- Saving a loan again (rename, note) keeps a snooze or done the user set on its
+  reminder: the reminder is rewritten, but `is_completed` and `snoozed_until`
+  stay while its date and amount are unchanged. A payment moves the date, so
+  the reminder then starts afresh.
 
 ### Not in this phase
 Notification buttons on iOS, anything that calls the push sender, a

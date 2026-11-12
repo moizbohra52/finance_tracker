@@ -77,6 +77,13 @@ abstract final class ReminderNotificationPlanner {
       ? '$loanPayloadType:${r.loanId}'
       : '${NotificationType.reminder}:${r.id}';
 
+  /// Whether [payload] (owner tag or not) is a loan reminder's.
+  static bool isLoanPayload(String? payload) =>
+      payload != null &&
+      payload
+          .substring(payload.indexOf('|') + 1)
+          .startsWith('$loanPayloadType:');
+
   /// Notification text carries only what the user typed as the title plus a
   /// generic line. Amounts and contact names are never put in a notification:
   /// it can be read on a locked screen.

@@ -324,6 +324,43 @@ void main() {
       expect(LoanCalculator.dueDate(l, 1), DateTime(2027, 1, 31));
       expect(LoanCalculator.dueDate(l, 3), DateTime(2027, 3, 31));
     });
+
+    test('paymentDay is today, never before the start or the last payment', () {
+      final Loan l = loan();
+      final LoanPayment last = payment(
+        'p1',
+        LoanPaymentKind.scheduled,
+        d('6629.18'),
+        d('3750'),
+        paidAt: DateTime(2027, 2, 5),
+      );
+      final LoanPayment deleted = payment(
+        'p2',
+        LoanPaymentKind.scheduled,
+        d('6629.18'),
+        d('3750'),
+        paidAt: DateTime(2027, 6, 1),
+        deletedAt: DateTime(2027, 6, 2),
+      );
+      final DateTime at = DateTime(2027, 3, 9, 18, 30);
+
+      expect(
+        LoanCalculator.paymentDay(l, <LoanPayment>[], at),
+        DateTime(2027, 3, 9),
+      );
+      expect(
+        LoanCalculator.paymentDay(l, <LoanPayment>[], DateTime(2026, 12, 1)),
+        DateTime(2027, 1, 5),
+      );
+      expect(
+        LoanCalculator.paymentDay(l, <LoanPayment>[last, deleted], at),
+        DateTime(2027, 3, 9),
+      );
+      expect(
+        LoanCalculator.paymentDay(l, <LoanPayment>[last], DateTime(2027, 2, 1)),
+        DateTime(2027, 2, 5),
+      );
+    });
   });
 
   group('monthly interest (Ravi, 10,000 at 2% a month from 1 Jan 2027)', () {

@@ -274,6 +274,13 @@ parts of live payments). Interest comes first:
   principal; no amount = the unpaid interest, or outstanding + unpaid interest
   when closing.
 
+A one-tap payment from a reminder (the notification's Paid button or the
+reminder's Mark as paid) records the suggestion of the scheduled payment due
+now, with no amount typed: the split above, from the loan's own account, dated
+today but never before the loan start or its latest live payment
+(`LoanCalculator.paymentDay`), through the same validation as a typed payment.
+Nothing is recorded for a closed loan or when nothing is due.
+
 ### Validation
 Each refusal is an English message key, in this order.
 

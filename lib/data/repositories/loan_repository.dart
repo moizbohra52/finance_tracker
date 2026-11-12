@@ -14,6 +14,7 @@ import 'package:finance_tracker/domain/services/loan_calculator.dart';
 import 'package:finance_tracker/domain/services/loan_ids.dart';
 import 'package:get/get.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' hide Transaction;
+import 'package:uuid/uuid.dart';
 
 /// One loan for the list screens, with where it stands.
 class LoanSummary {
@@ -48,6 +49,8 @@ class LoanRepository {
 
   final AppDatabase? _db;
   final SyncEngine? _syncEngine;
+
+  static const Uuid _uuid = Uuid();
 
   AppDatabase get _database {
     final AppDatabase? db = _db;
@@ -330,6 +333,59 @@ class LoanRepository {
       );
     });
     _syncEngine?.notifyNewQueueItem();
+  }
+
+  /// Records the instalment that is due, in one tap: the draft of [dueDraft]
+  /// saved through [savePayment], so the validation, derived rows, closing and
+  /// reminder move are the same as for a typed payment. Returns it, or null,
+  /// writing nothing, when the loan is missing, closed or owes nothing now.
+  Future<LoanPayment?> recordDuePayment(String loanId, {DateTime? now}) async {
+    final AppDatabase database = _database;
+    final Loan? loan = await _loanOrNull(database.db, loanId);
+    if (loan == null || !loan.isLive) return null;
+    final LoanPayment? payment = dueDraft(
+      loan,
+      await _livePayments(database.db, loanId),
+      now ?? DateTime.now(),
+      _uuid.v4(),
+    );
+    if (payment == null) return null;
+    await savePayment(payment);
+    return payment;
+  }
+
+  /// The scheduled payment due now on an open [loan]: the suggested split from
+  /// the loan's own account, dated by [LoanCalculator.paymentDay]. Null for a
+  /// closed loan or when nothing is due (a monthly-interest loan whose
+  /// interest is paid).
+  static LoanPayment? dueDraft(
+    Loan loan,
+    List<LoanPayment> payments,
+    DateTime now,
+    String id,
+  ) {
+    if (loan.isClosed) return null;
+    final DateTime day = LoanCalculator.paymentDay(loan, payments, now);
+    final LoanPart part = LoanCalculator.suggest(
+      loan,
+      payments,
+      kind: LoanPaymentKind.scheduled,
+      paidAt: day,
+    );
+    if (part.amount <= Decimal.zero) return null;
+    return LoanPayment(
+      id: id,
+      userId: '',
+      loanId: loan.id,
+      accountId: loan.accountId,
+      kind: LoanPaymentKind.scheduled,
+      paidAt: day,
+      amount: part.amount,
+      principalPart: part.principal,
+      interestPart: part.interest,
+      createdAt: now,
+      updatedAt: now,
+    );
   }
 
   /// Soft-deletes the loan's latest live payment and its two money rows,

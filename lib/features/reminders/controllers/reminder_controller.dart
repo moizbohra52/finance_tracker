@@ -5,8 +5,10 @@ import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/services/khata_due_reminders.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
@@ -63,6 +65,11 @@ class ReminderFormArgs {
   final String? title;
 }
 
+/// What Mark as paid did on a loan reminder: wrote the due instalment,
+/// completed the reminder because nothing was due, or failed (the message is
+/// in [ReminderController.action]).
+enum LoanPaidOutcome { recorded, completed, failed }
+
 /// Reminders: list, create, edit, complete, snooze, enable/disable, delete.
 /// Every load also makes the device's scheduled notifications match the list.
 class ReminderController extends GetxController {
@@ -70,13 +77,15 @@ class ReminderController extends GetxController {
     this._repository,
     this._contactRepository,
     this._notifications,
-    this._notifier,
-  );
+    this._notifier, {
+    LoanRepository? loanRepository,
+  }) : _loans = loanRepository;
 
   final ReminderRepository _repository;
   final ContactRepository _contactRepository;
   final NotificationCoordinator _notifications;
   final DataChangeNotifier _notifier;
+  final LoanRepository? _loans;
 
   static const Uuid _uuid = Uuid();
 
@@ -282,6 +291,31 @@ class ReminderController extends GetxController {
     reminder,
     (Reminder r) => ReminderCalculator.complete(r, DateTime.now()),
   );
+
+  /// Mark as paid on a loan reminder: records the instalment that is due (the
+  /// suggested split, from the loan's account) and announces the change, which
+  /// reloads this list with the reminder moved. When nothing is due the
+  /// reminder is completed like any other.
+  Future<LoanPaidOutcome> markLoanPaid(Reminder reminder) async {
+    LoanPaidOutcome outcome = LoanPaidOutcome.failed;
+    await action.run(() async {
+      final String? loanId = reminder.loanId;
+      final LoanPayment? paid = loanId == null
+          ? null
+          : await _loans?.recordDuePayment(loanId);
+      if (paid != null) {
+        _notifier.markChanged();
+        outcome = LoanPaidOutcome.recorded;
+        return;
+      }
+      await _repository.update(
+        ReminderCalculator.complete(reminder, DateTime.now()),
+      );
+      await load(silent: true);
+      outcome = LoanPaidOutcome.completed;
+    });
+    return outcome;
+  }
 
   Future<bool> reopen(Reminder reminder) =>
       _update(reminder, ReminderCalculator.reopen);

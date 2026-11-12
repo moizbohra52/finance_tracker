@@ -252,6 +252,23 @@ abstract final class LoanCalculator {
     return addMonths(loan.startDate, k);
   }
 
+  /// The day (date only) a payment made at [now] is dated: today, but never
+  /// before the loan starts or its latest live payment, which
+  /// [validatePayment] refuses.
+  static DateTime paymentDay(
+    Loan loan,
+    List<LoanPayment> payments,
+    DateTime now,
+  ) {
+    DateTime day = _dateOnly(now);
+    final DateTime start = _dateOnly(loan.startDate);
+    if (start.isAfter(day)) day = start;
+    final DateTime? last = _latestPaymentDay(
+      payments.where((LoanPayment p) => p.isLive),
+    );
+    return last != null && last.isAfter(day) ? last : day;
+  }
+
   /// Proposes how a payment of [amount] splits (or, with no [amount], what the
   /// form should fill in). [earlier] holds the loan's other payments, not the
   /// one being edited. Interest comes first; with [closing] the amount clears

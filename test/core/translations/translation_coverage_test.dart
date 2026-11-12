@@ -224,6 +224,7 @@ void main() {
       for (final SnoozeOption o in SnoozeOption.values) o.label,
       for (final AvatarProblem p in AvatarProblem.values) p.message,
       for (final ReminderAction a in ReminderAction.values) a.label,
+      ReminderAction.done.labelFor(loan: true),
       // Notification bodies, made in the domain and translated when scheduled.
       for (final ReminderType t in ReminderType.values)
         ReminderNotificationPlanner.bodyFor(t),

@@ -89,6 +89,17 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
     }
   }
 
+  Future<void> _markPaid(Reminder reminder) async {
+    switch (await controller.markLoanPaid(reminder)) {
+      case LoanPaidOutcome.recorded:
+        AppSnackbar.show('Payment recorded'.tr);
+      case LoanPaidOutcome.completed:
+        AppSnackbar.show('Marked as done'.tr);
+      case LoanPaidOutcome.failed:
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
@@ -273,10 +284,14 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                 : Column(
                     children: <Widget>[
                       AppButton(
-                        label: 'Mark as done'.tr,
+                        label: reminder.loanId == null
+                            ? 'Mark as done'.tr
+                            : 'Mark as paid'.tr,
                         icon: Icons.check_rounded,
                         isLoading: controller.action.isBusy.value,
-                        onPressed: () => _complete(reminder),
+                        onPressed: () => reminder.loanId == null
+                            ? _complete(reminder)
+                            : _markPaid(reminder),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       AppButton(
