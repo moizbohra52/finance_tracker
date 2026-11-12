@@ -119,6 +119,18 @@ class LoanPaymentController extends GetxController {
       note.value = existing.note ?? '';
       return;
     }
+    // Not before the loan starts or its latest payment: that date is refused.
+    final DateTime? lastPaid = detail.payments.isEmpty
+        ? null
+        : _day(detail.payments.first.paidAt);
+    for (final DateTime? floor in <DateTime?>[
+      detail.loan.startDate,
+      lastPaid,
+    ]) {
+      if (floor != null && _day(floor).isAfter(paidAt.value)) {
+        paidAt.value = _day(floor);
+      }
+    }
     final String loanAccount = detail.loan.accountId;
     accountId.value = accounts.any((Account a) => a.id == loanAccount)
         ? loanAccount
@@ -160,11 +172,18 @@ class LoanPaymentController extends GetxController {
     principalText.value = _text(amount - interest);
   }
 
-  /// A monthly-interest loan's interest due depends on the date, so the split
-  /// is suggested again; an EMI loan's stays as typed.
+  /// A monthly-interest loan's interest due depends on the date. A new
+  /// payment is suggested again; an edited one keeps its amount and only
+  /// re-splits it. An EMI loan's split stays as typed.
   void setDate(DateTime date) {
     paidAt.value = _day(date);
-    if (loan.value?.loan.method == LoanMethod.monthlyInterest) _suggest();
+    if (loan.value?.loan.method != LoanMethod.monthlyInterest) return;
+    if (_existing == null) {
+      _suggest();
+      return;
+    }
+    final Decimal? amount = Decimal.tryParse(amountText.value.trim());
+    if (amount != null) _split(_suggestion(amount: amount));
   }
 
   /// The first broken rule, or null while the amount is blank or all is valid.
@@ -187,6 +206,15 @@ class LoanPaymentController extends GetxController {
   String? _validate() {
     final LoanDetail? detail = loan.value;
     if (detail == null) return 'Amount must be more than zero';
+    for (final String text in <String>[
+      amountText.value,
+      principalText.value,
+      interestText.value,
+    ]) {
+      if (text.trim().isNotEmpty && Decimal.tryParse(text.trim()) == null) {
+        return 'Enter a valid number';
+      }
+    }
     return LoanCalculator.validatePayment(detail.loan, _earlier, _draft());
   }
 

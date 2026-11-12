@@ -620,6 +620,93 @@ void main() {
     );
 
     test(
+      'editing a monthly payment keeps its amount when the date moves',
+      () async {
+        final FakeFinance f = FakeFinance();
+        f.loans.add(ravi());
+        final LoanPayment saved = LoanPayment(
+          id: 'r1',
+          userId: 'u',
+          loanId: 'ravi',
+          accountId: 'acc-1',
+          kind: LoanPaymentKind.scheduled,
+          paidAt: DateTime(2027, 3, 15),
+          amount: Decimal.parse('3000'),
+          principalPart: Decimal.parse('2600'),
+          interestPart: Decimal.parse('400'),
+          createdAt: now,
+          updatedAt: now,
+        );
+        f.loanPayments.add(saved);
+        final LoanPaymentController c = await build(
+          f,
+          LoanPaymentArgs(loanId: 'ravi', existing: saved),
+        );
+
+        c.setDate(DateTime(2027, 3, 20));
+        expect(c.amountText.value, '3000.00');
+        expect(c.principalText.value, '2600.00');
+        expect(c.interestText.value, '400.00');
+        expect(c.error, isNull);
+
+        c.setAmount('');
+        c.setDate(DateTime(2027, 3, 21));
+        expect(c.amountText.value, '');
+        expect(c.principalText.value, '2600.00');
+      },
+    );
+
+    test('text that is not a number is refused, not read as zero', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(loan('loan-1'));
+      final LoanPaymentController c = await build(f, 'loan-1');
+      c.setDate(DateTime(2027, 2, 5));
+      c.setAmount('5000');
+      c.setInterest('5000');
+      c.principalText.value = 'abc';
+
+      expect(c.error, 'Enter a valid number');
+      expect(await c.savePayment(), isFalse);
+      expect(c.save.error.value, 'Enter a valid number');
+      expect(f.loanPayments, isEmpty);
+
+      c.setAmount('1,200');
+      expect(c.error, 'Enter a valid number');
+      expect(await c.savePayment(), isFalse);
+      expect(f.loanPayments, isEmpty);
+    });
+
+    test('a future start date sets the default date', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(
+        loan('loan-1').copyWith(
+          startDate: DateTime(2099, 1, 5),
+          firstDueDate: DateTime(2099, 2, 5),
+        ),
+      );
+      final LoanPaymentController c = await build(f, 'loan-1');
+      expect(c.paidAt.value, DateTime(2099, 1, 5));
+      expect(c.error, isNull);
+    });
+
+    test('a future-dated last payment sets the default date', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(loan('loan-1'));
+      f.loanPayments.add(payment('p1', DateTime(2099, 3, 5)));
+      final LoanPaymentController c = await build(f, 'loan-1');
+      expect(c.paidAt.value, DateTime(2099, 3, 5));
+      expect(c.error, isNull);
+    });
+
+    test('a missing loan sets loadError and cannot be saved', () async {
+      final FakeFinance f = FakeFinance();
+      final LoanPaymentController c = await build(f, 'nope');
+      expect(c.loadError.value, isNotNull);
+      expect(c.loan.value, isNull);
+      expect(await c.savePayment(), isFalse);
+    });
+
+    test(
       'an inactive loan account falls back to the first active one',
       () async {
         final FakeFinance f = FakeFinance();

@@ -487,6 +487,7 @@ const Map<String, String> hindi = <String, String>{
   'Add an account first': 'पहले एक अकाउंट जोड़ें',
   'Transactions are recorded against an account such as Cash or a bank account.':
       'लेन-देन किसी अकाउंट में दर्ज होते हैं, जैसे कैश या बैंक अकाउंट।',
+  'Enter a valid number': 'सही नंबर दर्ज करें',
   'Choose an account': 'अकाउंट चुनें',
   'Choose a category': 'श्रेणी चुनें',
   'Money received into an account': 'किसी अकाउंट में आया पैसा',

@@ -495,6 +495,7 @@ const Map<String, String> hinglish = <String, String>{
   'Add an account first': 'Pehle ek account jodein',
   'Transactions are recorded against an account such as Cash or a bank account.':
       'Len-den kisi account mein darj hote hain, jaise Cash ya bank account.',
+  'Enter a valid number': 'Sahi number darj karein',
   'Choose an account': 'Account chunein',
   'Choose a category': 'Category chunein',
   'Money received into an account': 'Kisi account mein aaya paisa',
