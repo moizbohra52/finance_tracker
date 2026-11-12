@@ -170,7 +170,8 @@ void main() {
 
     test('preselects the first active account', () async {
       final FakeFinance f = FakeFinance();
-      f.accounts.add(
+      f.accounts.insert(
+        0,
         Account(
           id: 'acc-0',
           userId: 'u',
