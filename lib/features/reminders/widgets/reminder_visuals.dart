@@ -9,6 +9,7 @@ IconData reminderIcon(ReminderType type) => switch (type) {
   ReminderType.khata => Icons.menu_book_outlined,
   ReminderType.recurring => Icons.event_repeat_outlined,
   ReminderType.custom => Icons.notifications_active_outlined,
+  ReminderType.loan => Icons.account_balance_outlined,
 };
 
 /// Colour of a status label: overdue stands out, the rest stay quiet.

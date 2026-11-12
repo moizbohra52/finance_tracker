@@ -313,8 +313,8 @@ void main() {
         );
         await categoryRepo.createCategory(customCat);
         final List<Category> cats = await categoryRepo.getCategories();
-        // 29 system + 1 custom
-        expect(cats.length, equals(30));
+        // 35 system + 1 custom
+        expect(cats.length, equals(36));
         expect(cats.any((c) => c.name == 'Pet Care'), isTrue);
       },
     );
@@ -358,7 +358,7 @@ void main() {
       // Display lookups still resolve names from every stored row, so older
       // transactions never lose their label.
       final List<Category> all = await categoryRepo.getAllCategories();
-      expect(all.length, equals(31)); // 29 system + the two above
+      expect(all.length, equals(37)); // 35 system + the two above
       expect(all.any((c) => c.id == 'cat-inactive'), isTrue);
       expect(all.any((c) => c.id == 'cat-gone'), isTrue);
     });

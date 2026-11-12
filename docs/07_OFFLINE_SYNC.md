@@ -20,6 +20,8 @@ Store:
 - split groups, group members, expenses, expense parts and settlements
   (database version 5; same upgrade rule, plus the `split_expense_id` /
   `split_settlement_id` link columns on transactions and contact transactions)
+- loans and loan payments (database version 10; same upgrade rule, plus the
+  `loan_id` column on transactions and reminders and the six loan categories)
 - sync metadata
 
 ### One database file per signed-in account (2026-10-15)
@@ -92,6 +94,16 @@ parents enqueued first: group → members → expense → parts → derived
 ahead of its parent and a failure rolls everything back. In the backup restore
 order the split tables sit after `contacts` and before `transactions`, so the
 server's foreign keys never see a missing parent.
+
+`loans` and `loan_payments` follow the split tables in the pull order and sit
+after them and before `transactions` in the backup restore order (loans, then
+their payments; `reminders` already come later). Every loan operation writes
+all of its rows in one local SQLite transaction, parents first: loan →
+payments → derived `transactions` → the loan's reminder. The queue therefore
+never holds a payment, derived row or reminder ahead of its loan, and a
+failure rolls everything back. Uploads of the loan rows wait in the queue
+(retrying) until migration 20 is applied; the app sends `loan_id` only when it
+is set, so nothing else is held back.
 
 Receipt photos are files, not queue rows. A photo attached offline is kept in
 `<app documents>/receipts/<user id>/pending/`, which is their queue

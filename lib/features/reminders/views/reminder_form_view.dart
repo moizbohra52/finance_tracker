@@ -177,7 +177,10 @@ class _ReminderFormViewState extends State<ReminderFormView> {
                   spacing: AppSpacing.sm,
                   runSpacing: AppSpacing.sm,
                   children: <Widget>[
-                    for (final ReminderType t in ReminderType.values)
+                    // Loan reminders are made by the loan feature only.
+                    for (final ReminderType t in ReminderType.values.where(
+                      (ReminderType t) => t != ReminderType.loan,
+                    ))
                       ChoiceChip(
                         label: Text(t.label.tr),
                         selected: _type == t,

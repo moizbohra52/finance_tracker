@@ -56,6 +56,18 @@ For system categories:
   in the insert/update policies of `split_expenses`, because system categories
   have no owner. Covered by the isolation check (reads, composite foreign keys
   on every child table, cascade on user delete).
+- 2026-11-11: `loans` and `loan_payments` have the four owner-only policies
+  each and no `anon` grant. A loan's contact and account, and a payment's loan
+  and account, are composite foreign keys on `(user_id, id)`; so are
+  `transactions.loan_id` and `reminders.loan_id`, so no row can point at
+  another user's loan (the `(user_id, id)` keys on `accounts`, `contacts` and
+  `transactions` already existed). The six loan categories are system rows
+  readable by everyone and writable by no one, like the others. Covered by the
+  isolation check: B cannot read, update or delete A's loans and payments,
+  cannot insert a loan owned by A, and cannot reference A's loan, account or
+  contact from a loan, a payment, a transaction or a reminder; the table
+  CHECKs (method fields, payment parts) are exercised as A; deleting the user
+  cascades to both tables. The check's system-category count is now 35.
 
 ## Ownership
 Never trust user_id supplied by the Flutter client. Where possible derive ownership from auth.uid() in database policies/functions.

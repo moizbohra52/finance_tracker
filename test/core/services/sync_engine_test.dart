@@ -233,6 +233,44 @@ void main() {
       }
     });
 
+    test('the loan tables are cleared for another user', () async {
+      await seedFor('user-a');
+      const String now = '2026-11-11T00:00:00Z';
+      await database.db.insert('loans', <String, Object?>{
+        'id': 'ln1',
+        'user_id': 'user-a',
+        'direction': 'taken',
+        'method': 'monthly_interest',
+        'name': 'Ravi',
+        'account_id': 'acc-user-a',
+        'principal': '10000',
+        'annual_rate': '24',
+        'start_date': '2026-11-01',
+        'created_at': now,
+        'updated_at': now,
+      });
+      await database.db.insert('loan_payments', <String, Object?>{
+        'id': 'lp1',
+        'user_id': 'user-a',
+        'loan_id': 'ln1',
+        'account_id': 'acc-user-a',
+        'kind': 'scheduled',
+        'paid_at': now,
+        'amount': '200',
+        'principal_part': '0',
+        'interest_part': '200',
+        'created_at': now,
+        'updated_at': now,
+      });
+
+      await syncEngine.claimLocalData('user-a');
+      await syncEngine.claimLocalData('user-b');
+
+      for (final String table in <String>['loans', 'loan_payments']) {
+        expect(await count(table), 0, reason: '$table is wiped for user-b');
+      }
+    });
+
     test(
       "another user never gets the previous user's rows or uploads",
       () async {

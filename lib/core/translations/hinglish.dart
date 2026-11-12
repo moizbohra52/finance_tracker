@@ -1146,6 +1146,12 @@ const Map<String, String> hinglish = <String, String>{
   'Expense part': 'Kharche ka hissa',
   'Settlements': 'Hisab kitab',
   'Settlement': 'Hisab kitab',
+  // Loans: backup, sync and reminder labels
+  'Loan': 'Loan',
+  'Loans': 'Loans',
+  'Loan payment': 'Loan ki kist',
+  'Loan payments': 'Loan ki kistein',
+  'Loan reminder': 'Loan reminder',
   // Split expenses screens
   'You': 'Aap',
   'Deleted contact': 'Delete hua contact',

@@ -18,6 +18,7 @@ abstract final class ReminderModel {
         : Decimal.parse(json['amount'].toString()),
     contactId: json['contact_id'] as String?,
     transactionId: json['transaction_id'] as String?,
+    loanId: json['loan_id'] as String?,
     remindAt: _parse(json['remind_at']),
     repeat: ReminderRepeat.fromRule(json['repeat_rule'] as String?),
     isCompleted: json['is_completed'] == true || json['is_completed'] == 1,
@@ -42,6 +43,8 @@ abstract final class ReminderModel {
     'amount': r.amount?.toString(),
     'contact_id': r.contactId,
     'transaction_id': r.transactionId,
+    // Only when set, so plain reminders still sync before the migration.
+    'loan_id': ?r.loanId,
     'remind_at': r.remindAt.toUtc().toIso8601String(),
     'repeat_rule': r.repeat.repeats ? r.repeat.name : null,
     'is_completed': r.isCompleted,

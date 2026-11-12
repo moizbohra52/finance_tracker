@@ -343,6 +343,10 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return Icons.receipt_long_outlined;
       case 'split_settlements':
         return Icons.handshake_outlined;
+      case 'loans':
+        return Icons.account_balance_outlined;
+      case 'loan_payments':
+        return Icons.payments_outlined;
       case 'categories':
         return Icons.category_outlined;
       default:
@@ -380,6 +384,10 @@ class _SyncStatusSheetState extends State<SyncStatusSheet> {
         return 'Expense part'.tr;
       case 'split_settlements':
         return 'Settlement'.tr;
+      case 'loans':
+        return 'Loan'.tr;
+      case 'loan_payments':
+        return 'Loan payment'.tr;
       case 'categories':
         return 'Category'.tr;
       case 'user_settings':

@@ -82,6 +82,7 @@ abstract final class ReminderNotificationPlanner {
     ReminderType.khata => 'Khata reminder',
     ReminderType.recurring => 'Recurring transaction reminder',
     ReminderType.custom => 'Reminder',
+    ReminderType.loan => 'Loan reminder',
   };
 
   /// Ids of notifications that are due but may not have been delivered yet.

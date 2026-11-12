@@ -1130,6 +1130,12 @@ const Map<String, String> hindi = <String, String>{
   'Expense part': 'खर्च का हिस्सा',
   'Settlements': 'हिसाब किताब',
   'Settlement': 'हिसाब किताब',
+  // Loans: backup, sync and reminder labels
+  'Loan': 'ऋण',
+  'Loans': 'ऋण',
+  'Loan payment': 'ऋण का भुगतान',
+  'Loan payments': 'ऋण के भुगतान',
+  'Loan reminder': 'ऋण रिमाइंडर',
   // Split expenses screens
   'You': 'आप',
   'Deleted contact': 'मिटाया गया संपर्क',
