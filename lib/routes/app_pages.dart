@@ -29,8 +29,10 @@ import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/export/views/export_view.dart';
+import 'package:finance_tracker/features/loans/views/loan_detail_view.dart';
 import 'package:finance_tracker/features/loans/views/loan_form_view.dart';
 import 'package:finance_tracker/features/loans/views/loan_list_view.dart';
+import 'package:finance_tracker/features/loans/views/loan_payment_form_view.dart';
 import 'package:finance_tracker/features/notifications/views/notification_center_view.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/recurring/views/recurring_form_view.dart';
@@ -410,6 +412,18 @@ abstract final class AppPages {
       page: () => const LoanFormView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: LoanFormBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.loanDetail,
+      page: () => LoanDetailView(loanId: routeIdArgument()),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: LoanDetailBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.loanPaymentForm,
+      page: () => const LoanPaymentFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: LoanPaymentBinding(),
     ),
   ];
 }

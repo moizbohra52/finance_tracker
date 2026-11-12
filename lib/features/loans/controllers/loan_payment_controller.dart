@@ -203,6 +203,13 @@ class LoanPaymentController extends GetxController {
     _notifier.markChanged();
   });
 
+  /// Deletes the payment being edited (the repository refuses anything but
+  /// the latest one, its message landing in [save].error).
+  Future<bool> deletePayment() => save.run(() async {
+    await _repository.deletePayment(_id);
+    _notifier.markChanged();
+  });
+
   String? _validate() {
     final LoanDetail? detail = loan.value;
     if (detail == null) return 'Amount must be more than zero';

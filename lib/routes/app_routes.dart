@@ -69,6 +69,7 @@ abstract final class AppRoutes {
   static const String loans = '/loans';
   static const String loanForm = '/loan-form';
   static const String loanDetail = '/loan-detail';
+  static const String loanPaymentForm = '/loan-payment-form';
 
   // Export and Backup
   static const String export = '/export';

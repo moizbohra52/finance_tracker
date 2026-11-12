@@ -135,6 +135,8 @@ const List<String> translatedFiles = <String>[
   // Part 6: loans and EMIs
   'lib/features/loans/views/loan_list_view.dart',
   'lib/features/loans/views/loan_form_view.dart',
+  'lib/features/loans/views/loan_detail_view.dart',
+  'lib/features/loans/views/loan_payment_form_view.dart',
 ];
 
 /// Files whose `.tr` keys are checked but whose other literals are not

@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
@@ -19,6 +20,9 @@ class LoanDetailController extends GetxController {
   final RxnString error = RxnString();
   final SubmitState deletion = SubmitState();
 
+  /// Whether the schedule shows every instalment, not just the next few.
+  final RxBool scheduleExpanded = false.obs;
+
   late final Worker _changes;
 
   /// The remaining EMIs, computed and never stored; empty without a loan.
@@ -27,6 +31,17 @@ class LoanDetailController extends GetxController {
     return d == null
         ? const <LoanInstalment>[]
         : LoanCalculator.schedule(d.loan, d.payments);
+  }
+
+  /// The share of the principal already repaid, 0 to 1 (for a progress bar:
+  /// the only place a loan amount becomes a double).
+  double get progress {
+    final LoanDetail? d = detail.value;
+    if (d == null || d.loan.principal <= Decimal.zero) return 0;
+    return (d.status.principalRepaid / d.loan.principal).toDouble().clamp(
+      0.0,
+      1.0,
+    );
   }
 
   /// Only the latest live payment can be edited or deleted (the repository
