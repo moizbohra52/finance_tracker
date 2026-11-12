@@ -261,6 +261,8 @@ const Map<String, String> hindi = <String, String>{
   'Show balance': 'बैलेंस दिखाएँ',
   'Hide balance': 'बैलेंस छिपाएँ',
   'Net worth incl. khata @amount': 'खाता मिलाकर कुल संपत्ति @amount',
+  'Net worth incl. khata and loans @amount':
+      'खाता और ऋण मिलाकर कुल संपत्ति @amount',
   '@percent% more than the same days last month':
       'पिछले महीने के इन्हीं दिनों से @percent% ज़्यादा',
   '@percent% less than the same days last month':

@@ -7,6 +7,7 @@ import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
@@ -357,6 +358,7 @@ class ShellBinding extends Bindings {
         Get.find<ContactRepository>(),
         Get.find<CategoryRepository>(),
         Get.find<DataChangeNotifier>(),
+        loanRepository: Get.find<LoanRepository>(),
       ),
     );
     TransactionBinding().dependencies();

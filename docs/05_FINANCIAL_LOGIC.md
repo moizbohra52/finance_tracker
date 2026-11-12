@@ -318,9 +318,11 @@ expense or income.
 `InsightsCalculator` (domain/services), shown on the home screen.
 
 - **Net worth** = current balance of active accounts + total khata
-  receivable - total khata payable. Archived accounts are left out, as in the
-  overall balance. Shown only when it differs from the balance, that is when
-  someone owes or is owed money.
+  receivable - total khata payable + outstanding of loans given - outstanding
+  of loans taken (live loans, `LoanRepository.outstandingTotals`). Archived
+  accounts are left out, as in the overall balance. Shown only when it differs
+  from the balance, that is when someone owes or is owed money; the line reads
+  "incl. khata and loans" while any loan has something outstanding.
 - **Spending so far** compares this month with the same days of last month:
   this month from the 1st to the end of today, last month from the 1st to the
   end of the same day of the month, or to its last day when it is shorter

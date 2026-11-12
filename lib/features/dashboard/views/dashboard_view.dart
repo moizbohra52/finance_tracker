@@ -566,6 +566,7 @@ class _BalanceSection extends GetView<HomeController> {
       isHidden: controller.balanceHidden.value,
       onToggleHidden: controller.toggleBalanceHidden,
       netWorth: controller.insights.value.netWorth,
+      netWorthIncludesLoans: controller.hasLoans.value,
       onTap: () => Get.toNamed<void>(AppRoutes.accounts),
       onOpeningBalanceTap: () => Get.toNamed<void>(AppRoutes.accounts),
       onIncomeTap: () => _openTransactionsFiltered(

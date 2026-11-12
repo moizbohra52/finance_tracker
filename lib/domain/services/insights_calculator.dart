@@ -34,7 +34,7 @@ class MonthInsights {
   );
 
   /// Active accounts' balance plus what others owe the user, less what the
-  /// user owes them (khata).
+  /// user owes them (khata), plus the loans given out less the loans taken.
   final Decimal netWorth;
   final Decimal spentSoFar;
   final Decimal spentLastMonthSoFar;
@@ -86,6 +86,8 @@ abstract final class InsightsCalculator {
     required Decimal accountsBalance,
     required KhataSummary khata,
     required DateTime now,
+    Decimal? loansGiven,
+    Decimal? loansTaken,
   }) {
     final ({
       DateTime currentStart,
@@ -105,7 +107,12 @@ abstract final class InsightsCalculator {
       end: w.previousEnd,
     );
     return MonthInsights(
-      netWorth: accountsBalance + khata.receivable - khata.payable,
+      netWorth:
+          accountsBalance +
+          khata.receivable -
+          khata.payable +
+          (loansGiven ?? Decimal.zero) -
+          (loansTaken ?? Decimal.zero),
       spentSoFar: FinanceSummaryCalculator.period(
         transactions,
         current.start,

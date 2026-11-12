@@ -167,4 +167,16 @@ void main() {
     );
     expect(m.netWorth, d('11800'));
   });
+
+  test('net worth adds loans given and takes off loans taken', () {
+    final MonthInsights m = InsightsCalculator.month(
+      transactions: const <Transaction>[],
+      accountsBalance: d('10000'),
+      khata: KhataSummary(receivable: d('2500'), payable: Decimal.zero),
+      now: DateTime(2026, 11, 10),
+      loansGiven: d('7400'),
+      loansTaken: d('493370.82'),
+    );
+    expect(m.netWorth, d('-473470.82'));
+  });
 }

@@ -1,7 +1,9 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_form_view.dart';
@@ -164,6 +166,40 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Food & Dining spending up ₹500.00'), findsOneWidget);
+    });
+
+    testWidgets('net worth counts loans and says so', (
+      WidgetTester tester,
+    ) async {
+      final FakeFinance f = FakeFinance()..addAccount('Cash', '10000');
+      f.loans.add(
+        Loan(
+          id: 'loan-1',
+          userId: 'user-1',
+          direction: LoanDirection.taken,
+          method: LoanMethod.emi,
+          name: 'HDFC Home Loan',
+          accountId: f.accounts.first.id,
+          principal: Decimal.parse('500000'),
+          annualRate: Decimal.parse('9'),
+          tenureMonths: 60,
+          emiAmount: Decimal.parse('10379.18'),
+          startDate: DateTime(2026, 11),
+          firstDueDate: DateTime(2026, 12),
+          movedMoney: false,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+      await _start(tester, finance: f);
+
+      final String amount = AppFormatters.money(
+        Decimal.parse('10000') - Decimal.parse('500000'),
+      );
+      expect(
+        find.text('Net worth incl. khata and loans $amount'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('hides net worth when there is no khata', (
