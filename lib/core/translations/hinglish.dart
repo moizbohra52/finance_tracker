@@ -1152,6 +1152,31 @@ const Map<String, String> hinglish = <String, String>{
   'Loan payment': 'Loan ki kist',
   'Loan payments': 'Loan ki kistein',
   'Loan reminder': 'Loan reminder',
+  'Give the loan a name': 'Loan ka naam likhein',
+  'Amounts can have at most 2 decimals':
+      'Rakam mein zyada se zyada 2 decimal ho sakte hain',
+  'Interest rate must be between 0% and 60% a year':
+      'Byaaj dar saal ke 0% se 60% ke beech honi chahiye',
+  'Interest rate must be between 0% and 5% a month':
+      'Byaaj dar mahine ke 0% se 5% ke beech honi chahiye',
+  'Tenure must be 1 to 480 months': 'Avadhi 1 se 480 mahine ki honi chahiye',
+  'Enter the EMI': 'EMI likhein',
+  "The EMI does not cover the first month's interest":
+      'EMI pehle mahine ka byaaj bhi poora nahi karti',
+  'Choose the first EMI date': 'Pehli EMI ki tareekh chunein',
+  'The first EMI cannot be before the loan starts':
+      'Pehli EMI loan shuru hone se pehle nahi ho sakti',
+  'Principal and interest must add up to the amount':
+      'Mool aur byaaj milkar rakam ke barabar hone chahiye',
+  'A payment cannot be dated before the previous one or the loan start':
+      'Kist ki tareekh pichhli kist ya loan shuru hone se pehle ki nahi ho sakti',
+  'This loan is already repaid': 'Yeh loan pehle hi chuka diya gaya hai',
+  'This is more than the principal still owed': 'Yeh baaki mool se zyada hai',
+  'This is more than is owed': 'Yeh baaki rakam se zyada hai',
+  'Only the name, contact and note can change after a payment':
+      'Kist ke baad sirf naam, contact aur note badal sakte hain',
+  'Loan payment due': 'Loan ki kist baaki hai',
+  'Collect loan payment': 'Loan ki kist vasool karein',
   // Split expenses screens
   'You': 'Aap',
   'Deleted contact': 'Delete hua contact',

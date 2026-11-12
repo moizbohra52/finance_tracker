@@ -5,6 +5,7 @@ import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
@@ -27,6 +28,7 @@ class AppRepositories {
     required this.reminders,
     required this.savingsGoals,
     required this.split,
+    required this.loans,
   });
 
   factory AppRepositories.supabase(
@@ -76,6 +78,7 @@ class AppRepositories {
       syncEngine: syncEngine,
     ),
     split: SplitRepository(database, syncEngine: syncEngine),
+    loans: LoanRepository(database, syncEngine: syncEngine),
   );
 
   final AccountRepository accounts;
@@ -88,4 +91,5 @@ class AppRepositories {
   final ReminderRepository reminders;
   final SavingsGoalRepository savingsGoals;
   final SplitRepository split;
+  final LoanRepository loans;
 }

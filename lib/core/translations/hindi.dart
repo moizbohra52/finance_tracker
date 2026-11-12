@@ -1136,6 +1136,30 @@ const Map<String, String> hindi = <String, String>{
   'Loan payment': 'ऋण का भुगतान',
   'Loan payments': 'ऋण के भुगतान',
   'Loan reminder': 'ऋण रिमाइंडर',
+  'Give the loan a name': 'ऋण का नाम लिखें',
+  'Amounts can have at most 2 decimals': 'राशि में अधिकतम 2 दशमलव हो सकते हैं',
+  'Interest rate must be between 0% and 60% a year':
+      'ब्याज दर साल के 0% से 60% के बीच होनी चाहिए',
+  'Interest rate must be between 0% and 5% a month':
+      'ब्याज दर महीने के 0% से 5% के बीच होनी चाहिए',
+  'Tenure must be 1 to 480 months': 'अवधि 1 से 480 महीने की होनी चाहिए',
+  'Enter the EMI': 'किस्त (EMI) लिखें',
+  "The EMI does not cover the first month's interest":
+      'किस्त पहले महीने का ब्याज भी पूरा नहीं करती',
+  'Choose the first EMI date': 'पहली किस्त की तारीख चुनें',
+  'The first EMI cannot be before the loan starts':
+      'पहली किस्त ऋण शुरू होने से पहले नहीं हो सकती',
+  'Principal and interest must add up to the amount':
+      'मूलधन और ब्याज मिलकर राशि के बराबर होने चाहिए',
+  'A payment cannot be dated before the previous one or the loan start':
+      'भुगतान की तारीख पिछले भुगतान या ऋण शुरू होने से पहले की नहीं हो सकती',
+  'This loan is already repaid': 'यह ऋण पहले ही चुकाया जा चुका है',
+  'This is more than the principal still owed': 'यह बाकी मूलधन से ज़्यादा है',
+  'This is more than is owed': 'यह बाकी राशि से ज़्यादा है',
+  'Only the name, contact and note can change after a payment':
+      'भुगतान के बाद केवल नाम, संपर्क और नोट बदले जा सकते हैं',
+  'Loan payment due': 'ऋण की किस्त बाकी है',
+  'Collect loan payment': 'ऋण की किस्त वसूल करें',
   // Split expenses screens
   'You': 'आप',
   'Deleted contact': 'मिटाया गया संपर्क',
