@@ -1,4 +1,5 @@
 import 'package:finance_tracker/core/services/notification_permission_state.dart';
+import 'package:finance_tracker/domain/services/loan_ids.dart';
 import 'package:finance_tracker/features/notifications/notification_target.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +32,27 @@ void main() {
         NotificationTarget.fromPayload('transaction:$id'),
         const NotificationTarget(AppRoutes.transactionDetail, id),
       );
+    });
+
+    test('a loan payload opens the payment form, for its account', () {
+      expect(
+        NotificationTarget.fromPayload('user-1|loan:$id'),
+        const NotificationTarget(AppRoutes.loanPaymentForm, id, 'user-1'),
+      );
+      expect(
+        NotificationTarget.fromPayload('loan:bad'),
+        const NotificationTarget(AppRoutes.notifications),
+      );
+    });
+
+    test('the reminder a notification button acts on', () {
+      expect(NotificationTarget.fromPayload('reminder:$id')!.reminderId, id);
+      expect(
+        NotificationTarget.fromPayload('loan:$id')!.reminderId,
+        LoanIds.reminder(id),
+      );
+      expect(NotificationTarget.fromPayload('contact:$id')!.reminderId, isNull);
+      expect(NotificationTarget.fromPayload('loan:bad')!.reminderId, isNull);
     });
 
     test('payload() and fromPayload() round-trip', () {

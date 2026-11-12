@@ -1,4 +1,6 @@
 import 'package:finance_tracker/domain/entities/app_notification.dart';
+import 'package:finance_tracker/domain/services/loan_ids.dart';
+import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 
 /// Where tapping a notification goes: a route, its argument, and the account
@@ -15,6 +17,16 @@ class NotificationTarget {
   /// (notifications scheduled before accounts were tagged, pushes without a
   /// `user_id`): those open in the active account.
   final String? userId;
+
+  /// The reminder a notification button (Done, Snooze) acts on: the one the
+  /// reminder detail shows, or the loan's own reminder for its payment form.
+  /// Null for every other target.
+  String? get reminderId => switch (route) {
+    AppRoutes.reminderDetail => argument,
+    AppRoutes.loanPaymentForm =>
+      argument == null ? null : LoanIds.reminder(argument!),
+    _ => null,
+  };
 
   NotificationTarget forUser(String? userId) =>
       NotificationTarget(route, argument, userId);
@@ -116,6 +128,10 @@ class NotificationTarget {
         return const NotificationTarget(AppRoutes.budgets);
       case NotificationType.recurring:
         return const NotificationTarget(AppRoutes.recurring);
+      case ReminderNotificationPlanner.loanPayloadType:
+        if (id != null) {
+          return NotificationTarget(AppRoutes.loanPaymentForm, id);
+        }
       case 'contact':
       case 'khata':
         if (id != null) return NotificationTarget(AppRoutes.contactDetail, id);

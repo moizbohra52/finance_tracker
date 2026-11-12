@@ -114,14 +114,15 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                     customNote: reminder.title,
                   ),
                 ),
-              IconButton(
-                tooltip: 'Edit reminder'.tr,
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () => Get.toNamed<void>(
-                  AppRoutes.reminderForm,
-                  arguments: ReminderFormArgs(existing: reminder),
+              if (reminder.loanId == null)
+                IconButton(
+                  tooltip: 'Edit reminder'.tr,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () => Get.toNamed<void>(
+                    AppRoutes.reminderForm,
+                    arguments: ReminderFormArgs(existing: reminder),
+                  ),
                 ),
-              ),
               IconButton(
                 tooltip: 'Delete reminder'.tr,
                 icon: const Icon(Icons.delete_outline),
@@ -244,6 +245,17 @@ class _ReminderDetailViewState extends State<ReminderDetailView> {
                 contact: contactEntity,
                 balance: reminder.amount ?? Decimal.zero,
                 customNote: reminder.title,
+              ),
+            ),
+          ],
+          if (reminder.loanId != null) ...<Widget>[
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+              label: 'Record payment'.tr,
+              icon: Icons.payments_outlined,
+              onPressed: () => Get.toNamed<void>(
+                AppRoutes.loanPaymentForm,
+                arguments: reminder.loanId,
               ),
             ),
           ],

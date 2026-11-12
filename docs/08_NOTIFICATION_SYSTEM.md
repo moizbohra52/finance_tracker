@@ -186,6 +186,7 @@ Push data: `type`, `reference_id` and `user_id`. Both go through
 | `recurring` | recurring transactions |
 | `contact`, `khata` | contact detail |
 | `transaction` | transaction detail |
+| `loan` | loan payment form (the loan's) |
 | anything else, or a missing/invalid id | notification center |
 
 Ids are validated as UUIDs before use because push data comes from outside the
@@ -332,6 +333,29 @@ other reminder. Rules live in `domain/services/khata_due_reminders.dart`
     data, so overlapping loads cannot save older balances over newer ones.
     Its writes do not call `DataChangeNotifier.markChanged` (that would start
     another load).
+
+### Loan reminders (2026-11-11)
+A loan reminder is an ordinary reminder (`ReminderType.loan`, `Reminder.loanId`
+set), so it is scheduled, listed, synced and actionable like any other. Rules
+live in `LoanRepository`; no further schema change.
+- One per open loan. Id: `uuid v5("loan-reminder:<loan id>")`
+  (`LoanIds.reminder`), the same on every device and retry. Title
+  "Loan payment due" (loan taken) or "Collect loan payment" (loan given), no
+  name or amount.
+- At 09:00 local on the loan's next due date. Each payment moves it to the next
+  due date; closing the loan or deleting it soft-deletes it.
+- Payload `loan:<loan id>` (`ReminderNotificationPlanner.payloadFor`, constant
+  `loanPayloadType`), tagged `<user id>|` like the others. A tap opens the
+  loan's payment form (`NotificationTarget.resolve('loan', id)` ->
+  `AppRoutes.loanPaymentForm`, a bad id -> notification center). Notifications
+  scheduled earlier keep their `reminder:<id>` payload and open the reminder
+  detail as before.
+- **Mark done** and **Snooze** work on it: `NotificationTarget.reminderId` maps
+  the `loan:` target back to `LoanIds.reminder(<loan id>)` for
+  `reminderActionInBackground`.
+- The reminder detail of a loan reminder has **Record payment** (opens the
+  payment form) and no Edit (the loan owns the date and title); Delete, Mark as
+  done and Snooze stay.
 
 ### Not in this phase
 Notification buttons on iOS, anything that calls the push sender, a

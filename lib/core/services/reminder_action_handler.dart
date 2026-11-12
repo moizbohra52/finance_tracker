@@ -15,7 +15,6 @@ import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
 import 'package:finance_tracker/features/notifications/notification_target.dart';
-import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,14 +46,10 @@ Future<void> reminderActionInBackground(NotificationResponse response) async {
   final NotificationTarget? target = NotificationTarget.fromPayload(
     response.payload,
   );
-  if (action == null ||
-      owner == null ||
-      target == null ||
-      target.route != AppRoutes.reminderDetail) {
-    return;
-  }
+  final String? reminderId = target?.reminderId;
+  if (action == null || owner == null || reminderId == null) return;
   try {
-    final Reminder? changed = await _save(action, owner, target.argument!);
+    final Reminder? changed = await _save(action, owner, reminderId);
     if (changed == null) return;
     IsolateNameServer.lookupPortByName(_appPort)?.send(null);
     await _reschedule(changed, owner);
@@ -122,7 +117,7 @@ Future<void> _reschedule(Reminder reminder, String owner) async {
   // device last used.
   AppTranslations.use(AppLanguage.fromStored(storage.readLanguage()));
   final String payload = NotificationTarget.withOwner(
-    ReminderNotificationPlanner.payloadFor(reminder.id),
+    ReminderNotificationPlanner.payloadFor(reminder),
     owner,
   );
   final LocalNotificationService local = LocalNotificationService();
