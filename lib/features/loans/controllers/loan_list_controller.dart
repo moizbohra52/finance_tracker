@@ -31,6 +31,14 @@ class LoanListController extends GetxController {
     (Decimal sum, LoanSummary s) => sum + s.status.outstanding,
   );
 
+  /// The share of the principal already repaid, 0 to 1 (for a progress bar:
+  /// the only place a loan amount becomes a double).
+  double progressOf(LoanSummary s) {
+    final Decimal principal = s.loan.principal;
+    if (principal <= Decimal.zero) return 0;
+    return (s.status.principalRepaid / principal).toDouble().clamp(0.0, 1.0);
+  }
+
   List<LoanSummary> _current({required bool closed}) => loans
       .where(
         (LoanSummary s) =>

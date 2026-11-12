@@ -73,6 +73,30 @@ void main() {
       expect(c.totalOutstanding, Decimal.parse('1000'));
     });
 
+    test('progress is the principal repaid over the principal', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(loan('a', principal: '1000'));
+      f.loanPayments.add(
+        LoanPayment(
+          id: 'p1',
+          userId: 'u',
+          loanId: 'a',
+          accountId: 'acc-1',
+          kind: LoanPaymentKind.scheduled,
+          paidAt: DateTime(2027, 2, 5),
+          amount: Decimal.parse('300'),
+          principalPart: Decimal.parse('250'),
+          interestPart: Decimal.parse('50'),
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final LoanListController c = build(f);
+      await c.load();
+
+      expect(c.progressOf(c.loans.single), 0.25);
+    });
+
     test('shows the load error', () async {
       final FakeFinance f = FakeFinance();
       final LoanListController c = build(f);

@@ -41,6 +41,8 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/recurring-form` | Add / edit / delete schedule incl. custom interval (arg: rule for edit) | `RecurringBinding` | Recurring FAB, schedule row |
 | `/savings-goals` | Savings goals with progress, left, reached/overdue, the part from income; "Add money" dialog per goal | `SavingsGoalBinding` → `SavingsGoalController` | Home "Plan ahead" |
 | `/savings-goal-form` | Add / edit / delete goal (arg: `SavingsGoal` for edit) | `SavingsGoalBinding` | Savings goals FAB, goal card |
+| `/loans` | Loans list: Taken / Given segments, total outstanding, open loans (name, outstanding, progress bar, *Next @date · @amount*), collapsed *Closed* section; row opens `/loan-detail` (registered in a later step) | `LoanListBinding` → `LoanListController` | Home "Plan ahead" *Loans* tile |
+| `/loan-form` | Add / edit a loan: direction (new only), method, name, contact, principal, rate, tenure and EMI, start and first EMI date, account, *money moved* switch, note; terms are disabled once a payment exists (`LoanFormArgs`) | `LoanFormBinding` → `LoanFormController` | Loans FAB and empty state |
 | `/settings` | Settings | — | app-bar gear |
 | `/categories` | Own and built-in categories, by kind | `CategoryBinding` → `CategoryController` | Settings > Categories |
 | `/category-form` | Add / edit / delete an own category (`CategoryFormArgs`); returns the id | `CategoryBinding` | Categories FAB and rows, *New* chip in the income/expense and recurring forms |

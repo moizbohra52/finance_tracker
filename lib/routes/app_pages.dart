@@ -29,6 +29,8 @@ import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/export/views/export_view.dart';
+import 'package:finance_tracker/features/loans/views/loan_form_view.dart';
+import 'package:finance_tracker/features/loans/views/loan_list_view.dart';
 import 'package:finance_tracker/features/notifications/views/notification_center_view.dart';
 import 'package:finance_tracker/features/profile/views/profile_view.dart';
 import 'package:finance_tracker/features/recurring/views/recurring_form_view.dart';
@@ -394,6 +396,20 @@ abstract final class AppPages {
       page: () => const SplitExpenseFormView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: SplitExpenseBinding(),
+    ),
+
+    // Loans and EMIs
+    GetPage<dynamic>(
+      name: AppRoutes.loans,
+      page: () => const LoanListView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: LoanListBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.loanForm,
+      page: () => const LoanFormView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: LoanFormBinding(),
     ),
   ];
 }

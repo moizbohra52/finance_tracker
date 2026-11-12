@@ -1036,12 +1036,28 @@ class _PlanSection extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        _EnhancedPlanTile(
-          icon: Icons.flag_outlined,
-          iconColor: money.income,
-          title: 'Savings goals'.tr,
-          subtitle: 'Save up for what matters'.tr,
-          onTap: () => Get.toNamed<void>(AppRoutes.savingsGoals),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: _EnhancedPlanTile(
+                icon: Icons.flag_outlined,
+                iconColor: money.income,
+                title: 'Savings goals'.tr,
+                subtitle: 'Save up for what matters'.tr,
+                onTap: () => Get.toNamed<void>(AppRoutes.savingsGoals),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _EnhancedPlanTile(
+                icon: Icons.account_balance_outlined,
+                iconColor: colors.primary,
+                title: 'Loans'.tr,
+                subtitle: 'EMIs and money lent'.tr,
+                onTap: () => Get.toNamed<void>(AppRoutes.loans),
+              ),
+            ),
+          ],
         ),
       ],
     );

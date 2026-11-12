@@ -74,6 +74,26 @@
   the signed-in user's own), receipts attached to split expenses, currencies
   per group, inviting by link, exporting a group's statement
 
+## Loans and EMIs (2026-11-11)
+- Loans taken (EMIs you pay) and loans given (money you lent), each with a name,
+  optional contact, principal, interest rate, start date, account and note
+- Two methods: `emi` (rate a year, tenure in months, fixed EMI that fills in from
+  the amount, rate and tenure and can be changed to the bank's figure, first EMI
+  date) and `monthly_interest` (rate a month, interest every month, principal
+  returned whenever the user likes)
+- Loans list: Taken / Given segments, the total outstanding, per open loan the
+  outstanding, a progress bar of principal repaid and the next date and amount;
+  closed loans in a collapsed section. Home "Plan ahead" has a Loans tile
+- Every payment splits into principal and interest; the money rows on the
+  account, the reminder at the next due date and the schedule are derived from
+  the loan (see docs/05_FINANCIAL_LOGIC.md)
+- Once a loan has a payment only its name, contact and note can change
+- A loan never touches the khata; local storage and sync like the other data
+- Out of scope (v1): floating rate changes; choosing to reduce the EMI on a
+  prepayment; processing fees; daily or compound interest; loans paid out in
+  several parts; a loan PDF statement; WhatsApp reminders for loans given;
+  moratoriums; loans in the export screen
+
 ## Reports
 - Income
 - Expense
