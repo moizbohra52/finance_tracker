@@ -573,7 +573,10 @@ class LoanRepository {
   }
 
   /// The reminder of the loan's next due date (revived if it was
-  /// tombstoned); tombstoned for a closed loan.
+  /// tombstoned); tombstoned for a closed loan. A live reminder whose due
+  /// date and amount are unchanged keeps its done / snooze state (a rename or
+  /// note edit must not wake what the user silenced); one a payment moved
+  /// starts afresh.
   Future<void> _syncReminder(
     DatabaseExecutor txn,
     Loan loan,
@@ -586,22 +589,40 @@ class LoanRepository {
       await _tombstoneLive(txn, 'reminders', 'id = ?', reminderId, now);
       return;
     }
-    final bool reminderLive = (await _liveIds(
-      txn,
+    final List<Map<String, dynamic>> found = await txn.query(
       'reminders',
-      'id = ?',
-      reminderId,
-    )).isNotEmpty;
-    final List<Map<String, dynamic>> old = await txn.query(
-      'reminders',
-      columns: <String>['created_at'],
+      columns: <String>[
+        'created_at',
+        'deleted_at',
+        'remind_at',
+        'amount',
+        'is_completed',
+        'snoozed_until',
+      ],
       where: 'id = ?',
       whereArgs: <Object>[reminderId],
       limit: 1,
     );
-    final DateTime createdAt = old.isEmpty
+    final Map<String, dynamic>? old = found.isEmpty ? null : found.first;
+    final bool reminderLive = old != null && old['deleted_at'] == null;
+    final DateTime createdAt = old == null
         ? now
-        : DateTime.parse(old.first['created_at'] as String);
+        : DateTime.parse(old['created_at'] as String);
+    final DateTime remindAt = DateTime(due.year, due.month, due.day, 9);
+    final Decimal? amount = (status.nextAmount ?? Decimal.zero) > Decimal.zero
+        ? status.nextAmount
+        : null;
+    final bool unchanged =
+        reminderLive &&
+        DateTime.parse(old['remind_at'] as String).isAtSameMomentAs(remindAt) &&
+        (old['amount'] == null
+            ? amount == null
+            : amount != null &&
+                  Decimal.parse(old['amount'].toString()) == amount);
+    final bool isCompleted = unchanged && old['is_completed'] == 1;
+    final DateTime? snoozedUntil = unchanged && old['snoozed_until'] != null
+        ? DateTime.parse(old['snoozed_until'] as String)
+        : null;
     final Map<String, dynamic> json = ReminderModel.toJson(
       Reminder(
         id: reminderId,
@@ -611,24 +632,22 @@ class LoanRepository {
             ? 'Loan payment due'.tr
             : 'Collect loan payment'.tr,
         description: loan.name,
-        amount: (status.nextAmount ?? Decimal.zero) > Decimal.zero
-            ? status.nextAmount
-            : null,
+        amount: amount,
         contactId: null,
         transactionId: null,
         loanId: loan.id,
-        remindAt: DateTime(due.year, due.month, due.day, 9),
+        remindAt: remindAt,
         repeat: ReminderRepeat.none,
-        isCompleted: false,
+        isCompleted: isCompleted,
         notificationEnabled: true,
-        snoozedUntil: null,
+        snoozedUntil: snoozedUntil,
         createdAt: createdAt,
         updatedAt: now,
       ),
     );
     await txn.insert('reminders', <String, dynamic>{
       ...json,
-      'is_completed': 0,
+      'is_completed': isCompleted ? 1 : 0,
       'notification_enabled': 1,
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': now.toUtc().toIso8601String(),

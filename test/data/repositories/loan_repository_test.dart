@@ -764,6 +764,83 @@ void main() {
       },
     );
 
+    group('the reminder keeps a snooze or done the user set', () {
+      final String snoozed = DateTime(2027, 2, 4, 9).toUtc().toIso8601String();
+
+      Future<void> setFlags(String loanId) => database.db.update(
+        'reminders',
+        <String, Object?>{'snoozed_until': snoozed, 'is_completed': 1},
+        where: 'id = ?',
+        whereArgs: <Object>[LoanIds.reminder(loanId)],
+      );
+
+      test('renaming the loan leaves the flags, the text follows', () async {
+        await repo.saveLoan(loan());
+        await setFlags('loan-1');
+
+        await repo.saveLoan(loan(name: 'HDFC Renamed', note: 'a note'));
+
+        final Map<String, Object?> reminder = (await liveRows(
+          'reminders',
+        )).single;
+        expect(reminder['is_completed'], 1);
+        expect(reminder['snoozed_until'], snoozed);
+        expect(reminder['description'], 'HDFC Renamed');
+        expect(reminder['amount'], '10379.18');
+        final Map<String, dynamic> queued = (await queue()).last.payload;
+        expect(queued['is_completed'], true);
+        expect(queued['snoozed_until'], snoozed);
+        expect(queued['description'], 'HDFC Renamed');
+      });
+
+      test('a reminder without an amount keeps them too', () async {
+        await repo.saveLoan(ravi().copyWith(annualRate: Decimal.zero));
+        await setFlags('ravi');
+
+        await repo.saveLoan(
+          ravi().copyWith(annualRate: Decimal.zero, name: 'Ravi K'),
+        );
+
+        final Map<String, Object?> reminder = (await liveRows(
+          'reminders',
+        )).single;
+        expect(reminder['amount'], isNull);
+        expect(reminder['is_completed'], 1);
+        expect(reminder['snoozed_until'], snoozed);
+      });
+
+      test('a payment moves the reminder and resets them', () async {
+        await repo.saveLoan(loan());
+        await setFlags('loan-1');
+
+        await repo.savePayment(first());
+
+        final Map<String, Object?> reminder = (await liveRows(
+          'reminders',
+        )).single;
+        expect(reminder['is_completed'], 0);
+        expect(reminder['snoozed_until'], isNull);
+        expect(
+          DateTime.parse(reminder['remind_at']! as String).toLocal(),
+          DateTime(2027, 3, 5, 9),
+        );
+      });
+
+      test('a revived reminder starts afresh', () async {
+        await repo.saveLoan(ravi());
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 3, 15), '10000', '400', loanId: 'ravi'),
+        );
+        await repo.deletePayment('r1');
+
+        final Map<String, Object?> reminder = (await liveRows(
+          'reminders',
+        )).single;
+        expect(reminder['is_completed'], 0);
+        expect(reminder['snoozed_until'], isNull);
+      });
+    });
+
     test('prepaid interest leaves the reminder without an amount', () async {
       await repo.saveLoan(ravi());
 
