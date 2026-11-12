@@ -1,7 +1,9 @@
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/data_change_notifier.dart';
+import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/loan.dart';
+import 'package:finance_tracker/domain/services/loan_calculator.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_form_controller.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_list_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -133,11 +135,7 @@ void main() {
       expect(c.direction.value, LoanDirection.taken);
       expect(
         c.firstDueDate.value,
-        DateTime(
-          c.startDate.value.year,
-          c.startDate.value.month + 1,
-          c.startDate.value.day,
-        ),
+        LoanCalculator.addMonths(c.startDate.value, 1),
       );
       expect(c.error, isNull);
     });
@@ -168,6 +166,60 @@ void main() {
       c.firstDueDate.value = DateTime(2027, 3, 10);
       c.startDate.value = DateTime(2027, 1, 5);
       expect(c.firstDueDate.value, DateTime(2027, 3, 10));
+    });
+
+    test('preselects the first active account', () async {
+      final FakeFinance f = FakeFinance();
+      f.accounts.add(
+        Account(
+          id: 'acc-0',
+          userId: 'u',
+          name: 'Old',
+          type: AccountType.bank,
+          openingBalance: Decimal.zero,
+          isActive: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      );
+      final LoanFormController c = await build(f);
+
+      expect(c.accountId.value, 'acc-1');
+      expect(c.accounts.map((Account a) => a.id), <String>['acc-1']);
+    });
+
+    test(
+      'an unlocked loan with the computed EMI refills on a change',
+      () async {
+        final FakeFinance f = FakeFinance();
+        final Loan existing = loan('loan-1');
+        f.loans.add(existing);
+        final LoanFormController c = await build(
+          f,
+          args: LoanFormArgs(existing: existing),
+        );
+        expect(c.termsLocked.value, isFalse);
+        expect(c.emiText.value, '10379.18');
+
+        c.tenureText.value = '120';
+        expect(c.emiText.value, '6333.79');
+      },
+    );
+
+    test('a stored EMI that is not the computed one stays', () async {
+      final FakeFinance f = FakeFinance();
+      final Loan existing = loan(
+        'loan-1',
+      ).copyWith(emiAmount: Decimal.parse('10400'));
+      f.loans.add(existing);
+      final LoanFormController c = await build(
+        f,
+        args: LoanFormArgs(existing: existing),
+      );
+      expect(c.emiText.value, '10400');
+
+      c.tenureText.value = '120';
+      expect(c.emiText.value, '10400');
     });
 
     test('a monthly loan saves the rate times 12 and no EMI fields', () async {

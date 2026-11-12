@@ -104,7 +104,11 @@ class LoanFormController extends GetxController {
     final Loan? existing = args.existing;
     _existing = existing;
     try {
-      accounts.assignAll(await _accountsRepository.getAccounts());
+      accounts.assignAll(
+        (await _accountsRepository.getAccounts()).where(
+          (Account a) => a.isActive || a.id == existing?.accountId,
+        ),
+      );
       contacts.assignAll(await _contactsRepository.getContacts());
     } on AppException {
       // The pickers stay empty; the error getter then asks for an account.
@@ -122,6 +126,7 @@ class LoanFormController extends GetxController {
     } on AppException {
       // The repository refuses term changes after a payment anyway.
     }
+    // Loading must not overwrite the stored EMI text, whatever follows.
     _emiEdited = true;
     direction.value = existing.direction;
     method.value = existing.method;
@@ -140,6 +145,10 @@ class LoanFormController extends GetxController {
     accountId.value = existing.accountId;
     movedMoney.value = existing.movedMoney;
     note.value = existing.note ?? '';
+    // A stored EMI that differs from the computed one is the bank's figure:
+    // keep it until the user edits. Otherwise it keeps following the inputs.
+    final Decimal? stored = existing.emiAmount;
+    _emiEdited = stored != null && stored != suggestedEmi;
   }
 
   /// The EMI from principal, rate and tenure; null until all three are valid.
