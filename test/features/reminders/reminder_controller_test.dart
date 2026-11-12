@@ -334,6 +334,7 @@ void main() {
     );
 
     Future<Reminder> seed(LoanMethod method) async {
+      finance.addAccount('Cash', '1000');
       finance.loans.add(loan(method));
       final Reminder due = makeReminder(
         type: ReminderType.loan,
@@ -357,6 +358,27 @@ void main() {
       expect(paid.kind, LoanPaymentKind.scheduled);
       expect(notifier.version.value, 1, reason: 'open screens reload');
       expect(controller.action.error.value, isNull);
+    });
+
+    test('tapping again on purpose pays the next instalment', () async {
+      final Reminder due = await seed(LoanMethod.emi);
+
+      await controller.markLoanPaid(due);
+      await controller.markLoanPaid(due);
+
+      expect(finance.loanPayments, hasLength(2));
+    });
+
+    test('a deactivated loan account is reported, nothing written', () async {
+      final Reminder due = await seed(LoanMethod.emi);
+      finance.accounts[0] = finance.accounts[0].copyWith(isActive: false);
+
+      expect(await controller.markLoanPaid(due), LoanPaidOutcome.failed);
+
+      expect(controller.action.error.value, 'Choose an account');
+      expect(finance.loanPayments, isEmpty);
+      expect(finance.reminders.single.isCompleted, isFalse);
+      expect(notifier.version.value, 0);
     });
 
     test('with nothing due it completes the reminder as before', () async {

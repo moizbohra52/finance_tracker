@@ -358,17 +358,35 @@ live in `LoanRepository`; no further schema change.
   and records the due instalment in one tap: `applyReminderAction` calls
   `LoanRepository.recordDuePayment` (the suggested split, from the loan's own
   account, dated today but never before the loan start or its latest payment,
-  saved through `savePayment` so the derived rows, closing and the reminder
-  move are exactly those of a typed payment) instead of completing the
-  reminder, then reschedules it at its new date. A loan that closes leaves no
-  reminder, so its notification is cancelled. With nothing due (a
-  monthly-interest loan whose interest is paid) the reminder is completed as
-  any other.
-- A tap delivered twice records once: the notification exists only for a due
-  date that has come, and a recorded instalment moves the reminder to a later
-  one, so a reminder whose date is still in the future was already handled and
-  the tap does nothing. Notifications scheduled before this change keep the
-  label "Mark done" until the next reschedule; the tap still records.
+  written in one transaction by the same code as `savePayment`, so the derived
+  rows, closing and the reminder move are exactly those of a typed payment)
+  instead of completing the reminder, then reschedules it at its new date. A
+  loan that closes leaves no reminder, so its notification is cancelled. Only
+  with nothing due (a monthly-interest loan whose interest is paid) is the
+  reminder completed as any other.
+- What is guaranteed when the same tap is delivered more than once:
+  - The payment's id is derived from the instalment it pays
+    (`LoanIds.duePayment`: the instalment number, or the due date for a
+    monthly-interest loan), and the loan is read inside the writing
+    transaction, so two deliveries cannot both record the same instalment
+    (the second is refused, or finds the same id and writes nothing), and the
+    same instalment recorded on two devices is one row after sync.
+  - The button passes `requireDue`, so nothing is recorded when the loan's
+    next due date is after today, when the reminder's date is still in the
+    future, or when any live payment of the loan was created in the last 60
+    seconds (`LoanRepository.replayWindow`). The last rule stops a replay on a
+    loan two or more instalments overdue from paying the following instalment,
+    because the moved reminder is still in the past. In each refused case the
+    reminder is left as it is, not completed.
+  - Not guaranteed: a second tap more than a minute later is a new tap and
+    records the next instalment if one is due.
+  - The in-app Mark as paid has no window: a deliberate second tap pays the
+    next instalment (the busy flag covers a double tap during the write).
+- A loan whose account is deactivated or deleted is not paid: nothing is
+  posted, the action fails with "Choose an account" (shown in the app,
+  logged in the background, the reminder left as it is).
+- Notifications scheduled before this change keep the label "Mark done" until
+  the next reschedule; the tap still records.
 - The reminder detail of a loan reminder has **Mark as paid** (the same
   one-tap payment, via `ReminderController.markLoanPaid`; "Payment recorded"),
   **Record payment** (opens the prefilled payment form) and no Edit (the loan

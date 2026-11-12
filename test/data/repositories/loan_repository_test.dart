@@ -765,17 +765,33 @@ void main() {
     );
 
     group('recordDuePayment', () {
+      Future<void> insertAccount() =>
+          database.db.insert('accounts', <String, Object?>{
+            'id': 'acc-1',
+            'user_id': null,
+            'name': 'HDFC',
+            'type': 'bank',
+            'opening_balance': '0',
+            'is_active': 1,
+            'created_at': now.toUtc().toIso8601String(),
+            'updated_at': now.toUtc().toIso8601String(),
+          });
+
+      setUp(insertAccount);
+
       test('records the due EMI from the loan account', () async {
         await repo.saveLoan(loan());
         final int queueBefore = (await queue()).length;
 
-        final LoanPayment? paid = await repo.recordDuePayment(
+        final DuePaymentResult result = await repo.recordDuePayment(
           'loan-1',
           now: DateTime(2027, 2, 5, 10),
         );
 
-        expect(paid, isNotNull);
-        expect(paid!.amount, d('10379.18'));
+        expect(result.status, DuePaymentStatus.recorded);
+        final LoanPayment paid = result.payment!;
+        expect(paid.id, LoanIds.duePayment('loan-1', '1'));
+        expect(paid.amount, d('10379.18'));
         expect(paid.principalPart, d('6629.18'));
         expect(paid.interestPart, d('3750.00'));
         expect(paid.kind, LoanPaymentKind.scheduled);
@@ -821,12 +837,15 @@ void main() {
       test('a monthly-interest loan records the interest due', () async {
         await repo.saveLoan(ravi());
 
-        final LoanPayment? paid = await repo.recordDuePayment(
+        final DuePaymentResult result = await repo.recordDuePayment(
           'ravi',
           now: DateTime(2027, 3, 15, 9),
         );
 
-        expect(paid!.amount, d('400'));
+        final LoanPayment paid = result.payment!;
+        // Keyed by the due date it pays, the 1 Feb instalment.
+        expect(paid.id, LoanIds.duePayment('ravi', '2027-02-01'));
+        expect(paid.amount, d('400'));
         expect(paid.principalPart, Decimal.zero);
         expect(paid.interestPart, d('400'));
         expect(paid.paidAt, DateTime(2027, 3, 15));
@@ -838,22 +857,41 @@ void main() {
         expect(only['amount'], '400');
       });
 
-      test('returns null and writes nothing when nothing is due', () async {
+      test('a monthly-interest loan called twice records once', () async {
+        await repo.saveLoan(ravi());
+        final DateTime at = DateTime(2027, 3, 15, 9);
+
+        final DuePaymentResult first = await repo.recordDuePayment(
+          'ravi',
+          now: at,
+        );
+        final DuePaymentResult second = await repo.recordDuePayment(
+          'ravi',
+          now: at.add(const Duration(minutes: 5)),
+        );
+
+        expect(first.status, DuePaymentStatus.recorded);
+        expect(second.status, DuePaymentStatus.nothingDue);
+        expect(await liveCount('loan_payments'), 1);
+      });
+
+      test('nothing due writes nothing', () async {
         await repo.saveLoan(ravi());
         final int queueBefore = (await queue()).length;
 
         // 20 Jan: the first month is not complete yet.
-        final LoanPayment? paid = await repo.recordDuePayment(
+        final DuePaymentResult result = await repo.recordDuePayment(
           'ravi',
           now: DateTime(2027, 1, 20),
         );
 
-        expect(paid, isNull);
+        expect(result.status, DuePaymentStatus.nothingDue);
+        expect(result.payment, isNull);
         expect(await liveCount('loan_payments'), 0);
         expect((await queue()).length, queueBefore);
       });
 
-      test('returns null for a closed, deleted or unknown loan', () async {
+      test('a closed, deleted or unknown loan owes nothing', () async {
         await repo.saveLoan(ravi());
         await repo.savePayment(
           pay('r1', DateTime(2027, 3, 15), '10000', '400', loanId: 'ravi'),
@@ -863,9 +901,13 @@ void main() {
         final int queueBefore = (await queue()).length;
         final DateTime later = DateTime(2027, 4, 2);
 
-        expect(await repo.recordDuePayment('ravi', now: later), isNull);
-        expect(await repo.recordDuePayment('gone', now: later), isNull);
-        expect(await repo.recordDuePayment('nope', now: later), isNull);
+        for (final String id in <String>['ravi', 'gone', 'nope']) {
+          expect(
+            (await repo.recordDuePayment(id, now: later)).status,
+            DuePaymentStatus.nothingDue,
+            reason: id,
+          );
+        }
 
         expect(await liveCount('loan_payments'), 1);
         expect((await queue()).length, queueBefore);
@@ -877,13 +919,13 @@ void main() {
           await repo.saveLoan(loan());
           await repo.savePayment(first());
 
-          final LoanPayment? second = await repo.recordDuePayment(
+          final DuePaymentResult second = await repo.recordDuePayment(
             'loan-1',
             now: DateTime(2027, 2, 1),
           );
 
-          expect(second!.paidAt, DateTime(2027, 2, 5));
-          expect(second.amount, d('10379.18'));
+          expect(second.payment!.paidAt, DateTime(2027, 2, 5));
+          expect(second.payment!.amount, d('10379.18'));
           expect(await liveCount('loan_payments'), 2);
 
           await repo.saveLoan(
@@ -893,13 +935,164 @@ void main() {
               firstDueDate: DateTime(2027, 7, 1),
             ),
           );
-          final LoanPayment? early = await repo.recordDuePayment(
+          final DuePaymentResult early = await repo.recordDuePayment(
             'later',
             now: DateTime(2027, 5, 20),
           );
-          expect(early!.paidAt, DateTime(2027, 6, 1));
+          expect(early.payment!.paidAt, DateTime(2027, 6, 1));
         },
       );
+
+      test('two parallel replay-protected calls record one payment', () async {
+        await repo.saveLoan(loan());
+        final DateTime at = DateTime(2027, 2, 5, 9, 1);
+
+        final List<DuePaymentResult> results =
+            await Future.wait(<Future<DuePaymentResult>>[
+              repo.recordDuePayment('loan-1', now: at, requireDue: true),
+              repo.recordDuePayment('loan-1', now: at, requireDue: true),
+            ]);
+
+        expect(await liveCount('loan_payments'), 1);
+        expect(
+          results.map((DuePaymentResult r) => r.status).toSet(),
+          <DuePaymentStatus>{
+            DuePaymentStatus.recorded,
+            DuePaymentStatus.refused,
+          },
+        );
+        // The loan's money row and the payment's two parts, once.
+        expect(await liveCount('transactions'), 3);
+      });
+
+      test('a replay does not pay the next overdue instalment', () async {
+        await repo.saveLoan(loan());
+        // 10 Apr: the 5 Feb and 5 Mar instalments are both overdue.
+        final DateTime at = DateTime(2027, 4, 10, 9);
+
+        final DuePaymentResult first = await repo.recordDuePayment(
+          'loan-1',
+          now: at,
+          requireDue: true,
+        );
+        final DuePaymentResult replay = await repo.recordDuePayment(
+          'loan-1',
+          now: at.add(const Duration(seconds: 1)),
+          requireDue: true,
+        );
+
+        expect(first.status, DuePaymentStatus.recorded);
+        expect(replay.status, DuePaymentStatus.refused);
+        expect(await liveCount('loan_payments'), 1);
+        expect(
+          DateTime.parse(
+            (await liveRows('reminders')).single['remind_at']! as String,
+          ).toLocal(),
+          DateTime(2027, 3, 5, 9),
+        );
+
+        // Past the window it is a new tap, and pays the following instalment.
+        final DuePaymentResult next = await repo.recordDuePayment(
+          'loan-1',
+          now: at.add(const Duration(seconds: 61)),
+          requireDue: true,
+        );
+        expect(next.payment!.id, LoanIds.duePayment('loan-1', '2'));
+        expect(await liveCount('loan_payments'), 2);
+      });
+
+      test('without requireDue there is no window and no due check', () async {
+        await repo.saveLoan(loan());
+        final DateTime at = DateTime(2027, 2, 5, 9);
+
+        await repo.recordDuePayment('loan-1', now: at);
+        final DuePaymentResult again = await repo.recordDuePayment(
+          'loan-1',
+          now: at.add(const Duration(seconds: 1)),
+        );
+
+        expect(again.payment!.id, LoanIds.duePayment('loan-1', '2'));
+        expect(await liveCount('loan_payments'), 2);
+      });
+
+      test('requireDue refuses an instalment that is not due yet', () async {
+        await repo.saveLoan(loan());
+        final DateTime early = DateTime(2027, 1, 20, 9);
+
+        final DuePaymentResult refused = await repo.recordDuePayment(
+          'loan-1',
+          now: early,
+          requireDue: true,
+        );
+        expect(refused.status, DuePaymentStatus.refused);
+        expect(await liveCount('loan_payments'), 0);
+
+        final DuePaymentResult typed = await repo.recordDuePayment(
+          'loan-1',
+          now: early,
+        );
+        expect(typed.status, DuePaymentStatus.recorded);
+      });
+
+      test('an instalment already recorded is returned, not written', () async {
+        await repo.saveLoan(loan());
+        // The same instalment recorded on another device has the same id.
+        final String id = LoanIds.duePayment('loan-1', '1');
+        await database.db.insert('loan_payments', <String, Object?>{
+          'id': id,
+          'user_id': null,
+          'loan_id': 'loan-1',
+          'account_id': 'acc-1',
+          'kind': 'extra',
+          'paid_at': DateTime(2027, 2, 5).toUtc().toIso8601String(),
+          'amount': '100',
+          'principal_part': '100',
+          'interest_part': '0',
+          'created_at': now.toUtc().toIso8601String(),
+          'updated_at': now.toUtc().toIso8601String(),
+        });
+        final int queueBefore = (await queue()).length;
+
+        final DuePaymentResult result = await repo.recordDuePayment(
+          'loan-1',
+          now: DateTime(2027, 2, 6),
+        );
+
+        expect(result.status, DuePaymentStatus.alreadyRecorded);
+        expect(result.payment!.id, id);
+        expect(await liveCount('loan_payments'), 1);
+        expect((await queue()).length, queueBefore);
+      });
+
+      test('a deactivated or deleted account is refused', () async {
+        await repo.saveLoan(loan());
+        final int queueBefore = (await queue()).length;
+        final Matcher refused = throwsA(
+          isA<UnexpectedFailure>().having(
+            (UnexpectedFailure e) => e.toString(),
+            'text',
+            contains('Choose an account'),
+          ),
+        );
+
+        await database.db.update('accounts', <String, Object?>{'is_active': 0});
+        await expectLater(
+          repo.recordDuePayment('loan-1', now: DateTime(2027, 2, 5, 9)),
+          refused,
+        );
+
+        await database.db.update('accounts', <String, Object?>{
+          'is_active': 1,
+          'deleted_at': now.toUtc().toIso8601String(),
+        });
+        await expectLater(
+          repo.recordDuePayment('loan-1', now: DateTime(2027, 2, 5, 9)),
+          refused,
+        );
+
+        expect(await liveCount('loan_payments'), 0);
+        expect((await queue()).length, queueBefore);
+      });
     });
 
     group('the reminder keeps a snooze or done the user set', () {
@@ -962,6 +1155,36 @@ void main() {
           DateTime.parse(reminder['remind_at']! as String).toLocal(),
           DateTime(2027, 3, 5, 9),
         );
+      });
+
+      test('a changed amount on the same due date resets the flags', () async {
+        await repo.saveLoan(ravi());
+        // Paid on 1 Feb: the next one is due 1 Mar, owing 180 on 9000.
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 2), '1000', '200', loanId: 'ravi'),
+        );
+        Future<Map<String, Object?>> reminder() async =>
+            (await liveRows('reminders')).single;
+        expect(
+          Decimal.parse((await reminder())['amount']! as String),
+          d('180'),
+        );
+        await setFlags('ravi');
+
+        // Editing the split (more principal) lowers February's interest, so
+        // the amount owed on the same 1 Mar changes.
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 2), '2000', '200', loanId: 'ravi'),
+        );
+
+        final Map<String, Object?> after = await reminder();
+        expect(Decimal.parse(after['amount']! as String), d('160'));
+        expect(
+          DateTime.parse(after['remind_at']! as String).toLocal(),
+          DateTime(2027, 3, 1, 9),
+        );
+        expect(after['is_completed'], 0);
+        expect(after['snoozed_until'], isNull);
       });
 
       test('a revived reminder starts afresh', () async {

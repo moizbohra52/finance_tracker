@@ -11,7 +11,6 @@ import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/domain/entities/app_notification.dart';
-import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
@@ -106,13 +105,16 @@ Future<Reminder?> _save(
 /// (reminder deleted or already done, or a loan reminder that already moved).
 ///
 /// Done on a loan reminder records the instalment that is due through
-/// [LoanRepository.recordDuePayment], and the loan moves the reminder (or
-/// removes it when that closed the loan, which comes back as a completed
-/// copy so its notification is cancelled). A notification exists only for a
-/// due date that has come and a recorded instalment moves the reminder to a
-/// later one, so a reminder still in the future means this tap was already
-/// handled (the same tap delivered twice): nothing is recorded again. With
-/// nothing due the reminder is completed as for any other.
+/// [LoanRepository.recordDuePayment] with `requireDue`, and the loan moves the
+/// reminder (or removes it when that closed the loan, which comes back as a
+/// completed copy so its notification is cancelled). The same tap can be
+/// delivered twice, so a replay records nothing: a reminder still in the
+/// future was already handled, and the repository refuses (and this leaves the
+/// reminder alone) when the instalment is not due or a payment was made in the
+/// last minute, the case of a loan several instalments overdue where the
+/// moved reminder is still due. Only a loan with nothing due completes the
+/// reminder, as for any other. A failure, such as a deactivated account,
+/// throws and leaves the reminder as it is.
 Future<Reminder?> applyReminderAction({
   required ReminderRepository reminders,
   required LoanRepository loans,
@@ -129,9 +131,18 @@ Future<Reminder?> applyReminderAction({
   final String? loanId = reminder.loanId;
   if (action == ReminderAction.done && loanId != null) {
     if (reminder.remindAt.isAfter(at)) return null;
-    final LoanPayment? paid = await loans.recordDuePayment(loanId, now: at);
-    if (paid != null) {
-      return await find() ?? reminder.copyWith(isCompleted: true);
+    final DuePaymentResult result = await loans.recordDuePayment(
+      loanId,
+      now: at,
+      requireDue: true,
+    );
+    switch (result.status) {
+      case DuePaymentStatus.recorded || DuePaymentStatus.alreadyRecorded:
+        return await find() ?? reminder.copyWith(isCompleted: true);
+      case DuePaymentStatus.refused:
+        return null;
+      case DuePaymentStatus.nothingDue:
+        break;
     }
   }
   final Reminder changed = ReminderCalculator.applyAction(reminder, action, at);

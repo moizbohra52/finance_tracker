@@ -1,4 +1,5 @@
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/core/services/reminder_action_handler.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/repositories/loan_repository.dart';
@@ -26,6 +27,16 @@ void main() {
       SupabaseClient('https://dummy.supabase.co', 'dummy-anon-key'),
       database: database,
     );
+    await database.db.insert('accounts', <String, Object?>{
+      'id': 'acc-1',
+      'user_id': null,
+      'name': 'HDFC',
+      'type': 'bank',
+      'opening_balance': '0',
+      'is_active': 1,
+      'created_at': DateTime(2027).toUtc().toIso8601String(),
+      'updated_at': DateTime(2027).toUtc().toIso8601String(),
+    });
   });
 
   tearDown(() async {
@@ -183,6 +194,46 @@ void main() {
     expect(changed!.isCompleted, isTrue);
     expect((await loanReminder('free')).isCompleted, isTrue);
     expect(await livePayments(), 0);
+  });
+
+  test('a replay does not pay the next overdue instalment', () async {
+    await loans.saveLoan(emiLoan());
+    // 10 Apr: the 5 Feb and 5 Mar instalments are both overdue, so after the
+    // first tap the reminder (5 Mar) is still in the past.
+    final DateTime late = DateTime(2027, 4, 10, 9);
+    final Reminder? first = await act(
+      ReminderAction.done,
+      LoanIds.reminder('loan-1'),
+      late,
+    );
+    expect(first!.remindAt, DateTime(2027, 3, 5, 9));
+
+    final Reminder? replay = await act(
+      ReminderAction.done,
+      LoanIds.reminder('loan-1'),
+      late.add(const Duration(seconds: 1)),
+    );
+
+    expect(replay, isNull);
+    expect(await livePayments(), 1);
+    final Reminder stored = await loanReminder('loan-1');
+    expect(stored.remindAt, DateTime(2027, 3, 5, 9));
+    expect(stored.isCompleted, isFalse);
+  });
+
+  test('a deactivated loan account leaves the reminder alone', () async {
+    await loans.saveLoan(emiLoan());
+    await database.db.update('accounts', <String, Object?>{'is_active': 0});
+
+    await expectLater(
+      act(ReminderAction.done, LoanIds.reminder('loan-1'), tapped),
+      throwsA(isA<UnexpectedFailure>()),
+    );
+
+    expect(await livePayments(), 0);
+    final Reminder stored = await loanReminder('loan-1');
+    expect(stored.isCompleted, isFalse);
+    expect(stored.remindAt, DateTime(2027, 2, 5, 9));
   });
 
   test('Snooze on a loan reminder only snoozes it', () async {

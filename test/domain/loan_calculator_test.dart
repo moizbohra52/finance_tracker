@@ -325,6 +325,53 @@ void main() {
       expect(LoanCalculator.dueDate(l, 3), DateTime(2027, 3, 31));
     });
 
+    test('dueKey names the instalment: its number, or its due date', () {
+      final Loan emi = loan();
+      final LoanPayment first = payment(
+        'p1',
+        LoanPaymentKind.scheduled,
+        d('6629.18'),
+        d('3750'),
+      );
+      final LoanPayment extra = payment(
+        'p2',
+        LoanPaymentKind.extra,
+        d('1000'),
+        Decimal.zero,
+      );
+      final LoanPayment deleted = payment(
+        'p3',
+        LoanPaymentKind.scheduled,
+        d('6629.18'),
+        d('3750'),
+        deletedAt: DateTime(2027, 3, 1),
+      );
+
+      expect(LoanCalculator.dueKey(emi, <LoanPayment>[]), '1');
+      expect(LoanCalculator.dueKey(emi, <LoanPayment>[first]), '2');
+      // Prepayments and deleted payments are not instalments.
+      expect(
+        LoanCalculator.dueKey(emi, <LoanPayment>[first, extra, deleted]),
+        '2',
+      );
+      expect(
+        LoanCalculator.dueKey(
+          emi.copyWith(closedAt: DateTime(2027, 3, 1)),
+          <LoanPayment>[],
+        ),
+        isNull,
+      );
+
+      final Loan ravi = monthly();
+      expect(LoanCalculator.dueKey(ravi, <LoanPayment>[]), '2027-02-01');
+      expect(
+        LoanCalculator.dueKey(ravi, <LoanPayment>[
+          paid('2600', '400', DateTime(2027, 3, 15)),
+        ]),
+        '2027-04-01',
+      );
+    });
+
     test('paymentDay is today, never before the start or the last payment', () {
       final Loan l = loan();
       final LoanPayment last = payment(
@@ -889,6 +936,13 @@ void main() {
     test('different inputs give different ids', () {
       expect(LoanIds.loanRow('a'), isNot(LoanIds.loanRow('b')));
       expect(LoanIds.loanRow('a'), isNot(LoanIds.reminder('a')));
+    });
+
+    test('a one-tap payment id follows the loan and the instalment', () {
+      expect(LoanIds.duePayment('a', '1'), LoanIds.duePayment('a', '1'));
+      expect(LoanIds.duePayment('a', '1'), isNot(LoanIds.duePayment('a', '2')));
+      expect(LoanIds.duePayment('a', '1'), isNot(LoanIds.duePayment('b', '1')));
+      expect(LoanIds.duePayment('a', '1'), isNot(LoanIds.reminder('a')));
     });
 
     test('a payment principal and interest row differ', () {

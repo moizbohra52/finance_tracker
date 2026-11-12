@@ -15,6 +15,12 @@ abstract final class LoanIds {
   static String paymentInterest(String paymentId) =>
       _v5('loan-payment:$paymentId:interest');
 
+  /// The one-tap payment of one instalment of a loan ([key] is its number, or
+  /// its due date for a monthly-interest loan; see `LoanCalculator.dueKey`):
+  /// the same on every device and retry, so the instalment is recorded once.
+  static String duePayment(String loanId, String key) =>
+      _v5('loan-due:$loanId:$key');
+
   /// The reminder of a loan's next due date.
   static String reminder(String loanId) => _v5('loan-reminder:$loanId');
 

@@ -1620,21 +1620,33 @@ class FakeLoanRepository implements LoanRepository {
   }
 
   @override
-  Future<LoanPayment?> recordDuePayment(String loanId, {DateTime? now}) async {
+  Future<DuePaymentResult> recordDuePayment(
+    String loanId, {
+    DateTime? now,
+    bool requireDue = false,
+  }) async {
     _f.throwPending();
     final int index = _f.loans.indexWhere(
       (Loan l) => l.id == loanId && l.isLive,
     );
-    if (index < 0) return null;
-    final LoanPayment? payment = LoanRepository.dueDraft(
-      _f.loans[index],
+    if (index < 0) return const DuePaymentResult(DuePaymentStatus.nothingDue);
+    final Loan loan = _f.loans[index];
+    final DuePaymentResult plan = LoanRepository.planDuePayment(
+      loan,
       _live(loanId),
       now ?? DateTime.now(),
-      'due-${_f.loanPayments.length + 1}',
+      requireDue: requireDue,
     );
-    if (payment == null) return null;
-    await savePayment(payment);
-    return payment;
+    final LoanPayment? draft = plan.payment;
+    if (plan.status != DuePaymentStatus.recorded || draft == null) return plan;
+    if (!_f.accounts.any(
+      (Account a) =>
+          a.id == loan.accountId && a.isActive && a.deletedAt == null,
+    )) {
+      throw const UnexpectedFailure('Choose an account');
+    }
+    await savePayment(draft);
+    return plan;
   }
 
   @override

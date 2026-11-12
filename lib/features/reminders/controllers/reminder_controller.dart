@@ -8,7 +8,6 @@ import 'package:finance_tracker/data/repositories/contact_repository.dart';
 import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
-import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/services/khata_due_reminders.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
@@ -300,10 +299,10 @@ class ReminderController extends GetxController {
     LoanPaidOutcome outcome = LoanPaidOutcome.failed;
     await action.run(() async {
       final String? loanId = reminder.loanId;
-      final LoanPayment? paid = loanId == null
+      final DuePaymentResult? result = loanId == null
           ? null
           : await _loans?.recordDuePayment(loanId);
-      if (paid != null) {
+      if (result?.payment != null) {
         _notifier.markChanged();
         outcome = LoanPaidOutcome.recorded;
         return;

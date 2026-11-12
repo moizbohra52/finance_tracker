@@ -14,7 +14,6 @@ import 'package:finance_tracker/domain/services/loan_calculator.dart';
 import 'package:finance_tracker/domain/services/loan_ids.dart';
 import 'package:get/get.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart' hide Transaction;
-import 'package:uuid/uuid.dart';
 
 /// One loan for the list screens, with where it stands.
 class LoanSummary {
@@ -37,6 +36,32 @@ class LoanDetail {
   final LoanStatus status;
 }
 
+/// What `LoanRepository.recordDuePayment` did.
+enum DuePaymentStatus {
+  /// The due instalment was written.
+  recorded,
+
+  /// A live payment for this very instalment already existed; nothing written.
+  alreadyRecorded,
+
+  /// The loan is missing or closed, or owes nothing now (a monthly-interest
+  /// loan whose interest is paid).
+  nothingDue,
+
+  /// Declined for a replay-protected caller: not due yet, or a payment was made
+  /// moments ago. The caller must leave everything as it is.
+  refused,
+}
+
+/// The outcome of a one-tap payment; [payment] is the one written
+/// ([DuePaymentStatus.recorded]) or found ([DuePaymentStatus.alreadyRecorded]).
+class DuePaymentResult {
+  const DuePaymentResult(this.status, [this.payment]);
+
+  final DuePaymentStatus status;
+  final LoanPayment? payment;
+}
+
 /// Local storage for loans (docs/05_FINANCIAL_LOGIC.md). Every write is one
 /// SQLite transaction holding the rows and their queue items, parents
 /// enqueued first. With a null database every method throws `DatabaseFailure`
@@ -49,8 +74,6 @@ class LoanRepository {
 
   final AppDatabase? _db;
   final SyncEngine? _syncEngine;
-
-  static const Uuid _uuid = Uuid();
 
   AppDatabase get _database {
     final AppDatabase? db = _db;
@@ -256,115 +279,180 @@ class LoanRepository {
   Future<void> savePayment(LoanPayment payment) async {
     final AppDatabase database = _database;
     final DateTime now = DateTime.now();
-    await database.db.transaction((DatabaseExecutor txn) async {
-      final Loan loan = await _liveLoan(txn, payment.loanId);
-      final List<LoanPayment> live = await _livePayments(txn, loan.id);
-      final LoanPayment? existing = live
-          .where((LoanPayment p) => p.id == payment.id)
-          .firstOrNull;
-      if (existing != null && live.first.id != existing.id) {
-        throw const UnexpectedFailure('Only the latest payment can be changed');
-      }
-      final List<LoanPayment> others = live
-          .where((LoanPayment p) => p.id != payment.id)
-          .toList();
-      final String? message = LoanCalculator.validatePayment(
-        loan,
-        others,
-        payment,
-      );
-      if (message != null) throw UnexpectedFailure(message);
-
-      final DateTime createdAt = existing?.createdAt ?? payment.createdAt;
-      final LoanPayment saved = payment.copyWith(updatedAt: now);
-      final Map<String, dynamic> json = LoanPaymentModel.toJson(saved);
-      await txn.insert(
-        'loan_payments',
-        _row(json, createdAt, now),
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-      await _enqueue(
-        txn,
-        existing == null ? SyncOperation.create : SyncOperation.update,
-        'loan_payments',
-        saved.id,
-        json,
-        now,
-      );
-      final bool taken = loan.direction == LoanDirection.taken;
-      await _writePart(
-        txn,
-        id: LoanIds.paymentPrincipal(saved.id),
-        amount: saved.principalPart,
-        type: taken
-            ? TransactionType.payment_made
-            : TransactionType.payment_received,
-        categoryKey: taken ? 'loan_repayment_made' : 'loan_repayment_received',
-        loan: loan,
-        payment: saved,
-        createdAt: createdAt,
-        now: now,
-      );
-      await _writePart(
-        txn,
-        id: LoanIds.paymentInterest(saved.id),
-        amount: saved.interestPart,
-        type: taken ? TransactionType.expense : TransactionType.income,
-        categoryKey: taken ? 'loan_interest_paid' : 'loan_interest_received',
-        loan: loan,
-        payment: saved,
-        createdAt: createdAt,
-        now: now,
-      );
-      final List<LoanPayment> after = <LoanPayment>[...others, saved];
-      final Loan updated = await _writeClosed(
-        txn,
-        loan,
-        LoanCalculator.outstanding(loan, after) <= Decimal.zero
-            ? saved.paidAt
-            : null,
-        now,
-      );
-      await _syncReminder(
-        txn,
-        updated,
-        LoanCalculator.status(updated, after),
-        now,
-      );
-    });
+    await database.db.transaction(
+      (DatabaseExecutor txn) => _savePaymentIn(txn, payment, now),
+    );
     _syncEngine?.notifyNewQueueItem();
   }
 
-  /// Records the instalment that is due, in one tap: the draft of [dueDraft]
-  /// saved through [savePayment], so the validation, derived rows, closing and
-  /// reminder move are the same as for a typed payment. Returns it, or null,
-  /// writing nothing, when the loan is missing, closed or owes nothing now.
-  Future<LoanPayment?> recordDuePayment(String loanId, {DateTime? now}) async {
-    final AppDatabase database = _database;
-    final Loan? loan = await _loanOrNull(database.db, loanId);
-    if (loan == null || !loan.isLive) return null;
-    final LoanPayment? payment = dueDraft(
+  /// The body of [savePayment], inside the caller's transaction.
+  Future<void> _savePaymentIn(
+    DatabaseExecutor txn,
+    LoanPayment payment,
+    DateTime now,
+  ) async {
+    final Loan loan = await _liveLoan(txn, payment.loanId);
+    final List<LoanPayment> live = await _livePayments(txn, loan.id);
+    final LoanPayment? existing = live
+        .where((LoanPayment p) => p.id == payment.id)
+        .firstOrNull;
+    if (existing != null && live.first.id != existing.id) {
+      throw const UnexpectedFailure('Only the latest payment can be changed');
+    }
+    final List<LoanPayment> others = live
+        .where((LoanPayment p) => p.id != payment.id)
+        .toList();
+    final String? message = LoanCalculator.validatePayment(
       loan,
-      await _livePayments(database.db, loanId),
-      now ?? DateTime.now(),
-      _uuid.v4(),
+      others,
+      payment,
     );
-    if (payment == null) return null;
-    await savePayment(payment);
-    return payment;
+    if (message != null) throw UnexpectedFailure(message);
+
+    final DateTime createdAt = existing?.createdAt ?? payment.createdAt;
+    final LoanPayment saved = payment.copyWith(updatedAt: now);
+    final Map<String, dynamic> json = LoanPaymentModel.toJson(saved);
+    await txn.insert(
+      'loan_payments',
+      _row(json, createdAt, now),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await _enqueue(
+      txn,
+      existing == null ? SyncOperation.create : SyncOperation.update,
+      'loan_payments',
+      saved.id,
+      json,
+      now,
+    );
+    final bool taken = loan.direction == LoanDirection.taken;
+    await _writePart(
+      txn,
+      id: LoanIds.paymentPrincipal(saved.id),
+      amount: saved.principalPart,
+      type: taken
+          ? TransactionType.payment_made
+          : TransactionType.payment_received,
+      categoryKey: taken ? 'loan_repayment_made' : 'loan_repayment_received',
+      loan: loan,
+      payment: saved,
+      createdAt: createdAt,
+      now: now,
+    );
+    await _writePart(
+      txn,
+      id: LoanIds.paymentInterest(saved.id),
+      amount: saved.interestPart,
+      type: taken ? TransactionType.expense : TransactionType.income,
+      categoryKey: taken ? 'loan_interest_paid' : 'loan_interest_received',
+      loan: loan,
+      payment: saved,
+      createdAt: createdAt,
+      now: now,
+    );
+    final List<LoanPayment> after = <LoanPayment>[...others, saved];
+    final Loan updated = await _writeClosed(
+      txn,
+      loan,
+      LoanCalculator.outstanding(loan, after) <= Decimal.zero
+          ? saved.paidAt
+          : null,
+      now,
+    );
+    await _syncReminder(
+      txn,
+      updated,
+      LoanCalculator.status(updated, after),
+      now,
+    );
   }
 
-  /// The scheduled payment due now on an open [loan]: the suggested split from
-  /// the loan's own account, dated by [LoanCalculator.paymentDay]. Null for a
-  /// closed loan or when nothing is due (a monthly-interest loan whose
-  /// interest is paid).
-  static LoanPayment? dueDraft(
+  /// Records the instalment that is due, in one tap, in one local transaction:
+  /// the loan and its payments are read inside it and the payment goes through
+  /// the same write as [savePayment], so validation, derived rows, closing and
+  /// the reminder move are those of a typed payment. [planDuePayment] decides;
+  /// a refusal or nothing due writes nothing. The payment's id follows the
+  /// instalment it pays (`LoanIds.duePayment`), so the same instalment
+  /// recorded twice, here or on another device, is one row. [requireDue] is
+  /// for a caller that can be replayed (the notification button): it also
+  /// refuses what is not due yet or follows a payment made moments ago.
+  ///
+  /// Throws `UnexpectedFailure('Choose an account')` when the loan's account
+  /// is deactivated or deleted: nothing is posted to it.
+  Future<DuePaymentResult> recordDuePayment(
+    String loanId, {
+    DateTime? now,
+    bool requireDue = false,
+  }) async {
+    final AppDatabase database = _database;
+    final DateTime at = now ?? DateTime.now();
+    final DuePaymentResult result = await database.db.transaction((
+      DatabaseExecutor txn,
+    ) async {
+      final Loan? loan = await _loanOrNull(txn, loanId);
+      if (loan == null || !loan.isLive) {
+        return const DuePaymentResult(DuePaymentStatus.nothingDue);
+      }
+      final DuePaymentResult plan = planDuePayment(
+        loan,
+        await _livePayments(txn, loanId),
+        at,
+        requireDue: requireDue,
+      );
+      final LoanPayment? draft = plan.payment;
+      if (plan.status != DuePaymentStatus.recorded || draft == null) {
+        return plan;
+      }
+      if (!await _accountActive(txn, loan.accountId)) {
+        throw const UnexpectedFailure('Choose an account');
+      }
+      await _savePaymentIn(txn, draft, DateTime.now());
+      return plan;
+    });
+    if (result.status == DuePaymentStatus.recorded) {
+      _syncEngine?.notifyNewQueueItem();
+    }
+    return result;
+  }
+
+  /// What a one-tap payment does for [loan] given its live [payments] at
+  /// [now]: no I/O, shared by the repository and the test fake. `recorded`
+  /// carries the payment to write: the scheduled one due now, with the
+  /// suggested split, from the loan's own account, dated by
+  /// [LoanCalculator.paymentDay], with the id of the instalment it pays.
+  static DuePaymentResult planDuePayment(
     Loan loan,
     List<LoanPayment> payments,
-    DateTime now,
-    String id,
-  ) {
-    if (loan.isClosed) return null;
+    DateTime now, {
+    bool requireDue = false,
+  }) {
+    final String? key = LoanCalculator.dueKey(loan, payments);
+    final DateTime? nextDue = LoanCalculator.nextDueDate(loan, payments);
+    if (key == null || nextDue == null) {
+      return const DuePaymentResult(DuePaymentStatus.nothingDue);
+    }
+    final String id = LoanIds.duePayment(loan.id, key);
+    final LoanPayment? same = payments
+        .where((LoanPayment p) => p.isLive && p.id == id)
+        .firstOrNull;
+    if (same != null) {
+      return DuePaymentResult(DuePaymentStatus.alreadyRecorded, same);
+    }
+    if (requireDue) {
+      if (nextDue.isAfter(DateTime(now.year, now.month, now.day))) {
+        return const DuePaymentResult(DuePaymentStatus.refused);
+      }
+      // A replayed tap finds the reminder (and so the loan) one instalment on,
+      // which on a loan that is two or more instalments overdue is still due:
+      // without this it would pay the following instalment. A payment made
+      // moments ago means the tap was already handled.
+      if (payments.any(
+        (LoanPayment p) =>
+            p.isLive && now.difference(p.createdAt) < replayWindow,
+      )) {
+        return const DuePaymentResult(DuePaymentStatus.refused);
+      }
+    }
     final DateTime day = LoanCalculator.paymentDay(loan, payments, now);
     final LoanPart part = LoanCalculator.suggest(
       loan,
@@ -372,21 +460,38 @@ class LoanRepository {
       kind: LoanPaymentKind.scheduled,
       paidAt: day,
     );
-    if (part.amount <= Decimal.zero) return null;
-    return LoanPayment(
-      id: id,
-      userId: '',
-      loanId: loan.id,
-      accountId: loan.accountId,
-      kind: LoanPaymentKind.scheduled,
-      paidAt: day,
-      amount: part.amount,
-      principalPart: part.principal,
-      interestPart: part.interest,
-      createdAt: now,
-      updatedAt: now,
+    if (part.amount <= Decimal.zero) {
+      return const DuePaymentResult(DuePaymentStatus.nothingDue);
+    }
+    return DuePaymentResult(
+      DuePaymentStatus.recorded,
+      LoanPayment(
+        id: id,
+        userId: '',
+        loanId: loan.id,
+        accountId: loan.accountId,
+        kind: LoanPaymentKind.scheduled,
+        paidAt: day,
+        amount: part.amount,
+        principalPart: part.principal,
+        interestPart: part.interest,
+        createdAt: now,
+        updatedAt: now,
+      ),
     );
   }
+
+  /// How long after a payment a replay-protected one-tap payment is refused.
+  static const Duration replayWindow = Duration(seconds: 60);
+
+  Future<bool> _accountActive(DatabaseExecutor txn, String accountId) async =>
+      (await txn.query(
+        'accounts',
+        columns: <String>['id'],
+        where: 'id = ? AND is_active = 1 AND deleted_at IS NULL',
+        whereArgs: <Object>[accountId],
+        limit: 1,
+      )).isNotEmpty;
 
   /// Soft-deletes the loan's latest live payment and its two money rows,
   /// reopens the loan if the payment had closed it and moves the reminder

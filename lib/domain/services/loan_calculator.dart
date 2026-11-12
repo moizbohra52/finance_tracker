@@ -252,6 +252,24 @@ abstract final class LoanCalculator {
     return addMonths(loan.startDate, k);
   }
 
+  /// Names the instalment [nextDueDate] points at: its number (live scheduled
+  /// payments + 1) for an EMI loan, its due date (`YYYY-MM-DD`) for a
+  /// monthly-interest loan. Null for a closed loan. A one-tap payment's id
+  /// is derived from it (`LoanIds.duePayment`).
+  static String? dueKey(Loan loan, List<LoanPayment> payments) {
+    final DateTime? due = nextDueDate(loan, payments);
+    if (due == null) return null;
+    if (loan.method == LoanMethod.monthlyInterest) {
+      return due.toIso8601String().substring(0, 10);
+    }
+    final int paid = payments
+        .where(
+          (LoanPayment p) => p.isLive && p.kind == LoanPaymentKind.scheduled,
+        )
+        .length;
+    return '${paid + 1}';
+  }
+
   /// The day (date only) a payment made at [now] is dated: today, but never
   /// before the loan starts or its latest live payment, which
   /// [validatePayment] refuses.

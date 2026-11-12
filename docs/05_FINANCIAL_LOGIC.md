@@ -279,7 +279,11 @@ reminder's Mark as paid) records the suggestion of the scheduled payment due
 now, with no amount typed: the split above, from the loan's own account, dated
 today but never before the loan start or its latest live payment
 (`LoanCalculator.paymentDay`), through the same validation as a typed payment.
-Nothing is recorded for a closed loan or when nothing is due.
+Nothing is recorded for a closed loan or when nothing is due, and an account
+that is deactivated or deleted is refused ("Choose an account"). Its id is
+derived from the instalment it pays (`LoanIds.duePayment`: the instalment
+number for an EMI loan, the due date for a monthly-interest loan), so the same
+instalment recorded twice is one payment.
 
 ### Validation
 Each refusal is an English message key, in this order.
