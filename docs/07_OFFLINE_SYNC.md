@@ -101,9 +101,22 @@ their payments; `reminders` already come later). Every loan operation writes
 all of its rows in one local SQLite transaction, parents first: loan →
 payments → derived `transactions` → the loan's reminder. The queue therefore
 never holds a payment, derived row or reminder ahead of its loan, and a
-failure rolls everything back. Uploads of the loan rows wait in the queue
-(retrying) until migration 20 is applied; the app sends `loan_id` only when it
-is set, so nothing else is held back.
+failure rolls everything back.
+
+Rollout: apply migration 20 to dev and prod, then update every device the same
+day. Against a server without it, the new app's loan, loan payment,
+loan-linked transaction and loan reminder uploads fail and retry (nothing is
+lost), but that is not all: the pull of `loans` fails after the other tables,
+so every sync ends in the error state, settings and profile are never pulled
+(a fresh install gets none), `cursor_pulled` is never set (a fresh install or
+wiped database creates no khata due-date reminders), synced queue rows are not
+cleaned up and open screens are not refreshed after a pull. A clean restore
+queues a `replace` step for `loans` that stops every upload behind it, and a
+backup made by this build holds raw rows with `loan_id: null`, which an
+unmigrated server rejects on every restored transaction and reminder: do not
+run a clean restore before migrating. After migrating, a phone still on the
+old app (database version 9) cannot pull `transactions` (the rows carry
+`loan_id`) and stops pulling every table after it until it is updated.
 
 Receipt photos are files, not queue rows. A photo attached offline is kept in
 `<app documents>/receipts/<user id>/pending/`, which is their queue

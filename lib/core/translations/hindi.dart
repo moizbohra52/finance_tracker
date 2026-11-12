@@ -1140,6 +1140,9 @@ const Map<String, String> hindi = <String, String>{
   'Loan payments': 'ऋण के भुगतान',
   'Loan reminder': 'ऋण रिमाइंडर',
   'Give the loan a name': 'ऋण का नाम लिखें',
+  'Keep the name to 80 characters': 'ऋण का नाम 80 अक्षरों तक रखें',
+  'Interest rate can have at most 4 decimals':
+      'ब्याज दर में अधिकतम 4 दशमलव हो सकते हैं',
   'Amounts can have at most 2 decimals': 'राशि में अधिकतम 2 दशमलव हो सकते हैं',
   'Interest rate must be between 0% and 60% a year':
       'ब्याज दर साल के 0% से 60% के बीच होनी चाहिए',

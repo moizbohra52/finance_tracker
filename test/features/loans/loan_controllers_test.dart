@@ -273,6 +273,25 @@ void main() {
       expect(edit.rateText.value, '2');
     });
 
+    test('a monthly rate keeps at most 4 decimals once times 12', () async {
+      final FakeFinance f = FakeFinance();
+      final LoanFormController c = await build(f);
+      c.method.value = LoanMethod.monthlyInterest;
+      c.name.value = 'Friend';
+      c.principalText.value = '100000';
+      c.rateText.value = '1.2345';
+
+      expect(c.error, isNull);
+      expect(await c.saveLoan('loan-1'), isTrue);
+      expect(f.loans.single.annualRate, Decimal.parse('14.814'));
+
+      c.rateText.value = '1.23456';
+      expect(c.error, 'Interest rate can have at most 4 decimals');
+      expect(await c.saveLoan('loan-2'), isFalse);
+      expect(c.save.error.value, 'Interest rate can have at most 4 decimals');
+      expect(f.loans, hasLength(1));
+    });
+
     test('an EMI below the first month interest is refused', () async {
       final FakeFinance f = FakeFinance();
       final LoanFormController c = await build(f);
@@ -472,6 +491,40 @@ void main() {
       expect(c.detail.value!.payments.map((LoanPayment p) => p.id), <String>[
         'p1',
       ]);
+    });
+
+    test('progressPercent floors and reaches 100 only when repaid', () async {
+      final FakeFinance f = FakeFinance();
+      f.loans.add(loan('loan-1', principal: '1000'));
+      final LoanDetailController c = build(f, DataChangeNotifier());
+      expect(c.progressPercent, 0);
+      await c.load();
+      expect(c.progressPercent, 0);
+
+      f.loanPayments.add(
+        payment(
+          'p1',
+          DateTime(2027, 2, 5),
+          amount: '996',
+          principal: '996',
+          interest: '0',
+        ),
+      );
+      await c.load();
+      expect(c.progress, closeTo(0.996, 1e-9));
+      expect(c.progressPercent, 99);
+
+      f.loanPayments.add(
+        payment(
+          'p2',
+          DateTime(2027, 3, 5),
+          amount: '4',
+          principal: '4',
+          interest: '0',
+        ),
+      );
+      await c.load();
+      expect(c.progressPercent, 100);
     });
 
     test(

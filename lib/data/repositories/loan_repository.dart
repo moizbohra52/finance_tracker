@@ -126,28 +126,29 @@ class LoanRepository {
     final AppDatabase database = _database;
     final String? message = LoanCalculator.validateLoan(loan);
     if (message != null) throw UnexpectedFailure(message);
-    final Loan? existing = await _loanOrNull(database.db, loan.id);
-    final List<LoanPayment> payments = await _livePayments(
-      database.db,
-      loan.id,
-    );
-    if (existing != null &&
-        payments.isNotEmpty &&
-        termsChanged(existing, loan)) {
-      throw const UnexpectedFailure(
-        'Only the name, contact and note can change after a payment',
-      );
-    }
     final DateTime now = DateTime.now();
-    final Loan saved = loan.copyWith(updatedAt: now);
-    final bool isNew = existing == null || !existing.isLive;
     final String categoryKey = loan.direction == LoanDirection.taken
         ? 'loan_taken'
         : 'loan_given';
-    final LoanStatus status = LoanCalculator.status(saved, payments);
     final String moneyId = LoanIds.loanRow(loan.id);
 
     await database.db.transaction((DatabaseExecutor txn) async {
+      // Read inside the transaction: the closed state belongs to the payments
+      // and the stored row, never to the (possibly stale) form copy.
+      final Loan? existing = await _loanOrNull(txn, loan.id);
+      final List<LoanPayment> payments = await _livePayments(txn, loan.id);
+      if (existing != null &&
+          payments.isNotEmpty &&
+          termsChanged(existing, loan)) {
+        throw const UnexpectedFailure(
+          'Only the name, contact and note can change after a payment',
+        );
+      }
+      final Loan saved = existing?.closedAt == null
+          ? loan.copyWith(clearClosedAt: true, updatedAt: now)
+          : loan.copyWith(closedAt: existing!.closedAt, updatedAt: now);
+      final bool isNew = existing == null || !existing.isLive;
+      final LoanStatus status = LoanCalculator.status(saved, payments);
       // 1. The loan.
       final Map<String, dynamic> loanJson = LoanModel.toJson(saved);
       await txn.insert('loans', <String, dynamic>{
@@ -610,7 +611,9 @@ class LoanRepository {
             ? 'Loan payment due'.tr
             : 'Collect loan payment'.tr,
         description: loan.name,
-        amount: status.nextAmount,
+        amount: (status.nextAmount ?? Decimal.zero) > Decimal.zero
+            ? status.nextAmount
+            : null,
         contactId: null,
         transactionId: null,
         loanId: loan.id,

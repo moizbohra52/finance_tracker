@@ -13,11 +13,21 @@
 -- (user_id, <ref>) -> parent (user_id, id); accounts, contacts and
 -- transactions already have the (user_id, id) key they need.
 --
--- Apply this before shipping the app version with loans. Until then loan and
--- loan_payment uploads fail and stay queued (they retry; nothing is lost),
--- transactions that carry a loan_id and loan reminders wait behind them, and
--- everything else keeps syncing because plain transactions and reminders are
--- sent without loan_id.
+-- Apply this to dev and prod before any device runs the app version with
+-- loans, then update every device the same day. Against a server without it
+-- the new app: ends every sync in the error state (the pull of loans fails
+-- after the other tables), so settings and profile are never pulled, the
+-- first-pull marker is never set (a fresh install or wiped database creates
+-- no khata due-date reminders), synced queue rows are not cleaned up and open
+-- screens are not refreshed after a pull; loan, loan payment, loan-linked
+-- transaction and loan reminder uploads fail and retry (nothing is lost); a
+-- clean backup restore queues a replace step for loans that stops every
+-- upload behind it, and a backup made by this build carries loan_id: null on
+-- every transaction and reminder, which an unmigrated server rejects. Do not
+-- run a clean restore before migrating. The other way round: once this is
+-- applied, a phone still on the old app (local database version 9) cannot
+-- pull transactions, because the rows now carry loan_id, and stops pulling
+-- every table after it until it is updated.
 --
 -- Not enforced here, only by the app: the payment splits match the loan's
 -- calculation, and the derived rows match the payments. Offline edits upload

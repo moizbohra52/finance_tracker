@@ -64,6 +64,7 @@ abstract final class LoanCalculator {
   static final Decimal _one = Decimal.one;
   static final Decimal _twelveHundred = Decimal.fromInt(1200);
   static final Decimal _maxAnnualRate = Decimal.fromInt(60);
+  static final Decimal _tenThousand = Decimal.fromInt(10000);
 
   /// [date] moved by [months] months; the day is kept but clamped to the
   /// length of the target month (31 Jan -> 28/29 Feb). Date only.
@@ -306,7 +307,9 @@ abstract final class LoanCalculator {
       final List<LoanInstalment> rows = schedule(loan, payments);
       if (rows.isNotEmpty) nextAmount = rows.first.amount;
     } else if (due != null) {
-      nextAmount = unpaidInterest(loan, payments, due);
+      final Decimal unpaid = unpaidInterest(loan, payments, due);
+      // A reminder amount of 0 is refused by the server: no amount instead.
+      if (unpaid > Decimal.zero) nextAmount = unpaid;
     }
     return LoanStatus(
       outstanding: outstanding(loan, payments),
@@ -330,6 +333,7 @@ abstract final class LoanCalculator {
     final bool isEmi = loan.method == LoanMethod.emi;
     final Decimal? emiAmount = loan.emiAmount;
     if (loan.name.trim().isEmpty) return 'Give the loan a name';
+    if (loan.name.trim().length > 80) return 'Keep the name to 80 characters';
     if (loan.accountId.isEmpty) return 'Choose an account';
     if (loan.principal <= Decimal.zero) return 'Amount must be more than zero';
     if (SplitCalculator.hasSubPaise(loan.principal) ||
@@ -340,6 +344,9 @@ abstract final class LoanCalculator {
       return isEmi
           ? 'Interest rate must be between 0% and 60% a year'
           : 'Interest rate must be between 0% and 5% a month';
+    }
+    if (!(loan.annualRate * _tenThousand).isInteger) {
+      return 'Interest rate can have at most 4 decimals';
     }
     if (!isEmi) return null;
     final int? months = loan.tenureMonths;

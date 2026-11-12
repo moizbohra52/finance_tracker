@@ -17,6 +17,7 @@ import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/features/contacts/views/contact_picker_sheet.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_form_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 /// Add a loan, or edit the one in [LoanFormArgs.existing]. Once the loan has
@@ -219,6 +220,9 @@ class _LoanFormViewState extends State<LoanFormView> {
                         label: 'Loan name'.tr,
                         hintText: 'e.g. HDFC Home Loan'.tr,
                         controller: _name,
+                        inputFormatters: <TextInputFormatter>[
+                          LengthLimitingTextInputFormatter(80),
+                        ],
                         textInputAction: TextInputAction.next,
                         onChanged: (String v) => _controller.name.value = v,
                       ),

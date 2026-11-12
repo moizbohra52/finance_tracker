@@ -216,14 +216,6 @@ void main() {
     expect(await rows('loans'), isEmpty);
   });
 
-  test('a closed loan tombstones its reminder', () async {
-    await repo.saveLoan(loan());
-
-    await repo.saveLoan(loan(closedAt: now));
-
-    expect((await rows('reminders')).single['deleted_at'], isNotNull);
-  });
-
   test(
     'terms lock: after a payment only name, contact and note change',
     () async {
@@ -253,31 +245,6 @@ void main() {
       expect(saved['note'], 'new note');
     },
   );
-
-  test('getLoans orders open loans by due date, then closed ones', () async {
-    await repo.saveLoan(
-      loan(id: 'late', name: 'Late', firstDueDate: DateTime(2027, 5, 5)),
-    );
-    await repo.saveLoan(
-      loan(id: 'soon', name: 'Soon', firstDueDate: DateTime(2027, 2, 5)),
-    );
-    await repo.saveLoan(
-      loan(id: 'old', name: 'Old', closedAt: DateTime(2027, 3, 1)),
-    );
-    await repo.saveLoan(
-      loan(id: 'newer', name: 'Newer', closedAt: DateTime(2027, 4, 1)),
-    );
-
-    final List<LoanSummary> loans = await repo.getLoans();
-
-    expect(loans.map((LoanSummary s) => s.loan.id).toList(), <String>[
-      'soon',
-      'late',
-      'newer',
-      'old',
-    ]);
-    expect(loans.first.status.outstanding, d('500000'));
-  });
 
   test('getLoansForContact and getLoan', () async {
     await repo.saveLoan(loan(id: 'a'));
@@ -781,6 +748,140 @@ void main() {
       expect((await queue()).length, queueBefore);
     });
 
+    test(
+      'a zero-rate monthly loan writes its reminder without an amount',
+      () async {
+        await repo.saveLoan(ravi().copyWith(annualRate: Decimal.zero));
+
+        final Map<String, Object?> reminder = (await liveRows(
+          'reminders',
+        )).single;
+        expect(reminder['amount'], isNull);
+        expect(
+          DateTime.parse(reminder['remind_at']! as String).toLocal(),
+          DateTime(2027, 2, 1, 9),
+        );
+      },
+    );
+
+    test('prepaid interest leaves the reminder without an amount', () async {
+      await repo.saveLoan(ravi());
+
+      await repo.savePayment(
+        pay('r1', DateTime(2027, 3, 15), '0', '600', loanId: 'ravi'),
+      );
+
+      final Map<String, Object?> reminder = (await liveRows(
+        'reminders',
+      )).single;
+      expect(reminder['amount'], isNull);
+      expect(
+        DateTime.parse(reminder['remind_at']! as String).toLocal(),
+        DateTime(2027, 4, 1, 9),
+      );
+    });
+
+    test(
+      'saving a stale open copy over a closed loan keeps it closed',
+      () async {
+        await repo.saveLoan(ravi());
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 3, 15), '10000', '400', loanId: 'ravi'),
+        );
+
+        await repo.saveLoan(ravi().copyWith(name: 'Ravi K'));
+
+        final Map<String, Object?> saved = (await rows('loans')).single;
+        expect(saved['name'], 'Ravi K');
+        expect(
+          DateTime.parse(saved['closed_at']! as String).toLocal(),
+          DateTime(2027, 3, 15),
+        );
+        expect((await repo.getLoans()).single.loan.isClosed, isTrue);
+        expect(await liveRows('reminders'), isEmpty);
+        final List<SyncQueueItem> items = await queue();
+        expect(
+          DateTime.parse(
+            items
+                    .lastWhere((SyncQueueItem i) => i.entity == 'loans')
+                    .payload['closed_at']!
+                as String,
+          ).toLocal(),
+          DateTime(2027, 3, 15),
+        );
+      },
+    );
+
+    test(
+      'saving a stale closed copy over an open loan keeps it open',
+      () async {
+        await repo.saveLoan(ravi());
+
+        await repo.saveLoan(
+          ravi().copyWith(name: 'Ravi K', closedAt: DateTime(2027, 3, 15)),
+        );
+
+        expect((await rows('loans')).single['closed_at'], isNull);
+        expect((await repo.getLoans()).single.loan.isClosed, isFalse);
+        expect((await liveRows('reminders')).single['deleted_at'], isNull);
+      },
+    );
+
+    test('editing the closing payment down reopens the loan', () async {
+      await repo.saveLoan(ravi());
+      await repo.savePayment(
+        pay('r1', DateTime(2027, 3, 15), '10000', '400', loanId: 'ravi'),
+      );
+      final int loanItems = (await queue())
+          .where((SyncQueueItem i) => i.entity == 'loans')
+          .length;
+
+      await repo.savePayment(
+        pay('r1', DateTime(2027, 3, 15), '5000', '400', loanId: 'ravi'),
+      );
+
+      expect((await rows('loans')).single['closed_at'], isNull);
+      expect((await repo.getLoans()).single.loan.isClosed, isFalse);
+      final List<SyncQueueItem> items = await queue();
+      expect(
+        items.where((SyncQueueItem i) => i.entity == 'loans'),
+        hasLength(loanItems + 1),
+      );
+      final Map<String, Object?> reminder = (await liveRows(
+        'reminders',
+      )).single;
+      expect(Decimal.parse(reminder['amount']! as String), d('200'));
+      expect(
+        DateTime.parse(reminder['remind_at']! as String).toLocal(),
+        DateTime(2027, 4, 1, 9),
+      );
+    });
+
+    test(
+      'editing the latest payment up to the whole debt closes the loan',
+      () async {
+        await repo.saveLoan(ravi());
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 3, 15), '2600', '400', loanId: 'ravi'),
+        );
+        expect((await rows('loans')).single['closed_at'], isNull);
+
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 3, 15), '10000', '400', loanId: 'ravi'),
+        );
+
+        expect(
+          DateTime.parse(
+            (await rows('loans')).single['closed_at']! as String,
+          ).toLocal(),
+          DateTime(2027, 3, 15),
+        );
+        expect((await repo.getLoans()).single.loan.isClosed, isTrue);
+        expect(await liveRows('reminders'), isEmpty);
+        expect((await rows('reminders')).single['deleted_at'], isNotNull);
+      },
+    );
+
     test('copyWith can clear closedAt', () {
       final Loan closed = loan(closedAt: now);
 
@@ -830,6 +931,8 @@ void main() {
     // of `Failure(...)` literals cannot see.
     const List<String> keys = <String>[
       'Give the loan a name',
+      'Keep the name to 80 characters',
+      'Interest rate can have at most 4 decimals',
       'Choose an account',
       'Amount must be more than zero',
       'Amounts can have at most 2 decimals',

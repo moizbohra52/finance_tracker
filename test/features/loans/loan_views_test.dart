@@ -111,6 +111,23 @@ void main() {
     expect(find.text('Next $due · ₹10,379.18'), findsOneWidget);
   });
 
+  testWidgets('the loan name field stops at 80 characters', (
+    WidgetTester tester,
+  ) async {
+    await _start(tester, FakeFinance()..addAccount('Cash', '1000'));
+    await _openList(tester);
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Loan name'),
+      'a' * 90,
+    );
+    await tester.pumpAndSettle();
+
+    expect(Get.find<LoanFormController>().name.value, 'a' * 80);
+  });
+
   testWidgets('the Given segment lists only given loans', (
     WidgetTester tester,
   ) async {

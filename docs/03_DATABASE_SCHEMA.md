@@ -287,8 +287,8 @@ The split is stored when the payment is saved and never recalculated.
 composite foreign keys `(user_id, loan_id)` to `loans` and a partial index
 each. A transaction with `loan_id` is derived from a loan or one of its
 payments and is changed only through the loan. `reminders.reminder_type` also
-accepts `'loan'`. The app sends `loan_id` only when it is set, so plain
-transactions and reminders sync before the migration is applied.
+accepts `'loan'`. The app sends `loan_id` only when it is set; the rollout
+rules are in migration 20 below.
 
 Six system categories, fixed ids and a `system_key` each (the same pattern as
 the khata categories): `...110` Loan Received `loan_taken`, `...111` Loan
@@ -575,12 +575,20 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    `reminders.loan_id` with composite foreign keys, `'loan'` in the
    `reminders_reminder_type_check` CHECK (the migration assumes Postgres
    named the inline column check from migration 8 that way), and the six loan
-   categories with their `system_key`s. **Apply before shipping** the app
-   version with loans. Without it, loan and loan payment uploads fail and
-   retry on every sync (nothing is lost), the pull of the two new tables adds
-   an error to every sync, and transactions that carry a `loan_id` and loan
-   reminders wait in the queue behind the loan rows; plain transactions and
-   reminders keep syncing because the app omits `loan_id` when it is null.
+   categories with their `system_key`s. **Apply to dev and prod before any
+   device runs** the app version with loans, then update every device the same
+   day. Without it, loan, loan payment, loan-linked transaction and loan
+   reminder uploads fail and retry on every sync (nothing is lost), and the
+   pull of `loans` fails after the other tables, so every sync ends in the
+   error state: settings and profile are never pulled, `cursor_pulled` is
+   never set (a fresh install or wiped database creates no khata due-date
+   reminders), and synced queue rows are not cleaned up. A clean backup
+   restore queues a `replace` step for `loans` that stops every upload behind
+   it, and a backup made by this build holds `loan_id: null` on every
+   transaction and reminder, which an unmigrated server rejects, so do not
+   run a clean restore before migrating. After migrating, an app on database
+   version 9 or older cannot pull `transactions` (the rows carry `loan_id`)
+   and stops pulling every table after it, so update the app everywhere.
    Local SQLite gets the tables, columns and categories in database version
    10. The restore order in `BackupService.insertOrder` puts `loans` and
    `loan_payments` after the split tables and before `transactions`.

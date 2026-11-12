@@ -151,7 +151,11 @@ class _Content extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _Header(detail: detail, progress: controller.progress),
+              _Header(
+                detail: detail,
+                progress: controller.progress,
+                percent: controller.progressPercent,
+              ),
               const SizedBox(height: AppSpacing.md),
               SubmitErrorMessage(controller.deletion),
               if (!detail.loan.isClosed) _Actions(detail: detail),
@@ -235,10 +239,15 @@ class _Content extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.detail, required this.progress});
+  const _Header({
+    required this.detail,
+    required this.progress,
+    required this.percent,
+  });
 
   final LoanDetail detail;
   final double progress;
+  final int percent;
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +316,7 @@ class _Header extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(
             '@percent% repaid · loan amount @amount'.trParams(<String, String>{
-              'percent': AppFormatters.number(progress * 100, decimalDigits: 0),
+              'percent': AppFormatters.number(percent, decimalDigits: 0),
               'amount': AppFormatters.money(loan.principal),
             }),
             style: text.bodySmall?.copyWith(color: colors.onSurfaceVariant),

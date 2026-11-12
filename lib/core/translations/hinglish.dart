@@ -1156,6 +1156,9 @@ const Map<String, String> hinglish = <String, String>{
   'Loan payments': 'Loan ki kistein',
   'Loan reminder': 'Loan reminder',
   'Give the loan a name': 'Loan ka naam likhein',
+  'Keep the name to 80 characters': 'Naam 80 akshar tak rakhein',
+  'Interest rate can have at most 4 decimals':
+      'Byaaj dar mein zyada se zyada 4 decimal ho sakte hain',
   'Amounts can have at most 2 decimals':
       'Rakam mein zyada se zyada 2 decimal ho sakte hain',
   'Interest rate must be between 0% and 60% a year':

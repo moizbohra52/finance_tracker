@@ -425,6 +425,25 @@ void main() {
       },
     );
 
+    test('interest paid in advance leaves no next amount, not 0', () {
+      final List<LoanPayment> payments = [
+        paid('0', '600', DateTime(2027, 3, 15)),
+      ];
+      final LoanStatus status = LoanCalculator.status(ravi, payments);
+      expect(status.nextDueDate, DateTime(2027, 4, 1));
+      expect(status.nextAmount, isNull);
+      expect(LoanCalculator.status(ravi, [march]).nextAmount, d('200.00'));
+    });
+
+    test('an interest-free monthly loan has no next amount', () {
+      final LoanStatus status = LoanCalculator.status(
+        ravi.copyWith(annualRate: Decimal.zero),
+        const [],
+      );
+      expect(status.nextDueDate, DateTime(2027, 2, 1));
+      expect(status.nextAmount, isNull);
+    });
+
     test('closing on 15 Mar is 10,400: 400 interest, 10,000 principal', () {
       final LoanPart part = LoanCalculator.suggest(
         ravi,
@@ -628,6 +647,29 @@ void main() {
       expect(
         check(raw(firstDue: DateTime(2027, 1, 4))),
         'The first EMI cannot be before the loan starts',
+      );
+    });
+
+    test('the name is at most 80 characters, after the blank check', () {
+      expect(check(raw(name: 'a' * 80)), isNull);
+      expect(check(raw(name: 'a' * 81)), 'Keep the name to 80 characters');
+      expect(check(raw(name: '${' ' * 5}${'a' * 80}${' ' * 5}')), isNull);
+      expect(
+        check(raw(name: 'a' * 81, accountId: '')),
+        'Keep the name to 80 characters',
+      );
+    });
+
+    test('the rate has at most 4 decimals, after the range check', () {
+      expect(check(raw(rate: '9.5')), isNull);
+      expect(check(raw(rate: '9.1234')), isNull);
+      expect(
+        check(raw(rate: '9.12345')),
+        'Interest rate can have at most 4 decimals',
+      );
+      expect(
+        check(raw(rate: '60.00001')),
+        'Interest rate must be between 0% and 60% a year',
       );
     });
 

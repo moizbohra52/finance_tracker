@@ -44,6 +44,16 @@ class LoanDetailController extends GetxController {
     );
   }
 
+  /// [progress] as a whole percent, floored so an open loan at 99.6% does not
+  /// read 100%.
+  int get progressPercent {
+    final LoanDetail? d = detail.value;
+    if (d == null || d.loan.principal <= Decimal.zero) return 0;
+    final Decimal repaid = d.status.principalRepaid;
+    if (repaid >= d.loan.principal) return 100;
+    return ((repaid * Decimal.fromInt(100)) / d.loan.principal).floor().toInt();
+  }
+
   /// Only the latest live payment can be edited or deleted (the repository
   /// refuses the rest); payments are newest first.
   bool canChange(LoanPayment p) {
