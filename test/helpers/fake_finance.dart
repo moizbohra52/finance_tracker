@@ -1485,8 +1485,26 @@ class FakeLoanRepository implements LoanRepository {
           .toList()
         ..sort((LoanPayment a, LoanPayment b) {
           final int byDate = b.paidAt.compareTo(a.paidAt);
-          return byDate != 0 ? byDate : b.id.compareTo(a.id);
+          if (byDate != 0) return byDate;
+          final int byCreated = b.createdAt.compareTo(a.createdAt);
+          return byCreated != 0 ? byCreated : b.id.compareTo(a.id);
         });
+
+  int _liveLoanIndex(String loanId) {
+    final int index = _f.loans.indexWhere(
+      (Loan l) => l.id == loanId && l.isLive,
+    );
+    if (index < 0) throw const DatabaseFailure();
+    return index;
+  }
+
+  /// Closes the loan at [closedAt], or reopens it when null.
+  void _setClosed(int index, DateTime? closedAt) {
+    final Loan loan = _f.loans[index];
+    _f.loans[index] = closedAt == null
+        ? loan.copyWith(clearClosedAt: true, updatedAt: DateTime.now())
+        : loan.copyWith(closedAt: closedAt, updatedAt: DateTime.now());
+  }
 
   List<LoanSummary> _summaries(bool Function(Loan) test) =>
       LoanRepository.ordered(<LoanSummary>[
@@ -1556,6 +1574,67 @@ class FakeLoanRepository implements LoanRepository {
     } else {
       _f.loans.add(saved);
     }
+  }
+
+  @override
+  Future<void> savePayment(LoanPayment payment) async {
+    _f.throwPending();
+    final int loanIndex = _liveLoanIndex(payment.loanId);
+    final Loan loan = _f.loans[loanIndex];
+    final List<LoanPayment> live = _live(loan.id);
+    final bool isEdit = live.any((LoanPayment p) => p.id == payment.id);
+    if (isEdit && live.first.id != payment.id) {
+      throw const UnexpectedFailure('Only the latest payment can be changed');
+    }
+    final List<LoanPayment> others = live
+        .where((LoanPayment p) => p.id != payment.id)
+        .toList();
+    final String? message = LoanCalculator.validatePayment(
+      loan,
+      others,
+      payment,
+    );
+    if (message != null) throw UnexpectedFailure(message);
+    final LoanPayment saved = payment.copyWith(updatedAt: DateTime.now());
+    final int index = _f.loanPayments.indexWhere(
+      (LoanPayment p) => p.id == payment.id,
+    );
+    if (index >= 0) {
+      _f.loanPayments[index] = saved;
+    } else {
+      _f.loanPayments.add(saved);
+    }
+    _setClosed(
+      loanIndex,
+      LoanCalculator.outstanding(loan, <LoanPayment>[...others, saved]) <=
+              Decimal.zero
+          ? saved.paidAt
+          : null,
+    );
+  }
+
+  @override
+  Future<void> deletePayment(String paymentId) async {
+    _f.throwPending();
+    final int index = _f.loanPayments.indexWhere(
+      (LoanPayment p) => p.id == paymentId && p.isLive,
+    );
+    if (index < 0) throw const DatabaseFailure();
+    final int loanIndex = _liveLoanIndex(_f.loanPayments[index].loanId);
+    final Loan loan = _f.loans[loanIndex];
+    final List<LoanPayment> live = _live(loan.id);
+    if (live.first.id != paymentId) {
+      throw const UnexpectedFailure('Only the latest payment can be changed');
+    }
+    _f.loanPayments[index] = _f.loanPayments[index].copyWith(
+      deletedAt: DateTime.now(),
+    );
+    _setClosed(
+      loanIndex,
+      LoanCalculator.outstanding(loan, live.skip(1)) <= Decimal.zero
+          ? loan.closedAt
+          : null,
+    );
   }
 
   @override

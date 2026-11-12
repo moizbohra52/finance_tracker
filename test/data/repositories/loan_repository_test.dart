@@ -5,8 +5,12 @@ import 'package:finance_tracker/core/translations/hindi.dart';
 import 'package:finance_tracker/core/translations/hinglish.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
 import 'package:finance_tracker/data/models/sync_queue_item.dart';
+import 'package:finance_tracker/data/models/transaction.dart';
 import 'package:finance_tracker/data/repositories/loan_repository.dart';
+import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/loan.dart';
+import 'package:finance_tracker/domain/entities/transaction.dart';
+import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
 import 'package:finance_tracker/domain/services/loan_ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -371,6 +375,420 @@ void main() {
     },
   );
 
+  group('payments', () {
+    Loan ravi() => Loan(
+      id: 'ravi',
+      userId: '',
+      direction: LoanDirection.given,
+      method: LoanMethod.monthlyInterest,
+      name: 'Ravi',
+      accountId: 'acc-1',
+      principal: d('10000'),
+      annualRate: d('24'),
+      startDate: DateTime(2027, 1, 1),
+      movedMoney: false,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    LoanPayment pay(
+      String id,
+      DateTime paidAt,
+      String principal,
+      String interest, {
+      String loanId = 'loan-1',
+      LoanPaymentKind kind = LoanPaymentKind.scheduled,
+      String? note,
+    }) => LoanPayment(
+      id: id,
+      userId: '',
+      loanId: loanId,
+      accountId: 'acc-1',
+      kind: kind,
+      paidAt: paidAt,
+      amount: d(principal) + d(interest),
+      principalPart: d(principal),
+      interestPart: d(interest),
+      note: note,
+      createdAt: now,
+      updatedAt: now,
+    );
+
+    LoanPayment first() => pay('p1', DateTime(2027, 2, 5), '6629.18', '3750');
+
+    Future<List<Map<String, Object?>>> liveRows(
+      String table, [
+      String? where,
+    ]) => database.db.query(
+      table,
+      where: 'deleted_at IS NULL${where == null ? '' : ' AND $where'}',
+      orderBy: 'id',
+    );
+
+    Future<List<Transaction>> allTransactions() async =>
+        (await rows('transactions'))
+            .map(TransactionModel.fromJson)
+            .map((TransactionModel m) => m.toEntity())
+            .toList();
+
+    Future<Decimal> hdfcBalance() async {
+      final Account account = Account(
+        id: 'acc-1',
+        userId: '',
+        name: 'HDFC',
+        type: AccountType.bank,
+        openingBalance: Decimal.zero,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      );
+      return FinanceSummaryCalculator.accountBalances(<Account>[
+        account,
+      ], await allTransactions())['acc-1']!;
+    }
+
+    test('the first EMI writes its rows and moves the reminder', () async {
+      await repo.saveLoan(loan());
+      final Decimal before = await hdfcBalance();
+      final int queueBefore = (await queue()).length;
+
+      await repo.savePayment(first());
+
+      final Map<String, Object?> principal = (await liveRows(
+        'transactions',
+        'id = \'${LoanIds.paymentPrincipal('p1')}\'',
+      )).single;
+      expect(principal['type'], 'payment_made');
+      expect(principal['amount'], '6629.18');
+      expect(principal['category_id'], 'c0000000-0000-4000-8000-000000000222');
+      expect(principal['loan_id'], 'loan-1');
+      expect(principal['description'], 'HDFC Home Loan');
+      expect(principal['account_id'], 'acc-1');
+      expect(principal['contact_id'], isNull);
+      final Map<String, Object?> interest = (await liveRows(
+        'transactions',
+        'id = \'${LoanIds.paymentInterest('p1')}\'',
+      )).single;
+      expect(interest['type'], 'expense');
+      expect(interest['amount'], '3750');
+      expect(interest['category_id'], 'c0000000-0000-4000-8000-000000000223');
+
+      expect(before - await hdfcBalance(), d('10379.18'));
+      final PeriodSummary period = FinanceSummaryCalculator.period(
+        await allTransactions(),
+        DateTime(2027, 2),
+        DateTime(2027, 3),
+      );
+      expect(period.expense, d('3750'));
+      expect(period.income, Decimal.zero);
+
+      final LoanDetail detail = await repo.getLoan('loan-1');
+      expect(detail.status.outstanding, d('493370.82'));
+      final Map<String, Object?> reminder = (await liveRows(
+        'reminders',
+      )).single;
+      expect(reminder['amount'], '10379.18');
+      expect(
+        DateTime.parse(reminder['remind_at']! as String).toLocal(),
+        DateTime(2027, 3, 5, 9),
+      );
+
+      final List<SyncQueueItem> items = (await queue())
+          .skip(queueBefore)
+          .toList();
+      expect(items.map((SyncQueueItem i) => i.entity).toList(), <String>[
+        'loan_payments',
+        'transactions',
+        'transactions',
+        'reminders',
+      ]);
+      expect(items.first.operation, SyncOperation.create);
+      expect(items.last.operation, SyncOperation.update);
+      // The loan row is queued only when it closes or reopens.
+      expect(items.where((SyncQueueItem i) => i.entity == 'loans'), isEmpty);
+    });
+
+    test('a given loan writes payment_received and income rows', () async {
+      await repo.saveLoan(ravi());
+
+      await repo.savePayment(
+        pay('r1', DateTime(2027, 3, 15), '2600', '400', loanId: 'ravi'),
+      );
+
+      final Map<String, Object?> principal = (await liveRows(
+        'transactions',
+        'id = \'${LoanIds.paymentPrincipal('r1')}\'',
+      )).single;
+      expect(principal['type'], 'payment_received');
+      expect(principal['amount'], '2600');
+      expect(principal['category_id'], 'c0000000-0000-4000-8000-000000000111');
+      final Map<String, Object?> interest = (await liveRows(
+        'transactions',
+        'id = \'${LoanIds.paymentInterest('r1')}\'',
+      )).single;
+      expect(interest['type'], 'income');
+      expect(interest['amount'], '400');
+      expect(interest['category_id'], 'c0000000-0000-4000-8000-000000000112');
+    });
+
+    test('a part of 0 writes no row; the note and name are carried', () async {
+      await repo.saveLoan(ravi());
+
+      await repo.savePayment(
+        pay(
+          'r1',
+          DateTime(2027, 1, 10),
+          '500',
+          '0',
+          loanId: 'ravi',
+          note: 'cash',
+        ),
+      );
+
+      final Map<String, Object?> only = (await liveRows('transactions')).single;
+      expect(only['id'], LoanIds.paymentPrincipal('r1'));
+      expect(only['note'], 'cash');
+      expect(only['description'], 'Ravi');
+    });
+
+    test('a retried savePayment adds no live rows', () async {
+      await repo.saveLoan(loan());
+      await repo.savePayment(first());
+      final int txns = await liveCount('transactions');
+      final int reminders = await liveCount('reminders');
+
+      await repo.savePayment(first());
+
+      expect(await liveCount('loan_payments'), 1);
+      expect(await liveCount('transactions'), txns);
+      expect(await liveCount('reminders'), reminders);
+      expect(
+        (await queue()).where(
+          (SyncQueueItem i) =>
+              i.entity == 'loan_payments' &&
+              i.operation == SyncOperation.update,
+        ),
+        hasLength(1),
+      );
+    });
+
+    test('a back-dated payment is refused and writes nothing', () async {
+      await repo.saveLoan(ravi());
+      await repo.savePayment(
+        pay('r1', DateTime(2027, 3, 15), '2600', '400', loanId: 'ravi'),
+      );
+      final int queueBefore = (await queue()).length;
+
+      await expectLater(
+        repo.savePayment(
+          pay('r2', DateTime(2027, 3, 14), '500', '0', loanId: 'ravi'),
+        ),
+        throwsA(
+          isA<UnexpectedFailure>().having(
+            (UnexpectedFailure e) => e.toString(),
+            'text',
+            contains('A payment cannot be dated before the previous one'),
+          ),
+        ),
+      );
+
+      expect(await liveCount('loan_payments'), 1);
+      expect(await liveCount('transactions'), 2);
+      expect((await queue()).length, queueBefore);
+    });
+
+    test('only the latest payment can be edited or deleted', () async {
+      await repo.saveLoan(ravi());
+      await repo.savePayment(
+        pay('r1', DateTime(2027, 2, 10), '2000', '200', loanId: 'ravi'),
+      );
+      await repo.savePayment(
+        pay('r2', DateTime(2027, 3, 15), '2600', '400', loanId: 'ravi'),
+      );
+      final int queueBefore = (await queue()).length;
+      final Matcher refused = throwsA(
+        isA<UnexpectedFailure>().having(
+          (UnexpectedFailure e) => e.toString(),
+          'text',
+          contains('Only the latest payment can be changed'),
+        ),
+      );
+
+      await expectLater(
+        repo.savePayment(
+          pay('r1', DateTime(2027, 2, 10), '1000', '200', loanId: 'ravi'),
+        ),
+        refused,
+      );
+      await expectLater(repo.deletePayment('r1'), refused);
+      expect((await queue()).length, queueBefore);
+
+      final List<Map<String, Object?>> before = await liveRows(
+        'transactions',
+        'loan_id = \'ravi\'',
+      );
+      expect(before, hasLength(4));
+      await repo.savePayment(
+        pay('r2', DateTime(2027, 3, 15), '2600', '200', loanId: 'ravi'),
+      );
+      final List<Map<String, Object?>> after = await liveRows(
+        'transactions',
+        'loan_id = \'ravi\'',
+      );
+      expect(
+        after.map((Map<String, Object?> r) => r['id']),
+        before.map((Map<String, Object?> r) => r['id']),
+      );
+      expect(
+        after.singleWhere(
+          (Map<String, Object?> r) => r['id'] == LoanIds.paymentInterest('r2'),
+        )['amount'],
+        '200',
+      );
+
+      await repo.savePayment(
+        pay('r2', DateTime(2027, 3, 15), '2600', '0', loanId: 'ravi'),
+      );
+      expect(
+        await liveRows(
+          'transactions',
+          'id = \'${LoanIds.paymentInterest('r2')}\'',
+        ),
+        isEmpty,
+      );
+      expect(await liveCount('loan_payments'), 2);
+    });
+
+    test('deleting the latest payment tombstones it and its rows', () async {
+      await repo.saveLoan(loan());
+      await repo.savePayment(first());
+      final int queueBefore = (await queue()).length;
+
+      await repo.deletePayment('p1');
+
+      expect(await liveCount('loan_payments'), 0);
+      expect(
+        await liveRows('transactions', 'loan_id = \'loan-1\''),
+        hasLength(1),
+      );
+      final List<SyncQueueItem> items = (await queue())
+          .skip(queueBefore)
+          .toList();
+      expect(
+        items
+            .where((SyncQueueItem i) => i.operation == SyncOperation.delete)
+            .map((SyncQueueItem i) => i.entity)
+            .toList(),
+        <String>['loan_payments', 'transactions', 'transactions'],
+      );
+      final Map<String, Object?> reminder = (await liveRows(
+        'reminders',
+      )).single;
+      expect(reminder['amount'], '10379.18');
+      expect(
+        DateTime.parse(reminder['remind_at']! as String).toLocal(),
+        DateTime(2027, 2, 5, 9),
+      );
+      await expectLater(
+        repo.deletePayment('p1'),
+        throwsA(isA<DatabaseFailure>()),
+      );
+    });
+
+    test(
+      'closing a loan sets closed_at; deleting the payment reopens',
+      () async {
+        await repo.saveLoan(ravi());
+
+        await repo.savePayment(
+          pay('r1', DateTime(2027, 3, 15), '10000', '400', loanId: 'ravi'),
+        );
+
+        final Map<String, Object?> closed = (await rows('loans')).single;
+        expect(
+          DateTime.parse(closed['closed_at']! as String).toLocal(),
+          DateTime(2027, 3, 15),
+        );
+        expect(closed['sync_status'], 'pending');
+        expect((await rows('reminders')).single['deleted_at'], isNotNull);
+        expect((await repo.getLoans()).single.loan.isClosed, isTrue);
+        final List<SyncQueueItem> closedItems = await queue();
+        expect(
+          closedItems.where((SyncQueueItem i) => i.entity == 'loans'),
+          hasLength(2),
+        );
+        expect(closedItems.last.entity, 'reminders');
+        expect(closedItems.last.operation, SyncOperation.delete);
+
+        await repo.deletePayment('r1');
+
+        final Map<String, Object?> reopened = (await rows('loans')).single;
+        expect(reopened['closed_at'], isNull);
+        final Map<String, Object?> reminder = (await liveRows(
+          'reminders',
+        )).single;
+        expect(reminder['is_completed'], 0);
+        expect(reminder['snoozed_until'], isNull);
+        expect(Decimal.parse(reminder['amount']! as String), d('200'));
+        expect(
+          DateTime.parse(reminder['remind_at']! as String).toLocal(),
+          DateTime(2027, 2, 1, 9),
+        );
+        expect((await repo.getLoans()).single.loan.isClosed, isFalse);
+      },
+    );
+
+    test('an invalid payment is refused', () async {
+      await repo.saveLoan(ravi());
+      final int queueBefore = (await queue()).length;
+
+      await expectLater(
+        repo.savePayment(
+          pay('r1', DateTime(2027, 3, 15), '10001', '0', loanId: 'ravi'),
+        ),
+        throwsA(isA<UnexpectedFailure>()),
+      );
+      await expectLater(
+        repo.savePayment(
+          pay('x', DateTime(2027, 3, 15), '1', '0', loanId: 'no'),
+        ),
+        throwsA(isA<DatabaseFailure>()),
+      );
+
+      expect((await queue()).length, queueBefore);
+    });
+
+    test('a failure inside the transaction leaves nothing behind', () async {
+      await repo.saveLoan(loan());
+      final int queueBefore = (await queue()).length;
+      await database.db.execute('DROP TABLE loan_payments');
+
+      await expectLater(repo.savePayment(first()), throwsA(isA<Exception>()));
+
+      expect(await liveCount('transactions'), 1);
+      expect((await queue()).length, queueBefore);
+    });
+
+    test('a failure after the payment rows rolls them back', () async {
+      await repo.saveLoan(loan());
+      final int queueBefore = (await queue()).length;
+      await database.db.execute('DROP TABLE reminders');
+
+      await expectLater(repo.savePayment(first()), throwsA(isA<Exception>()));
+
+      expect(await liveCount('loan_payments'), 0);
+      expect(await liveCount('transactions'), 1);
+      expect((await queue()).length, queueBefore);
+    });
+
+    test('copyWith can clear closedAt', () {
+      final Loan closed = loan(closedAt: now);
+
+      expect(closed.copyWith().closedAt, now);
+      expect(closed.copyWith(clearClosedAt: true).closedAt, isNull);
+    });
+  });
+
   test('with a null database every method throws DatabaseFailure', () async {
     final LoanRepository none = LoanRepository(null);
 
@@ -386,6 +804,25 @@ void main() {
     );
     await expectLater(none.saveLoan(loan()), throwsA(isA<DatabaseFailure>()));
     await expectLater(none.deleteLoan('x'), throwsA(isA<DatabaseFailure>()));
+    await expectLater(none.deletePayment('x'), throwsA(isA<DatabaseFailure>()));
+    await expectLater(
+      none.savePayment(
+        LoanPayment(
+          id: 'p',
+          userId: '',
+          loanId: 'x',
+          accountId: 'a',
+          kind: LoanPaymentKind.scheduled,
+          paidAt: now,
+          amount: d('1'),
+          principalPart: d('1'),
+          interestPart: Decimal.zero,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ),
+      throwsA(isA<DatabaseFailure>()),
+    );
   });
 
   test('every loan message and reminder title is in both language maps', () {
@@ -409,6 +846,7 @@ void main() {
       'This is more than the principal still owed',
       'This is more than is owed',
       'Only the name, contact and note can change after a payment',
+      'Only the latest payment can be changed',
       'Loan payment due',
       'Collect loan payment',
     ];

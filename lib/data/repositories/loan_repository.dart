@@ -145,9 +145,7 @@ class LoanRepository {
         ? 'loan_taken'
         : 'loan_given';
     final LoanStatus status = LoanCalculator.status(saved, payments);
-    final DateTime? due = loan.isClosed ? null : status.nextDueDate;
     final String moneyId = LoanIds.loanRow(loan.id);
-    final String reminderId = LoanIds.reminder(loan.id);
 
     await database.db.transaction((DatabaseExecutor txn) async {
       // 1. The loan.
@@ -172,21 +170,12 @@ class LoanRepository {
           'id = ?',
           moneyId,
         )).isNotEmpty;
-        final List<Map<String, dynamic>> category = await txn.query(
-          'categories',
-          columns: <String>['id'],
-          where: 'system_key = ? AND is_system = 1 AND deleted_at IS NULL',
-          whereArgs: <Object>[categoryKey],
-          limit: 1,
-        );
         final Map<String, dynamic> json = TransactionModel.fromEntity(
           Transaction(
             id: moneyId,
             userId: '',
             accountId: saved.accountId,
-            categoryId: category.isEmpty
-                ? null
-                : category.first['id'] as String,
+            categoryId: await _categoryId(txn, categoryKey),
             contactId: null,
             type: saved.direction == LoanDirection.taken
                 ? TransactionType.payment_received
@@ -216,65 +205,7 @@ class LoanRepository {
         await _tombstoneLive(txn, 'transactions', 'id = ?', moneyId, now);
       }
       // 3. The reminder of the next due date; none for a closed loan.
-      if (due == null) {
-        await _tombstoneLive(txn, 'reminders', 'id = ?', reminderId, now);
-      } else {
-        final bool reminderLive = (await _liveIds(
-          txn,
-          'reminders',
-          'id = ?',
-          reminderId,
-        )).isNotEmpty;
-        final List<Map<String, dynamic>> old = await txn.query(
-          'reminders',
-          columns: <String>['created_at'],
-          where: 'id = ?',
-          whereArgs: <Object>[reminderId],
-          limit: 1,
-        );
-        final DateTime createdAt = old.isEmpty
-            ? now
-            : DateTime.parse(old.first['created_at'] as String);
-        final Map<String, dynamic> json = ReminderModel.toJson(
-          Reminder(
-            id: reminderId,
-            userId: '',
-            type: ReminderType.loan,
-            title: saved.direction == LoanDirection.taken
-                ? 'Loan payment due'.tr
-                : 'Collect loan payment'.tr,
-            description: saved.name,
-            amount: status.nextAmount,
-            contactId: null,
-            transactionId: null,
-            loanId: saved.id,
-            remindAt: DateTime(due.year, due.month, due.day, 9),
-            repeat: ReminderRepeat.none,
-            isCompleted: false,
-            notificationEnabled: true,
-            snoozedUntil: null,
-            createdAt: createdAt,
-            updatedAt: now,
-          ),
-        );
-        await txn.insert('reminders', <String, dynamic>{
-          ...json,
-          'is_completed': 0,
-          'notification_enabled': 1,
-          'created_at': createdAt.toUtc().toIso8601String(),
-          'updated_at': now.toUtc().toIso8601String(),
-          'deleted_at': null,
-          'sync_status': 'pending',
-        }, conflictAlgorithm: ConflictAlgorithm.replace);
-        await _enqueue(
-          txn,
-          reminderLive ? SyncOperation.update : SyncOperation.create,
-          'reminders',
-          reminderId,
-          json,
-          now,
-        );
-      }
+      await _syncReminder(txn, saved, status, now);
     });
     _syncEngine?.notifyNewQueueItem();
   }
@@ -307,6 +238,147 @@ class LoanRepository {
         'reminders',
         'id = ?',
         LoanIds.reminder(loanId),
+        now,
+      );
+    });
+    _syncEngine?.notifyNewQueueItem();
+  }
+
+  /// Writes a payment, its principal and interest rows, the loan's closed
+  /// state and the reminder in one local transaction, queued in that order.
+  /// Only the loan's latest live payment (by `paid_at`, `created_at`, id) can
+  /// be edited, and a new one cannot be dated before it, so the stored splits
+  /// of later payments never go stale. A retry with the same id upserts.
+  Future<void> savePayment(LoanPayment payment) async {
+    final AppDatabase database = _database;
+    final DateTime now = DateTime.now();
+    await database.db.transaction((DatabaseExecutor txn) async {
+      final Loan loan = await _liveLoan(txn, payment.loanId);
+      final List<LoanPayment> live = await _livePayments(txn, loan.id);
+      final LoanPayment? existing = live
+          .where((LoanPayment p) => p.id == payment.id)
+          .firstOrNull;
+      if (existing != null && live.first.id != existing.id) {
+        throw const UnexpectedFailure('Only the latest payment can be changed');
+      }
+      final List<LoanPayment> others = live
+          .where((LoanPayment p) => p.id != payment.id)
+          .toList();
+      final String? message = LoanCalculator.validatePayment(
+        loan,
+        others,
+        payment,
+      );
+      if (message != null) throw UnexpectedFailure(message);
+
+      final DateTime createdAt = existing?.createdAt ?? payment.createdAt;
+      final LoanPayment saved = payment.copyWith(updatedAt: now);
+      final Map<String, dynamic> json = LoanPaymentModel.toJson(saved);
+      await txn.insert(
+        'loan_payments',
+        _row(json, createdAt, now),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+      await _enqueue(
+        txn,
+        existing == null ? SyncOperation.create : SyncOperation.update,
+        'loan_payments',
+        saved.id,
+        json,
+        now,
+      );
+      final bool taken = loan.direction == LoanDirection.taken;
+      await _writePart(
+        txn,
+        id: LoanIds.paymentPrincipal(saved.id),
+        amount: saved.principalPart,
+        type: taken
+            ? TransactionType.payment_made
+            : TransactionType.payment_received,
+        categoryKey: taken ? 'loan_repayment_made' : 'loan_repayment_received',
+        loan: loan,
+        payment: saved,
+        createdAt: createdAt,
+        now: now,
+      );
+      await _writePart(
+        txn,
+        id: LoanIds.paymentInterest(saved.id),
+        amount: saved.interestPart,
+        type: taken ? TransactionType.expense : TransactionType.income,
+        categoryKey: taken ? 'loan_interest_paid' : 'loan_interest_received',
+        loan: loan,
+        payment: saved,
+        createdAt: createdAt,
+        now: now,
+      );
+      final List<LoanPayment> after = <LoanPayment>[...others, saved];
+      final Loan updated = await _writeClosed(
+        txn,
+        loan,
+        LoanCalculator.outstanding(loan, after) <= Decimal.zero
+            ? saved.paidAt
+            : null,
+        now,
+      );
+      await _syncReminder(
+        txn,
+        updated,
+        LoanCalculator.status(updated, after),
+        now,
+      );
+    });
+    _syncEngine?.notifyNewQueueItem();
+  }
+
+  /// Soft-deletes the loan's latest live payment and its two money rows,
+  /// reopens the loan if the payment had closed it and moves the reminder
+  /// back to the next due date.
+  Future<void> deletePayment(String paymentId) async {
+    final AppDatabase database = _database;
+    final DateTime now = DateTime.now();
+    await database.db.transaction((DatabaseExecutor txn) async {
+      final List<Map<String, dynamic>> found = await txn.query(
+        'loan_payments',
+        columns: <String>['loan_id'],
+        where: 'id = ? AND deleted_at IS NULL',
+        whereArgs: <Object>[paymentId],
+        limit: 1,
+      );
+      if (found.isEmpty) throw const DatabaseFailure();
+      final Loan loan = await _liveLoan(txn, found.first['loan_id'] as String);
+      final List<LoanPayment> live = await _livePayments(txn, loan.id);
+      if (live.first.id != paymentId) {
+        throw const UnexpectedFailure('Only the latest payment can be changed');
+      }
+      await _tombstoneLive(txn, 'loan_payments', 'id = ?', paymentId, now);
+      await _tombstoneLive(
+        txn,
+        'transactions',
+        'id = ?',
+        LoanIds.paymentPrincipal(paymentId),
+        now,
+      );
+      await _tombstoneLive(
+        txn,
+        'transactions',
+        'id = ?',
+        LoanIds.paymentInterest(paymentId),
+        now,
+      );
+      final List<LoanPayment> after = live.skip(1).toList();
+      final Loan updated = await _writeClosed(
+        txn,
+        loan,
+        LoanCalculator.outstanding(loan, after) <= Decimal.zero
+            ? loan.closedAt
+            : null,
+        now,
+      );
+      await _syncReminder(
+        txn,
+        updated,
+        LoanCalculator.status(updated, after),
         now,
       );
     });
@@ -388,6 +460,186 @@ class LoanRepository {
       limit: 1,
     );
     return rows.isEmpty ? null : LoanModel.fromJson(rows.first);
+  }
+
+  Future<Loan> _liveLoan(DatabaseExecutor txn, String loanId) async {
+    final Loan? loan = await _loanOrNull(txn, loanId);
+    if (loan == null || !loan.isLive) throw const DatabaseFailure();
+    return loan;
+  }
+
+  Future<String?> _categoryId(DatabaseExecutor txn, String systemKey) async {
+    final List<Map<String, dynamic>> category = await txn.query(
+      'categories',
+      columns: <String>['id'],
+      where: 'system_key = ? AND is_system = 1 AND deleted_at IS NULL',
+      whereArgs: <Object>[systemKey],
+      limit: 1,
+    );
+    return category.isEmpty ? null : category.first['id'] as String;
+  }
+
+  /// The money row of one part of a payment; a part of 0 has no row, so an
+  /// existing one is tombstoned.
+  Future<void> _writePart(
+    DatabaseExecutor txn, {
+    required String id,
+    required Decimal amount,
+    required TransactionType type,
+    required String categoryKey,
+    required Loan loan,
+    required LoanPayment payment,
+    required DateTime createdAt,
+    required DateTime now,
+  }) async {
+    if (amount <= Decimal.zero) {
+      await _tombstoneLive(txn, 'transactions', 'id = ?', id, now);
+      return;
+    }
+    final bool live = (await _liveIds(
+      txn,
+      'transactions',
+      'id = ?',
+      id,
+    )).isNotEmpty;
+    final Map<String, dynamic> json = TransactionModel.fromEntity(
+      Transaction(
+        id: id,
+        userId: '',
+        accountId: payment.accountId,
+        categoryId: await _categoryId(txn, categoryKey),
+        contactId: null,
+        type: type,
+        amount: amount,
+        transactionDate: payment.paidAt,
+        note: payment.note,
+        description: loan.name,
+        loanId: loan.id,
+        createdAt: createdAt,
+        updatedAt: now,
+      ),
+    ).toJson();
+    await txn.insert(
+      'transactions',
+      _row(json, createdAt, now),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await _enqueue(
+      txn,
+      live ? SyncOperation.update : SyncOperation.create,
+      'transactions',
+      id,
+      json,
+      now,
+    );
+  }
+
+  /// Sets the loan's `closed_at` to [closedAt] and queues the loan only when
+  /// it changes; returns the loan as it now stands.
+  Future<Loan> _writeClosed(
+    DatabaseExecutor txn,
+    Loan loan,
+    DateTime? closedAt,
+    DateTime now,
+  ) async {
+    final DateTime? old = loan.closedAt;
+    final bool unchanged = old == null
+        ? closedAt == null
+        : closedAt != null && closedAt.isAtSameMomentAs(old);
+    if (unchanged) return loan;
+    final Loan updated = closedAt == null
+        ? loan.copyWith(clearClosedAt: true, updatedAt: now)
+        : loan.copyWith(closedAt: closedAt, updatedAt: now);
+    await txn.update(
+      'loans',
+      <String, dynamic>{
+        'closed_at': closedAt?.toUtc().toIso8601String(),
+        'updated_at': now.toUtc().toIso8601String(),
+        'sync_status': 'pending',
+      },
+      where: 'id = ?',
+      whereArgs: <Object>[loan.id],
+    );
+    await _enqueue(
+      txn,
+      SyncOperation.update,
+      'loans',
+      loan.id,
+      LoanModel.toJson(updated),
+      now,
+    );
+    return updated;
+  }
+
+  /// The reminder of the loan's next due date (revived if it was
+  /// tombstoned); tombstoned for a closed loan.
+  Future<void> _syncReminder(
+    DatabaseExecutor txn,
+    Loan loan,
+    LoanStatus status,
+    DateTime now,
+  ) async {
+    final String reminderId = LoanIds.reminder(loan.id);
+    final DateTime? due = loan.isClosed ? null : status.nextDueDate;
+    if (due == null) {
+      await _tombstoneLive(txn, 'reminders', 'id = ?', reminderId, now);
+      return;
+    }
+    final bool reminderLive = (await _liveIds(
+      txn,
+      'reminders',
+      'id = ?',
+      reminderId,
+    )).isNotEmpty;
+    final List<Map<String, dynamic>> old = await txn.query(
+      'reminders',
+      columns: <String>['created_at'],
+      where: 'id = ?',
+      whereArgs: <Object>[reminderId],
+      limit: 1,
+    );
+    final DateTime createdAt = old.isEmpty
+        ? now
+        : DateTime.parse(old.first['created_at'] as String);
+    final Map<String, dynamic> json = ReminderModel.toJson(
+      Reminder(
+        id: reminderId,
+        userId: '',
+        type: ReminderType.loan,
+        title: loan.direction == LoanDirection.taken
+            ? 'Loan payment due'.tr
+            : 'Collect loan payment'.tr,
+        description: loan.name,
+        amount: status.nextAmount,
+        contactId: null,
+        transactionId: null,
+        loanId: loan.id,
+        remindAt: DateTime(due.year, due.month, due.day, 9),
+        repeat: ReminderRepeat.none,
+        isCompleted: false,
+        notificationEnabled: true,
+        snoozedUntil: null,
+        createdAt: createdAt,
+        updatedAt: now,
+      ),
+    );
+    await txn.insert('reminders', <String, dynamic>{
+      ...json,
+      'is_completed': 0,
+      'notification_enabled': 1,
+      'created_at': createdAt.toUtc().toIso8601String(),
+      'updated_at': now.toUtc().toIso8601String(),
+      'deleted_at': null,
+      'sync_status': 'pending',
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    await _enqueue(
+      txn,
+      reminderLive ? SyncOperation.update : SyncOperation.create,
+      'reminders',
+      reminderId,
+      json,
+      now,
+    );
   }
 
   /// The loan's live payments, newest first.

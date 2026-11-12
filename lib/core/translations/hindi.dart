@@ -1158,6 +1158,8 @@ const Map<String, String> hindi = <String, String>{
   'This is more than is owed': 'यह बाकी राशि से ज़्यादा है',
   'Only the name, contact and note can change after a payment':
       'भुगतान के बाद केवल नाम, संपर्क और नोट बदले जा सकते हैं',
+  'Only the latest payment can be changed':
+      'केवल सबसे हाल का भुगतान बदला जा सकता है',
   'Loan payment due': 'ऋण की किस्त बाकी है',
   'Collect loan payment': 'ऋण की किस्त वसूल करें',
   // Split expenses screens

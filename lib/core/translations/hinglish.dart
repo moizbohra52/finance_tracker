@@ -1175,6 +1175,8 @@ const Map<String, String> hinglish = <String, String>{
   'This is more than is owed': 'Yeh baaki rakam se zyada hai',
   'Only the name, contact and note can change after a payment':
       'Kist ke baad sirf naam, contact aur note badal sakte hain',
+  'Only the latest payment can be changed':
+      'Sirf sabse nayi payment badli ja sakti hai',
   'Loan payment due': 'Loan ki kist baaki hai',
   'Collect loan payment': 'Loan ki kist vasool karein',
   // Split expenses screens
