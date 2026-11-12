@@ -1187,6 +1187,11 @@ const Map<String, String> hindi = <String, String>{
   'Open in group': 'समूह में खोलें',
   'Open it in the group to change or delete it':
       'इसे बदलने या हटाने के लिए समूह में खोलें',
+  'Open loan': 'ऋण खोलें',
+  'Open the loan to change or delete it':
+      'इसे बदलने या हटाने के लिए ऋण खोलें',
+  'Loan you took': 'आपका लिया हुआ ऋण',
+  'Loan you gave': 'आपका दिया हुआ ऋण',
   '@name is in the group @group. Remove them from the group first.':
       '@name, @group समूह में है। पहले उसे समूह से हटाएं।',
   'Group updated': 'समूह अपडेट हो गया',

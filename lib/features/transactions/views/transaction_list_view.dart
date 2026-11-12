@@ -806,8 +806,8 @@ class _GroupedList extends GetView<TransactionController> {
             TransactionDayHeader(label: label, count: count),
           TransactionItemRow(:final Transaction transaction) => SwipeToDelete(
             key: ValueKey<String>(transaction.id),
-            // A row made by a split group is changed in the group.
-            enabled: !transaction.isSplitDerived,
+            // A row made by a split group or a loan is changed there.
+            enabled: !transaction.isSplitDerived && !transaction.isLoanDerived,
             margin: TransactionListItem.cardMargin,
             onDelete: () => swipeDeleteTransaction(context, transaction),
             onDismissed: () => controller.items.removeWhere(

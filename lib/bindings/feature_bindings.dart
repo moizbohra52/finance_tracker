@@ -161,6 +161,7 @@ class ContactDetailBinding extends Bindings {
         profileRepository: Get.find<ProfileRepository>(),
         splitRepository: Get.find<SplitRepository>(),
         reminderRepository: Get.find<ReminderRepository>(),
+        loanRepository: Get.find<LoanRepository>(),
       ),
       tag: routeIdArgument(),
     );

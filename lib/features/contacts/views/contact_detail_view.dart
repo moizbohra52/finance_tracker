@@ -14,9 +14,11 @@ import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
 import 'package:finance_tracker/core/widgets/swipe_to_delete.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
@@ -125,6 +127,7 @@ class ContactDetailView extends GetView<ContactDetailController> {
         const SizedBox(height: AppSpacing.md),
         _EntryActions(contact: contact),
         const SizedBox(height: AppSpacing.lg),
+        _LoansSection(id: id),
         SectionHeader(title: 'Ledger'.tr),
         const SizedBox(height: AppSpacing.sm),
         Obx(() {
@@ -190,6 +193,62 @@ class ContactDetailView extends GetView<ContactDetailController> {
         ),
       ),
     );
+  }
+}
+
+/// The contact's loans, above the ledger; nothing when there are none. Loans
+/// are not part of the khata balance.
+class _LoansSection extends GetView<ContactDetailController> {
+  const _LoansSection({required this.id});
+
+  final String id;
+
+  @override
+  String get tag => id;
+
+  @override
+  Widget build(BuildContext context) {
+    final FinanceColors money = FinanceColors.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
+    return Obx(() {
+      final List<LoanSummary> loans = controller.loans.toList();
+      if (loans.isEmpty) return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SectionHeader(title: 'Loans'.tr),
+          const SizedBox(height: AppSpacing.sm),
+          AppListCard(
+            children: <Widget>[
+              for (final LoanSummary s in loans)
+                AppListTile(
+                  onTap: () => Get.toNamed<void>(
+                    AppRoutes.loanDetail,
+                    arguments: s.loan.id,
+                  ),
+                  leading: IconBadge(
+                    icon: Icons.account_balance_outlined,
+                    color: s.loan.direction == LoanDirection.taken
+                        ? money.payable
+                        : money.receivable,
+                  ),
+                  title: s.loan.name,
+                  subtitle: s.loan.direction == LoanDirection.taken
+                      ? 'Loan you took'.tr
+                      : 'Loan you gave'.tr,
+                  trailing: Text(
+                    AppFormatters.money(s.status.outstanding),
+                    style: text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
+      );
+    });
   }
 }
 

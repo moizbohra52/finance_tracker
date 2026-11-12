@@ -27,7 +27,7 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/transaction-detail` | Transaction details, edit, delete (arg: id); an income put into goals shows a *Savings* line ("goal amount · goal amount") | `TransactionDetailBinding` | any transaction row |
 | `/contacts` | Khata list (route form of tab 2) | `ContactBinding` | Home "Open" |
 | `/contact-form` | Add / edit contact (arg: `Contact` for edit) | `ContactBinding` | Khata FAB, contact detail |
-| `/contact-detail` | Contact ledger, balance, delete (arg: id) | `ContactDetailBinding` | contact row |
+| `/contact-detail` | Contact ledger, balance, delete; a *Loans* section above the ledger (name, direction, outstanding; row opens `/loan-detail`) when the contact has loans, which are not part of the balance (arg: id) | `ContactDetailBinding` | contact row |
 | `/contact-entry` | Add credit / debit / payment (`ContactEntryArgs`) | `ContactBinding` | contact detail, Home Credit/Debit |
 | `/split-groups` | Split groups list (name, member count, the user's net) | `SplitGroupBinding` | Khata app bar *Groups* |
 | `/split-group-form` | Add / edit / delete a group: name, member chips, member picker sheet (arg: `SplitGroupSummary` for edit) | `SplitGroupBinding` | Groups FAB and empty state |
@@ -167,4 +167,4 @@ New routes (all signed-in only):
   selected chip has a thicker primary border and the selected fill.
 - **No database change.** `categories` RLS already allowed own-row writes and
   `transactions.transfer_id` with its unique indexes already existed.
-
+- **Derived loan rows are owned by their loan**: a transaction with a `loan_id` shows *Open loan* (`/loan-detail`) instead of Edit/Delete on the transaction detail, is not swipeable in the transaction list or the account screen, and `deleteTransaction` refuses it (*Open the loan to change or delete it*); the repository does not guard it, as for split rows, only the controller and the screens do.

@@ -453,6 +453,9 @@ class TransactionController extends GetxController {
           'Open it in the group to change or delete it',
         );
       }
+      if (tx.isLoanDerived) {
+        throw const UnexpectedFailure('Open the loan to change or delete it');
+      }
       bool hadReceipt = false;
       if (receipts != null) {
         hadReceipt =

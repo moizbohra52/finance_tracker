@@ -82,10 +82,7 @@ class _Details extends StatelessWidget {
   final TransferLegs? transfer;
 
   bool get _editable {
-    if (transaction.splitExpenseId != null ||
-        transaction.splitSettlementId != null) {
-      return false;
-    }
+    if (transaction.isSplitDerived || transaction.isLoanDerived) return false;
     return transfer != null ||
         transaction.type == TransactionType.income ||
         transaction.type == TransactionType.expense;
@@ -257,6 +254,16 @@ class _Details extends StatelessWidget {
             ),
           if (!_editable && transaction.isSplitDerived)
             const SizedBox(height: AppSpacing.md),
+          if (transaction.isLoanDerived)
+            AppButton(
+              label: 'Open loan'.tr,
+              icon: Icons.account_balance_outlined,
+              onPressed: () => Get.toNamed<void>(
+                AppRoutes.loanDetail,
+                arguments: transaction.loanId,
+              ),
+            ),
+          if (transaction.isLoanDerived) const SizedBox(height: AppSpacing.md),
           AppButton(
             label: 'Remind me'.tr,
             icon: Icons.alarm_add_outlined,
@@ -271,7 +278,7 @@ class _Details extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          if (!transaction.isSplitDerived)
+          if (!transaction.isSplitDerived && !transaction.isLoanDerived)
             Obx(
               () => AppButton(
                 label: 'Delete'.tr,

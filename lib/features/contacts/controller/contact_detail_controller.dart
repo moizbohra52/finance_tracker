@@ -7,6 +7,7 @@ import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
@@ -31,10 +32,12 @@ class ContactDetailController extends GetxController {
     ProfileRepository? profileRepository,
     this._splitRepository,
     ReminderRepository? reminderRepository,
+    LoanRepository? loanRepository,
     this.exportService = const ExportService(),
     this.sharingService = const FileSharingService(),
   }) : _profiles = profileRepository,
-       _reminders = reminderRepository;
+       _reminders = reminderRepository,
+       _loans = loanRepository;
 
   final ContactRepository _repository;
   final TransactionRepository _transactionRepository;
@@ -47,6 +50,9 @@ class ContactDetailController extends GetxController {
 
   /// Removes an entry's due-date reminder with it; null in tests.
   final ReminderRepository? _reminders;
+
+  /// Lists the contact's loans; null in tests that do not need them.
+  final LoanRepository? _loans;
   final ExportService exportService;
   final FileSharingService sharingService;
 
@@ -58,6 +64,9 @@ class ContactDetailController extends GetxController {
   /// statement and a contact delete read the whole ledger themselves.
   final RxList<ContactTransaction> entries = <ContactTransaction>[].obs;
   final Rx<Decimal> balance = Decimal.zero.obs;
+
+  /// The contact's loans. They are not part of [balance].
+  final RxList<LoanSummary> loans = <LoanSummary>[].obs;
   final RxBool isLoading = true.obs;
   final RxBool isLoadingMore = false.obs;
   final RxBool hasMore = true.obs;
@@ -146,6 +155,8 @@ class ContactDetailController extends GetxController {
         _repository.getEntriesTotal(contactId),
       );
       if (generation != _generation) return;
+      await _loadLoans();
+      if (generation != _generation) return;
       contact.value = loaded.deletedAt == null ? loaded : null;
       entries.assignAll(page);
       hasMore.value = page.length == limit;
@@ -155,6 +166,18 @@ class ContactDetailController extends GetxController {
       if (!silent && generation == _generation) error.value = failure.message;
     } finally {
       if (generation == _generation) isLoading.value = false;
+    }
+  }
+
+  /// The loans are a side section: a failure keeps the ones shown and does
+  /// not hide the ledger.
+  Future<void> _loadLoans() async {
+    final LoanRepository? repository = _loans;
+    if (repository == null) return;
+    try {
+      loans.assignAll(await repository.getLoansForContact(contactId));
+    } on AppException {
+      // Keep what is shown; the next reload retries.
     }
   }
 

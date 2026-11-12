@@ -236,7 +236,7 @@ class AccountDetailView extends GetView<AccountDetailController> {
                   SwipeToDelete(
                     key: ValueKey<String>(t.id),
                     // A row made by a split group is changed in the group.
-                    enabled: !t.isSplitDerived,
+                    enabled: !t.isSplitDerived && !t.isLoanDerived,
                     margin: TransactionListItem.cardMargin,
                     onDelete: () => swipeDeleteTransaction(context, t),
                     onDismissed: () => controller.items.removeWhere(
