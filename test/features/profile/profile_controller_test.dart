@@ -183,6 +183,32 @@ void main() {
       },
     );
 
+    test('removing the photo clears it and deletes the old file', () async {
+      await controller.uploadAvatar('me.jpg', photo);
+
+      expect(await controller.removeAvatar(), isTrue);
+
+      expect(profiles.profile.avatarPath, isNull);
+      expect(controller.avatarPath.value, isNull);
+      expect(controller.avatarLink.value, isNull);
+      expect(profiles.removed, <String>['user-1/0.jpg']);
+      expect(controller.avatarBusy.value, isFalse);
+      expect(controller.avatarError.value, isNull);
+    });
+
+    test('a failed removal keeps the photo and shows the error', () async {
+      await controller.uploadAvatar('me.jpg', photo);
+      profiles.failUpdates = true;
+
+      expect(await controller.removeAvatar(), isFalse);
+
+      expect(controller.avatarPath.value, 'user-1/0.jpg');
+      expect(controller.avatarLink.value, isNotNull);
+      expect(profiles.removed, isEmpty, reason: 'the file is still in use');
+      expect(controller.avatarError.value, isNotNull);
+      expect(controller.avatarBusy.value, isFalse);
+    });
+
     test('a photo saved as a public link before is still shown', () async {
       profiles.profile = profileWithPhoto('https://cdn.example/old.jpg');
       controller = ProfileController(profiles, auth);

@@ -247,4 +247,57 @@ void main() {
     // Still on the profile, which is its own route (not a shell tab).
     expect(Get.currentRoute, AppRoutes.profile);
   });
+
+  group('remove own photo', () {
+    void withPhoto() {
+      profiles.profile = const Profile(
+        id: 'user-1',
+        fullName: 'Asha Rao',
+        mobile: '+91 98765 43210',
+        avatarPath: 'user-1/0.jpg',
+        currencyCode: 'INR',
+        timezone: 'Asia/Kolkata',
+      );
+    }
+
+    testWidgets('there is no Remove photo button without a photo', (
+      WidgetTester tester,
+    ) async {
+      await openProfile(tester);
+
+      expect(find.text('Remove photo'), findsNothing);
+    });
+
+    testWidgets('with a photo, Remove photo asks first and cancel keeps it', (
+      WidgetTester tester,
+    ) async {
+      withPhoto();
+      await openProfile(tester);
+
+      expect(find.text('Remove photo'), findsOneWidget);
+      await tapAndSettle(tester, find.text('Remove photo'));
+      expect(find.text('Remove the photo?'), findsOneWidget);
+      expect(profiles.profile.avatarPath, 'user-1/0.jpg');
+
+      await tapAndSettle(tester, find.text('Cancel'));
+
+      expect(profiles.profile.avatarPath, 'user-1/0.jpg');
+      expect(find.text('Remove photo'), findsOneWidget);
+    });
+
+    testWidgets('confirming removes the photo and the button goes away', (
+      WidgetTester tester,
+    ) async {
+      withPhoto();
+      await openProfile(tester);
+
+      await tapAndSettle(tester, find.text('Remove photo'));
+      await tapAndSettle(tester, find.widgetWithText(FilledButton, 'Delete'));
+
+      expect(profiles.profile.avatarPath, isNull);
+      expect(profiles.removed, <String>['user-1/0.jpg']);
+      expect(find.text('Photo removed'), findsOneWidget);
+      expect(find.text('Remove photo'), findsNothing);
+    });
+  });
 }

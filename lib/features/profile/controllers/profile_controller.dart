@@ -173,6 +173,36 @@ class ProfileController extends GetxController {
     }
   }
 
+  /// Removes the photo. The profile is cleared first and the stored file is
+  /// deleted after, so a failure keeps the photo as it was.
+  Future<bool> removeAvatar() async {
+    final String? previous = avatarPath.value;
+    avatarBusy.value = true;
+    avatarError.value = null;
+    try {
+      _fill(await _profiles.updateProfile(clearAvatar: true));
+      avatarLink.value = null;
+      final String? uid = userId;
+      if (uid != null && uid.isNotEmpty) {
+        await AvatarCache.delete(uid);
+        if (Get.isRegistered<AccountSwitchController>()) {
+          Get.find<AccountSwitchController>().updateActiveProfile(
+            avatarUrl: '',
+          );
+        }
+      }
+      if (previous != null && previous.isNotEmpty) {
+        await _removeQuietly(previous);
+      }
+      return true;
+    } on AppException catch (failure) {
+      avatarError.value = failure.message;
+      return false;
+    } finally {
+      avatarBusy.value = false;
+    }
+  }
+
   /// AuthController returns the app to sign-in on the signed-out event.
 
   /// The account is only deleted after the password is confirmed, so the photo
