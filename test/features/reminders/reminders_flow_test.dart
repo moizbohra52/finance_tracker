@@ -2,11 +2,13 @@ import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/features/budgets/views/budget_list_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
+import 'package:finance_tracker/features/loans/views/loan_payment_form_view.dart';
 import 'package:finance_tracker/features/notifications/views/notification_center_view.dart';
 import 'package:finance_tracker/features/reminders/views/reminder_detail_view.dart';
 import 'package:finance_tracker/features/reminders/views/reminder_form_view.dart';
@@ -25,6 +27,7 @@ import '../../helpers/reminder_fixtures.dart';
 
 const String _contactId = 'a1b2c3d4-0000-4000-8000-0000000000c1';
 const String _reminderId = 'a1b2c3d4-0000-4000-8000-0000000000a1';
+const String _loanId = 'a1b2c3d4-0000-4000-8000-0000000000d1';
 const String _budgetId = 'a1b2c3d4-0000-4000-8000-0000000000b1';
 
 Contact _contact() => Contact(
@@ -385,6 +388,7 @@ void main() {
       await _go(tester, AppRoutes.reminderDetail, _reminderId);
       expect(h.local.scheduled, hasLength(1));
 
+      expect(find.text('Mark as paid'), findsNothing);
       await tapAndSettle(tester, find.text('Mark as done'));
       expect(f.reminders.single.isCompleted, isTrue);
       expect(find.text('Completed'), findsOneWidget);
@@ -444,6 +448,134 @@ void main() {
       expect(f.reminders, isEmpty);
       expect(h.local.scheduled, isEmpty);
       expect(find.byType(ReminderListView), findsOneWidget);
+    });
+
+    testWidgets('a loan reminder offers Record payment and no edit', (
+      WidgetTester tester,
+    ) async {
+      await _tall(tester);
+      final DateTime now = DateTime.now();
+      final FakeFinance f = _seeded()
+        ..loans.add(
+          Loan(
+            id: _loanId,
+            userId: 'u',
+            direction: LoanDirection.taken,
+            method: LoanMethod.monthlyInterest,
+            name: 'Car loan',
+            accountId: 'acc-1',
+            principal: Decimal.parse('100000'),
+            annualRate: Decimal.parse('12'),
+            startDate: DateTime(now.year, now.month),
+            movedMoney: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        )
+        ..reminders.add(
+          makeReminder(
+            id: _reminderId,
+            title: 'Loan payment due',
+            type: ReminderType.loan,
+            loanId: _loanId,
+            remindAt: now.add(const Duration(days: 3)),
+          ),
+        );
+      await _start(tester, f);
+      await _go(tester, AppRoutes.reminderDetail, _reminderId);
+
+      expect(find.byTooltip('Edit reminder'), findsNothing);
+      expect(find.byTooltip('Delete reminder'), findsOneWidget);
+      expect(find.text('Mark as paid'), findsOneWidget);
+      expect(find.text('Mark as done'), findsNothing);
+      await tapAndSettle(tester, find.text('Record payment'));
+      expect(find.byType(LoanPaymentFormView), findsOneWidget);
+    });
+
+    testWidgets('Mark as paid records the due instalment in one tap', (
+      WidgetTester tester,
+    ) async {
+      await _tall(tester);
+      final DateTime now = DateTime.now();
+      final FakeFinance f = _seeded()
+        ..loans.add(
+          Loan(
+            id: _loanId,
+            userId: 'u',
+            direction: LoanDirection.taken,
+            method: LoanMethod.emi,
+            name: 'Car loan',
+            accountId: 'acc-1',
+            principal: Decimal.parse('12000'),
+            annualRate: Decimal.zero,
+            tenureMonths: 12,
+            startDate: DateTime(now.year, now.month - 2, 5),
+            firstDueDate: DateTime(now.year, now.month - 1, 5),
+            movedMoney: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        )
+        ..reminders.add(
+          makeReminder(
+            id: _reminderId,
+            title: 'Loan payment due',
+            type: ReminderType.loan,
+            loanId: _loanId,
+            remindAt: now.subtract(const Duration(hours: 1)),
+          ),
+        );
+      await _start(tester, f);
+      await _go(tester, AppRoutes.reminderDetail, _reminderId);
+
+      await tapAndSettle(tester, find.text('Mark as paid'));
+
+      final LoanPayment paid = f.loanPayments.single;
+      expect(paid.amount, Decimal.parse('1000'));
+      expect(paid.accountId, 'acc-1');
+      expect(paid.kind, LoanPaymentKind.scheduled);
+      expect(find.text('Payment recorded'), findsOneWidget);
+    });
+
+    testWidgets('Mark as paid with nothing due completes the reminder', (
+      WidgetTester tester,
+    ) async {
+      await _tall(tester);
+      final DateTime now = DateTime.now();
+      final FakeFinance f = _seeded()
+        ..loans.add(
+          Loan(
+            id: _loanId,
+            userId: 'u',
+            direction: LoanDirection.taken,
+            method: LoanMethod.monthlyInterest,
+            name: 'Car loan',
+            accountId: 'acc-1',
+            principal: Decimal.parse('100000'),
+            annualRate: Decimal.parse('12'),
+            startDate: DateTime(now.year, now.month),
+            movedMoney: true,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        )
+        ..reminders.add(
+          makeReminder(
+            id: _reminderId,
+            title: 'Loan payment due',
+            type: ReminderType.loan,
+            loanId: _loanId,
+            remindAt: now.add(const Duration(days: 3)),
+          ),
+        );
+      await _start(tester, f);
+      await _go(tester, AppRoutes.reminderDetail, _reminderId);
+
+      await tapAndSettle(tester, find.text('Mark as paid'));
+
+      expect(f.loanPayments, isEmpty);
+      expect(f.reminders.single.isCompleted, isTrue);
+      expect(find.text('Marked as done'), findsOneWidget);
     });
 
     testWidgets('edit changes the reminder and the schedule stays single', (

@@ -51,7 +51,7 @@ class PlannedNotification {
   final String title;
   final String body;
 
-  /// `reminder:<id>`; see NotificationTarget for how taps use it.
+  /// `reminder:<id>` or `loan:<loan id>`; see NotificationTarget for how taps use it.
   final String payload;
 
   /// Local time of the next fire.
@@ -69,8 +69,20 @@ abstract final class ReminderNotificationPlanner {
   /// iOS keeps at most 64 pending local notifications; leave room for others.
   static const int maxScheduled = 60;
 
-  static String payloadFor(String reminderId) =>
-      '${NotificationType.reminder}:$reminderId';
+  /// Payload type of a loan reminder: a tap opens the loan's payment form.
+  static const String loanPayloadType = 'loan';
+
+  /// `loan:<loan id>` for a loan reminder, `reminder:<id>` for any other.
+  static String payloadFor(Reminder r) => r.loanId != null
+      ? '$loanPayloadType:${r.loanId}'
+      : '${NotificationType.reminder}:${r.id}';
+
+  /// Whether [payload] (owner tag or not) is a loan reminder's.
+  static bool isLoanPayload(String? payload) =>
+      payload != null &&
+      payload
+          .substring(payload.indexOf('|') + 1)
+          .startsWith('$loanPayloadType:');
 
   /// Notification text carries only what the user typed as the title plus a
   /// generic line. Amounts and contact names are never put in a notification:
@@ -82,6 +94,7 @@ abstract final class ReminderNotificationPlanner {
     ReminderType.khata => 'Khata reminder',
     ReminderType.recurring => 'Recurring transaction reminder',
     ReminderType.custom => 'Reminder',
+    ReminderType.loan => 'Loan reminder',
   };
 
   /// Ids of notifications that are due but may not have been delivered yet.
@@ -129,7 +142,7 @@ abstract final class ReminderNotificationPlanner {
           id: id,
           title: r.title,
           body: bodyFor(r.type),
-          payload: payloadFor(r.id),
+          payload: payloadFor(r),
           fireAt: fireAt,
           // A snooze is a single extra nudge; the series resumes afterwards.
           // shortcut: a series the OS repeat cannot start at fireAt (done

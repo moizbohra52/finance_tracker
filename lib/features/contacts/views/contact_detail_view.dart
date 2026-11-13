@@ -13,9 +13,12 @@ import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/finance_widgets.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
+import 'package:finance_tracker/core/widgets/swipe_to_delete.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_detail_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/contacts/views/contact_entry_view.dart';
@@ -115,45 +118,175 @@ class ContactDetailView extends GetView<ContactDetailController> {
         message: 'It may have been deleted.'.tr,
       );
     }
+    final List<ContactTransaction> entries = controller.entries;
+    final bool loadingMore = controller.isLoadingMore.value;
+    final Widget header = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _BalanceHeader(contact: contact, id: id),
+        const SizedBox(height: AppSpacing.md),
+        _EntryActions(contact: contact),
+        const SizedBox(height: AppSpacing.lg),
+        _LoansSection(id: id),
+        SectionHeader(title: 'Ledger'.tr),
+        const SizedBox(height: AppSpacing.sm),
+        Obx(() {
+          final String? deleteError = controller.deletion.error.value;
+          return deleteError == null
+              ? const SizedBox.shrink()
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: InlineMessage(message: deleteError),
+                );
+        }),
+        if (entries.isEmpty)
+          AppCard(
+            child: EmptyState(
+              icon: Icons.menu_book_outlined,
+              title: 'No entries yet'.tr,
+              message: 'Add a credit or debit to start this ledger.'.tr,
+            ),
+          ),
+      ],
+    );
     return AppContent(
       child: RefreshIndicator(
         onRefresh: controller.load,
-        child: ListView(
-          children: <Widget>[
-            _BalanceHeader(contact: contact, id: id),
-            const SizedBox(height: AppSpacing.md),
-            _EntryActions(contact: contact),
-            const SizedBox(height: AppSpacing.lg),
-            SectionHeader(title: 'Ledger'.tr),
-            const SizedBox(height: AppSpacing.sm),
-            Obx(() {
-              final String? deleteError = controller.deletion.error.value;
-              return deleteError == null
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: InlineMessage(message: deleteError),
-                    );
-            }),
-            if (controller.entries.isEmpty)
-              AppCard(
-                child: EmptyState(
-                  icon: Icons.menu_book_outlined,
-                  title: 'No entries yet'.tr,
-                  message: 'Add a credit or debit to start this ledger.'.tr,
-                ),
-              )
-            else
-              AppListCard(
-                children: <Widget>[
-                  for (final ContactTransaction e in controller.entries)
-                    _EntryTile(entry: e, id: id),
-                ],
-              ),
-            const SizedBox(height: AppSpacing.lg),
-            _ContactInfo(contact: contact, balance: controller.balance.value),
-          ],
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification n) {
+            if (n.metrics.extentAfter < 300) controller.loadMore();
+            return false;
+          },
+          // Header, one row per entry, then a footer: the loading spinner,
+          // or the contact's details once the whole ledger is loaded, under
+          // it as before paging.
+          child: ListView.builder(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: entries.length + 2,
+            itemBuilder: (BuildContext context, int index) {
+              if (index == 0) return header;
+              if (index > entries.length) {
+                if (loadingMore) {
+                  return const Padding(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.lg),
+                  child: controller.hasMore.value
+                      ? const SizedBox.shrink()
+                      : _ContactInfo(
+                          contact: contact,
+                          balance: controller.balance.value,
+                        ),
+                );
+              }
+              final int i = index - 1;
+              return _LedgerRow(
+                isFirst: i == 0,
+                isLast: i == entries.length - 1,
+                child: _EntryTile(entry: entries[i], id: id),
+              );
+            },
+          ),
         ),
+      ),
+    );
+  }
+}
+
+/// The contact's loans, above the ledger; nothing when there are none. Loans
+/// are not part of the khata balance.
+class _LoansSection extends GetView<ContactDetailController> {
+  const _LoansSection({required this.id});
+
+  final String id;
+
+  @override
+  String get tag => id;
+
+  @override
+  Widget build(BuildContext context) {
+    final FinanceColors money = FinanceColors.of(context);
+    final TextTheme text = Theme.of(context).textTheme;
+    return Obx(() {
+      final List<LoanSummary> loans = controller.loans.toList();
+      if (loans.isEmpty) return const SizedBox.shrink();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SectionHeader(title: 'Loans'.tr),
+          const SizedBox(height: AppSpacing.sm),
+          AppListCard(
+            children: <Widget>[
+              for (final LoanSummary s in loans)
+                AppListTile(
+                  onTap: () => Get.toNamed<void>(
+                    AppRoutes.loanDetail,
+                    arguments: s.loan.id,
+                  ),
+                  leading: IconBadge(
+                    icon: Icons.account_balance_outlined,
+                    color: s.loan.direction == LoanDirection.taken
+                        ? money.payable
+                        : money.receivable,
+                  ),
+                  title: s.loan.name,
+                  subtitle: s.loan.direction == LoanDirection.taken
+                      ? 'Loan you took'.tr
+                      : 'Loan you gave'.tr,
+                  trailing: Text(
+                    AppFormatters.money(s.status.outstanding),
+                    style: text.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
+      );
+    });
+  }
+}
+
+/// One ledger row, drawn as part of one card: the card colour, round corners
+/// on the first and last row, and a divider above every row but the first,
+/// as AppListCard draws them, while the rows are still built lazily.
+class _LedgerRow extends StatelessWidget {
+  const _LedgerRow({
+    required this.isFirst,
+    required this.isLast,
+    required this.child,
+  });
+
+  final bool isFirst;
+  final bool isLast;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    const Radius corner = Radius.circular(AppRadius.lg);
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      clipBehavior: Clip.antiAlias,
+      borderRadius: BorderRadius.vertical(
+        top: isFirst ? corner : Radius.zero,
+        bottom: isLast ? corner : Radius.zero,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (!isFirst)
+            const Divider(
+              height: 1,
+              indent: AppListTile.textInset,
+              endIndent: AppSpacing.md,
+            ),
+          child,
+        ],
       ),
     );
   }
@@ -205,8 +338,8 @@ class _BalanceHeader extends GetView<ContactDetailController> {
               style: text.labelLarge,
             ),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              AppFormatters.money(balance.abs()),
+            CountUpMoney(
+              balance.abs(),
               style: text.displaySmall?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,
@@ -278,8 +411,10 @@ class _EntryActions extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        // A Wrap, not a Row: with large text or a longer translation the two
+        // buttons move onto a second line instead of overflowing.
+        Wrap(
+          alignment: WrapAlignment.center,
           children: <Widget>[
             TextButton(
               onPressed: () => _add(ContactTransactionType.paymentReceived),
@@ -323,7 +458,9 @@ class _EntryTile extends GetView<ContactDetailController> {
     );
   }
 
-  Future<void> _delete(BuildContext context) async {
+  /// Asks, deletes and says so; returns whether the entry went. Used by the
+  /// delete button and by a swipe on the row.
+  Future<bool> _delete(BuildContext context) async {
     final bool confirmed = await confirmDestructive(
       context,
       title: 'Delete entry?'.tr,
@@ -334,7 +471,9 @@ class _EntryTile extends GetView<ContactDetailController> {
     );
     if (confirmed && await controller.deleteEntry(entry.id)) {
       AppSnackbar.show('Entry deleted'.tr);
+      return true;
     }
+    return false;
   }
 
   @override
@@ -352,79 +491,92 @@ class _EntryTile extends GetView<ContactDetailController> {
       // linkOf touches splitLinks, so the tile also rebuilds when the group
       // behind a derived row arrives after the first frame.
       final SplitLink? link = controller.linkOf(entry);
-      return AppListTile(
-        onTap: derived ? () => controller.openInGroup(entry) : _edit,
-        padding: const EdgeInsets.only(
-          left: AppSpacing.md,
-          top: AppSpacing.sm,
-          bottom: AppSpacing.sm,
+      return SwipeToDelete(
+        key: ValueKey<String>(entry.id),
+        // An entry made by a split group is changed in the group.
+        enabled: !derived,
+        onDelete: () => _delete(context),
+        onDismissed: () => controller.entries.removeWhere(
+          (ContactTransaction e) => e.id == entry.id,
         ),
-        leading: IconBadge(
-          icon: raises ? Icons.call_received_rounded : Icons.call_made_rounded,
-          color: color,
-        ),
-        title: contactEntryLabel(entry.type),
-        subtitle:
-            '${AppFormatters.dateTime(entry.transactionDate)}$due'
-            '${note.isEmpty ? '' : '\n$note'}',
-        subtitleMaxLines: 3,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(
-              AppFormatters.signedMoney(entry.amount, positive: raises),
-              style: text.titleSmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w700,
+        child: AppListTile(
+          onTap: derived ? () => controller.openInGroup(entry) : _edit,
+          padding: const EdgeInsets.only(
+            left: AppSpacing.md,
+            top: AppSpacing.sm,
+            bottom: AppSpacing.sm,
+          ),
+          leading: IconBadge(
+            icon: raises
+                ? Icons.call_received_rounded
+                : Icons.call_made_rounded,
+            color: color,
+          ),
+          title: contactEntryLabel(entry.type),
+          subtitle:
+              '${AppFormatters.dateTime(entry.transactionDate)}$due'
+              '${note.isEmpty ? '' : '\n$note'}',
+          subtitleMaxLines: 3,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                AppFormatters.signedMoney(entry.amount, positive: raises),
+                style: text.titleSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-            ),
-            if (derived)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.sm),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Icon(
-                        Icons.groups_outlined,
-                        size: 12,
-                        color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      ),
-                      const SizedBox(width: 3),
-                      Text(
-                        link?.groupName ?? '',
-                        style: text.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+              if (derived)
+                Padding(
+                  padding: const EdgeInsets.only(left: AppSpacing.sm),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Icon(
+                          Icons.groups_outlined,
+                          size: 12,
                           color: Theme.of(
                             context,
                           ).colorScheme.onPrimaryContainer,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 3),
+                        Text(
+                          link?.groupName ?? '',
+                          style: text.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                )
+              else ...<Widget>[
+                IconButton(
+                  tooltip: 'Edit entry'.tr,
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: _edit,
                 ),
-              )
-            else ...<Widget>[
-              IconButton(
-                tooltip: 'Edit entry'.tr,
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _edit,
-              ),
-              IconButton(
-                tooltip: 'Delete entry'.tr,
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _delete(context),
-              ),
+                IconButton(
+                  tooltip: 'Delete entry'.tr,
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _delete(context),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       );
     });

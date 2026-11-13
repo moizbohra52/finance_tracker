@@ -72,6 +72,8 @@ class BalanceCard extends StatelessWidget {
     required this.monthExpense,
     required this.isHidden,
     required this.onToggleHidden,
+    this.netWorth,
+    this.netWorthIncludesLoans = false,
     this.onTap,
     this.onOpeningBalanceTap,
     this.onIncomeTap,
@@ -84,6 +86,13 @@ class BalanceCard extends StatelessWidget {
   final Decimal monthExpense;
   final bool isHidden;
   final VoidCallback onToggleHidden;
+
+  /// Balance with khata added in; shown only when it differs from
+  /// [currentBalance], that is when someone owes or is owed money.
+  final Decimal? netWorth;
+
+  /// Whether [netWorth] counts loans too, which changes the line's wording.
+  final bool netWorthIncludesLoans;
   final VoidCallback? onTap;
   final VoidCallback? onOpeningBalanceTap;
   final VoidCallback? onIncomeTap;
@@ -202,13 +211,18 @@ class BalanceCard extends StatelessWidget {
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
-                          child: Text(
-                            show(currentBalance),
-                            style: text.displaySmall?.copyWith(
-                              color: onCard,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.8,
-                            ),
+                          child: Builder(
+                            builder: (BuildContext context) {
+                              final TextStyle? style = text.displaySmall
+                                  ?.copyWith(
+                                    color: onCard,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -0.8,
+                                  );
+                              return isHidden
+                                  ? Text(_mask, style: style)
+                                  : CountUpMoney(currentBalance, style: style);
+                            },
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -242,6 +256,24 @@ class BalanceCard extends StatelessWidget {
                             ),
                           ),
                         ),
+                        if (netWorth != null &&
+                            netWorth != currentBalance) ...<Widget>[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            netWorthIncludesLoans
+                                ? 'Net worth incl. khata and loans @amount'
+                                      .trParams(<String, String>{
+                                        'amount': show(netWorth!),
+                                      })
+                                : 'Net worth incl. khata @amount'.trParams(
+                                    <String, String>{'amount': show(netWorth!)},
+                                  ),
+                            style: text.labelMedium?.copyWith(
+                              color: onCard.withValues(alpha: 0.9),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.md),
                         IntrinsicHeight(
                           child: Row(
@@ -550,6 +582,35 @@ class MoneyText extends StatelessWidget {
       style: (style ?? Theme.of(context).textTheme.titleSmall)?.copyWith(
         color: color,
         fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+/// A headline amount that counts up when first shown and eases to a new value
+/// when it changes. Frames in between show a rounded figure; the last frame
+/// is always [amount] exactly. Shown at once when the phone turns animations
+/// off.
+class CountUpMoney extends StatelessWidget {
+  const CountUpMoney(this.amount, {super.key, this.style});
+
+  final Decimal amount;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    final double end = amount.toDouble();
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: end),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : AppSizes.countUpAnimation,
+      curve: Curves.easeOutCubic,
+      builder: (_, double value, _) => Text(
+        AppFormatters.money(
+          value == end ? amount : Decimal.parse(value.toStringAsFixed(2)),
+        ),
+        style: style,
       ),
     );
   }

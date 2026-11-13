@@ -7,6 +7,7 @@ import 'package:finance_tracker/core/utils/app_formatters.dart';
 import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/core/utils/submit_state.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
@@ -31,10 +32,12 @@ class ContactDetailController extends GetxController {
     ProfileRepository? profileRepository,
     this._splitRepository,
     ReminderRepository? reminderRepository,
+    LoanRepository? loanRepository,
     this.exportService = const ExportService(),
     this.sharingService = const FileSharingService(),
   }) : _profiles = profileRepository,
-       _reminders = reminderRepository;
+       _reminders = reminderRepository,
+       _loans = loanRepository;
 
   final ContactRepository _repository;
   final TransactionRepository _transactionRepository;
@@ -47,13 +50,26 @@ class ContactDetailController extends GetxController {
 
   /// Removes an entry's due-date reminder with it; null in tests.
   final ReminderRepository? _reminders;
+
+  /// Lists the contact's loans; null in tests that do not need them.
+  final LoanRepository? _loans;
   final ExportService exportService;
   final FileSharingService sharingService;
 
+  static const int pageSize = 30;
+
   final Rxn<Contact> contact = Rxn<Contact>();
+
+  /// The loaded pages of the ledger, newest first. The balance, the
+  /// statement and a contact delete read the whole ledger themselves.
   final RxList<ContactTransaction> entries = <ContactTransaction>[].obs;
   final Rx<Decimal> balance = Decimal.zero.obs;
+
+  /// The contact's loans. They are not part of [balance].
+  final RxList<LoanSummary> loans = <LoanSummary>[].obs;
   final RxBool isLoading = true.obs;
+  final RxBool isLoadingMore = false.obs;
+  final RxBool hasMore = true.obs;
   final RxnString error = RxnString();
   final SubmitState deletion = SubmitState();
   final SubmitState statement = SubmitState();
@@ -117,22 +133,73 @@ class ContactDetailController extends GetxController {
     _changes = ever<int>(_notifier.version, (_) => load(silent: true));
   }
 
+  int _generation = 0;
+
   Future<void> load({bool silent = false}) async {
+    final int generation = ++_generation;
     if (!silent) isLoading.value = true;
     error.value = null;
+    // A silent reload refetches every entry already on screen, so the list
+    // does not jump back to the first page after an edit.
+    final int limit = silent && entries.length > pageSize
+        ? entries.length
+        : pageSize;
     try {
-      final (Contact loaded, List<ContactTransaction> list) = await wait2(
+      final (
+        Contact loaded,
+        List<ContactTransaction> page,
+        Decimal total,
+      ) = await wait3(
         _repository.getContactById(contactId),
-        _repository.getContactTransactions(contactId),
+        _repository.getContactTransactions(contactId, limit: limit),
+        _repository.getEntriesTotal(contactId),
       );
+      if (generation != _generation) return;
+      await _loadLoans();
+      if (generation != _generation) return;
       contact.value = loaded.deletedAt == null ? loaded : null;
-      entries.assignAll(list);
-      balance.value = loaded.getCurrentBalance(list);
-      _loadSplitLinks(list);
+      entries.assignAll(page);
+      hasMore.value = page.length == limit;
+      balance.value = loaded.balanceWith(total);
+      _loadSplitLinks(page);
     } on AppException catch (failure) {
-      if (!silent) error.value = failure.message;
+      if (!silent && generation == _generation) error.value = failure.message;
     } finally {
-      isLoading.value = false;
+      if (generation == _generation) isLoading.value = false;
+    }
+  }
+
+  /// The loans are a side section: a failure keeps the ones shown and does
+  /// not hide the ledger.
+  Future<void> _loadLoans() async {
+    final LoanRepository? repository = _loans;
+    if (repository == null) return;
+    try {
+      loans.assignAll(await repository.getLoansForContact(contactId));
+    } on AppException {
+      // Keep what is shown; the next reload retries.
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (isLoading.value || isLoadingMore.value || !hasMore.value) return;
+    final int generation = _generation;
+    isLoadingMore.value = true;
+    try {
+      final List<ContactTransaction> page = await _repository
+          .getContactTransactions(
+            contactId,
+            limit: pageSize,
+            offset: entries.length,
+          );
+      if (generation != _generation) return;
+      entries.addAll(page);
+      hasMore.value = page.length == pageSize;
+      _loadSplitLinks(page);
+    } on AppException {
+      // The entries already shown stay; scrolling again retries.
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 
@@ -170,7 +237,8 @@ class ContactDetailController extends GetxController {
     try {
       final List<int> bytes = await exportService.generateContactStatementPdf(
         contact: current,
-        entries: entries,
+        // The whole ledger, not just the pages on screen.
+        entries: await _repository.getContactTransactions(contactId),
         userName: userName,
         upiPayLink: ReminderSenderService.buildUpiLink(
           upiId: AppFormatters.preferences.upiId,
@@ -217,7 +285,10 @@ class ContactDetailController extends GetxController {
         );
       }
     }
-    for (final ContactTransaction e in entries) {
+    // Every entry, not just the pages on screen.
+    for (final ContactTransaction e in await _repository.getContactTransactions(
+      contactId,
+    )) {
       // As deleteEntry does: the entry goes too, or it lingers in exports
       // and backups under a contact that no longer exists.
       await _repository.deleteContactTransaction(e.id);

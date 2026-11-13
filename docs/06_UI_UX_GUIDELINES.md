@@ -162,3 +162,28 @@ inline (`lib/core/widgets`, `lib/widgets`):
 Colours and sizes come from the theme and `AppSizes`, `AppSpacing` and
 `AppRadius`, never literals in feature widgets.
 
+
+## Typography and motion
+- **Font.** Inter, bundled in `assets/fonts` (five weights, 400-800, SIL OFL;
+  the licence shows on the licences screen). `AppTheme.fontFamily` names it.
+  Every text style also turns on tabular figures, so digits are equal width
+  and amounts line up down a list. Inter has no Devanagari: Hindi text uses
+  the phone's font. A style built from scratch (not from the text theme)
+  must name the family itself, as the button themes do, or it falls back to
+  the phone's font.
+- **Count-up.** Headline balances (home balance card, account screen, khata
+  contact) use `CountUpMoney`: they count up when shown and ease to a new
+  value, and always end on the exact amount. A hidden balance stays masked.
+- **Reduced motion.** Animations check `MediaQuery.disableAnimationsOf` and
+  jump to the end when the phone has animations turned off.
+- **Haptics.** Confirming a destructive action gives a medium tap
+  (`confirmDestructive`); any save or delete that succeeds gives a light tap
+  (`SubmitState.onSuccess`, set in `main.dart`). The phone's own haptics
+  setting decides whether they are felt.
+- **Swipe to delete.** Rows in the Transactions tab, on an account screen
+  and in a khata ledger swipe left to delete (`SwipeToDelete`). A swipe asks
+  the same confirmation as the row's Delete button (`confirmDeleteTransaction`
+  for transactions, which removes both legs of a transfer) and slides the row
+  away only once the delete succeeded. Rows made by a split group do not
+  swipe: they are changed in the group. The Delete button stays, so the
+  action never depends on knowing the gesture.

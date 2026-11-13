@@ -439,6 +439,13 @@ void main() {
       expect(snoozed.isCompleted, isFalse);
     });
 
+    test('the Done button of a loan reminder reads Paid', () {
+      expect(ReminderAction.done.labelFor(loan: false), 'Mark done');
+      expect(ReminderAction.done.labelFor(loan: true), 'Paid');
+      expect(ReminderAction.snooze.labelFor(loan: true), 'Snooze 1 hour');
+      expect(ReminderAction.snooze.labelFor(loan: false), 'Snooze 1 hour');
+    });
+
     test('action ids are stable, the OS hands them back by name', () {
       expect(ReminderAction.values.asNameMap().keys, <String>[
         'done',

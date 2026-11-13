@@ -38,17 +38,20 @@ class Contact {
   Decimal get signedOpeningBalance =>
       openingBalanceType == 'payable' ? -openingBalance : openingBalance;
 
-  // Get current balance based on opening balance and transactions
-  // This would typically be calculated by a service/repository
-  Decimal getCurrentBalance(List<ContactTransaction> transactions) {
-    Decimal balance = signedOpeningBalance;
-    for (final transaction in transactions) {
-      if (transaction.deletedAt == null) balance += transaction.signedAmount;
-    }
+  /// The balance once [entriesTotal], the entries' signed amounts summed
+  /// (ContactTransaction.signedAmount), is added to the opening balance.
+  /// Positive = receivable (they owe us), negative = payable (we owe them).
+  Decimal balanceWith(Decimal entriesTotal) =>
+      signedOpeningBalance + entriesTotal;
 
-    // Return absolute value for display, with sign indicating direction
-    // Positive = receivable (they owe us), Negative = payable (we owe them)
-    return balance;
+  /// The balance from the opening balance and [transactions] (deleted ones
+  /// are skipped).
+  Decimal getCurrentBalance(List<ContactTransaction> transactions) {
+    Decimal total = Decimal.zero;
+    for (final transaction in transactions) {
+      if (transaction.deletedAt == null) total += transaction.signedAmount;
+    }
+    return balanceWith(total);
   }
 
   // Get receivable amount (positive if they owe us, 0 if we owe them or settled)
@@ -121,11 +124,16 @@ class ContactTransaction {
   /// How this entry moves the contact's balance: positive when they owe us
   /// more (credit, or we paid back), negative when we owe them more (debit,
   /// or they paid back). Adjustments apply as entered.
-  Decimal get signedAmount => switch (type) {
-    ContactTransactionType.credit ||
-    ContactTransactionType.paymentMade ||
-    ContactTransactionType.adjustment => amount,
-    ContactTransactionType.debit ||
-    ContactTransactionType.paymentReceived => -amount,
-  };
+  Decimal get signedAmount => signedOf(type, amount);
+
+  /// [signedAmount] for an entry of [type] and [amount], for totals read
+  /// without loading whole entries.
+  static Decimal signedOf(ContactTransactionType type, Decimal amount) =>
+      switch (type) {
+        ContactTransactionType.credit ||
+        ContactTransactionType.paymentMade ||
+        ContactTransactionType.adjustment => amount,
+        ContactTransactionType.debit ||
+        ContactTransactionType.paymentReceived => -amount,
+      };
 }

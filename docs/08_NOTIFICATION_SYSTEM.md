@@ -186,6 +186,7 @@ Push data: `type`, `reference_id` and `user_id`. Both go through
 | `recurring` | recurring transactions |
 | `contact`, `khata` | contact detail |
 | `transaction` | transaction detail |
+| `loan` | loan payment form (the loan's) |
 | anything else, or a missing/invalid id | notification center |
 
 Ids are validated as UUIDs before use because push data comes from outside the
@@ -332,6 +333,68 @@ other reminder. Rules live in `domain/services/khata_due_reminders.dart`
     data, so overlapping loads cannot save older balances over newer ones.
     Its writes do not call `DataChangeNotifier.markChanged` (that would start
     another load).
+
+### Loan reminders (2026-11-11)
+A loan reminder is an ordinary reminder (`ReminderType.loan`, `Reminder.loanId`
+set), so it is scheduled, listed, synced and actionable like any other. Rules
+live in `LoanRepository`; no further schema change.
+- One per open loan. Id: `uuid v5("loan-reminder:<loan id>")`
+  (`LoanIds.reminder`), the same on every device and retry. Title
+  "Loan payment due" (loan taken) or "Collect loan payment" (loan given), no
+  name or amount.
+- At 09:00 local on the loan's next due date. Each payment moves it to the next
+  due date; closing the loan or deleting it soft-deletes it.
+- Payload `loan:<loan id>` (`ReminderNotificationPlanner.payloadFor`, constant
+  `loanPayloadType`), tagged `<user id>|` like the others. A tap opens the
+  loan's payment form (`NotificationTarget.resolve('loan', id)` ->
+  `AppRoutes.loanPaymentForm`, a bad id -> notification center). Notifications
+  scheduled earlier keep their `reminder:<id>` payload and open the reminder
+  detail as before.
+- **Paid** and **Snooze** work on it: `NotificationTarget.reminderId` maps
+  the `loan:` target back to `LoanIds.reminder(<loan id>)` for
+  `reminderActionInBackground`.
+- **Paid** is the Done button (action id `done`, label chosen per notification
+  by `ReminderAction.labelFor`, from `ReminderNotificationPlanner.isLoanPayload`)
+  and records the due instalment in one tap: `applyReminderAction` calls
+  `LoanRepository.recordDuePayment` (the suggested split, from the loan's own
+  account, dated today but never before the loan start or its latest payment,
+  written in one transaction by the same code as `savePayment`, so the derived
+  rows, closing and the reminder move are exactly those of a typed payment)
+  instead of completing the reminder, then reschedules it at its new date. A
+  loan that closes leaves no reminder, so its notification is cancelled. Only
+  with nothing due (a monthly-interest loan whose interest is paid) is the
+  reminder completed as any other.
+- What is guaranteed when the same tap is delivered more than once:
+  - The payment's id is derived from the instalment it pays
+    (`LoanIds.duePayment`: the instalment number, or the due date for a
+    monthly-interest loan), and the loan is read inside the writing
+    transaction, so two deliveries cannot both record the same instalment
+    (the second is refused, or finds the same id and writes nothing), and the
+    same instalment recorded on two devices is one row after sync.
+  - The button passes `requireDue`, so nothing is recorded when the loan's
+    next due date is after today, when the reminder's date is still in the
+    future, or when any live payment of the loan was created in the last 60
+    seconds (`LoanRepository.replayWindow`). The last rule stops a replay on a
+    loan two or more instalments overdue from paying the following instalment,
+    because the moved reminder is still in the past. In each refused case the
+    reminder is left as it is, not completed.
+  - Not guaranteed: a second tap more than a minute later is a new tap and
+    records the next instalment if one is due.
+  - The in-app Mark as paid has no window: a deliberate second tap pays the
+    next instalment (the busy flag covers a double tap during the write).
+- A loan whose account is deactivated or deleted is not paid: nothing is
+  posted, the action fails with "Choose an account" (shown in the app,
+  logged in the background, the reminder left as it is).
+- Notifications scheduled before this change keep the label "Mark done" until
+  the next reschedule; the tap still records.
+- The reminder detail of a loan reminder has **Mark as paid** (the same
+  one-tap payment, via `ReminderController.markLoanPaid`; "Payment recorded"),
+  **Record payment** (opens the prefilled payment form) and no Edit (the loan
+  owns the date and title); Delete and Snooze stay.
+- Saving a loan again (rename, note) keeps a snooze or done the user set on its
+  reminder: the reminder is rewritten, but `is_completed` and `snoozed_until`
+  stay while its date and amount are unchanged. A payment moves the date, so
+  the reminder then starts afresh.
 
 ### Not in this phase
 Notification buttons on iOS, anything that calls the push sender, a

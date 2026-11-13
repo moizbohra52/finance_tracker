@@ -7,6 +7,7 @@ import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
@@ -26,6 +27,10 @@ import 'package:finance_tracker/features/contacts/controller/contact_detail_cont
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
 import 'package:finance_tracker/features/export/controllers/export_controller.dart';
+import 'package:finance_tracker/features/loans/controllers/loan_detail_controller.dart';
+import 'package:finance_tracker/features/loans/controllers/loan_form_controller.dart';
+import 'package:finance_tracker/features/loans/controllers/loan_list_controller.dart';
+import 'package:finance_tracker/features/loans/controllers/loan_payment_controller.dart';
 import 'package:finance_tracker/features/notifications/controllers/notification_center_controller.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
 import 'package:finance_tracker/features/recurring/controllers/recurring_controller.dart';
@@ -156,6 +161,7 @@ class ContactDetailBinding extends Bindings {
         profileRepository: Get.find<ProfileRepository>(),
         splitRepository: Get.find<SplitRepository>(),
         reminderRepository: Get.find<ReminderRepository>(),
+        loanRepository: Get.find<LoanRepository>(),
       ),
       tag: routeIdArgument(),
     );
@@ -265,6 +271,7 @@ class ReminderBinding extends Bindings {
       Get.find<ContactRepository>(),
       Get.find<NotificationCoordinator>(),
       Get.find<DataChangeNotifier>(),
+      loanRepository: Get.find<LoanRepository>(),
     ),
   );
 }
@@ -335,6 +342,58 @@ class SplitExpenseBinding extends Bindings {
   }
 }
 
+class LoanListBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => LoanListController(
+      Get.find<LoanRepository>(),
+      Get.find<DataChangeNotifier>(),
+    ),
+  );
+}
+
+class LoanFormBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<LoanFormController>(
+      LoanFormController(
+        Get.find<LoanRepository>(),
+        Get.find<AccountRepository>(),
+        Get.find<ContactRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+  }
+}
+
+/// One detail controller per loan id (tagged, like SplitGroupDetailBinding).
+class LoanDetailBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<LoanDetailController>(
+      LoanDetailController(
+        Get.find<LoanRepository>(),
+        Get.find<DataChangeNotifier>(),
+        routeIdArgument(),
+      ),
+      tag: routeIdArgument(),
+    );
+  }
+}
+
+class LoanPaymentBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.put<LoanPaymentController>(
+      LoanPaymentController(
+        Get.find<LoanRepository>(),
+        Get.find<AccountRepository>(),
+        Get.find<DataChangeNotifier>(),
+      ),
+    );
+  }
+}
+
 /// Everything the signed-in shell's tabs need.
 class ShellBinding extends Bindings {
   @override
@@ -357,6 +416,7 @@ class ShellBinding extends Bindings {
         Get.find<ContactRepository>(),
         Get.find<CategoryRepository>(),
         Get.find<DataChangeNotifier>(),
+        loanRepository: Get.find<LoanRepository>(),
       ),
     );
     TransactionBinding().dependencies();

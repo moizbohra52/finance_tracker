@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:decimal/decimal.dart';
+import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/data/repositories/split_repository.dart';
 import 'package:finance_tracker/domain/entities/split.dart';
 import 'package:finance_tracker/features/split/controllers/split_expense_controller.dart';
@@ -8,6 +10,7 @@ import 'package:finance_tracker/features/split/views/split_expense_form_view.dar
 import 'package:finance_tracker/features/split/views/split_group_form_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
@@ -118,8 +121,56 @@ double _labelAboveList(WidgetTester tester, Type form, String label) {
   return list.top - text.top;
 }
 
+/// Tests draw every font as square boxes, far wider than real text. Loading
+/// the app's own font gives the segments their real width. Called from
+/// setUpAll: inside a widget test, real file work never completes.
+Future<void> _loadAppFont() async {
+  final FontLoader loader = FontLoader(AppTheme.fontFamily);
+  for (final File f in Directory('assets/fonts').listSync().whereType<File>()) {
+    if (f.path.endsWith('.ttf')) {
+      loader.addFont(
+        Future<ByteData>.value(ByteData.sublistView(f.readAsBytesSync())),
+      );
+    }
+  }
+  await loader.load();
+}
+
 void main() {
+  setUpAll(_loadAppFont);
   tearDown(Get.reset);
+
+  testWidgets('the segments draw no check icon on a 360 wide phone', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final FakeFinance f = await dinner()
+      ..addAccount('Cash', '1000');
+    await _start(tester, f);
+    await _openForm(tester);
+
+    for (final String mode in <String>['Equal', 'Shares']) {
+      await _scrollUpTo(tester, find.text(mode));
+      await tester.tap(find.text(mode));
+      await tester.pumpAndSettle();
+      expect(
+        find.descendant(
+          of: find.byType(SegmentedButton<SplitMode>),
+          matching: find.byIcon(Icons.check),
+        ),
+        findsNothing,
+      );
+    }
+    expect(
+      find.descendant(
+        of: find.byType(SegmentedButton<bool>),
+        matching: find.byIcon(Icons.check),
+      ),
+      findsNothing,
+    );
+  });
 
   testWidgets('the title label is not cut off once it floats', (
     WidgetTester tester,

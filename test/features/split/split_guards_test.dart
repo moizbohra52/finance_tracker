@@ -13,6 +13,7 @@ import 'package:finance_tracker/features/split/views/split_group_list_view.dart'
 import 'package:finance_tracker/features/transactions/controller/transaction_controller.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
 import 'package:finance_tracker/routes/app_routes.dart';
+import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -254,6 +255,75 @@ void main() {
       expect(find.byType(ContactDetailView), findsOneWidget);
       // The one derived entry carries the group chip.
       expect(find.text('Goa'), findsOneWidget);
+    });
+
+    testWidgets('only rows the user can delete here move on a swipe', (
+      WidgetTester tester,
+    ) async {
+      // Tall enough that the row to swipe is fully on screen.
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final FakeFinance f = await guarded();
+      await pumpApp(
+        tester,
+        auth: FakeAuthRepository(signedIn: true),
+        finance: f,
+      );
+      await tester.tap(
+        find.descendant(
+          of: find.byType(NavigationBar),
+          matching: find.byIcon(Icons.receipt_long_outlined),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // A row made by a split group is changed in the group: no swipe.
+      final Finder derived = find
+          .byWidgetPredicate(
+            (Widget w) =>
+                w is TransactionListItem && w.transaction.isSplitDerived,
+          )
+          .first;
+      await tester.drag(derived, const Offset(-600, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete transaction?'), findsNothing);
+      expect(
+        f.transactions.where((Transaction t) => t.deletedAt != null),
+        isEmpty,
+      );
+
+      // A khata entry swipes; one made by a group does not.
+      unawaited(
+        Get.toNamed<void>(AppRoutes.contactDetail, arguments: 'c-amit'),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(find.text('Goa'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete entry?'), findsNothing);
+
+      // GetX does not push the same route on top of itself.
+      Get.back<void>();
+      await tester.pumpAndSettle();
+      unawaited(
+        Get.toNamed<void>(AppRoutes.contactDetail, arguments: 'c-other'),
+      );
+      await tester.pumpAndSettle();
+      await tester.drag(find.text('+₹120.00'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete entry?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+      // The fake repository drops a deleted entry outright.
+      expect(
+        f.contactTransactions.where(
+          (ContactTransaction e) => e.id == 'plain-entry',
+        ),
+        isEmpty,
+      );
+      expect(find.text('+₹120.00'), findsNothing);
+      expect(find.text('Entry deleted'), findsOneWidget);
     });
 
     testWidgets(

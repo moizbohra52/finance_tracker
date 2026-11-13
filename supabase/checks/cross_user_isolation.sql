@@ -78,6 +78,14 @@ values
   ('a6000000-0000-4000-8000-000000000006', 'a6000000-0000-4000-8000-000000000004', 'a6000000-0000-4000-8000-000000000003', 400, 300);
 insert into public.split_settlements (id, group_id, from_member_id, to_member_id, amount, settled_at)
 values ('a6000000-0000-4000-8000-000000000007', 'a6000000-0000-4000-8000-000000000001', 'a6000000-0000-4000-8000-000000000003', 'a6000000-0000-4000-8000-000000000002', 200, '2026-10-27T12:00:00Z');
+insert into public.loans (id, direction, method, name, contact_id, account_id, principal, annual_rate, tenure_months, emi_amount, start_date, first_due_date)
+values ('a7000000-0000-4000-8000-000000000001', 'taken', 'emi', 'A Home Loan', 'a3000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 500000, 9, 60, 10379.18, '2026-01-01', '2026-02-01');
+insert into public.loan_payments (id, loan_id, account_id, kind, paid_at, amount, principal_part, interest_part)
+values ('a7000000-0000-4000-8000-000000000002', 'a7000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 'scheduled', '2026-02-01T04:30:00Z', 10379.18, 6629.18, 3750);
+insert into public.transactions (id, account_id, type, amount, loan_id)
+values ('a7000000-0000-4000-8000-000000000003', 'a1000000-0000-4000-8000-000000000001', 'payment_made', 6629.18, 'a7000000-0000-4000-8000-000000000001');
+insert into public.reminders (title, remind_at, reminder_type, loan_id)
+values ('A Home Loan EMI', '2026-03-01T04:30:00Z', 'loan', 'a7000000-0000-4000-8000-000000000001');
 update public.profiles set mobile = '+910000000000';
 
 do $$
@@ -93,7 +101,7 @@ begin
   if (select mobile from public.profiles) is distinct from '+910000000000' then
     raise exception 'FAIL: user could not update own profile';
   end if;
-  if (select count(*) from public.categories where is_system) <> 25 then
+  if (select count(*) from public.categories where is_system) <> 35 then
     raise exception 'FAIL: system categories are not readable';
   end if;
 end $$;
@@ -139,7 +147,9 @@ begin
      + (select count(*) from public.split_group_members)
      + (select count(*) from public.split_expenses)
      + (select count(*) from public.split_expense_parts)
-     + (select count(*) from public.split_settlements) <> 0 then
+     + (select count(*) from public.split_settlements)
+     + (select count(*) from public.loans)
+     + (select count(*) from public.loan_payments) <> 0 then
     raise exception 'FAIL: B can read A financial rows';
   end if;
 
@@ -260,6 +270,57 @@ begin
   exception when foreign_key_violation then null;
   end;
 
+  -- The loan tables reference A rows through composite foreign keys
+  begin
+    insert into public.loans (direction, method, name, account_id, principal, annual_rate, start_date)
+    values ('given', 'monthly_interest', 'probe', 'a1000000-0000-4000-8000-000000000001', 10, 1, '2026-10-01');
+    raise exception 'FAIL: B created a loan on an A account';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.loans (direction, method, name, contact_id, account_id, principal, annual_rate, start_date)
+    values ('given', 'monthly_interest', 'probe', 'a3000000-0000-4000-8000-000000000001', 'b1000000-0000-4000-8000-000000000001', 10, 1, '2026-10-01');
+    raise exception 'FAIL: B created a loan for an A contact';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.loans (user_id, direction, method, name, account_id, principal, annual_rate, start_date)
+    values (a, 'given', 'monthly_interest', 'planted', 'a1000000-0000-4000-8000-000000000001', 10, 1, '2026-10-01');
+    raise exception 'FAIL: B inserted a loan owned by A';
+  exception when insufficient_privilege then null;
+  end;
+
+  begin
+    insert into public.loan_payments (loan_id, account_id, kind, paid_at, amount, principal_part, interest_part)
+    values ('a7000000-0000-4000-8000-000000000001', 'b1000000-0000-4000-8000-000000000001', 'scheduled', now(), 10, 10, 0);
+    raise exception 'FAIL: B created a payment on an A loan';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.transactions (account_id, type, amount, loan_id)
+    values ('b1000000-0000-4000-8000-000000000001', 'payment_made', 10, 'a7000000-0000-4000-8000-000000000001');
+    raise exception 'FAIL: B linked a transaction to an A loan';
+  exception when foreign_key_violation then null;
+  end;
+
+  begin
+    insert into public.reminders (title, remind_at, reminder_type, loan_id)
+    values ('probe', now(), 'loan', 'a7000000-0000-4000-8000-000000000001');
+    raise exception 'FAIL: B linked a reminder to an A loan';
+  exception when foreign_key_violation then null;
+  end;
+
+  update public.loans set name = 'hacked' where user_id = a;
+  get diagnostics affected = row_count;
+  if affected <> 0 then raise exception 'FAIL: B updated A loans'; end if;
+
+  delete from public.loan_payments where user_id = a;
+  get diagnostics affected = row_count;
+  if affected <> 0 then raise exception 'FAIL: B deleted A loan payments'; end if;
+
   -- Creating a shared system category or handing a row to A
   begin
     insert into public.categories (user_id, name, type, is_system)
@@ -361,6 +422,27 @@ begin
     raise exception 'FAIL: a negative ledger amount was accepted';
   exception when check_violation then null;
   end;
+
+  begin
+    insert into public.loans (direction, method, name, account_id, principal, annual_rate, start_date)
+    values ('taken', 'emi', 'no EMI fields', 'a1000000-0000-4000-8000-000000000001', 1000, 9, '2026-01-01');
+    raise exception 'FAIL: an EMI loan without tenure, EMI and first due date was accepted';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.loans (direction, method, name, account_id, principal, annual_rate, tenure_months, start_date)
+    values ('taken', 'monthly_interest', 'EMI fields', 'a1000000-0000-4000-8000-000000000001', 1000, 24, 12, '2026-01-01');
+    raise exception 'FAIL: a monthly-interest loan with a tenure was accepted';
+  exception when check_violation then null;
+  end;
+
+  begin
+    insert into public.loan_payments (loan_id, account_id, kind, paid_at, amount, principal_part, interest_part)
+    values ('a7000000-0000-4000-8000-000000000001', 'a1000000-0000-4000-8000-000000000001', 'extra', now(), 100, 60, 30);
+    raise exception 'FAIL: a payment whose parts do not add up was accepted';
+  exception when check_violation then null;
+  end;
 end $$;
 
 -- ---------------------------------------------------------------------------
@@ -389,13 +471,15 @@ begin
      or exists (select 1 from public.split_group_members where user_id = a)
      or exists (select 1 from public.split_expenses where user_id = a)
      or exists (select 1 from public.split_expense_parts where user_id = a)
-     or exists (select 1 from public.split_settlements where user_id = a) then
+     or exists (select 1 from public.split_settlements where user_id = a)
+     or exists (select 1 from public.loans where user_id = a)
+     or exists (select 1 from public.loan_payments where user_id = a) then
     raise exception 'FAIL: deleting the auth user left data behind';
   end if;
   if not exists (select 1 from public.accounts where user_id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') then
     raise exception 'FAIL: deleting user A removed user B data';
   end if;
-  if (select count(*) from public.categories where is_system) <> 25 then
+  if (select count(*) from public.categories where is_system) <> 35 then
     raise exception 'FAIL: deleting a user removed system categories';
   end if;
 end $$;
@@ -442,7 +526,7 @@ begin
      or exists (select 1 from public.profiles where id = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb') then
     raise exception 'FAIL: delete_my_account left the user or their data behind';
   end if;
-  if (select count(*) from public.categories where is_system) <> 25 then
+  if (select count(*) from public.categories where is_system) <> 35 then
     raise exception 'FAIL: delete_my_account removed system categories';
   end if;
 

@@ -42,6 +42,12 @@ class Transaction {
   bool get isSplitDerived =>
       splitExpenseId != null || splitSettlementId != null;
 
+  /// Set when the row is derived from a loan or one of its payments.
+  final String? loanId;
+
+  /// A loan row is changed only through its loan.
+  bool get isLoanDerived => loanId != null;
+
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
@@ -62,6 +68,7 @@ class Transaction {
     this.attachmentUrl,
     this.splitExpenseId,
     this.splitSettlementId,
+    this.loanId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -84,6 +91,7 @@ class Transaction {
       attachmentUrl: json['attachment_url'] as String?,
       splitExpenseId: json['split_expense_id'] as String?,
       splitSettlementId: json['split_settlement_id'] as String?,
+      loanId: json['loan_id'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       deletedAt: json['deleted_at'] != null
@@ -134,6 +142,8 @@ class Transaction {
       'attachment_url': attachmentUrl,
       'split_expense_id': splitExpenseId,
       'split_settlement_id': splitSettlementId,
+      // Only when set, so plain rows still sync before the migration.
+      'loan_id': ?loanId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'deleted_at': deletedAt?.toIso8601String(),
@@ -179,6 +189,7 @@ class Transaction {
     String? attachmentUrl,
     String? splitExpenseId,
     String? splitSettlementId,
+    String? loanId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? deletedAt,
@@ -199,6 +210,7 @@ class Transaction {
       attachmentUrl: attachmentUrl ?? this.attachmentUrl,
       splitExpenseId: splitExpenseId ?? this.splitExpenseId,
       splitSettlementId: splitSettlementId ?? this.splitSettlementId,
+      loanId: loanId ?? this.loanId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,

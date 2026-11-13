@@ -65,6 +65,12 @@ abstract final class AppRoutes {
   static const String splitExpenseForm = '/split-expense-form';
   static const String splitSettlementForm = '/split-settlement-form';
 
+  // Loans and EMIs
+  static const String loans = '/loans';
+  static const String loanForm = '/loan-form';
+  static const String loanDetail = '/loan-detail';
+  static const String loanPaymentForm = '/loan-payment-form';
+
   // Export and Backup
   static const String export = '/export';
   static const String backup = '/backup';

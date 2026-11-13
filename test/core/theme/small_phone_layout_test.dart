@@ -5,9 +5,11 @@ import 'package:finance_tracker/core/theme/app_theme.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
+import 'package:finance_tracker/features/contacts/views/contact_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_detail_view.dart';
 import 'package:finance_tracker/features/transactions/views/transaction_form_view.dart';
 import 'package:finance_tracker/widgets/account_list_item.dart';
+import 'package:finance_tracker/widgets/contact_list_item.dart';
 import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +21,8 @@ import '../../helpers/fakes.dart';
 
 /// Tests draw every font as square boxes, far wider than real text. Loading
 /// the app's own font files gives text its real width, so a row that is too
-/// tight for the font shows up as an overflow error.
+/// tight for the font shows up as an overflow error. Called from setUpAll:
+/// inside a widget test, real file and engine work never completes.
 Future<void> _loadAppFont() async {
   final FontLoader loader = FontLoader(AppTheme.fontFamily);
   final List<File> files =
@@ -31,7 +34,7 @@ Future<void> _loadAppFont() async {
         ..sort((File a, File b) => a.path.compareTo(b.path));
   for (final File file in files) {
     loader.addFont(
-      file.readAsBytes().then((Uint8List b) => ByteData.sublistView(b)),
+      Future<ByteData>.value(ByteData.sublistView(file.readAsBytesSync())),
     );
   }
   await loader.load();
@@ -106,12 +109,12 @@ FakeFinance _busy() {
 }
 
 void main() {
+  setUpAll(_loadAppFont);
   tearDown(Get.reset);
 
   testWidgets('the main screens fit a 360 dp wide phone in the app font', (
     WidgetTester tester,
   ) async {
-    await _loadAppFont();
     tester.view.physicalSize = const Size(360, 740);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -143,8 +146,7 @@ void main() {
 
     // A transaction's detail screen, then the add form.
     await _tapTab(tester, Icons.receipt_long_outlined);
-    await tester.tap(find.byType(TransactionListItem).first);
-    await tester.pumpAndSettle();
+    await tapAndSettle(tester, find.byType(TransactionListItem).first);
     expect(find.byType(TransactionDetailView), findsOneWidget);
     await _scrollThrough(tester);
     await tester.pageBack();
@@ -155,6 +157,29 @@ void main() {
     await tester.tap(find.text('Add expense'));
     await tester.pumpAndSettle();
     expect(find.byType(TransactionFormView), findsOneWidget);
+    await _scrollThrough(tester);
+  });
+
+  // The Payment received / Payment made row sat in a Row and overflowed once
+  // text was larger than normal, which many people set on a small phone.
+  testWidgets('a contact fits a 360 dp phone with large text', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 740);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.5;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await pumpApp(
+      tester,
+      auth: FakeAuthRepository(signedIn: true),
+      finance: _busy(),
+    );
+    await _tapTab(tester, Icons.people_outline);
+    await tapAndSettle(tester, find.byType(ContactBalanceTile).first);
+    expect(find.byType(ContactDetailView), findsOneWidget);
+    expect(find.text('Payment received'), findsOneWidget);
     await _scrollThrough(tester);
   });
 }

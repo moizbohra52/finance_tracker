@@ -14,6 +14,7 @@ import 'package:finance_tracker/data/repositories/auth_repository.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/photo_store.dart';
 import 'package:finance_tracker/data/repositories/profile_repository.dart';
@@ -118,6 +119,7 @@ class InitialBinding extends Bindings {
     Get.put<ReminderRepository>(repositories.reminders, permanent: true);
     Get.put<SavingsGoalRepository>(repositories.savingsGoals, permanent: true);
     Get.put<SplitRepository>(repositories.split, permanent: true);
+    Get.put<LoanRepository>(repositories.loans, permanent: true);
     Get.put<NotificationCoordinator>(notificationCoordinator, permanent: true);
     Get.put<AppLockController>(appLock, permanent: true);
     Get.put<DataChangeNotifier>(notifier, permanent: true);

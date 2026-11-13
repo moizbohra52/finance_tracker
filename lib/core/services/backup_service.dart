@@ -69,6 +69,8 @@ class BackupService {
     'split_expenses',
     'split_expense_parts',
     'split_settlements',
+    'loans',
+    'loan_payments',
     'user_settings',
     'profiles',
   ];
@@ -91,6 +93,8 @@ class BackupService {
     'split_expenses',
     'split_expense_parts',
     'split_settlements',
+    'loans',
+    'loan_payments',
   };
 
   /// Columns of the signed-in user's settings and profile rows that a restore
@@ -429,11 +433,12 @@ class BackupService {
 
         // Step 2: Insert rows table by table in dependency order
         // Order: categories -> accounts -> contacts -> split groups/members ->
-        // split expenses/parts/settlements -> transactions ->
+        // split expenses/parts/settlements -> loans -> loan payments ->
+        // transactions ->
         // contact_transactions -> budgets -> recurring -> reminders ->
         // savings goals -> savings contributions -> settings -> profiles.
-        // The split tables come after contacts and before transactions so the
-        // server's foreign keys never see a missing parent.
+        // The split and loan tables come after contacts and accounts and before
+        // transactions so the server's foreign keys never see a missing parent.
         const List<String> insertOrder = <String>[
           'categories',
           'accounts',
@@ -443,6 +448,8 @@ class BackupService {
           'split_expenses',
           'split_expense_parts',
           'split_settlements',
+          'loans',
+          'loan_payments',
           'transactions',
           'contact_transactions',
           'budgets',

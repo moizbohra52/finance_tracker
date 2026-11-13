@@ -8,6 +8,8 @@ import 'package:finance_tracker/core/widgets/app_button.dart';
 import 'package:finance_tracker/core/widgets/app_card.dart';
 import 'package:finance_tracker/core/widgets/app_content.dart';
 import 'package:finance_tracker/core/widgets/app_list_tile.dart';
+import 'package:finance_tracker/core/widgets/app_pickers.dart';
+import 'package:finance_tracker/core/widgets/app_snackbar.dart';
 import 'package:finance_tracker/core/widgets/app_text_field.dart';
 import 'package:finance_tracker/core/widgets/inline_message.dart';
 import 'package:finance_tracker/core/widgets/state_views.dart';
@@ -113,6 +115,21 @@ class _ProfileForm extends StatelessWidget {
     await controller.uploadAvatar(fileName, bytes);
   }
 
+  Future<void> _removePhoto(
+    BuildContext context,
+    ProfileController controller,
+  ) async {
+    final bool confirmed = await confirmDestructive(
+      context,
+      title: 'Remove the photo?'.tr,
+      message: 'You can add a new one any time.'.tr,
+    );
+    if (!confirmed) return;
+    if (await controller.removeAvatar()) {
+      AppSnackbar.show('Photo removed'.tr);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ProfileController controller = Get.find();
@@ -164,6 +181,20 @@ class _ProfileForm extends StatelessWidget {
                 ),
               ),
             ),
+            Obx(() {
+              if (controller.avatarLink.value == null) {
+                return const SizedBox.shrink();
+              }
+              return Center(
+                child: TextButton.icon(
+                  onPressed: controller.avatarBusy.value
+                      ? null
+                      : () => _removePhoto(context, controller),
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text('Remove photo'.tr),
+                ),
+              );
+            }),
             Obx(() {
               final String? error = controller.avatarError.value;
               if (error == null) return const SizedBox.shrink();

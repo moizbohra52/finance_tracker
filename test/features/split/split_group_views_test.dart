@@ -206,6 +206,42 @@ void main() {
     expect(find.text('Goa'), findsOneWidget);
   });
 
+  // The bottom Khata tab is not the standalone route above: it has the
+  // shell's app bar, so it needs its own way into the groups.
+  testWidgets('the Khata tab of the main screen opens the groups', (
+    WidgetTester tester,
+  ) async {
+    final FakeFinance f = await dinner();
+    await _start(tester, f);
+    await tester.tap(
+      find.descendant(
+        of: find.byType(NavigationBar),
+        matching: find.byIcon(Icons.people_outline),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Split groups'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SplitGroupListView), findsOneWidget);
+    expect(find.text('Goa'), findsOneWidget);
+
+    // The card's menu edits the group.
+    await tester.tap(find.byType(PopupMenuButton<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Edit group').last);
+    await tester.pumpAndSettle();
+    expect(find.byType(SplitGroupFormView), findsOneWidget);
+    expect(find.text('Edit group'), findsWidgets);
+  });
+
+  testWidgets('the groups action shows only on the Khata tab', (
+    WidgetTester tester,
+  ) async {
+    await _start(tester, await dinner());
+    expect(find.byTooltip('Split groups'), findsNothing);
+  });
+
   testWidgets('empty state asks for the first group', (
     WidgetTester tester,
   ) async {

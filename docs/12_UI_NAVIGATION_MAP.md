@@ -27,7 +27,7 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/transaction-detail` | Transaction details, edit, delete (arg: id); an income put into goals shows a *Savings* line ("goal amount · goal amount") | `TransactionDetailBinding` | any transaction row |
 | `/contacts` | Khata list (route form of tab 2) | `ContactBinding` | Home "Open" |
 | `/contact-form` | Add / edit contact (arg: `Contact` for edit) | `ContactBinding` | Khata FAB, contact detail |
-| `/contact-detail` | Contact ledger, balance, delete (arg: id) | `ContactDetailBinding` | contact row |
+| `/contact-detail` | Contact ledger, balance, delete; a *Loans* section above the ledger (name, direction, outstanding; row opens `/loan-detail`) when the contact has loans, which are not part of the balance (arg: id) | `ContactDetailBinding` | contact row |
 | `/contact-entry` | Add credit / debit / payment (`ContactEntryArgs`) | `ContactBinding` | contact detail, Home Credit/Debit |
 | `/split-groups` | Split groups list (name, member count, the user's net) | `SplitGroupBinding` | Khata app bar *Groups* |
 | `/split-group-form` | Add / edit / delete a group: name, member chips, member picker sheet (arg: `SplitGroupSummary` for edit) | `SplitGroupBinding` | Groups FAB and empty state |
@@ -41,6 +41,10 @@ Result of the UI integration pass that followed `UI_INTEGRATION_AUDIT.md`. No sc
 | `/recurring-form` | Add / edit / delete schedule incl. custom interval (arg: rule for edit) | `RecurringBinding` | Recurring FAB, schedule row |
 | `/savings-goals` | Savings goals with progress, left, reached/overdue, the part from income; "Add money" dialog per goal | `SavingsGoalBinding` → `SavingsGoalController` | Home "Plan ahead" |
 | `/savings-goal-form` | Add / edit / delete goal (arg: `SavingsGoal` for edit) | `SavingsGoalBinding` | Savings goals FAB, goal card |
+| `/loans` | Loans list: Taken / Given segments, total outstanding, open loans (name, outstanding, progress bar, *Next @date · @amount*), collapsed *Closed* section; row opens `/loan-detail` | `LoanListBinding` → `LoanListController` | Home "Plan ahead" *Loans* tile |
+| `/loan-form` | Add / edit a loan: direction (new only), method, name, contact, principal, rate, tenure and EMI, start and first EMI date, account, *money moved* switch, note; terms are disabled once a payment exists (`LoanFormArgs`) | `LoanFormBinding` → `LoanFormController` | Loans FAB and empty state |
+| `/loan-detail` | One loan: outstanding (count-up), progress, next instalment, interest paid so far; *Record payment*, *Prepay* (EMI only) and *Close loan* (hidden once closed); app bar Edit (opens `/loan-form`) and Delete (confirms); remaining EMI schedule (next 12, *Show all*); payments newest first, Edit and Delete on the latest only (arg: loan id) | `LoanDetailBinding` → `LoanDetailController` (tagged with the loan id) | loan row on `/loans` |
+| `/loan-payment-form` | Record a payment, *Prepay* or *Close loan* (title by arguments), or edit one: date, account, amount, principal and interest (amount split interest first, either part editable), note; Delete when editing (confirms) (`LoanPaymentArgs`, or a bare loan id) | `LoanPaymentBinding` → `LoanPaymentController` | loan detail actions and payment rows |
 | `/settings` | Settings | — | app-bar gear |
 | `/categories` | Own and built-in categories, by kind | `CategoryBinding` → `CategoryController` | Settings > Categories |
 | `/category-form` | Add / edit / delete an own category (`CategoryFormArgs`); returns the id | `CategoryBinding` | Categories FAB and rows, *New* chip in the income/expense and recurring forms |
@@ -88,7 +92,7 @@ New routes:
 |---|---|---|---|
 | `/reminders` | Reminder list (overdue / upcoming / completed, enable switch, permission banner) | `ReminderBinding` -> `ReminderController` | Home "Reminders" tile |
 | `/reminder-form` | Add / edit reminder (arg: `ReminderFormArgs`) | `ReminderBinding` | list FAB, contact detail "Add reminder", transaction detail "Remind me", reminder detail "Edit" |
-| `/reminder-detail` | Reminder with Mark as done, Snooze, Edit, Delete, link to contact/transaction (arg: id) | `ReminderBinding` | list row, notification tap |
+| `/reminder-detail` | Reminder with Mark as done (Mark as paid on a loan reminder), Snooze, Edit, Delete, link to contact/transaction (arg: id) | `ReminderBinding` | list row, notification tap |
 | `/notifications` | Notification center (paged, mark read, mark all read) | `NotificationCenterBinding` -> `NotificationCenterController` | app-bar bell, Home "Notifications" tile, unknown notification tap |
 
 - The app-bar bell on the shell shows the unread count (`99+` at the cap).
@@ -163,4 +167,4 @@ New routes (all signed-in only):
   selected chip has a thicker primary border and the selected fill.
 - **No database change.** `categories` RLS already allowed own-row writes and
   `transactions.transfer_id` with its unique indexes already existed.
-
+- **Derived loan rows are owned by their loan**: a transaction with a `loan_id` shows *Open loan* (`/loan-detail`) instead of Edit/Delete on the transaction detail, is not swipeable in the transaction list or the account screen, and `deleteTransaction` refuses it (*Open the loan to change or delete it*); the repository does not guard it, as for split rows, only the controller and the screens do.

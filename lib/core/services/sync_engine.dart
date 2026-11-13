@@ -446,6 +446,8 @@ class SyncEngine extends GetxService {
       'split_expenses',
       'split_expense_parts',
       'split_settlements',
+      'loans',
+      'loan_payments',
     ];
 
     for (final String table in syncableTables) {

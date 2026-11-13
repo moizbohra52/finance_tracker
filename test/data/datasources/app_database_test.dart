@@ -22,7 +22,7 @@ void main() {
     final List<Map<String, dynamic>> categories = await database.db.query(
       'categories',
     );
-    expect(categories.length, equals(29));
+    expect(categories.length, equals(35));
     expect(
       categories.any((c) => c['name'] == 'Money Lent' && c['is_system'] == 1),
       isTrue,
@@ -88,6 +88,12 @@ void main() {
         'khata_borrowed': 'Money Borrowed',
         'khata_repayment_received': 'Repayment Received',
         'khata_repayment_made': 'Repayment Made',
+        'loan_taken': 'Loan Received',
+        'loan_repayment_received': 'Loan Repayment Received',
+        'loan_interest_received': 'Loan Interest Received',
+        'loan_given': 'Loan Given',
+        'loan_repayment_made': 'Loan Repayment',
+        'loan_interest_paid': 'Loan Interest Paid',
       },
     );
     await old.close();
@@ -377,4 +383,120 @@ void main() {
       );
     }
   });
+
+  test('upgrading a version 9 file adds the loan tables, loan_id columns and '
+      'loan categories', () async {
+    final Database old = await databaseFactoryFfi.openDatabase(
+      inMemoryDatabasePath,
+      options: OpenDatabaseOptions(
+        version: 9,
+        singleInstance: false,
+        onCreate: (Database db, int _) async {
+          await db.execute(
+            'CREATE TABLE transactions (id TEXT PRIMARY KEY, user_id TEXT, '
+            'account_id TEXT NOT NULL, type TEXT NOT NULL, '
+            'amount TEXT NOT NULL, transaction_date TEXT NOT NULL, '
+            'created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
+          );
+          await db.execute(
+            'CREATE TABLE reminders (id TEXT PRIMARY KEY, user_id TEXT, '
+            'title TEXT NOT NULL, remind_at TEXT NOT NULL, '
+            'created_at TEXT NOT NULL, updated_at TEXT NOT NULL)',
+          );
+          await db.execute('''
+            CREATE TABLE categories (
+              id TEXT PRIMARY KEY, user_id TEXT, name TEXT, type TEXT,
+              icon TEXT, is_system INTEGER, is_active INTEGER,
+              created_at TEXT, updated_at TEXT, deleted_at TEXT,
+              sync_status TEXT, system_key TEXT
+            )
+          ''');
+        },
+      ),
+    );
+    await old.insert('transactions', <String, Object?>{
+      'id': 't1',
+      'account_id': 'a1',
+      'type': 'expense',
+      'amount': '100',
+      'transaction_date': '2026-11-01',
+      'created_at': '2026-11-01T00:00:00Z',
+      'updated_at': '2026-11-01T00:00:00Z',
+    });
+    await old.insert('reminders', <String, Object?>{
+      'id': 'r1',
+      'title': 'Pay',
+      'remind_at': '2026-11-02T00:00:00Z',
+      'created_at': '2026-11-01T00:00:00Z',
+      'updated_at': '2026-11-01T00:00:00Z',
+    });
+
+    await AppDatabase.upgrade(old, 9, AppDatabase.databaseVersion);
+
+    for (final String table in <String>['loans', 'loan_payments']) {
+      expect(
+        await old.rawQuery('PRAGMA table_info($table)'),
+        isNotEmpty,
+        reason: '$table is created by the upgrade',
+      );
+    }
+    for (final String table in <String>['transactions', 'reminders']) {
+      final List<Map<String, Object?>> columns = await old.rawQuery(
+        'PRAGMA table_info($table)',
+      );
+      expect(
+        columns.map((Map<String, Object?> c) => c['name']),
+        contains('loan_id'),
+        reason: '$table gains loan_id',
+      );
+    }
+    expect((await old.query('transactions')).single['id'], 't1');
+    expect((await old.query('reminders')).single['id'], 'r1');
+    expect(await _loanCategories(old), _expectedLoanCategories);
+    await old.close();
+  });
+
+  test('a fresh database has the loan tables and categories', () async {
+    for (final String table in <String>['loans', 'loan_payments']) {
+      expect(
+        await database.db.rawQuery('PRAGMA table_info($table)'),
+        isNotEmpty,
+        reason: '$table exists on a fresh database',
+      );
+    }
+    for (final String table in <String>['transactions', 'reminders']) {
+      final List<Map<String, Object?>> columns = await database.db.rawQuery(
+        'PRAGMA table_info($table)',
+      );
+      expect(
+        columns.map((Map<String, Object?> c) => c['name']),
+        contains('loan_id'),
+      );
+    }
+    expect(await _loanCategories(database.db), _expectedLoanCategories);
+  });
+}
+
+const Map<String, String> _expectedLoanCategories = <String, String>{
+  'loan_taken': 'c0000000-0000-4000-8000-000000000110|Loan Received|income',
+  'loan_repayment_received':
+      'c0000000-0000-4000-8000-000000000111|Loan Repayment Received|income',
+  'loan_interest_received':
+      'c0000000-0000-4000-8000-000000000112|Loan Interest Received|income',
+  'loan_given': 'c0000000-0000-4000-8000-000000000221|Loan Given|expense',
+  'loan_repayment_made':
+      'c0000000-0000-4000-8000-000000000222|Loan Repayment|expense',
+  'loan_interest_paid':
+      'c0000000-0000-4000-8000-000000000223|Loan Interest Paid|expense',
+};
+
+Future<Map<String, String>> _loanCategories(DatabaseExecutor db) async {
+  final List<Map<String, Object?>> rows = await db.query(
+    'categories',
+    where: "system_key LIKE 'loan_%'",
+  );
+  return <String, String>{
+    for (final Map<String, Object?> c in rows)
+      c['system_key']! as String: '${c['id']}|${c['name']}|${c['type']}',
+  };
 }

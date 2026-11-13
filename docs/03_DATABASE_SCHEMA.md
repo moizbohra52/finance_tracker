@@ -240,6 +240,67 @@ transactions and contact_transactions gain nullable `split_expense_id` and
 tables, and one partial index per column. A row with either set is derived
 from a split and cannot be edited or deleted directly (docs/05_FINANCIAL_LOGIC.md).
 
+### loans (2026-11-11)
+id UUID PK
+user_id UUID
+direction TEXT -- check in ('taken', 'given')
+method TEXT -- check in ('emi', 'monthly_interest')
+name TEXT -- check btrim(name) <> '' and length <= 80
+contact_id UUID nullable -- composite FK (user_id, contact_id); the khata balance does not include loans
+account_id UUID -- composite FK (user_id, account_id); where the loan was received into or given from
+principal NUMERIC(18,2) -- > 0
+annual_rate NUMERIC(7,4) -- >= 0 and <= 60; a monthly rate is stored times 12
+tenure_months INTEGER nullable -- 1..480; emi loans only
+emi_amount NUMERIC(18,2) nullable -- > 0; emi loans only
+start_date DATE -- when the money moved; interest runs from here
+first_due_date DATE nullable -- emi loans only; >= start_date
+moved_money BOOLEAN -- default true; false for a loan entered part way through
+closed_at TIMESTAMPTZ nullable -- set when nothing is owed
+note TEXT nullable
+created_at
+updated_at
+deleted_at
+
+CHECK: `method = 'emi'` exactly when `tenure_months`, `emi_amount` and
+`first_due_date` are all set (and all null for `monthly_interest`).
+`UNIQUE (user_id, id)` for the composite foreign keys that point here.
+
+### loan_payments (2026-11-11)
+id UUID PK
+user_id UUID
+loan_id UUID -- composite FK (user_id, loan_id)
+account_id UUID -- composite FK (user_id, account_id)
+kind TEXT -- check in ('scheduled', 'extra'); extra = prepayment or closing payment
+paid_at TIMESTAMPTZ
+amount NUMERIC(18,2) -- > 0
+principal_part NUMERIC(18,2) -- >= 0
+interest_part NUMERIC(18,2) -- >= 0; CHECK principal_part + interest_part = amount
+note TEXT nullable
+created_at
+updated_at
+deleted_at
+
+The split is stored when the payment is saved and never recalculated.
+
+### Loan link columns and categories (2026-11-11)
+`transactions.loan_id` and `reminders.loan_id` are nullable UUID columns with
+composite foreign keys `(user_id, loan_id)` to `loans` and a partial index
+each. A transaction with `loan_id` is derived from a loan or one of its
+payments and is changed only through the loan. `reminders.reminder_type` also
+accepts `'loan'`. The app sends `loan_id` only when it is set; the rollout
+rules are in migration 20 below.
+
+Six system categories, fixed ids and a `system_key` each (the same pattern as
+the khata categories): `...110` Loan Received `loan_taken`, `...111` Loan
+Repayment Received `loan_repayment_received`, `...112` Loan Interest Received
+`loan_interest_received` (income); `...221` Loan Given `loan_given`, `...222`
+Loan Repayment `loan_repayment_made`, `...223` Loan Interest Paid
+`loan_interest_paid` (expense).
+
+Local SQLite (database version 10) has the same two tables (money and dates
+as TEXT, `moved_money` as 0/1), the two `loan_id` columns with indexes, and
+the six categories.
+
 ### recurring_transactions
 id UUID PK
 user_id UUID
@@ -266,7 +327,8 @@ account_id UUID nullable
 title TEXT
 description TEXT
 transaction_id UUID nullable -- (user_id, transaction_id) -> transactions (Phase 09)
-reminder_type TEXT -- payment, receivable, payable, khata, recurring, custom (Phase 09, default custom)
+reminder_type TEXT -- payment, receivable, payable, khata, recurring, custom (Phase 09, default custom), loan (2026-11-11)
+loan_id UUID nullable -- (user_id, loan_id) -> loans (2026-11-11)
 amount NUMERIC(18,2) nullable
 remind_at TIMESTAMPTZ
 snoozed_until TIMESTAMPTZ nullable -- replaces remind_at while in the future (Phase 09)
@@ -336,6 +398,14 @@ At minimum:
 - transactions(split_settlement_id) WHERE split_settlement_id IS NOT NULL
 - contact_transactions(split_expense_id) WHERE split_expense_id IS NOT NULL
 - contact_transactions(split_settlement_id) WHERE split_settlement_id IS NOT NULL
+- loans(user_id)
+- loans(contact_id) WHERE contact_id IS NOT NULL
+- loans(account_id)
+- loan_payments(user_id)
+- loan_payments(user_id, loan_id)
+- loan_payments(account_id)
+- transactions(loan_id) WHERE loan_id IS NOT NULL
+- reminders(loan_id) WHERE loan_id IS NOT NULL
 
 ## Money rules
 Use NUMERIC(18,2). Do not use double/float for persisted monetary values.
@@ -498,6 +568,30 @@ Migrations live in `supabase/migrations/` and apply in filename order:
    `Validators.upiIdPattern`; `validators_upi_test.dart` compares the two and
    checks the counts. No column or policy change. **Apply it** (`supabase db
    push`): the next sync then uploads the queued settings on its own.
+
+20. `20261111090000_loans.sql` - `loans` and `loan_payments` (see above) with
+   the four owner-only policies each and no `anon` grant, composite foreign
+   keys to `contacts`, `accounts` and `loans`, `transactions.loan_id` and
+   `reminders.loan_id` with composite foreign keys, `'loan'` in the
+   `reminders_reminder_type_check` CHECK (the migration assumes Postgres
+   named the inline column check from migration 8 that way), and the six loan
+   categories with their `system_key`s. **Apply to dev and prod before any
+   device runs** the app version with loans, then update every device the same
+   day. Without it, loan, loan payment, loan-linked transaction and loan
+   reminder uploads fail and retry on every sync (nothing is lost), and the
+   pull of `loans` fails after the other tables, so every sync ends in the
+   error state: settings and profile are never pulled, `cursor_pulled` is
+   never set (a fresh install or wiped database creates no khata due-date
+   reminders), and synced queue rows are not cleaned up. A clean backup
+   restore queues a `replace` step for `loans` that stops every upload behind
+   it, and a backup made by this build holds `loan_id: null` on every
+   transaction and reminder, which an unmigrated server rejects, so do not
+   run a clean restore before migrating. After migrating, an app on database
+   version 9 or older cannot pull `transactions` (the rows carry `loan_id`)
+   and stops pulling every table after it, so update the app everywhere.
+   Local SQLite gets the tables, columns and categories in database version
+   10. The restore order in `BackupService.insertOrder` puts `loans` and
+   `loan_payments` after the split tables and before `transactions`.
 
 Each migration enables RLS in the same file that creates the table, so a
 partial apply never leaves a table exposed.

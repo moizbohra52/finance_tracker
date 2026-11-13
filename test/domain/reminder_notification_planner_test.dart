@@ -136,6 +136,42 @@ void main() {
       expect(plan.single.payload, 'reminder:${idOf(5)}');
     });
 
+    test('a loan reminder carries the loan id in its payload', () {
+      final PlannedNotification n = ReminderNotificationPlanner.plan(
+        <Reminder>[
+          makeReminder(
+            id: idOf(6),
+            type: ReminderType.loan,
+            loanId: idOf(7),
+            remindAt: DateTime(2026, 10, 9),
+          ),
+        ],
+        now,
+        on,
+      ).single;
+      expect(n.payload, 'loan:${idOf(7)}');
+      expect(
+        ReminderNotificationPlanner.payloadFor(
+          makeReminder(id: idOf(8), remindAt: DateTime(2026, 10, 9)),
+        ),
+        'reminder:${idOf(8)}',
+      );
+    });
+
+    test('a loan payload is told apart, owner tag or not', () {
+      expect(ReminderNotificationPlanner.isLoanPayload('loan:abc'), isTrue);
+      expect(ReminderNotificationPlanner.isLoanPayload('u-1|loan:abc'), isTrue);
+      expect(
+        ReminderNotificationPlanner.isLoanPayload('reminder:${idOf(8)}'),
+        isFalse,
+      );
+      expect(
+        ReminderNotificationPlanner.isLoanPayload('u-1|reminder:${idOf(8)}'),
+        isFalse,
+      );
+      expect(ReminderNotificationPlanner.isLoanPayload(null), isFalse);
+    });
+
     test('a repeating reminder keeps its repeat at its next occurrence', () {
       final PlannedNotification n = ReminderNotificationPlanner.plan(
         <Reminder>[

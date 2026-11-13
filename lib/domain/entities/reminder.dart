@@ -7,7 +7,9 @@ enum ReminderType {
   payable('Payable'),
   khata('Khata'),
   recurring('Recurring'),
-  custom('Custom');
+  custom('Custom'),
+  // Written by the loan feature only; the reminder form does not offer it.
+  loan('Loan');
 
   const ReminderType(this.label);
 
@@ -76,6 +78,7 @@ class Reminder {
     required this.snoozedUntil,
     required this.createdAt,
     required this.updatedAt,
+    this.loanId,
     this.deletedAt,
   });
 
@@ -87,6 +90,9 @@ class Reminder {
   final Decimal? amount;
   final String? contactId;
   final String? transactionId;
+
+  /// The loan a `loan` reminder is about.
+  final String? loanId;
 
   /// Local date and time.
   final DateTime remindAt;
@@ -111,6 +117,7 @@ class Reminder {
     bool clearContact = false,
     String? transactionId,
     bool clearTransaction = false,
+    String? loanId,
     DateTime? remindAt,
     ReminderRepeat? repeat,
     bool? isCompleted,
@@ -128,6 +135,7 @@ class Reminder {
     transactionId: clearTransaction
         ? null
         : (transactionId ?? this.transactionId),
+    loanId: loanId ?? this.loanId,
     remindAt: remindAt ?? this.remindAt,
     repeat: repeat ?? this.repeat,
     isCompleted: isCompleted ?? this.isCompleted,

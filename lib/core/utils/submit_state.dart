@@ -4,6 +4,10 @@ import 'package:get/get.dart';
 /// Progress and error state for one user-triggered async action (a form
 /// submit, a delete). Controllers hold one per action and views observe it.
 class SubmitState {
+  /// Called after any action succeeds. main.dart sets it to a light haptic;
+  /// it stays null in tests, which have no phone to vibrate.
+  static void Function()? onSuccess;
+
   final RxBool isBusy = false.obs;
   final RxnString error = RxnString();
 
@@ -15,6 +19,7 @@ class SubmitState {
     isBusy.value = true;
     try {
       await action();
+      onSuccess?.call();
       return true;
     } on AppException catch (failure) {
       error.value = failure.message;

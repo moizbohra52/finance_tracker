@@ -134,4 +134,7 @@ abstract final class AppSizes {
 
   /// Progress bars and other value changes that should read as motion.
   static const Duration slowAnimation = Duration(milliseconds: 350);
+
+  /// A headline balance counting up to its value (CountUpMoney).
+  static const Duration countUpAnimation = Duration(milliseconds: 450);
 }

@@ -31,7 +31,7 @@ class AppDatabase {
   }) : _db = database;
 
   static String get databaseName => AppEnv.databaseName;
-  static const int databaseVersion = 9;
+  static const int databaseVersion = 10;
 
   /// Database file name of [userId]; null is the signed-out file, which is
   /// also the single file used before accounts had their own.
@@ -155,6 +155,12 @@ class AppDatabase {
     }
     if (oldVersion < 9 && await _hasTable(db, 'savings_contributions')) {
       await _allowHandAddedContributions(db);
+    }
+    if (oldVersion < 10) {
+      await _createLoanTables(db);
+      await _addLoanLinkColumns(db);
+      // Adds the loan categories and skips the rows already there.
+      if (await _hasTable(db, 'categories')) await _seedSystemCategories(db);
     }
   }
 
@@ -370,6 +376,89 @@ class AppDatabase {
     }
   }
 
+  /// `loans` and `loan_payments` (version 10, docs/03_DATABASE_SCHEMA.md).
+  /// Money is TEXT, dates are `YYYY-MM-DD` text, every reference is indexed.
+  static Future<void> _createLoanTables(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS loans (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        direction TEXT NOT NULL,
+        method TEXT NOT NULL,
+        name TEXT NOT NULL,
+        contact_id TEXT,
+        account_id TEXT NOT NULL,
+        principal TEXT NOT NULL,
+        annual_rate TEXT NOT NULL,
+        tenure_months INTEGER,
+        emi_amount TEXT,
+        start_date TEXT NOT NULL,
+        first_due_date TEXT,
+        moved_money INTEGER NOT NULL DEFAULT 1,
+        closed_at TEXT,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_loans_user ON loans(user_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_loans_contact ON loans(contact_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_loans_account ON loans(account_id);',
+    );
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS loan_payments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        loan_id TEXT NOT NULL,
+        account_id TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        paid_at TEXT NOT NULL,
+        amount TEXT NOT NULL,
+        principal_part TEXT NOT NULL,
+        interest_part TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        deleted_at TEXT,
+        sync_status TEXT NOT NULL DEFAULT 'synced'
+      );
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_loan_payments_user ON loan_payments(user_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_loan_payments_loan ON loan_payments(loan_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_loan_payments_account ON loan_payments(account_id);',
+    );
+  }
+
+  /// Adds `loan_id` to `transactions` and `reminders` when they do not have
+  /// it yet.
+  static Future<void> _addLoanLinkColumns(DatabaseExecutor db) async {
+    await _addTextColumn(db, 'transactions', 'loan_id');
+    await _addTextColumn(db, 'reminders', 'loan_id');
+    if (await _hasTable(db, 'transactions')) {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_transactions_loan ON transactions(loan_id);',
+      );
+    }
+    if (await _hasTable(db, 'reminders')) {
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_reminders_loan ON reminders(loan_id);',
+      );
+    }
+  }
+
   static Future<bool> _hasTable(DatabaseExecutor db, String table) async {
     final List<Map<String, Object?>> rows = await db.rawQuery(
       "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
@@ -549,6 +638,7 @@ class AppDatabase {
         transfer_id TEXT,
         split_expense_id TEXT,
         split_settlement_id TEXT,
+        loan_id TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL,
         deleted_at TEXT,
@@ -566,6 +656,9 @@ class AppDatabase {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_transactions_split_settlement ON transactions(split_settlement_id);',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_transactions_loan ON transactions(loan_id);',
     );
 
     // 4. Contacts
@@ -678,6 +771,7 @@ class AppDatabase {
         title TEXT NOT NULL,
         description TEXT,
         transaction_id TEXT,
+        loan_id TEXT,
         reminder_type TEXT,
         amount TEXT,
         remind_at TEXT NOT NULL,
@@ -694,6 +788,9 @@ class AppDatabase {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_reminders_user_remind ON reminders(user_id, remind_at);',
     );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_reminders_loan ON reminders(loan_id);',
+    );
 
     // 8b. Savings Goals
     await _createSavingsGoals(db);
@@ -701,6 +798,9 @@ class AppDatabase {
 
     // 8c. Split Expenses
     await _createSplitTables(db);
+
+    // 8d. Loans
+    await _createLoanTables(db);
 
     // 9. User Settings
     await db.execute('''
@@ -947,6 +1047,48 @@ class AppDatabase {
         'icon': 'repayment_made',
         'system_key': 'khata_repayment_made',
       },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000110',
+        'name': 'Loan Received',
+        'type': 'income',
+        'icon': 'borrowed',
+        'system_key': 'loan_taken',
+      },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000111',
+        'name': 'Loan Repayment Received',
+        'type': 'income',
+        'icon': 'repayment_received',
+        'system_key': 'loan_repayment_received',
+      },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000112',
+        'name': 'Loan Interest Received',
+        'type': 'income',
+        'icon': 'interest',
+        'system_key': 'loan_interest_received',
+      },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000221',
+        'name': 'Loan Given',
+        'type': 'expense',
+        'icon': 'lent',
+        'system_key': 'loan_given',
+      },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000222',
+        'name': 'Loan Repayment',
+        'type': 'expense',
+        'icon': 'emi',
+        'system_key': 'loan_repayment_made',
+      },
+      <String, dynamic>{
+        'id': 'c0000000-0000-4000-8000-000000000223',
+        'name': 'Loan Interest Paid',
+        'type': 'expense',
+        'icon': 'emi',
+        'system_key': 'loan_interest_paid',
+      },
     ];
 
     final String now = DateTime.now().toUtc().toIso8601String();
@@ -1112,6 +1254,8 @@ class AppDatabase {
       'split_expenses',
       'split_expense_parts',
       'split_settlements',
+      'loans',
+      'loan_payments',
       'user_settings',
       'profiles',
       'sync_queue',

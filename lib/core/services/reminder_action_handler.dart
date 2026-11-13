@@ -8,6 +8,7 @@ import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/storage/storage_service.dart';
 import 'package:finance_tracker/core/translations/app_translations.dart';
 import 'package:finance_tracker/data/datasources/local/app_database.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
 import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
@@ -15,7 +16,6 @@ import 'package:finance_tracker/domain/entities/user_preferences.dart';
 import 'package:finance_tracker/domain/services/reminder_calculator.dart';
 import 'package:finance_tracker/domain/services/reminder_notification_planner.dart';
 import 'package:finance_tracker/features/notifications/notification_target.dart';
-import 'package:finance_tracker/routes/app_routes.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,11 +34,11 @@ void listenForReminderActions(void Function() onChange) {
   port.listen((_) => onChange());
 }
 
-/// Mark done / Snooze tapped on a reminder notification. The plugin runs this
-/// in a background isolate, whether or not the app is open, so no app service
-/// exists here: the change goes through the reminder's own account database
-/// and sync queue, exactly as the app writes it, and only that reminder's
-/// device notification is rescheduled.
+/// Mark done (Paid, for a loan reminder) / Snooze tapped on a reminder
+/// notification. The plugin runs this in a background isolate, whether or not
+/// the app is open, so no app service exists here: the change goes through the
+/// reminder's own account database and sync queue, exactly as the app writes
+/// it, and only that reminder's device notification is rescheduled.
 @pragma('vm:entry-point')
 Future<void> reminderActionInBackground(NotificationResponse response) async {
   final ReminderAction? action = ReminderAction.values
@@ -47,14 +47,10 @@ Future<void> reminderActionInBackground(NotificationResponse response) async {
   final NotificationTarget? target = NotificationTarget.fromPayload(
     response.payload,
   );
-  if (action == null ||
-      owner == null ||
-      target == null ||
-      target.route != AppRoutes.reminderDetail) {
-    return;
-  }
+  final String? reminderId = target?.reminderId;
+  if (action == null || owner == null || reminderId == null) return;
   try {
-    final Reminder? changed = await _save(action, owner, target.argument!);
+    final Reminder? changed = await _save(action, owner, reminderId);
     if (changed == null) return;
     IsolateNameServer.lookupPortByName(_appPort)?.send(null);
     await _reschedule(changed, owner);
@@ -89,40 +85,89 @@ Future<Reminder?> _save(
     authOptions: const AuthClientOptions(autoRefreshToken: false),
   );
   try {
-    final ReminderRepository repository = ReminderRepository(
-      client,
-      database: AppDatabase(database: db),
+    final AppDatabase database = AppDatabase(database: db);
+    // Paying a loan writes the reminder's title, so the text needs the
+    // language this device last used (see [_reschedule]).
+    await _loadStorage();
+    return await applyReminderAction(
+      reminders: ReminderRepository(client, database: database),
+      loans: LoanRepository(database),
+      action: action,
+      reminderId: reminderId,
     );
-    final Reminder? reminder = (await repository.getAll())
-        .where((Reminder r) => r.id == reminderId)
-        .firstOrNull;
-    if (reminder == null || reminder.isCompleted) return null;
-    final Reminder changed = ReminderCalculator.applyAction(
-      reminder,
-      action,
-      DateTime.now(),
-    );
-    await repository.update(changed);
-    return changed;
   } finally {
     await db.close();
     await client.dispose();
   }
 }
 
-Future<void> _reschedule(Reminder reminder, String owner) async {
+/// The reminder after [action], saved; null when there is nothing to change
+/// (reminder deleted or already done, or a loan reminder that already moved).
+///
+/// Done on a loan reminder records the instalment that is due through
+/// [LoanRepository.recordDuePayment] with `requireDue`, and the loan moves the
+/// reminder (or removes it when that closed the loan, which comes back as a
+/// completed copy so its notification is cancelled). The same tap can be
+/// delivered twice, so a replay records nothing: a reminder still in the
+/// future was already handled, and the repository refuses (and this leaves the
+/// reminder alone) when the instalment is not due or a payment was made in the
+/// last minute, the case of a loan several instalments overdue where the
+/// moved reminder is still due. Only a loan with nothing due completes the
+/// reminder, as for any other. A failure, such as a deactivated account,
+/// throws and leaves the reminder as it is.
+Future<Reminder?> applyReminderAction({
+  required ReminderRepository reminders,
+  required LoanRepository loans,
+  required ReminderAction action,
+  required String reminderId,
+  DateTime? now,
+}) async {
+  final DateTime at = now ?? DateTime.now();
+  Future<Reminder?> find() async => (await reminders.getAll())
+      .where((Reminder r) => r.id == reminderId)
+      .firstOrNull;
+  final Reminder? reminder = await find();
+  if (reminder == null || reminder.isCompleted) return null;
+  final String? loanId = reminder.loanId;
+  if (action == ReminderAction.done && loanId != null) {
+    if (reminder.remindAt.isAfter(at)) return null;
+    final DuePaymentResult result = await loans.recordDuePayment(
+      loanId,
+      now: at,
+      requireDue: true,
+    );
+    switch (result.status) {
+      case DuePaymentStatus.recorded || DuePaymentStatus.alreadyRecorded:
+        return await find() ?? reminder.copyWith(isCompleted: true);
+      case DuePaymentStatus.refused:
+        return null;
+      case DuePaymentStatus.nothingDue:
+        break;
+    }
+  }
+  final Reminder changed = ReminderCalculator.applyAction(reminder, action, at);
+  await reminders.update(changed);
+  return changed;
+}
+
+/// The device's saved settings, freshly read (this isolate outlives one tap),
+/// with the language this device last used in effect: there is no app here to
+/// hold it.
+Future<StorageService> _loadStorage() async {
   final SharedPreferences stored = await SharedPreferences.getInstance();
-  // This isolate outlives one tap; the settings may have changed since.
   await stored.reload();
   final StorageService storage = StorageService(stored);
+  AppTranslations.use(AppLanguage.fromStored(storage.readLanguage()));
+  return storage;
+}
+
+Future<void> _reschedule(Reminder reminder, String owner) async {
+  final StorageService storage = await _loadStorage();
   final NotificationPreferences prefs = NotificationCoordinator.readPreferences(
     storage,
   );
-  // No app here to hold the language, so the text is made in the one this
-  // device last used.
-  AppTranslations.use(AppLanguage.fromStored(storage.readLanguage()));
   final String payload = NotificationTarget.withOwner(
-    ReminderNotificationPlanner.payloadFor(reminder.id),
+    ReminderNotificationPlanner.payloadFor(reminder),
     owner,
   );
   final LocalNotificationService local = LocalNotificationService();

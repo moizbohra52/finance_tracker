@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
@@ -5,6 +7,7 @@ import 'package:finance_tracker/data/repositories/app_repositories.dart';
 import 'package:finance_tracker/data/repositories/budget_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/notification_repository.dart';
 import 'package:finance_tracker/data/repositories/recurring_repository.dart';
 import 'package:finance_tracker/data/repositories/reminder_repository.dart';
@@ -16,6 +19,7 @@ import 'package:finance_tracker/domain/entities/app_notification.dart';
 import 'package:finance_tracker/domain/entities/budget.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/recurring_transaction.dart';
 import 'package:finance_tracker/domain/entities/reminder.dart';
 import 'package:finance_tracker/domain/entities/savings_contribution.dart';
@@ -23,6 +27,7 @@ import 'package:finance_tracker/domain/entities/savings_goal.dart';
 import 'package:finance_tracker/domain/entities/split.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/entities/transaction_summary.dart';
+import 'package:finance_tracker/domain/services/loan_calculator.dart';
 import 'package:finance_tracker/domain/services/savings_split.dart';
 import 'package:finance_tracker/domain/services/split_balances.dart';
 import 'package:finance_tracker/domain/services/split_ids.dart';
@@ -43,6 +48,7 @@ class FakeFinance {
       reminders: FakeReminderRepository(this),
       savingsGoals: FakeSavingsGoalRepository(this),
       split: FakeSplitRepository(this),
+      loans: FakeLoanRepository(this),
     );
   }
 
@@ -64,6 +70,8 @@ class FakeFinance {
   final List<SplitExpense> splitExpenses = <SplitExpense>[];
   final List<SplitPart> splitParts = <SplitPart>[];
   final List<SplitSettlement> splitSettlements = <SplitSettlement>[];
+  final List<Loan> loans = <Loan>[];
+  final List<LoanPayment> loanPayments = <LoanPayment>[];
 
   /// FCM token rows by device id, with their `active` flag.
   final Map<String, ({String token, bool active})> deviceTokens =
@@ -106,6 +114,9 @@ class FakeFinance {
   /// While set, every repository call fails (use when several controllers
   /// load at startup and a single [nextError] would hit only one of them).
   AppException? failAll;
+
+  /// While set, `getLoan` waits for it (a slow load, to see loading states).
+  Completer<void>? getLoanGate;
 
   void throwPending() {
     if (failAll != null) throw failAll!;
@@ -584,14 +595,38 @@ class FakeContactRepository implements ContactRepository {
     }
   }
 
+  /// Same order and paging as the real datasource.
   @override
   Future<List<ContactTransaction>> getContactTransactions(
-    String contactId,
-  ) async {
+    String contactId, {
+    int? limit,
+    int offset = 0,
+  }) async {
     _f.throwPending();
-    return _f.contactTransactions
-        .where((ContactTransaction t) => t.contactId == contactId)
-        .toList();
+    final List<ContactTransaction> rows =
+        _f.contactTransactions
+            .where(
+              (ContactTransaction t) =>
+                  t.contactId == contactId && t.deletedAt == null,
+            )
+            .toList()
+          ..sort((ContactTransaction a, ContactTransaction b) {
+            final int byDate = b.transactionDate.compareTo(a.transactionDate);
+            return byDate != 0 ? byDate : b.id.compareTo(a.id);
+          });
+    return limit == null ? rows : rows.skip(offset).take(limit).toList();
+  }
+
+  @override
+  Future<Decimal> getEntriesTotal(String contactId) async {
+    _f.throwPending();
+    Decimal total = Decimal.zero;
+    for (final ContactTransaction t in _f.contactTransactions) {
+      if (t.contactId == contactId && t.deletedAt == null) {
+        total += t.signedAmount;
+      }
+    }
+    return total;
   }
 
   @override
@@ -1440,5 +1475,217 @@ class FakeSplitRepository implements SplitRepository {
               )
               .length,
     );
+  }
+}
+
+/// Loans without the derived money rows and reminders of the real
+/// repository; statuses and validation come from the same calculator.
+class FakeLoanRepository implements LoanRepository {
+  FakeLoanRepository(this._f);
+  final FakeFinance _f;
+
+  List<LoanPayment> _live(String loanId) =>
+      _f.loanPayments
+          .where((LoanPayment p) => p.loanId == loanId && p.isLive)
+          .toList()
+        ..sort((LoanPayment a, LoanPayment b) {
+          final int byDate = b.paidAt.compareTo(a.paidAt);
+          if (byDate != 0) return byDate;
+          final int byCreated = b.createdAt.compareTo(a.createdAt);
+          return byCreated != 0 ? byCreated : b.id.compareTo(a.id);
+        });
+
+  int _liveLoanIndex(String loanId) {
+    final int index = _f.loans.indexWhere(
+      (Loan l) => l.id == loanId && l.isLive,
+    );
+    if (index < 0) throw const DatabaseFailure();
+    return index;
+  }
+
+  /// Closes the loan at [closedAt], or reopens it when null.
+  void _setClosed(int index, DateTime? closedAt) {
+    final Loan loan = _f.loans[index];
+    _f.loans[index] = closedAt == null
+        ? loan.copyWith(clearClosedAt: true, updatedAt: DateTime.now())
+        : loan.copyWith(closedAt: closedAt, updatedAt: DateTime.now());
+  }
+
+  List<LoanSummary> _summaries(bool Function(Loan) test) =>
+      LoanRepository.ordered(<LoanSummary>[
+        for (final Loan l in _f.loans)
+          if (l.isLive && test(l))
+            LoanSummary(loan: l, status: LoanCalculator.status(l, _live(l.id))),
+      ]);
+
+  @override
+  Future<List<LoanSummary>> getLoans() async {
+    _f.throwPending();
+    return _summaries((Loan l) => true);
+  }
+
+  @override
+  Future<List<LoanSummary>> getLoansForContact(String contactId) async {
+    _f.throwPending();
+    return _summaries((Loan l) => l.contactId == contactId);
+  }
+
+  @override
+  Future<LoanDetail> getLoan(String loanId) async {
+    await _f.getLoanGate?.future;
+    _f.throwPending();
+    for (final Loan l in _f.loans) {
+      if (l.id != loanId || !l.isLive) continue;
+      final List<LoanPayment> payments = _live(loanId);
+      return LoanDetail(
+        loan: l,
+        payments: payments,
+        status: LoanCalculator.status(l, payments),
+      );
+    }
+    throw const DatabaseFailure();
+  }
+
+  @override
+  Future<({Decimal given, Decimal taken})> outstandingTotals() async {
+    _f.throwPending();
+    Decimal given = Decimal.zero;
+    Decimal taken = Decimal.zero;
+    for (final LoanSummary s in _summaries((Loan l) => true)) {
+      if (s.loan.direction == LoanDirection.given) {
+        given += s.status.outstanding;
+      } else {
+        taken += s.status.outstanding;
+      }
+    }
+    return (given: given, taken: taken);
+  }
+
+  @override
+  Future<void> saveLoan(Loan loan) async {
+    _f.throwPending();
+    final String? message = LoanCalculator.validateLoan(loan);
+    if (message != null) throw UnexpectedFailure(message);
+    final int index = _f.loans.indexWhere((Loan l) => l.id == loan.id);
+    if (index >= 0 &&
+        _live(loan.id).isNotEmpty &&
+        LoanRepository.termsChanged(_f.loans[index], loan)) {
+      throw const UnexpectedFailure(
+        'Only the name, contact and note can change after a payment',
+      );
+    }
+    final Loan saved = loan.copyWith(updatedAt: DateTime.now());
+    if (index >= 0) {
+      _f.loans[index] = saved;
+    } else {
+      _f.loans.add(saved);
+    }
+  }
+
+  @override
+  Future<void> savePayment(LoanPayment payment) async {
+    _f.throwPending();
+    final int loanIndex = _liveLoanIndex(payment.loanId);
+    final Loan loan = _f.loans[loanIndex];
+    final List<LoanPayment> live = _live(loan.id);
+    final bool isEdit = live.any((LoanPayment p) => p.id == payment.id);
+    if (isEdit && live.first.id != payment.id) {
+      throw const UnexpectedFailure('Only the latest payment can be changed');
+    }
+    final List<LoanPayment> others = live
+        .where((LoanPayment p) => p.id != payment.id)
+        .toList();
+    final String? message = LoanCalculator.validatePayment(
+      loan,
+      others,
+      payment,
+    );
+    if (message != null) throw UnexpectedFailure(message);
+    final LoanPayment saved = payment.copyWith(updatedAt: DateTime.now());
+    final int index = _f.loanPayments.indexWhere(
+      (LoanPayment p) => p.id == payment.id,
+    );
+    if (index >= 0) {
+      _f.loanPayments[index] = saved;
+    } else {
+      _f.loanPayments.add(saved);
+    }
+    _setClosed(
+      loanIndex,
+      LoanCalculator.outstanding(loan, <LoanPayment>[...others, saved]) <=
+              Decimal.zero
+          ? saved.paidAt
+          : null,
+    );
+  }
+
+  @override
+  Future<DuePaymentResult> recordDuePayment(
+    String loanId, {
+    DateTime? now,
+    bool requireDue = false,
+  }) async {
+    _f.throwPending();
+    final int index = _f.loans.indexWhere(
+      (Loan l) => l.id == loanId && l.isLive,
+    );
+    if (index < 0) return const DuePaymentResult(DuePaymentStatus.nothingDue);
+    final Loan loan = _f.loans[index];
+    final DuePaymentResult plan = LoanRepository.planDuePayment(
+      loan,
+      _live(loanId),
+      now ?? DateTime.now(),
+      requireDue: requireDue,
+    );
+    final LoanPayment? draft = plan.payment;
+    if (plan.status != DuePaymentStatus.recorded || draft == null) return plan;
+    if (!_f.accounts.any(
+      (Account a) =>
+          a.id == loan.accountId && a.isActive && a.deletedAt == null,
+    )) {
+      throw const UnexpectedFailure('Choose an account');
+    }
+    await savePayment(draft);
+    return plan;
+  }
+
+  @override
+  Future<void> deletePayment(String paymentId) async {
+    _f.throwPending();
+    final int index = _f.loanPayments.indexWhere(
+      (LoanPayment p) => p.id == paymentId && p.isLive,
+    );
+    if (index < 0) throw const DatabaseFailure();
+    final int loanIndex = _liveLoanIndex(_f.loanPayments[index].loanId);
+    final Loan loan = _f.loans[loanIndex];
+    final List<LoanPayment> live = _live(loan.id);
+    if (live.first.id != paymentId) {
+      throw const UnexpectedFailure('Only the latest payment can be changed');
+    }
+    _f.loanPayments[index] = _f.loanPayments[index].copyWith(
+      deletedAt: DateTime.now(),
+    );
+    _setClosed(
+      loanIndex,
+      LoanCalculator.outstanding(loan, live.skip(1)) <= Decimal.zero
+          ? loan.closedAt
+          : null,
+    );
+  }
+
+  @override
+  Future<void> deleteLoan(String loanId) async {
+    _f.throwPending();
+    final DateTime now = DateTime.now();
+    for (int i = 0; i < _f.loans.length; i++) {
+      if (_f.loans[i].id == loanId) {
+        _f.loans[i] = _f.loans[i].copyWith(deletedAt: now);
+      }
+    }
+    for (int i = 0; i < _f.loanPayments.length; i++) {
+      if (_f.loanPayments[i].loanId == loanId) {
+        _f.loanPayments[i] = _f.loanPayments[i].copyWith(deletedAt: now);
+      }
+    }
   }
 }

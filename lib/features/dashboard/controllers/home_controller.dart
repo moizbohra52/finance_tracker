@@ -5,12 +5,14 @@ import 'package:finance_tracker/core/utils/parallel.dart';
 import 'package:finance_tracker/data/repositories/account_repository.dart';
 import 'package:finance_tracker/data/repositories/category_repository.dart';
 import 'package:finance_tracker/data/repositories/contact_repository.dart';
+import 'package:finance_tracker/data/repositories/loan_repository.dart';
 import 'package:finance_tracker/data/repositories/transaction_repository.dart';
 import 'package:finance_tracker/domain/entities/account.dart';
 import 'package:finance_tracker/domain/entities/category.dart';
 import 'package:finance_tracker/domain/entities/contact.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/domain/services/finance_summary_calculator.dart';
+import 'package:finance_tracker/domain/services/insights_calculator.dart';
 import 'package:finance_tracker/domain/services/report_calculator.dart';
 import 'package:finance_tracker/domain/services/report_period.dart';
 import 'package:get/get.dart';
@@ -23,9 +25,11 @@ class HomeController extends GetxController {
     this._transactionRepository,
     this._contactRepository,
     this._categoryRepository,
-    this._notifier,
-  );
+    this._notifier, {
+    this._loanRepository,
+  });
 
+  final LoanRepository? _loanRepository;
   final AccountRepository _accountRepository;
   final TransactionRepository _transactionRepository;
   final ContactRepository _contactRepository;
@@ -49,8 +53,16 @@ class HomeController extends GetxController {
   final Rx<KhataSummary> khata = KhataSummary.zero.obs;
   final RxInt contactCount = 0.obs;
 
+  /// True when any loan still has something outstanding; the net worth line
+  /// then says it counts loans.
+  final RxBool hasLoans = false.obs;
+
   /// This month's expense by category, largest first.
   final RxList<CategoryTotal> monthCategories = <CategoryTotal>[].obs;
+
+  /// Net worth, and this month's spending against the same days of last
+  /// month (InsightsCalculator).
+  final Rx<MonthInsights> insights = MonthInsights.zero.obs;
 
   /// Every stored category row, so dashboard rows and the top-categories list
   /// keep their labels after a category is switched off, deleted, or
@@ -107,6 +119,8 @@ class HomeController extends GetxController {
         _contactRepository.getAllContactTransactions(),
         _categoryRepository.getAllCategories(),
       );
+      final ({Decimal given, Decimal taken})? loans = await _loanRepository
+          ?.outstandingTotals();
 
       final List<Account> active = loadedAccounts
           .where((Account a) => a.isActive)
@@ -145,6 +159,17 @@ class HomeController extends GetxController {
         contacts,
         contactTransactions,
       );
+      insights.value = InsightsCalculator.month(
+        transactions: transactions,
+        accountsBalance: currentBalance.value,
+        khata: khata.value,
+        now: now,
+        loansGiven: loans?.given,
+        loansTaken: loans?.taken,
+      );
+      hasLoans.value =
+          loans != null &&
+          (loans.given > Decimal.zero || loans.taken > Decimal.zero);
       contactCount.value = contacts.length;
       _hasLoaded = true;
     } on AppException catch (failure) {

@@ -17,6 +17,7 @@ class TransactionModel {
   final String? attachmentUrl;
   final String? splitExpenseId;
   final String? splitSettlementId;
+  final String? loanId;
   final String createdAt;
   final String updatedAt;
   final String? deletedAt;
@@ -37,6 +38,7 @@ class TransactionModel {
     this.attachmentUrl,
     this.splitExpenseId,
     this.splitSettlementId,
+    this.loanId,
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
@@ -59,6 +61,7 @@ class TransactionModel {
         attachmentUrl: json['attachment_url'] as String?,
         splitExpenseId: json['split_expense_id'] as String?,
         splitSettlementId: json['split_settlement_id'] as String?,
+        loanId: json['loan_id'] as String?,
         createdAt: json['created_at'] as String,
         updatedAt: json['updated_at'] as String,
         deletedAt: json['deleted_at'] as String?,
@@ -80,6 +83,8 @@ class TransactionModel {
     'attachment_url': attachmentUrl,
     'split_expense_id': splitExpenseId,
     'split_settlement_id': splitSettlementId,
+    // Only when set, so plain rows still sync before the migration.
+    'loan_id': ?loanId,
     'created_at': createdAt,
     'updated_at': updatedAt,
     'deleted_at': deletedAt,
@@ -101,6 +106,7 @@ class TransactionModel {
     attachmentUrl: attachmentUrl,
     splitExpenseId: splitExpenseId,
     splitSettlementId: splitSettlementId,
+    loanId: loanId,
     createdAt: DateTime.parse(createdAt),
     updatedAt: DateTime.parse(updatedAt),
     deletedAt: deletedAt != null ? DateTime.parse(deletedAt!) : null,
@@ -123,6 +129,7 @@ class TransactionModel {
         attachmentUrl: transaction.attachmentUrl,
         splitExpenseId: transaction.splitExpenseId,
         splitSettlementId: transaction.splitSettlementId,
+        loanId: transaction.loanId,
         createdAt: transaction.createdAt.toIso8601String(),
         updatedAt: transaction.updatedAt.toIso8601String(),
         deletedAt: transaction.deletedAt?.toIso8601String(),

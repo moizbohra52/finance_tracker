@@ -35,6 +35,14 @@ User pays ₹2,000 -> receivable becomes ₹3,000.
 If user owes contact ₹5,000 -> payable ₹5,000.
 User pays ₹2,000 -> payable becomes ₹3,000.
 
+Balance = signed opening balance + the entries' signed amounts
+(`ContactTransaction.signedOf`: credit, payment made and adjustment add;
+debit and payment received subtract). The contact screen loads its ledger 30
+entries at a time, so it takes the entries' total from
+`ContactRepository.getEntriesTotal`, which reads only the type and amount
+columns, and adds it with `Contact.balanceWith`. The statement PDF and a
+contact delete read the whole ledger, never just the loaded pages.
+
 ## Opening balance
 Opening balance is the starting point for an account/contact. It must be included in current balance.
 
@@ -196,6 +204,147 @@ Checked examples:
 Pairs with amount 0 are omitted; a negative result is stored with debtor and
 creditor swapped. A settlement `from → to` of `x` reduces what `from` owes
 `to`; paying more than the outstanding amount flips the direction.
+
+## Loans
+Money borrowed (`taken`) or lent (`given`), repaid in one of two ways. The
+`loans` and `loan_payments` tables are the source of truth; the user's account
+movements, interest expense/income and the reminder are derived rows written
+with them. All maths lives in `domain/services/loan_calculator.dart`, exact
+`Decimal`s (never `double` for money), rounded half up to paisa at each step.
+A monthly rate is stored as `annual_rate` = rate × 12.
+
+Dates are calendar dates (the local date of `paid_at`, no time). A due date
+keeps the day of the month, clamped to the month's length (31 Jan -> 28/29
+Feb). Rows with `deleted_at` set are ignored everywhere.
+
+### EMI loans
+- r = annual_rate / 1200. EMI = P·r·(1+r)ⁿ / ((1+r)ⁿ − 1); P / n when r = 0.
+  Example: ₹5,00,000 at 9% over 60 months = ₹10,379.18.
+- A scheduled payment's interest = outstanding × r; its principal = EMI −
+  interest. First EMI: 10,379.18 = 6,629.18 principal + 3,750.00 interest. The
+  last one takes exactly the outstanding (principal 10,301.71, total 10,378.97);
+  interest over the 60 months is ₹1,22,750.59. A zero rate over 3 months of
+  ₹1,000 ends 333.33, 333.33, 333.34.
+- Due date k = first_due_date + (k − 1) months. The next due date is that of
+  (live scheduled payments + 1).
+- Remaining EMIs. With no live `extra` payment: tenure − live scheduled
+  payments (at least 1 while something is owed), and the last one takes exactly
+  the outstanding. With an `extra` payment, the EMI stays and the months
+  shrink: ceil(ln(E / (E − O·r)) / ln(1 + r) − 1e-9) (doubles, only to count
+  months), or ceil(O / E) when r = 0. Why: the EMI is rounded to paisa, so
+  counting months from the EMI alone gives a 61st payment of a few paise on
+  most fresh loans (1,454 of 3,000 random ones); counting from the tenure ends
+  every fresh loan on its tenure.
+- After 12 EMIs and ₹1,00,000 prepaid: ₹3,17,084.97 owed, 35 EMIs left (the
+  13th due on 5 Feb 2028, the last numbered 47 at ₹8,592.08).
+- The schedule of remaining EMIs is computed for display, never stored.
+
+### Monthly-interest loans
+- m = annual_rate / 1200. Interest is counted in whole months: month k is
+  complete on its anniversary, start_date + k months, and costs
+  `round(m × principal owed at the start of that month)`; the principal owed
+  there ignores payments dated after the month's start.
+- Unpaid interest at D = interest accrued by D − interest parts of payments
+  dated on or before D, never below 0. Part months carry no interest.
+- The next due date is the first anniversary of start_date after the latest
+  live payment (after the start when there is none), not "after today": it
+  needs no clock and an unpaid month stays overdue. The next amount is the
+  unpaid interest on that date.
+- Example (Ravi, ₹10,000 at 2% a month, annual_rate 24, from 1 Jan 2027):
+  400 accrued on 15 Mar. A payment of 3,000 that day splits 400 interest +
+  2,600 principal; 7,400 is then owed, the next due date is 1 Apr and the next
+  amount 200.00 (March's month started on 1 Mar at ₹10,000); on 1 May the
+  unpaid interest is 348.00 (April's 148 is on ₹7,400). Closing on 15 Mar is
+  10,400 (400 + 10,000).
+- Short months: ₹1,000 at 24% from 31 Jan 2027 has 0 complete months on 27 Feb,
+  1 on 28 Feb (interest 20), 2 on 31 Mar, 3 on 30 Apr. A payment of 20 on 28
+  Feb is all interest and the next due date is 31 Mar.
+
+### Payment splits
+`LoanCalculator.suggest` proposes the split; the user can change it. The
+principal part reduces the outstanding (outstanding = principal − principal
+parts of live payments). Interest comes first:
+- EMI `scheduled`, no amount: the next schedule row. With an amount: interest =
+  min(amount, outstanding × r), the rest principal (3,000 on the first EMI is
+  all interest).
+- EMI `extra`: all principal; closing = the whole outstanding (₹4,17,084.97
+  after 12 EMIs, no interest). A charge the bank adds is typed as its interest
+  part.
+- Monthly: interest = min(amount, unpaid interest at `paid_at`), the rest
+  principal; no amount = the unpaid interest, or outstanding + unpaid interest
+  when closing.
+
+A one-tap payment from a reminder (the notification's Paid button or the
+reminder's Mark as paid) records the suggestion of the scheduled payment due
+now, with no amount typed: the split above, from the loan's own account, dated
+today but never before the loan start or its latest live payment
+(`LoanCalculator.paymentDay`), through the same validation as a typed payment.
+Nothing is recorded for a closed loan or when nothing is due, and an account
+that is deactivated or deleted is refused ("Choose an account"). Its id is
+derived from the instalment it pays (`LoanIds.duePayment`: the instalment
+number for an EMI loan, the due date for a monthly-interest loan), so the same
+instalment recorded twice is one payment.
+
+### Validation
+Each refusal is an English message key, in this order.
+
+Loan (`validateLoan`): name not blank; account chosen; principal > 0; principal
+and EMI have at most 2 decimals; rate 0..60% a year (monthly loans: 0..5% a
+month); EMI loans only: tenure 1..480 months, EMI > 0, an EMI that does not
+cover the first month's interest (rate > 0 and EMI ≤ P·r) is refused, first due
+date chosen and not before the start date. (An EMI of 3,750.00 on the example
+loan is refused.)
+
+Payment (`validatePayment`, against the loan's other live payments):
+- amount > 0; at most 2 decimals; principal + interest = amount, no negative
+  part
+- not dated before the latest live payment or the loan start (back-dating would
+  leave the stored splits of later payments stale); the same day is allowed
+- the loan is not already repaid; the principal part is at most the
+  outstanding (417,084.98 on 417,084.97 owed is refused)
+- monthly only: the amount is at most outstanding + unpaid interest at
+  `paid_at` (10,401 on Ravi at 15 Mar is refused)
+- the interest part of an EMI or closing payment is not capped (it is the
+  bank's figure); 417,084.97 + a 5,000 charge is accepted
+
+### Derived rows
+Deterministic ids (UUID v5), so a retried save upserts the same rows. A part of
+zero writes no row. A derived row has `contact_id` null: a loan never touches
+the khata.
+
+| Event | Row | Type | Category key | Id seed |
+|---|---|---|---|---|
+| Loan taken, `moved_money` | money in to `account_id` | `payment_received` | `loan_taken` | `loan:<loan id>` |
+| Loan given, `moved_money` | money out of `account_id` | `payment_made` | `loan_given` | `loan:<loan id>` |
+| Payment on a loan taken | principal out | `payment_made` | `loan_repayment_made` | `loan-payment:<id>:principal` |
+| | interest out | `expense` | `loan_interest_paid` | `loan-payment:<id>:interest` |
+| Payment on a loan given | principal in | `payment_received` | `loan_repayment_received` | `loan-payment:<id>:principal` |
+| | interest in | `income` | `loan_interest_received` | `loan-payment:<id>:interest` |
+
+`payment_made` and `payment_received` move the account balance and are left
+out of income and expense totals, as for khata entries; interest rows count as
+expense or income.
+
+## Home insights
+`InsightsCalculator` (domain/services), shown on the home screen.
+
+- **Net worth** = current balance of active accounts + total khata
+  receivable - total khata payable + outstanding of loans given - outstanding
+  of loans taken (live loans, `LoanRepository.outstandingTotals`). Archived
+  accounts are left out, as in the overall balance. Shown only when it differs
+  from the balance, that is when someone owes or is owed money; the line reads
+  "incl. khata and loans" while any loan has something outstanding.
+- **Spending so far** compares this month with the same days of last month:
+  this month from the 1st to the end of today, last month from the 1st to the
+  end of the same day of the month, or to its last day when it is shorter
+  (31 March compares with all of February). Spending is expense only, as in
+  the monthly summary: transfers, adjustments and deleted rows do not count.
+- **Change** = (this month - last month) / last month x 100, rounded to a
+  whole percent. No percent is shown when last month had no spending by then.
+- **Biggest rise** is the expense category with the largest increase over
+  the same two windows; a category new this month counts its whole amount.
+  None is shown when no category rose. A tie goes to the category with more
+  spending this month.
 
 ## Validation
 - amount > 0

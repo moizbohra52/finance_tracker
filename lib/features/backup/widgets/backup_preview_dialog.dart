@@ -244,6 +244,10 @@ class _BackupPreviewDialogState extends State<BackupPreviewDialog> {
         return 'Expense parts'.tr;
       case 'split_settlements':
         return 'Settlements'.tr;
+      case 'loans':
+        return 'Loans'.tr;
+      case 'loan_payments':
+        return 'Loan payments'.tr;
       case 'user_settings':
         return 'Preferences & Settings'.tr;
       case 'profiles':

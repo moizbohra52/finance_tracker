@@ -132,6 +132,11 @@ const List<String> translatedFiles = <String>[
   'lib/features/split/views/split_settlement_form_view.dart',
   'lib/features/split/views/split_expense_form_view.dart',
   'lib/features/split/widgets/split_member_picker_sheet.dart',
+  // Part 6: loans and EMIs
+  'lib/features/loans/views/loan_list_view.dart',
+  'lib/features/loans/views/loan_form_view.dart',
+  'lib/features/loans/views/loan_detail_view.dart',
+  'lib/features/loans/views/loan_payment_form_view.dart',
 ];
 
 /// Files whose `.tr` keys are checked but whose other literals are not
@@ -219,6 +224,7 @@ void main() {
       for (final SnoozeOption o in SnoozeOption.values) o.label,
       for (final AvatarProblem p in AvatarProblem.values) p.message,
       for (final ReminderAction a in ReminderAction.values) a.label,
+      ReminderAction.done.labelFor(loan: true),
       // Notification bodies, made in the domain and translated when scheduled.
       for (final ReminderType t in ReminderType.values)
         ReminderNotificationPlanner.bodyFor(t),

@@ -1,4 +1,9 @@
+import 'package:decimal/decimal.dart';
 import 'package:finance_tracker/core/errors/app_exception.dart';
+import 'package:finance_tracker/core/utils/app_formatters.dart';
+import 'package:finance_tracker/core/widgets/app_card.dart';
+import 'package:finance_tracker/domain/entities/contact.dart';
+import 'package:finance_tracker/domain/entities/loan.dart';
 import 'package:finance_tracker/domain/entities/transaction.dart';
 import 'package:finance_tracker/features/accounts/views/account_detail_view.dart';
 import 'package:finance_tracker/features/accounts/views/account_form_view.dart';
@@ -11,6 +16,8 @@ import 'package:finance_tracker/features/transactions/views/transaction_form_vie
 import 'package:finance_tracker/features/transactions/views/transaction_list_view.dart';
 import 'package:finance_tracker/widgets/account_list_item.dart';
 import 'package:finance_tracker/widgets/contact_list_item.dart';
+import 'package:finance_tracker/widgets/transaction_day_header.dart';
+import 'package:finance_tracker/widgets/transaction_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -98,6 +105,108 @@ void main() {
       expect(find.text('Salary'), findsOneWidget);
       expect(find.text('−₹250.00'), findsOneWidget);
       expect(find.text('+₹5,000.00'), findsOneWidget);
+
+      // Grouped under the day, and each row is its own card, not one card
+      // inside another.
+      expect(
+        find.widgetWithText(TransactionDayHeader, 'Today'),
+        findsOneWidget,
+      );
+      expect(
+        find.ancestor(
+          of: find.byType(TransactionListItem).first,
+          matching: find.byType(AppCard),
+        ),
+        findsNothing,
+      );
+    });
+
+    testWidgets('shows net worth and this month against last month', (
+      WidgetTester tester,
+    ) async {
+      final DateTime now = DateTime.now();
+      final FakeFinance f = FakeFinance()..addAccount('Cash', '10000');
+      // The 1st of each month is inside "so far" whatever today's date.
+      f.addTransaction(
+        id: 'this-month',
+        type: TransactionType.expense,
+        amount: '1500',
+        categoryId: 'cat-food',
+        date: DateTime(now.year, now.month),
+      );
+      f.addTransaction(
+        id: 'last-month',
+        type: TransactionType.expense,
+        amount: '1000',
+        categoryId: 'cat-food',
+        date: DateTime(now.year, now.month - 1),
+      );
+      // Ravi owes the user 2,500, so net worth is above the balance.
+      f.contacts.add(
+        Contact(
+          id: 'c-ravi',
+          userId: 'user-1',
+          name: 'Ravi',
+          openingBalance: Decimal.parse('2500'),
+          openingBalanceType: 'receivable',
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+      await _start(tester, finance: f);
+
+      // 10,000 - 1,500 - 1,000 = 7,500 in accounts, + 2,500 owed.
+      expect(find.text('Net worth incl. khata ₹10,000.00'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('50% more than the same days last month'),
+        200,
+      );
+      expect(
+        find.text('50% more than the same days last month'),
+        findsOneWidget,
+      );
+      expect(find.text('Food & Dining spending up ₹500.00'), findsOneWidget);
+    });
+
+    testWidgets('net worth counts loans and says so', (
+      WidgetTester tester,
+    ) async {
+      final FakeFinance f = FakeFinance()..addAccount('Cash', '10000');
+      f.loans.add(
+        Loan(
+          id: 'loan-1',
+          userId: 'user-1',
+          direction: LoanDirection.taken,
+          method: LoanMethod.emi,
+          name: 'HDFC Home Loan',
+          accountId: f.accounts.first.id,
+          principal: Decimal.parse('500000'),
+          annualRate: Decimal.parse('9'),
+          tenureMonths: 60,
+          emiAmount: Decimal.parse('10379.18'),
+          startDate: DateTime(2026, 11),
+          firstDueDate: DateTime(2026, 12),
+          movedMoney: false,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+      await _start(tester, finance: f);
+
+      final String amount = AppFormatters.money(
+        Decimal.parse('10000') - Decimal.parse('500000'),
+      );
+      expect(
+        find.text('Net worth incl. khata and loans $amount'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('hides net worth when there is no khata', (
+      WidgetTester tester,
+    ) async {
+      await _start(tester, finance: _seeded());
+      expect(find.textContaining('Net worth'), findsNothing);
     });
 
     testWidgets('shows an error with retry when loading fails', (
@@ -278,6 +387,43 @@ void main() {
       expect(find.text('Food & Dining'), findsNothing);
     });
 
+    testWidgets('swiping a row left deletes it after the same confirmation', (
+      WidgetTester tester,
+    ) async {
+      final FakeFinance f = await _start(tester, finance: _seeded());
+      await _tapNav(tester, Icons.receipt_long_outlined);
+
+      Future<void> swipeLunch() async {
+        await tester.drag(find.text('Food & Dining'), const Offset(-600, 0));
+        await tester.pumpAndSettle();
+      }
+
+      await swipeLunch();
+      expect(find.text('Delete transaction?'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+      expect(
+        f.transactions.every((Transaction t) => t.deletedAt == null),
+        isTrue,
+      );
+      expect(
+        find.text('Food & Dining'),
+        findsOneWidget,
+        reason: 'it springs back',
+      );
+
+      await swipeLunch();
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+      expect(
+        f.transactions.firstWhere((Transaction t) => t.id == 't1').deletedAt,
+        isNotNull,
+      );
+      expect(find.text('Food & Dining'), findsNothing);
+      expect(find.text('Transaction deleted'), findsOneWidget);
+      expect(find.text('Salary'), findsOneWidget);
+    });
+
     testWidgets('see all from home opens the list route and goes back', (
       WidgetTester tester,
     ) async {
@@ -319,6 +465,35 @@ void main() {
       expect(find.text('Yesterday'), findsOneWidget);
       expect(find.text('Salary'), findsOneWidget);
       expect(find.text('Food & Dining'), findsNWidgets(2));
+    });
+
+    testWidgets('a row on the account screen deletes with a swipe', (
+      WidgetTester tester,
+    ) async {
+      // Tall enough that the row to swipe is fully on screen.
+      tester.view.physicalSize = const Size(800, 1800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final FakeFinance f = await _start(tester, finance: _seeded());
+      await tester.scrollUntilVisible(find.byType(AccountTile), 200);
+      await tapAndSettle(tester, find.byType(AccountTile));
+      await tester.scrollUntilVisible(find.text('Salary'), 200);
+
+      await tester.drag(find.text('Salary'), const Offset(-600, 0));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete transaction?'), findsOneWidget);
+      await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+      await tester.pumpAndSettle();
+
+      expect(
+        f.transactions.firstWhere((Transaction t) => t.id == 't2').deletedAt,
+        isNotNull,
+      );
+      expect(find.byType(AccountDetailView), findsOneWidget);
+      expect(find.text('Salary'), findsNothing);
+      // The balance follows: 1,000 opening - 250 lunch.
+      expect(find.text('₹750.00'), findsWidgets);
     });
   });
 
