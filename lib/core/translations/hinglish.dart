@@ -1309,7 +1309,8 @@ const Map<String, String> hinglish = <String, String>{
   '+ @amount added from income': '+ @amount aamdani se jude',
   // Loans screens
   'No loans yet': 'Abhi koi loan nahi',
-  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.': 'Aapne jo loan liya ya diya, uski EMI, baaki rakam aur agli kist kab hai, yahan dekhein.',
+  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.':
+      'Aapne jo loan liya ya diya, uski EMI, baaki rakam aur agli kist kab hai, yahan dekhein.',
   'Add loan': 'Loan jodein',
   'Taken': 'Liye hue',
   'Given': 'Diye hue',
@@ -1322,7 +1323,8 @@ const Map<String, String> hinglish = <String, String>{
   'Loan added': 'Loan jod diya gaya',
   'Loan updated': 'Loan update ho gaya',
   'Edit loan': 'Loan edit karein',
-  'Terms are locked after the first payment': 'Pehli kist ke baad sharten badal nahi sakti',
+  'Terms are locked after the first payment':
+      'Pehli kist ke baad sharten badal nahi sakti',
   'Monthly interest': 'Mahine ka byaaj',
   'EMI': 'EMI',
   'Loan name': 'Loan ka naam',
@@ -1333,20 +1335,24 @@ const Map<String, String> hinglish = <String, String>{
   'Interest rate (% a year)': 'Byaaj dar (% saal)',
   'Interest rate (% a month)': 'Byaaj dar (% mahina)',
   'Tenure (months)': 'Avadhi (mahine)',
-  'Filled from the amount, rate and tenure. Change it to match your bank.': 'Rakam, dar aur avadhi se bhari gayi hai. Bank ki EMI se milane ke liye badal sakte hain.',
+  'Filled from the amount, rate and tenure. Change it to match your bank.':
+      'Rakam, dar aur avadhi se bhari gayi hai. Bank ki EMI se milane ke liye badal sakte hain.',
   'First EMI date': 'Pehli EMI ki tareekh',
   'Money came into this account': 'Paise is account mein aaye',
   'Money went out of this account': 'Paise is account se gaye',
-  'Turn off if the loan is older than your records.': 'Agar loan aapke records se purana hai to band karein.',
+  'Turn off if the loan is older than your records.':
+      'Agar loan aapke records se purana hai to band karein.',
   'EMIs and money lent': 'EMI aur diye hue paise',
   'Outstanding': 'Baaki rakam',
   'Delete this loan?': 'Yeh loan hatayein?',
   'Delete loan': 'Loan hatayein',
-  'This deletes the loan, its @count payments and their transactions.': 'Isse loan, uski @count kistein aur unke transactions hat jayenge.',
+  'This deletes the loan, its @count payments and their transactions.':
+      'Isse loan, uski @count kistein aur unke transactions hat jayenge.',
   'Loan deleted': 'Loan hata diya gaya',
   'Loan not found': 'Loan nahi mila',
   'Closed': 'Band',
-  '@percent% repaid · loan amount @amount': '@percent% chuka diya · loan rakam @amount',
+  '@percent% repaid · loan amount @amount':
+      '@percent% chuka diya · loan rakam @amount',
   'Interest paid so far': 'Ab tak diya gaya byaaj',
   'Record payment': 'Kist darj karein',
   'Prepay': 'Pehle chukayein',
@@ -1366,7 +1372,12 @@ const Map<String, String> hinglish = <String, String>{
   'Payment updated': 'Kist update ho gayi',
   'Payment deleted': 'Kist hata di gayi',
   'EMI @number · @date': 'EMI @number · @date',
-  'Principal @principal · Interest @interest': 'Mool @principal · Byaaj @interest',
+  'Principal @principal · Interest @interest':
+      'Mool @principal · Byaaj @interest',
   'Prepayment · @date': 'Pehle ki adaygi · @date',
   'Interest': 'Byaaj',
+  // Home screen widget and app icon shortcuts
+  '@month expense': '@month ka kharcha',
+  'Tap to open': 'Kholne ke liye tap karein',
+  'Khata entry': 'Khata entry',
 };

@@ -15,6 +15,7 @@ import 'package:finance_tracker/domain/services/finance_summary_calculator.dart'
 import 'package:finance_tracker/domain/services/insights_calculator.dart';
 import 'package:finance_tracker/domain/services/report_calculator.dart';
 import 'package:finance_tracker/domain/services/report_period.dart';
+import 'package:finance_tracker/features/dashboard/services/home_widget_service.dart';
 import 'package:get/get.dart';
 
 /// Presentation state for the home dashboard and the reports tab. All totals
@@ -27,9 +28,11 @@ class HomeController extends GetxController {
     this._categoryRepository,
     this._notifier, {
     this._loanRepository,
+    this._homeWidget,
   });
 
   final LoanRepository? _loanRepository;
+  final HomeWidgetService? _homeWidget;
   final AccountRepository _accountRepository;
   final TransactionRepository _transactionRepository;
   final ContactRepository _contactRepository;
@@ -172,6 +175,11 @@ class HomeController extends GetxController {
           (loans.given > Decimal.zero || loans.taken > Decimal.zero);
       contactCount.value = contacts.length;
       _hasLoaded = true;
+      _homeWidget?.show(
+        balance: currentBalance.value,
+        monthExpense: month.value.expense,
+        month: now,
+      );
     } on AppException catch (failure) {
       error.value = failure.message;
     } finally {

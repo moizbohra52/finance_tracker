@@ -1144,26 +1144,29 @@ class _NoAccountsCard extends StatelessWidget {
   }
 }
 
+/// Opens the new income or expense form. Also used by the app icon's
+/// shortcuts (app_shortcuts.dart).
+void addTransaction(TransactionType type) => Get.toNamed<void>(
+  AppRoutes.transactionForm,
+  arguments: TransactionFormArgs(type: type),
+);
+
+/// Asks which contact, then opens a new khata entry for them.
+Future<void> addKhataEntry(ContactTransactionType type) async {
+  final Contact? contact = await pickContact();
+  if (contact == null) return;
+  await Get.toNamed<void>(
+    AppRoutes.contactEntry,
+    arguments: ContactEntryArgs(
+      contactId: contact.id,
+      contactName: contact.name,
+      type: type,
+    ),
+  );
+}
+
 class _QuickActions extends StatelessWidget {
   const _QuickActions();
-
-  void _addTransaction(TransactionType type) => Get.toNamed<void>(
-    AppRoutes.transactionForm,
-    arguments: TransactionFormArgs(type: type),
-  );
-
-  Future<void> _addEntry(ContactTransactionType type) async {
-    final Contact? contact = await pickContact();
-    if (contact == null) return;
-    await Get.toNamed<void>(
-      AppRoutes.contactEntry,
-      arguments: ContactEntryArgs(
-        contactId: contact.id,
-        contactName: contact.name,
-        type: type,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1176,25 +1179,25 @@ class _QuickActions extends StatelessWidget {
         icon: Icons.south_west_rounded,
         label: 'Income'.tr,
         color: money.income,
-        onTap: () => _addTransaction(TransactionType.income),
+        onTap: () => addTransaction(TransactionType.income),
       ),
       (
         icon: Icons.north_east_rounded,
         label: 'Expense'.tr,
         color: money.expense,
-        onTap: () => _addTransaction(TransactionType.expense),
+        onTap: () => addTransaction(TransactionType.expense),
       ),
       (
         icon: Icons.add_card_outlined,
         label: 'Credit'.tr,
         color: money.receivable,
-        onTap: () => _addEntry(ContactTransactionType.credit),
+        onTap: () => addKhataEntry(ContactTransactionType.credit),
       ),
       (
         icon: Icons.remove_circle_outline,
         label: 'Debit'.tr,
         color: money.payable,
-        onTap: () => _addEntry(ContactTransactionType.debit),
+        onTap: () => addKhataEntry(ContactTransactionType.debit),
       ),
       (
         icon: Icons.swap_horiz_rounded,

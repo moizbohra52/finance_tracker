@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:finance_tracker/core/services/notification_coordinator.dart';
 import 'package:finance_tracker/core/widgets/app_app_bar.dart';
 import 'package:finance_tracker/core/widgets/app_bottom_navigation.dart';
@@ -6,6 +8,7 @@ import 'package:finance_tracker/core/widgets/offline_widgets.dart';
 import 'package:finance_tracker/features/auth/widgets/account_switcher_sheet.dart';
 import 'package:finance_tracker/features/auth/widgets/confirm_sign_out.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
+import 'package:finance_tracker/features/dashboard/app_shortcuts.dart';
 import 'package:finance_tracker/features/dashboard/views/dashboard_view.dart';
 import 'package:finance_tracker/features/notifications/widgets/notification_bell.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
@@ -38,9 +41,11 @@ class _AppShellViewState extends State<AppShellView> {
     super.initState();
     // From here a notification tap can open its screen on top of the shell,
     // and one that launched the app is opened now.
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _notifications.markShellReady(this),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notifications.markShellReady(this);
+      // Same for an app icon shortcut.
+      unawaited(setUpAppShortcuts(isShellActive: () => mounted));
+    });
   }
 
   @override

@@ -137,6 +137,9 @@ const List<String> translatedFiles = <String>[
   'lib/features/loans/views/loan_form_view.dart',
   'lib/features/loans/views/loan_detail_view.dart',
   'lib/features/loans/views/loan_payment_form_view.dart',
+  // Home screen widget and app icon shortcuts
+  'lib/features/dashboard/services/home_widget_service.dart',
+  'lib/features/dashboard/app_shortcuts.dart',
 ];
 
 /// Files whose `.tr` keys are checked but whose other literals are not

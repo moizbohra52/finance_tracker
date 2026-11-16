@@ -167,6 +167,27 @@ Settings > *Switch account*). `AccountSwitchController`
 - In the UI the action is "Sign in to another account", never "Add account",
   which already means adding a cash/bank account.
 
+## Home screen widget and app icon shortcuts (2026-11-16)
+- **Widget (Android only).** `HomeController.load` hands the current balance
+  and this month's expense to `HomeWidgetService`
+  (`features/dashboard/services`, permanent), which formats them and sends
+  ready-to-show text over the `com.finance.tracker/home_widget` channel.
+  `MainActivity` stores it in its own preferences file and refreshes
+  `BalanceWidget.kt` (an `AppWidgetProvider`; no timed updates). No
+  calculation happens natively. The label names the month, so a widget not
+  refreshed since the month turned does not claim to be "this month".
+  Masked while app lock is on (`docs/04_SECURITY_RLS.md`); cleared by
+  `resetUserScope()`. iOS has no widget yet: it needs a WidgetKit extension
+  target and an App Group, which can only be built on a Mac.
+- **Shortcuts (Android and iOS).** `quick_actions` (flutter.dev's own
+  plugin, added for this) publishes *Add expense*, *Add income* and *Khata
+  entry* from `setUpAppShortcuts` (`features/dashboard/app_shortcuts.dart`),
+  called once the signed-in shell is up, like
+  `NotificationCoordinator.markShellReady`. They run the home screen's quick
+  actions (`addTransaction`, `addKhataEntry` in `dashboard_view.dart`). A
+  shortcut tapped while signed out opens its form after sign-in. Labels are
+  set in the app's language at each start.
+
 Formatting is centralised in `AppFormatters`, which reads `UserPreferences`.
 Widgets pass no symbols, locales or patterns of their own, except fixed labels
 such as chart axes.

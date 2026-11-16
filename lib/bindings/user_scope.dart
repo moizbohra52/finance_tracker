@@ -9,6 +9,7 @@ import 'package:finance_tracker/features/budgets/controllers/budget_controller.d
 import 'package:finance_tracker/features/contacts/controller/contact_controller.dart';
 import 'package:finance_tracker/features/contacts/controller/contact_form_controller.dart';
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
+import 'package:finance_tracker/features/dashboard/services/home_widget_service.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_list_controller.dart';
 import 'package:finance_tracker/features/notifications/controllers/notification_center_controller.dart';
 import 'package:finance_tracker/features/profile/controllers/profile_controller.dart';
@@ -48,6 +49,10 @@ void loadUserScope() {
 void resetUserScope() {
   if (Get.isRegistered<SettingsController>()) {
     Get.find<SettingsController>().reset();
+  }
+  // The home screen widget stops showing this account's figures.
+  if (Get.isRegistered<HomeWidgetService>()) {
+    Get.find<HomeWidgetService>().clear();
   }
   for (final void Function() remove in _userScopedRemovers) {
     remove();

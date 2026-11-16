@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home screen widget text shown before the app has sent its own (in the
+     app's language) and in the widget picker. -->
+<resources>
+    <string name="widget_name">Balance</string>
+    <string name="widget_description">Your balance and this month\'s expense</string>
+    <string name="widget_balance">Current balance</string>
+    <string name="widget_expense">This month\'s expense</string>
+    <string name="widget_no_value">—</string>
+    <string name="widget_open_app">Open the app to see your balance</string>
+</resources>

@@ -1193,8 +1193,7 @@ const Map<String, String> hindi = <String, String>{
   'Open it in the group to change or delete it':
       'इसे बदलने या हटाने के लिए समूह में खोलें',
   'Open loan': 'ऋण खोलें',
-  'Open the loan to change or delete it':
-      'इसे बदलने या हटाने के लिए ऋण खोलें',
+  'Open the loan to change or delete it': 'इसे बदलने या हटाने के लिए ऋण खोलें',
   'Loan you took': 'आपका लिया हुआ ऋण',
   'Loan you gave': 'आपका दिया हुआ ऋण',
   '@name is in the group @group. Remove them from the group first.':
@@ -1291,7 +1290,8 @@ const Map<String, String> hindi = <String, String>{
   '+ @amount added from income': '+ @amount आमदनी से जुड़े',
   // Loans screens
   'No loans yet': 'अभी कोई ऋण नहीं',
-  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.': 'आपने जो ऋण लिया या दिया, उसकी किस्त, बाकी रकम और अगली किस्त कब है, यहाँ देखें।',
+  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.':
+      'आपने जो ऋण लिया या दिया, उसकी किस्त, बाकी रकम और अगली किस्त कब है, यहाँ देखें।',
   'Add loan': 'ऋण जोड़ें',
   'Taken': 'लिए हुए',
   'Given': 'दिए हुए',
@@ -1304,7 +1304,8 @@ const Map<String, String> hindi = <String, String>{
   'Loan added': 'ऋण जोड़ दिया गया',
   'Loan updated': 'ऋण अपडेट हो गया',
   'Edit loan': 'ऋण बदलें',
-  'Terms are locked after the first payment': 'पहली किस्त के बाद शर्तें बदली नहीं जा सकतीं',
+  'Terms are locked after the first payment':
+      'पहली किस्त के बाद शर्तें बदली नहीं जा सकतीं',
   'Monthly interest': 'हर महीने का ब्याज',
   'EMI': 'किस्त (EMI)',
   'Loan name': 'ऋण का नाम',
@@ -1315,16 +1316,19 @@ const Map<String, String> hindi = <String, String>{
   'Interest rate (% a year)': 'ब्याज दर (% साल)',
   'Interest rate (% a month)': 'ब्याज दर (% महीना)',
   'Tenure (months)': 'अवधि (महीने)',
-  'Filled from the amount, rate and tenure. Change it to match your bank.': 'रकम, दर और अवधि से भरी गई है। बैंक की किस्त से मिलाने के लिए बदल सकते हैं।',
+  'Filled from the amount, rate and tenure. Change it to match your bank.':
+      'रकम, दर और अवधि से भरी गई है। बैंक की किस्त से मिलाने के लिए बदल सकते हैं।',
   'First EMI date': 'पहली किस्त की तारीख',
   'Money came into this account': 'पैसे इस खाते में आए',
   'Money went out of this account': 'पैसे इस खाते से गए',
-  'Turn off if the loan is older than your records.': 'अगर ऋण आपके रिकॉर्ड से पुराना है तो बंद करें।',
+  'Turn off if the loan is older than your records.':
+      'अगर ऋण आपके रिकॉर्ड से पुराना है तो बंद करें।',
   'EMIs and money lent': 'किस्तें और दिया हुआ पैसा',
   'Outstanding': 'बाकी रकम',
   'Delete this loan?': 'यह ऋण हटाएँ?',
   'Delete loan': 'ऋण हटाएँ',
-  'This deletes the loan, its @count payments and their transactions.': 'इससे ऋण, उसकी @count किस्तें और उनके लेनदेन हट जाएँगे।',
+  'This deletes the loan, its @count payments and their transactions.':
+      'इससे ऋण, उसकी @count किस्तें और उनके लेनदेन हट जाएँगे।',
   'Loan deleted': 'ऋण हटा दिया गया',
   'Loan not found': 'ऋण नहीं मिला',
   'Closed': 'बंद',
@@ -1348,7 +1352,12 @@ const Map<String, String> hindi = <String, String>{
   'Payment updated': 'किस्त अपडेट हो गई',
   'Payment deleted': 'किस्त हटा दी गई',
   'EMI @number · @date': 'किस्त @number · @date',
-  'Principal @principal · Interest @interest': 'मूलधन @principal · ब्याज @interest',
+  'Principal @principal · Interest @interest':
+      'मूलधन @principal · ब्याज @interest',
   'Prepayment · @date': 'पहले की अदायगी · @date',
   'Interest': 'ब्याज',
+  // Home screen widget and app icon shortcuts
+  '@month expense': '@month का खर्च',
+  'Tap to open': 'खोलने के लिए टैप करें',
+  'Khata entry': 'खाता एंट्री',
 };
