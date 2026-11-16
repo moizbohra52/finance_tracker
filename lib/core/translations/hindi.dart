@@ -1360,4 +1360,50 @@ const Map<String, String> hindi = <String, String>{
   '@month expense': '@month का खर्च',
   'Tap to open': 'खोलने के लिए टैप करें',
   'Khata entry': 'खाता एंट्री',
+  // Import from a file
+  'Import transactions': 'लेन-देन इम्पोर्ट करें',
+  'From a bank statement or another app (CSV or Excel)':
+      'बैंक स्टेटमेंट या दूसरे ऐप से (CSV या Excel)',
+  'Imported entries go into one of your accounts.':
+      'इम्पोर्ट की गई एंट्री आपके किसी अकाउंट में जाती हैं।',
+  'Columns': 'कॉलम',
+  'Import from a file': 'फ़ाइल से इम्पोर्ट करें',
+  'CSV or Excel (.xlsx) from your bank or another app':
+      'आपके बैंक या दूसरे ऐप की CSV या Excel (.xlsx)',
+  'Rows: @count': 'पंक्तियाँ: @count',
+  'Choose file': 'फ़ाइल चुनें',
+  'Choose another file': 'दूसरी फ़ाइल चुनें',
+  'Entries already in the app are skipped, so importing the same file twice adds nothing.':
+      'ऐप में पहले से मौजूद एंट्री छोड़ दी जाती हैं, इसलिए वही फ़ाइल दो बार इम्पोर्ट करने से कुछ नहीं जुड़ता।',
+  'Not in file': 'फ़ाइल में नहीं',
+  'Import into account': 'किस अकाउंट में इम्पोर्ट करें',
+  'For rows without an account, or with one not in the app':
+      'जिन पंक्तियों में अकाउंट नहीं, या ऐसा अकाउंट जो ऐप में नहीं',
+  'Choose the Date column, and Amount or Debit/Credit.':
+      'तारीख का कॉलम चुनें, और रकम या डेबिट/क्रेडिट।',
+  'Entries imported: @count': 'इम्पोर्ट हुई एंट्री: @count',
+  'Preview': 'पूर्वावलोकन',
+  'New entries: @count': 'नई एंट्री: @count',
+  'Already in the app, skipped: @count': 'पहले से ऐप में, छोड़ी गईं: @count',
+  'Rows not read (totals, blank rows, transfers), skipped: @count':
+      'पढ़ी नहीं गईं पंक्तियाँ (कुल, खाली पंक्तियाँ, ट्रांसफ़र), छोड़ी गईं: @count',
+  'and @count more': 'और @count',
+  'Nothing new to import': 'इम्पोर्ट करने को कुछ नया नहीं',
+  'Import entries (@count)': 'एंट्री इम्पोर्ट करें (@count)',
+  'Balance now': 'अभी का बैलेंस',
+  'After import': 'इम्पोर्ट के बाद',
+  "Keep today's balance": 'आज का बैलेंस वही रखें',
+  'Adds one adjustment entry of @amount before the imported entries':
+      'इम्पोर्ट की गई एंट्री से पहले @amount की एक समायोजन एंट्री जुड़ेगी',
+  'The imported entries change this balance':
+      'इम्पोर्ट की गई एंट्री यह बैलेंस बदल देंगी',
+  'Debit (money out)': 'डेबिट (पैसा गया)',
+  'Credit (money in)': 'क्रेडिट (पैसा आया)',
+  'Type (income or expense)': 'प्रकार (आमदनी या खर्च)',
+  'No rows found in this file.': 'इस फ़ाइल में कोई पंक्ति नहीं मिली।',
+  'This file could not be read. Choose a CSV or Excel (.xlsx) file.':
+      'यह फ़ाइल पढ़ी नहीं जा सकी। CSV या Excel (.xlsx) फ़ाइल चुनें।',
+  'Open this file in Excel or Google Sheets and save it as .xlsx or .csv, then import that.':
+      'इस फ़ाइल को Excel या Google Sheets में खोलकर .xlsx या .csv में सेव करें, फिर उसे इम्पोर्ट करें।',
+  'Import adjustment': 'इम्पोर्ट समायोजन',
 };

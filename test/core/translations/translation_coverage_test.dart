@@ -140,6 +140,9 @@ const List<String> translatedFiles = <String>[
   // Home screen widget and app icon shortcuts
   'lib/features/dashboard/services/home_widget_service.dart',
   'lib/features/dashboard/app_shortcuts.dart',
+  // Import from a file
+  'lib/features/import/views/import_view.dart',
+  'lib/features/import/controllers/import_controller.dart',
 ];
 
 /// Files whose `.tr` keys are checked but whose other literals are not

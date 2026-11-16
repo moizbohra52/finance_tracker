@@ -454,6 +454,47 @@ class TransactionRepository {
     });
   }
 
+  /// Writes a file import (StatementImport) in one database transaction, so
+  /// it is saved whole or not at all, and queues every row. Rows keep their
+  /// ids, so a retried import writes the same rows again.
+  Future<void> importTransactions(List<Transaction> transactions) async {
+    if (transactions.isEmpty) return;
+    if (_db != null) {
+      final DateTime now = DateTime.now();
+      await _db.db.transaction((txn) async {
+        for (final Transaction t in transactions) {
+          final Map<String, dynamic> json = TransactionModel.fromEntity(
+            t,
+          ).toJson();
+          await txn.insert('transactions', <String, dynamic>{
+            ...json,
+            'sync_status': 'pending',
+          }, conflictAlgorithm: ConflictAlgorithm.replace);
+          await _enqueue(
+            txn,
+            SyncOperation.create,
+            'transactions',
+            t.id,
+            json,
+            now,
+          );
+        }
+      });
+      _syncEngine?.notifyNewQueueItem();
+      return;
+    }
+
+    await guardSupabase(
+      () => _supabaseClient.from('transactions').upsert(<Map<String, dynamic>>[
+        for (final Transaction t in transactions)
+          insertPayload(
+            _supabaseClient,
+            TransactionModel.fromEntity(t).toJson(),
+          ),
+      ]),
+    );
+  }
+
   /// With [savings] the income's contribution rows change in the same step
   /// (see [createTransaction]).
   Future<void> updateTransaction(

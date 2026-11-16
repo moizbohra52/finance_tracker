@@ -188,6 +188,18 @@ Settings > *Switch account*). `AccountSwitchController`
   shortcut tapped while signed out opens its form after sign-in. Labels are
   set in the app's language at each start.
 
+## Import from a file (2026-11-16)
+- `domain/services/statement_import.dart` (pure): header row, column
+  guesses, date/amount/type parsing, the plan (new rows, duplicates) and the
+  balance adjustment. Rules: `docs/05_FINANCIAL_LOGIC.md`.
+- `features/import`: `readImportFile` turns .csv (`csv`) or .xlsx (`excel`)
+  bytes into text rows in a background isolate; `ImportController` holds the
+  file, the column choice and the plan; `ImportView` at
+  `/import-transactions` (Settings > Data & backup).
+- `TransactionRepository.importTransactions` writes all rows and their sync
+  queue items in one database transaction: an import is saved whole or not
+  at all.
+
 Formatting is centralised in `AppFormatters`, which reads `UserPreferences`.
 Widgets pass no symbols, locales or patterns of their own, except fixed labels
 such as chart axes.

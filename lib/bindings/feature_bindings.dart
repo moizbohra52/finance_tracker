@@ -28,6 +28,7 @@ import 'package:finance_tracker/features/contacts/controller/contact_form_contro
 import 'package:finance_tracker/features/dashboard/controllers/home_controller.dart';
 import 'package:finance_tracker/features/dashboard/services/home_widget_service.dart';
 import 'package:finance_tracker/features/export/controllers/export_controller.dart';
+import 'package:finance_tracker/features/import/controllers/import_controller.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_detail_controller.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_form_controller.dart';
 import 'package:finance_tracker/features/loans/controllers/loan_list_controller.dart';
@@ -459,6 +460,19 @@ class ExportBinding extends Bindings {
       profileRepository: Get.isRegistered<ProfileRepository>()
           ? Get.find<ProfileRepository>()
           : null,
+    ),
+  );
+}
+
+class ImportBinding extends Bindings {
+  @override
+  void dependencies() => _putIfAbsent(
+    () => ImportController(
+      Get.find<TransactionRepository>(),
+      Get.find<AccountRepository>(),
+      Get.find<CategoryRepository>(),
+      Get.find<AuthRepository>(),
+      Get.find<DataChangeNotifier>(),
     ),
   );
 }

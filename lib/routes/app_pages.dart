@@ -29,6 +29,7 @@ import 'package:finance_tracker/features/contacts/views/contact_form_view.dart';
 import 'package:finance_tracker/features/contacts/views/contact_list_view.dart';
 import 'package:finance_tracker/features/dashboard/views/app_shell_view.dart';
 import 'package:finance_tracker/features/export/views/export_view.dart';
+import 'package:finance_tracker/features/import/views/import_view.dart';
 import 'package:finance_tracker/features/loans/views/loan_detail_view.dart';
 import 'package:finance_tracker/features/loans/views/loan_form_view.dart';
 import 'package:finance_tracker/features/loans/views/loan_list_view.dart';
@@ -197,6 +198,12 @@ abstract final class AppPages {
       page: () => const BackupView(),
       middlewares: <GetMiddleware>[AuthGuard()],
       binding: BackupBinding(),
+    ),
+    GetPage<dynamic>(
+      name: AppRoutes.importTransactions,
+      page: () => const ImportView(),
+      middlewares: <GetMiddleware>[AuthGuard()],
+      binding: ImportBinding(),
     ),
     // Accounts
     GetPage<dynamic>(

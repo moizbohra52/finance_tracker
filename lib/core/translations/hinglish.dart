@@ -1380,4 +1380,50 @@ const Map<String, String> hinglish = <String, String>{
   '@month expense': '@month ka kharcha',
   'Tap to open': 'Kholne ke liye tap karein',
   'Khata entry': 'Khata entry',
+  // Import from a file
+  'Import transactions': 'Transactions import karein',
+  'From a bank statement or another app (CSV or Excel)':
+      'Bank statement ya doosre app se (CSV ya Excel)',
+  'Imported entries go into one of your accounts.':
+      'Import ki gayi entries aapke kisi account me jaati hain.',
+  'Columns': 'Columns',
+  'Import from a file': 'File se import karein',
+  'CSV or Excel (.xlsx) from your bank or another app':
+      'Aapke bank ya doosre app ki CSV ya Excel (.xlsx)',
+  'Rows: @count': 'Rows: @count',
+  'Choose file': 'File chunein',
+  'Choose another file': 'Doosri file chunein',
+  'Entries already in the app are skipped, so importing the same file twice adds nothing.':
+      'App me pehle se maujood entries chhod di jaati hain, isliye wahi file do baar import karne se kuch nahi judta.',
+  'Not in file': 'File me nahi',
+  'Import into account': 'Kis account me import karein',
+  'For rows without an account, or with one not in the app':
+      'Jin rows me account nahi, ya aisa account jo app me nahi',
+  'Choose the Date column, and Amount or Debit/Credit.':
+      'Date ka column chunein, aur Amount ya Debit/Credit.',
+  'Entries imported: @count': 'Import hui entries: @count',
+  'Preview': 'Preview',
+  'New entries: @count': 'Nayi entries: @count',
+  'Already in the app, skipped: @count': 'Pehle se app me, chhodi gayi: @count',
+  'Rows not read (totals, blank rows, transfers), skipped: @count':
+      'Padhi nahi gayi rows (total, khaali rows, transfer), chhodi gayi: @count',
+  'and @count more': 'aur @count',
+  'Nothing new to import': 'Import karne ko kuch naya nahi',
+  'Import entries (@count)': 'Entries import karein (@count)',
+  'Balance now': 'Abhi ka balance',
+  'After import': 'Import ke baad',
+  "Keep today's balance": 'Aaj ka balance same rakhein',
+  'Adds one adjustment entry of @amount before the imported entries':
+      'Import ki gayi entries se pehle @amount ki ek adjustment entry judegi',
+  'The imported entries change this balance':
+      'Import ki gayi entries yeh balance badal dengi',
+  'Debit (money out)': 'Debit (paisa gaya)',
+  'Credit (money in)': 'Credit (paisa aaya)',
+  'Type (income or expense)': 'Type (aamdani ya kharcha)',
+  'No rows found in this file.': 'Is file me koi row nahi mili.',
+  'This file could not be read. Choose a CSV or Excel (.xlsx) file.':
+      'Yeh file padhi nahi ja saki. CSV ya Excel (.xlsx) file chunein.',
+  'Open this file in Excel or Google Sheets and save it as .xlsx or .csv, then import that.':
+      'Is file ko Excel ya Google Sheets me kholkar .xlsx ya .csv me save karein, phir woh import karein.',
+  'Import adjustment': 'Import adjustment',
 };

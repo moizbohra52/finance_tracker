@@ -135,6 +135,15 @@
 - Date/number format
 - Notification controls
 - Backup/export
+- Import transactions (2026-11-16): from a CSV or Excel (.xlsx) file, e.g. a
+  bank statement, another app's export or this app's own export. The app
+  finds the header row and guesses which column is the date, amount (or
+  debit/credit), type, category, note and account; the user can change each.
+  A preview shows new rows, duplicates and unreadable rows, and each account's
+  balance before and after (keep today's balance or let it change,
+  docs/05_FINANCIAL_LOGIC.md). Not yet: old .xls and PDF statements, khata
+  entries, transfers, creating missing categories (unmatched rows go to
+  Other Income / Other Expense).
 - Privacy/terms/about
 
 ## Acceptance philosophy

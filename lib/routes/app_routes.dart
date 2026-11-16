@@ -74,6 +74,7 @@ abstract final class AppRoutes {
   // Export and Backup
   static const String export = '/export';
   static const String backup = '/backup';
+  static const String importTransactions = '/import-transactions';
 
   /// Screens for signed-out users only.
   static const Set<String> guestOnly = <String>{
