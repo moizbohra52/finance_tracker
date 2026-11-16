@@ -1309,7 +1309,8 @@ const Map<String, String> hinglish = <String, String>{
   '+ @amount added from income': '+ @amount aamdani se jude',
   // Loans screens
   'No loans yet': 'Abhi koi loan nahi',
-  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.': 'Aapne jo loan liya ya diya, uski EMI, baaki rakam aur agli kist kab hai, yahan dekhein.',
+  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.':
+      'Aapne jo loan liya ya diya, uski EMI, baaki rakam aur agli kist kab hai, yahan dekhein.',
   'Add loan': 'Loan jodein',
   'Taken': 'Liye hue',
   'Given': 'Diye hue',
@@ -1322,7 +1323,8 @@ const Map<String, String> hinglish = <String, String>{
   'Loan added': 'Loan jod diya gaya',
   'Loan updated': 'Loan update ho gaya',
   'Edit loan': 'Loan edit karein',
-  'Terms are locked after the first payment': 'Pehli kist ke baad sharten badal nahi sakti',
+  'Terms are locked after the first payment':
+      'Pehli kist ke baad sharten badal nahi sakti',
   'Monthly interest': 'Mahine ka byaaj',
   'EMI': 'EMI',
   'Loan name': 'Loan ka naam',
@@ -1333,20 +1335,24 @@ const Map<String, String> hinglish = <String, String>{
   'Interest rate (% a year)': 'Byaaj dar (% saal)',
   'Interest rate (% a month)': 'Byaaj dar (% mahina)',
   'Tenure (months)': 'Avadhi (mahine)',
-  'Filled from the amount, rate and tenure. Change it to match your bank.': 'Rakam, dar aur avadhi se bhari gayi hai. Bank ki EMI se milane ke liye badal sakte hain.',
+  'Filled from the amount, rate and tenure. Change it to match your bank.':
+      'Rakam, dar aur avadhi se bhari gayi hai. Bank ki EMI se milane ke liye badal sakte hain.',
   'First EMI date': 'Pehli EMI ki tareekh',
   'Money came into this account': 'Paise is account mein aaye',
   'Money went out of this account': 'Paise is account se gaye',
-  'Turn off if the loan is older than your records.': 'Agar loan aapke records se purana hai to band karein.',
+  'Turn off if the loan is older than your records.':
+      'Agar loan aapke records se purana hai to band karein.',
   'EMIs and money lent': 'EMI aur diye hue paise',
   'Outstanding': 'Baaki rakam',
   'Delete this loan?': 'Yeh loan hatayein?',
   'Delete loan': 'Loan hatayein',
-  'This deletes the loan, its @count payments and their transactions.': 'Isse loan, uski @count kistein aur unke transactions hat jayenge.',
+  'This deletes the loan, its @count payments and their transactions.':
+      'Isse loan, uski @count kistein aur unke transactions hat jayenge.',
   'Loan deleted': 'Loan hata diya gaya',
   'Loan not found': 'Loan nahi mila',
   'Closed': 'Band',
-  '@percent% repaid · loan amount @amount': '@percent% chuka diya · loan rakam @amount',
+  '@percent% repaid · loan amount @amount':
+      '@percent% chuka diya · loan rakam @amount',
   'Interest paid so far': 'Ab tak diya gaya byaaj',
   'Record payment': 'Kist darj karein',
   'Prepay': 'Pehle chukayein',
@@ -1366,7 +1372,58 @@ const Map<String, String> hinglish = <String, String>{
   'Payment updated': 'Kist update ho gayi',
   'Payment deleted': 'Kist hata di gayi',
   'EMI @number · @date': 'EMI @number · @date',
-  'Principal @principal · Interest @interest': 'Mool @principal · Byaaj @interest',
+  'Principal @principal · Interest @interest':
+      'Mool @principal · Byaaj @interest',
   'Prepayment · @date': 'Pehle ki adaygi · @date',
   'Interest': 'Byaaj',
+  // Home screen widget and app icon shortcuts
+  '@month expense': '@month ka kharcha',
+  'Tap to open': 'Kholne ke liye tap karein',
+  'Khata entry': 'Khata entry',
+  // Import from a file
+  'Import transactions': 'Transactions import karein',
+  'From a bank statement or another app (CSV or Excel)':
+      'Bank statement ya doosre app se (CSV ya Excel)',
+  'Imported entries go into one of your accounts.':
+      'Import ki gayi entries aapke kisi account me jaati hain.',
+  'Columns': 'Columns',
+  'Import from a file': 'File se import karein',
+  'CSV or Excel (.xlsx) from your bank or another app':
+      'Aapke bank ya doosre app ki CSV ya Excel (.xlsx)',
+  'Rows: @count': 'Rows: @count',
+  'Choose file': 'File chunein',
+  'Choose another file': 'Doosri file chunein',
+  'Entries already in the app are skipped, so importing the same file twice adds nothing.':
+      'App me pehle se maujood entries chhod di jaati hain, isliye wahi file do baar import karne se kuch nahi judta.',
+  'Not in file': 'File me nahi',
+  'Import into account': 'Kis account me import karein',
+  'For rows without an account, or with one not in the app':
+      'Jin rows me account nahi, ya aisa account jo app me nahi',
+  'Choose the Date column, and Amount or Debit/Credit.':
+      'Date ka column chunein, aur Amount ya Debit/Credit.',
+  'Entries imported: @count': 'Import hui entries: @count',
+  'Preview': 'Preview',
+  'New entries: @count': 'Nayi entries: @count',
+  'Already in the app, skipped: @count': 'Pehle se app me, chhodi gayi: @count',
+  'Rows not read (totals, blank rows, transfers), skipped: @count':
+      'Padhi nahi gayi rows (total, khaali rows, transfer), chhodi gayi: @count',
+  'and @count more': 'aur @count',
+  'Nothing new to import': 'Import karne ko kuch naya nahi',
+  'Import entries (@count)': 'Entries import karein (@count)',
+  'Balance now': 'Abhi ka balance',
+  'After import': 'Import ke baad',
+  "Keep today's balance": 'Aaj ka balance same rakhein',
+  'Adds one adjustment entry of @amount before the imported entries':
+      'Import ki gayi entries se pehle @amount ki ek adjustment entry judegi',
+  'The imported entries change this balance':
+      'Import ki gayi entries yeh balance badal dengi',
+  'Debit (money out)': 'Debit (paisa gaya)',
+  'Credit (money in)': 'Credit (paisa aaya)',
+  'Type (income or expense)': 'Type (aamdani ya kharcha)',
+  'No rows found in this file.': 'Is file me koi row nahi mili.',
+  'This file could not be read. Choose a CSV or Excel (.xlsx) file.':
+      'Yeh file padhi nahi ja saki. CSV ya Excel (.xlsx) file chunein.',
+  'Open this file in Excel or Google Sheets and save it as .xlsx or .csv, then import that.':
+      'Is file ko Excel ya Google Sheets me kholkar .xlsx ya .csv me save karein, phir woh import karein.',
+  'Import adjustment': 'Import adjustment',
 };

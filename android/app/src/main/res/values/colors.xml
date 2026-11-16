@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#ffffff</color>
+    <!-- Home screen widget: the default accent (Ember, AppAccentColor). -->
+    <color name="widget_background">#B5501F</color>
+    <color name="widget_text">#FFFFFF</color>
+    <color name="widget_text_secondary">#D9FFFFFF</color>
 </resources>

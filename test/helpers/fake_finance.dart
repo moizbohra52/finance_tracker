@@ -420,6 +420,16 @@ class FakeTransactionRepository implements TransactionRepository {
   }
 
   @override
+  Future<void> importTransactions(List<Transaction> transactions) async {
+    _f.throwPending();
+    for (final Transaction t in transactions) {
+      _f.transactions
+        ..removeWhere((Transaction x) => x.id == t.id)
+        ..add(t);
+    }
+  }
+
+  @override
   Future<void> updateTransaction(
     Transaction transaction, {
     SplitChanges? savings,

@@ -184,6 +184,11 @@ Test both authenticated and unauthenticated access, and attempt cross-user reads
   instead of shutting the user out: removing the screen lock required it, so
   the app lock protected nothing more.
 - One lock for the device, whichever account is active.
+- The home screen widget (2026-11-16) shows only masks while app lock is on:
+  `HomeWidgetService` sends `••••` instead of the figures, so they never
+  leave the app. Sign-out and account switch clear the widget.
+- App icon shortcuts open their form underneath the lock, like a
+  notification tap.
 - Not covered: screenshots and the app-switcher thumbnail
   (`FLAG_SECURE`) are not blocked.
 

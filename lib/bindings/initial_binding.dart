@@ -28,6 +28,7 @@ import 'package:finance_tracker/data/repositories/user_settings.dart';
 import 'package:finance_tracker/features/app_lock/controllers/app_lock_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/account_switch_controller.dart';
 import 'package:finance_tracker/features/auth/controllers/auth_controller.dart';
+import 'package:finance_tracker/features/dashboard/services/home_widget_service.dart';
 import 'package:finance_tracker/features/settings/controllers/settings_controller.dart';
 import 'package:get/get.dart';
 
@@ -122,6 +123,7 @@ class InitialBinding extends Bindings {
     Get.put<LoanRepository>(repositories.loans, permanent: true);
     Get.put<NotificationCoordinator>(notificationCoordinator, permanent: true);
     Get.put<AppLockController>(appLock, permanent: true);
+    Get.put(HomeWidgetService(appLock), permanent: true);
     Get.put<DataChangeNotifier>(notifier, permanent: true);
     Get.put<SettingsController>(
       SettingsController(

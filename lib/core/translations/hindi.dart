@@ -1193,8 +1193,7 @@ const Map<String, String> hindi = <String, String>{
   'Open it in the group to change or delete it':
       'इसे बदलने या हटाने के लिए समूह में खोलें',
   'Open loan': 'ऋण खोलें',
-  'Open the loan to change or delete it':
-      'इसे बदलने या हटाने के लिए ऋण खोलें',
+  'Open the loan to change or delete it': 'इसे बदलने या हटाने के लिए ऋण खोलें',
   'Loan you took': 'आपका लिया हुआ ऋण',
   'Loan you gave': 'आपका दिया हुआ ऋण',
   '@name is in the group @group. Remove them from the group first.':
@@ -1291,7 +1290,8 @@ const Map<String, String> hindi = <String, String>{
   '+ @amount added from income': '+ @amount आमदनी से जुड़े',
   // Loans screens
   'No loans yet': 'अभी कोई ऋण नहीं',
-  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.': 'आपने जो ऋण लिया या दिया, उसकी किस्त, बाकी रकम और अगली किस्त कब है, यहाँ देखें।',
+  'Track a loan you took or gave: the EMI, what is left and when the next payment is due.':
+      'आपने जो ऋण लिया या दिया, उसकी किस्त, बाकी रकम और अगली किस्त कब है, यहाँ देखें।',
   'Add loan': 'ऋण जोड़ें',
   'Taken': 'लिए हुए',
   'Given': 'दिए हुए',
@@ -1304,7 +1304,8 @@ const Map<String, String> hindi = <String, String>{
   'Loan added': 'ऋण जोड़ दिया गया',
   'Loan updated': 'ऋण अपडेट हो गया',
   'Edit loan': 'ऋण बदलें',
-  'Terms are locked after the first payment': 'पहली किस्त के बाद शर्तें बदली नहीं जा सकतीं',
+  'Terms are locked after the first payment':
+      'पहली किस्त के बाद शर्तें बदली नहीं जा सकतीं',
   'Monthly interest': 'हर महीने का ब्याज',
   'EMI': 'किस्त (EMI)',
   'Loan name': 'ऋण का नाम',
@@ -1315,16 +1316,19 @@ const Map<String, String> hindi = <String, String>{
   'Interest rate (% a year)': 'ब्याज दर (% साल)',
   'Interest rate (% a month)': 'ब्याज दर (% महीना)',
   'Tenure (months)': 'अवधि (महीने)',
-  'Filled from the amount, rate and tenure. Change it to match your bank.': 'रकम, दर और अवधि से भरी गई है। बैंक की किस्त से मिलाने के लिए बदल सकते हैं।',
+  'Filled from the amount, rate and tenure. Change it to match your bank.':
+      'रकम, दर और अवधि से भरी गई है। बैंक की किस्त से मिलाने के लिए बदल सकते हैं।',
   'First EMI date': 'पहली किस्त की तारीख',
   'Money came into this account': 'पैसे इस खाते में आए',
   'Money went out of this account': 'पैसे इस खाते से गए',
-  'Turn off if the loan is older than your records.': 'अगर ऋण आपके रिकॉर्ड से पुराना है तो बंद करें।',
+  'Turn off if the loan is older than your records.':
+      'अगर ऋण आपके रिकॉर्ड से पुराना है तो बंद करें।',
   'EMIs and money lent': 'किस्तें और दिया हुआ पैसा',
   'Outstanding': 'बाकी रकम',
   'Delete this loan?': 'यह ऋण हटाएँ?',
   'Delete loan': 'ऋण हटाएँ',
-  'This deletes the loan, its @count payments and their transactions.': 'इससे ऋण, उसकी @count किस्तें और उनके लेनदेन हट जाएँगे।',
+  'This deletes the loan, its @count payments and their transactions.':
+      'इससे ऋण, उसकी @count किस्तें और उनके लेनदेन हट जाएँगे।',
   'Loan deleted': 'ऋण हटा दिया गया',
   'Loan not found': 'ऋण नहीं मिला',
   'Closed': 'बंद',
@@ -1348,7 +1352,58 @@ const Map<String, String> hindi = <String, String>{
   'Payment updated': 'किस्त अपडेट हो गई',
   'Payment deleted': 'किस्त हटा दी गई',
   'EMI @number · @date': 'किस्त @number · @date',
-  'Principal @principal · Interest @interest': 'मूलधन @principal · ब्याज @interest',
+  'Principal @principal · Interest @interest':
+      'मूलधन @principal · ब्याज @interest',
   'Prepayment · @date': 'पहले की अदायगी · @date',
   'Interest': 'ब्याज',
+  // Home screen widget and app icon shortcuts
+  '@month expense': '@month का खर्च',
+  'Tap to open': 'खोलने के लिए टैप करें',
+  'Khata entry': 'खाता एंट्री',
+  // Import from a file
+  'Import transactions': 'लेन-देन इम्पोर्ट करें',
+  'From a bank statement or another app (CSV or Excel)':
+      'बैंक स्टेटमेंट या दूसरे ऐप से (CSV या Excel)',
+  'Imported entries go into one of your accounts.':
+      'इम्पोर्ट की गई एंट्री आपके किसी अकाउंट में जाती हैं।',
+  'Columns': 'कॉलम',
+  'Import from a file': 'फ़ाइल से इम्पोर्ट करें',
+  'CSV or Excel (.xlsx) from your bank or another app':
+      'आपके बैंक या दूसरे ऐप की CSV या Excel (.xlsx)',
+  'Rows: @count': 'पंक्तियाँ: @count',
+  'Choose file': 'फ़ाइल चुनें',
+  'Choose another file': 'दूसरी फ़ाइल चुनें',
+  'Entries already in the app are skipped, so importing the same file twice adds nothing.':
+      'ऐप में पहले से मौजूद एंट्री छोड़ दी जाती हैं, इसलिए वही फ़ाइल दो बार इम्पोर्ट करने से कुछ नहीं जुड़ता।',
+  'Not in file': 'फ़ाइल में नहीं',
+  'Import into account': 'किस अकाउंट में इम्पोर्ट करें',
+  'For rows without an account, or with one not in the app':
+      'जिन पंक्तियों में अकाउंट नहीं, या ऐसा अकाउंट जो ऐप में नहीं',
+  'Choose the Date column, and Amount or Debit/Credit.':
+      'तारीख का कॉलम चुनें, और रकम या डेबिट/क्रेडिट।',
+  'Entries imported: @count': 'इम्पोर्ट हुई एंट्री: @count',
+  'Preview': 'पूर्वावलोकन',
+  'New entries: @count': 'नई एंट्री: @count',
+  'Already in the app, skipped: @count': 'पहले से ऐप में, छोड़ी गईं: @count',
+  'Rows not read (totals, blank rows, transfers), skipped: @count':
+      'पढ़ी नहीं गईं पंक्तियाँ (कुल, खाली पंक्तियाँ, ट्रांसफ़र), छोड़ी गईं: @count',
+  'and @count more': 'और @count',
+  'Nothing new to import': 'इम्पोर्ट करने को कुछ नया नहीं',
+  'Import entries (@count)': 'एंट्री इम्पोर्ट करें (@count)',
+  'Balance now': 'अभी का बैलेंस',
+  'After import': 'इम्पोर्ट के बाद',
+  "Keep today's balance": 'आज का बैलेंस वही रखें',
+  'Adds one adjustment entry of @amount before the imported entries':
+      'इम्पोर्ट की गई एंट्री से पहले @amount की एक समायोजन एंट्री जुड़ेगी',
+  'The imported entries change this balance':
+      'इम्पोर्ट की गई एंट्री यह बैलेंस बदल देंगी',
+  'Debit (money out)': 'डेबिट (पैसा गया)',
+  'Credit (money in)': 'क्रेडिट (पैसा आया)',
+  'Type (income or expense)': 'प्रकार (आमदनी या खर्च)',
+  'No rows found in this file.': 'इस फ़ाइल में कोई पंक्ति नहीं मिली।',
+  'This file could not be read. Choose a CSV or Excel (.xlsx) file.':
+      'यह फ़ाइल पढ़ी नहीं जा सकी। CSV या Excel (.xlsx) फ़ाइल चुनें।',
+  'Open this file in Excel or Google Sheets and save it as .xlsx or .csv, then import that.':
+      'इस फ़ाइल को Excel या Google Sheets में खोलकर .xlsx या .csv में सेव करें, फिर उसे इम्पोर्ट करें।',
+  'Import adjustment': 'इम्पोर्ट समायोजन',
 };

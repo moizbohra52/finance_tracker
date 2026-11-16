@@ -522,6 +522,12 @@ class _DataBackupSection extends StatelessWidget {
           onTap: () => Get.toNamed<void>(AppRoutes.export),
         ),
         SettingsTile(
+          icon: Icons.upload_file_outlined,
+          title: 'Import transactions'.tr,
+          subtitle: 'From a bank statement or another app (CSV or Excel)'.tr,
+          onTap: () => Get.toNamed<void>(AppRoutes.importTransactions),
+        ),
+        SettingsTile(
           icon: Icons.settings_backup_restore_outlined,
           title: 'Backup & restore'.tr,
           subtitle: 'Create a full offline backup or restore previous data'.tr,

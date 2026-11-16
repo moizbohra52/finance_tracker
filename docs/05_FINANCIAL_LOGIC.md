@@ -48,6 +48,25 @@ Opening balance is the starting point for an account/contact. It must be include
 
 Changing opening balance should be auditable. Prefer an adjustment/history record rather than silently rewriting historical transactions.
 
+### Importing history (2026-11-16)
+A balance counts every entry whatever its date, so importing old statement
+rows into an account whose opening balance is already today's balance would
+count that money twice. On import (`StatementImport`, Settings > Import
+transactions) the user sees each account's balance now and after the import,
+and chooses per account:
+- *Keep today's balance* (default): one `adjustment_in`/`adjustment_out`
+  entry, note "Import adjustment", takes back the imported rows' net. It is
+  dated one minute before the earliest imported row, so the imported history
+  starts from the balance the account had then.
+- Off: the imported rows change the balance.
+
+Only income and expense rows are imported. Transfers, adjustments and opening
+balances in a file are skipped: as single rows they would count money twice.
+A row is a duplicate when the account already has an entry with the same day,
+type and amount (counted one for one), or when the same row was imported
+before (ids are uuid v5 of the user and the row's content, so re-importing a
+file, or importing it after editing an imported entry, adds nothing).
+
 ## Transfer
 A transfer creates two linked entries:
 - source: transfer_out
